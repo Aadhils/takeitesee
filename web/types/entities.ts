@@ -5,6 +5,8 @@
  * These are the source of truth for all core domain entities.
  */
 
+import type { ServicePricing } from './money';
+
 /**
  * UUID-based unique identifier
  * All entities use UUID v4 for distributed ID generation
@@ -111,15 +113,13 @@ export interface CustomerProfile {
 export interface Service {
   id: EntityId;
   category_id: EntityId;
-  service_name: string;
+  service_name: LocalizedText;
   slug: string;
-  description: string;
-  currency: Currency;
-  base_price: number;
-  pricing_model: 'fixed' | 'hourly' | 'negotiable';
+  description: LocalizedText;
+  pricing: ServicePricing;
   duration_minutes?: number;
-  status: 'draft' | 'active' | 'paused' | 'archived' | 'suspended' | 'deleted';
-  is_published: boolean;
+  status: ServiceStatus;
+  publication: CatalogPublication;
   created_at: Date;
   updated_at: Date;
   deleted_at?: Date;
@@ -152,14 +152,35 @@ export interface BusinessServiceOwnership {
  */
 export interface Category {
   id: EntityId;
-  name: string;
+  name: LocalizedText;
   slug: string;
   parent_category_id?: EntityId;
-  locale: Locale;
   is_active: boolean;
   sort_order: number;
   created_at: Date;
+  updated_at: Date;
 }
+
+/**
+ * Localized catalog content. The default locale must always have a value.
+ */
+export interface LocalizedText {
+  default_locale: Locale;
+  values: Partial<Record<Locale, string>>;
+}
+
+export type ServiceStatus =
+  | 'draft'
+  | 'active'
+  | 'paused'
+  | 'archived'
+  | 'suspended'
+  | 'deleted';
+
+export type CatalogPublication =
+  | { state: 'unpublished' }
+  | { state: 'published'; published_at: Date; published_by: EntityId }
+  | { state: 'hidden'; hidden_at: Date; hidden_by: EntityId; reason: string };
 
 /**
  * Address entity - customer, professional, and business addresses

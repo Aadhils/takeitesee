@@ -13,6 +13,9 @@
 // Entity types
 export * from './entities';
 
+// Service and catalog foundation
+export * from './catalog';
+
 // Ownership and role model
 export * from './ownership';
 
