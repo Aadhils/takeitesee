@@ -1,81 +1,218 @@
 /**
- * Booking Lifecycle Types
+ * Booking and workflow foundation.
  *
- * Canonical booking state machine and lifecycle models
- * Tied to provider action, payment state, and refund/dispute logic
+ * Booking lifecycle is deliberately separate from payment lifecycle. Payment
+ * records remain the source of truth for payment state, while this module
+ * models service commitment, scheduling, completion, and operational outcomes.
  */
 
-import type { EntityId } from './entities';
+import type { AuthorizationContext } from './authorization';
+import type { ServiceId } from './catalog';
+import type { EntityId, Locale } from './entities';
 import type { Money } from './money';
+import type { Dispute, PaymentStatus, Refund } from './payment';
 import type { ProviderReference } from './ownership';
 
-/**
- * Booking lifecycle states
- * Captures the entire lifecycle from request to closure
- */
-export type BookingStatus =
-  | 'draft' // customer creating booking
-  | 'submitted' // submitted for provider review
-  | 'pending_provider_acceptance' // waiting for provider response
-  | 'accepted' // provider accepted
-  | 'scheduled' // scheduled/confirmed
-  | 'in_progress' // service in progress
-  | 'awaiting_completion' // waiting for completion confirmation
-  | 'completed' // service completed
-  | 'payment_pending' // payment pending
-  | 'payment_confirmed' // payment confirmed
-  | 'paid' // payment received
-  | 'cancelled' // booking cancelled
-  | 'refunded' // refund issued
-  | 'disputed' // under dispute
-  | 'closed'; // final state
+export type BookingId = EntityId;
 
-/**
- * Allowed booking state transitions
- * Enforces safe progression through booking lifecycle
- */
+/** Booking lifecycle states, excluding payment states. */
+export type BookingStatus =
+  | 'draft'
+  | 'requested'
+  | 'provider_review'
+  | 'rejected'
+  | 'accepted'
+  | 'reschedule_requested'
+  | 'scheduled'
+  | 'in_progress'
+  | 'completion_pending'
+  | 'completed'
+  | 'cancelled'
+  | 'no_show'
+  | 'refund_pending'
+  | 'closed';
+
+/** Payment and dispute changes are represented by their own references. */
 export const BOOKING_TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
-  draft: ['submitted'],
-  submitted: ['pending_provider_acceptance'],
-  pending_provider_acceptance: ['accepted', 'cancelled'],
-  accepted: ['scheduled'],
-  scheduled: ['in_progress'],
-  in_progress: ['awaiting_completion'],
-  awaiting_completion: ['completed'],
-  completed: ['payment_pending'],
-  payment_pending: ['payment_confirmed'],
-  payment_confirmed: ['paid'],
-  paid: ['refunded', 'disputed'],
-  cancelled: ['refunded', 'closed'],
-  refunded: ['closed'],
-  disputed: ['paid', 'refunded', 'closed'],
+  draft: ['requested', 'cancelled'],
+  requested: ['provider_review', 'cancelled'],
+  provider_review: ['accepted', 'rejected', 'reschedule_requested', 'cancelled'],
+  rejected: ['closed'],
+  accepted: ['scheduled', 'reschedule_requested', 'cancelled'],
+  reschedule_requested: ['accepted', 'scheduled', 'cancelled'],
+  scheduled: ['in_progress', 'reschedule_requested', 'cancelled', 'no_show'],
+  in_progress: ['completion_pending', 'no_show'],
+  completion_pending: ['completed', 'no_show'],
+  completed: ['refund_pending', 'closed'],
+  cancelled: ['refund_pending', 'closed'],
+  no_show: ['refund_pending', 'closed'],
+  refund_pending: ['closed'],
   closed: [],
 };
 
-/**
- * Validate booking state transition
- */
 export function isAllowedBookingTransition(from: BookingStatus, to: BookingStatus): boolean {
-  return BOOKING_TRANSITIONS[from]?.includes(to) ?? false;
+  return BOOKING_TRANSITIONS[from].includes(to);
 }
 
-/**
- * Booking entity - finalized service order or booking
- */
-export interface Booking {
+export class InvalidBookingTransitionError extends Error {
+  constructor(from: BookingStatus, to: BookingStatus) {
+    super(`Booking transition is not allowed: ${from} -> ${to}`);
+    this.name = 'InvalidBookingTransitionError';
+  }
+}
+
+/** Validates the lifecycle edge and rejects duplicate or forbidden transitions. */
+export function assertAllowedBookingTransition(
+  from: BookingStatus,
+  to: BookingStatus
+): void {
+  if (from === to || !isAllowedBookingTransition(from, to)) {
+    throw new InvalidBookingTransitionError(from, to);
+  }
+}
+
+export function canStartBooking(booking: Pick<Booking, 'status' | 'schedule'>): boolean {
+  return (
+    booking.status === 'scheduled' &&
+    booking.schedule !== undefined &&
+    isAllowedBookingTransition(booking.status, 'in_progress')
+  );
+}
+
+export function canCompleteBooking(
+  booking: Pick<Booking, 'status' | 'schedule' | 'completion'>
+): boolean {
+  return (
+    booking.status === 'completion_pending' &&
+    booking.schedule !== undefined &&
+    booking.completion?.status === 'confirmed' &&
+    isAllowedBookingTransition(booking.status, 'completed')
+  );
+}
+
+export type BookingRequestStatus = 'pending' | 'accepted' | 'rejected' | 'withdrawn';
+
+export interface BookingRequest {
   id: EntityId;
+  booking_id: BookingId;
+  requested_by_customer_id: EntityId;
+  requested_at: Date;
+  status: BookingRequestStatus;
+  message?: string;
+  locale?: Locale;
+}
+
+export type ProviderResponseStatus =
+  | 'pending'
+  | 'accepted'
+  | 'rejected'
+  | 'reschedule_proposed'
+  | 'withdrawn';
+
+export interface ProviderBookingResponse {
+  id: EntityId;
+  booking_id: BookingId;
+  provider: ProviderReference;
+  status: ProviderResponseStatus;
+  message?: string;
+  proposed_schedule?: BookingSchedule;
+  responded_at?: Date;
+  created_at: Date;
+}
+
+export interface BookingSchedule {
+  starts_at: Date;
+  ends_at: Date;
+  timezone: string;
+}
+
+export type RescheduleStatus = 'proposed' | 'accepted' | 'declined' | 'withdrawn';
+
+export interface RescheduleProposal {
+  id: EntityId;
+  booking_id: BookingId;
+  proposed_by_user_id: EntityId;
+  proposed_schedule: BookingSchedule;
+  reason?: string;
+  status: RescheduleStatus;
+  created_at: Date;
+  resolved_at?: Date;
+}
+
+export type CancellationStatus = 'requested' | 'approved' | 'rejected' | 'completed';
+
+export type CancellationReason =
+  | 'customer_request'
+  | 'provider_request'
+  | 'provider_failure'
+  | 'schedule_conflict'
+  | 'policy'
+  | 'admin_action'
+  | 'other';
+
+export interface CancellationRequest {
+  id: EntityId;
+  booking_id: BookingId;
+  requested_by_user_id: EntityId;
+  reason: CancellationReason;
+  notes?: string;
+  status: CancellationStatus;
+  requested_at: Date;
+  resolved_at?: Date;
+}
+
+export type CompletionStatus = 'pending' | 'confirmed' | 'rejected';
+
+export interface ServiceCompletion {
+  id: EntityId;
+  booking_id: BookingId;
+  confirmed_by_user_id?: EntityId;
+  status: CompletionStatus;
+  notes?: string;
+  confirmed_at?: Date;
+}
+
+export type NoShowParty = 'customer' | 'provider';
+
+export interface NoShowRecord {
+  id: EntityId;
+  booking_id: BookingId;
+  reported_by_user_id: EntityId;
+  absent_party: NoShowParty;
+  reason?: string;
+  created_at: Date;
+}
+
+/** Operational dispute linkage; the authoritative dispute lifecycle is in payment.ts. */
+export interface BookingDisputeReference {
+  dispute: Dispute;
+  freezes_settlement: true;
+}
+
+/** Payment status is observed here, never changed by booking transitions. */
+export interface BookingPaymentReference {
+  payment_record_id: EntityId;
+  status: PaymentStatus;
+}
+
+export interface Booking {
+  id: BookingId;
   customer_id: EntityId;
-  service_id: EntityId;
+  service_id: ServiceId;
   requirement_id?: EntityId;
-  provider: ProviderReference; // discriminated union - professional or business
-  booking_reference: string; // unique reference for customer
+  provider: ProviderReference;
+  booking_reference: string;
   status: BookingStatus;
-  subtotal_amount: Money;
-  tax_amount: Money;
-  platform_fee_amount: Money;
-  provider_payout_amount: Money;
-  scheduled_start_at: Date;
-  scheduled_end_at: Date;
+  schedule?: BookingSchedule;
+  quoted_amount: Money;
+  payment?: BookingPaymentReference;
+  dispute?: BookingDisputeReference;
+  refund?: BookingRefundReference;
+  cancellation?: CancellationRequest;
+  completion?: ServiceCompletion;
+  no_show?: NoShowRecord;
+  notes?: string;
+  metadata?: Record<string, string>;
   created_at: Date;
   updated_at: Date;
   completed_at?: Date;
@@ -83,39 +220,99 @@ export interface Booking {
   deleted_at?: Date;
 }
 
-/**
- * Booking status change reason codes
- */
 export type BookingStatusChangeReason =
   | 'customer_request'
-  | 'provider_request'
+  | 'provider_response'
+  | 'reschedule'
+  | 'schedule_reached'
+  | 'service_started'
+  | 'completion_confirmation'
+  | 'no_show_reported'
+  | 'cancellation_policy'
+  | 'refund_required'
   | 'admin_action'
   | 'system_action'
-  | 'payment_completed'
-  | 'payment_failed'
-  | 'refund_processed'
-  | 'dispute_resolved'
-  | 'cancellation_policy'
-  | 'service_completion'
   | 'other';
 
-/**
- * Booking status history - append-only timeline
- */
+/** Append-only booking lifecycle timeline. */
 export interface BookingStatusHistory {
   id: EntityId;
-  booking_id: EntityId;
+  booking_id: BookingId;
   previous_status: BookingStatus;
   new_status: BookingStatus;
   changed_by_user_id: EntityId;
   reason_code: BookingStatusChangeReason;
+  idempotency_key: string;
   notes?: string;
   created_at: Date;
 }
 
-/**
- * Requirement entity - customer posted service request
- */
+export type BookingAction =
+  | 'create'
+  | 'accept'
+  | 'reject'
+  | 'propose_reschedule'
+  | 'respond_to_reschedule'
+  | 'cancel'
+  | 'start'
+  | 'confirm_completion'
+  | 'report_no_show'
+  | 'request_refund';
+
+/** Server-side policy input; client-supplied ownership must never be trusted. */
+export interface BookingAuthorizationRequest {
+  context: AuthorizationContext;
+  booking_id: BookingId;
+  action: BookingAction;
+}
+
+export interface BookingAuthorizationService {
+  authorize(request: BookingAuthorizationRequest): Promise<boolean>;
+}
+
+export interface BookingRepository {
+  get_booking(booking_id: BookingId): Promise<Booking | null>;
+  save_booking(booking: Booking): Promise<Booking>;
+  append_status_history(entry: BookingStatusHistory): Promise<void>;
+  list_status_history(booking_id: BookingId): Promise<readonly BookingStatusHistory[]>;
+}
+
+export type BookingAuditEventType =
+  | 'booking_created'
+  | 'booking_status_changed'
+  | 'provider_responded'
+  | 'reschedule_proposed'
+  | 'cancellation_requested'
+  | 'completion_recorded'
+  | 'no_show_recorded'
+  | 'dispute_linked';
+
+export interface BookingAuditEvent {
+  id: EntityId;
+  event_type: BookingAuditEventType;
+  booking_id: BookingId;
+  actor_user_id: EntityId;
+  occurred_at: Date;
+  reason?: string;
+  previous_state?: Record<string, unknown>;
+  next_state?: Record<string, unknown>;
+}
+
+export interface BookingAuditWriter {
+  append(event: BookingAuditEvent): Promise<void>;
+}
+
+export interface BookingGateRules {
+  provider_acceptance_required_before_schedule: true;
+  provider_acceptance_required_before_start: true;
+  schedule_required_before_start: true;
+  completion_confirmation_required_before_complete: true;
+  payment_state_does_not_advance_booking_state: true;
+  dispute_freezes_settlement: true;
+  every_transition_requires_unique_idempotency_key: true;
+}
+
+/** Existing requirement domain retained here because requirements can create bookings. */
 export interface Requirement {
   id: EntityId;
   customer_id: EntityId;
@@ -131,13 +328,10 @@ export interface Requirement {
   deleted_at?: Date;
 }
 
-/**
- * Response entity - provider response to a requirement
- */
 export interface Response {
   id: EntityId;
   requirement_id: EntityId;
-  provider: ProviderReference; // professional or business
+  provider: ProviderReference;
   message: string;
   proposed_price: Money;
   status: 'pending' | 'accepted' | 'rejected' | 'withdrawn';
@@ -145,52 +339,8 @@ export interface Response {
   updated_at: Date;
 }
 
-/**
- * Booking gate rules
- * Safety constraints on booking state transitions
- */
-export interface BookingGateRules {
-  // A booking cannot enter payment-confirmed without valid payment record
-  payment_confirmed_requires_valid_payment_record: true;
-
-  // A booking cannot be completed without provider acceptance and schedule
-  completed_requires_acceptance_and_schedule: true;
-
-  // Cancellation or failure triggers refund path but doesn't bypass ledger rules
-  cancellation_triggers_refund_path: true;
-
-  // Dispute freezes settlement until resolution
-  dispute_freezes_settlement: true;
-}
-
-/**
- * Service completion confirmation
- */
-export interface ServiceCompletionConfirmation {
-  booking_id: EntityId;
-  confirmed_by: EntityId; // customer or provider
-  completion_notes?: string;
-  confirmed_at: Date;
-}
-
-/**
- * Cancellation policy types
- */
-export type CancellationPolicyType =
-  | 'full_refund_anytime'
-  | 'refund_until_scheduled'
-  | 'refund_with_penalty'
-  | 'no_refund_after_accepted';
-
-/**
- * Cancellation outcome
- */
-export interface CancellationOutcome {
-  booking_id: EntityId;
-  cancelled_by: EntityId;
-  cancellation_reason: string;
-  policy_applied: CancellationPolicyType;
-  refund_amount: Money;
-  status: 'pending' | 'refund_issued' | 'no_refund';
-  cancelled_at: Date;
+/** Refund decisions remain owned by the canonical payment/refund domain. */
+export interface BookingRefundReference {
+  refund: Refund;
+  required_before_closure: boolean;
 }
