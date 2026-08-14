@@ -53,6 +53,9 @@ export * from './authorization';
 // Server-side authentication/authorization service interfaces
 export * from './auth-services';
 
+// Security, data protection, and RLS-readiness foundation
+export * from './security';
+
 // CSS Modules
 declare module '*.module.css';
 declare module '*.module.scss';
