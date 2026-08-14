@@ -5,8 +5,12 @@
  * Defines allowed states and transitions for payment records
  */
 
-import type { EntityId, Currency } from './entities';
+import type { BookingId } from './booking';
+import type { Currency, EntityId } from './entities';
 import type { Money } from './money';
+
+export type PaymentId = EntityId;
+export type PaymentAmount = Money;
 
 /**
  * Payment lifecycle states - canonical payment state machine
@@ -18,6 +22,7 @@ export type PaymentStatus =
   | 'authorized' // provider authorized the payment
   | 'captured' // payment captured/completed
   | 'failed' // payment failed
+  | 'cancelled' // payment was cancelled before capture
   | 'partially_refunded' // partial refund issued
   | 'refunded' // full refund issued
   | 'disputed' // customer raised a dispute
@@ -30,10 +35,11 @@ export type PaymentStatus =
  */
 export const PAYMENT_TRANSITIONS: Record<PaymentStatus, PaymentStatus[]> = {
   pending: ['initiated'],
-  initiated: ['authorized', 'failed'],
+  initiated: ['authorized', 'failed', 'cancelled'],
   authorized: ['captured', 'failed'],
   captured: ['partially_refunded', 'refunded', 'disputed', 'settled'],
   failed: [],
+  cancelled: [],
   partially_refunded: ['refunded', 'disputed'],
   refunded: ['closed'],
   disputed: ['settled', 'closed'],
@@ -51,7 +57,7 @@ export function isAllowedPaymentTransition(from: PaymentStatus, to: PaymentStatu
 /**
  * Payment method types
  */
-export type PaymentMethodType =
+export type PaymentMethod =
   | 'credit_card'
   | 'debit_card'
   | 'net_banking'
@@ -59,27 +65,81 @@ export type PaymentMethodType =
   | 'wallet'
   | 'emi';
 
+export type PaymentMethodType = PaymentMethod;
+
+export type PaymentProviderCode = string & { readonly brand: 'PaymentProviderCode' };
+
+export function createPaymentProviderCode(code: string): PaymentProviderCode {
+  if (code.trim().length === 0) {
+    throw new Error('Payment provider code cannot be empty');
+  }
+  return code as PaymentProviderCode;
+}
+
+export interface PaymentProvider {
+  id: EntityId;
+  code: PaymentProviderCode;
+  name: string;
+  settlement_model: 'provider_managed' | 'platform_managed';
+  country_code: string;
+  supported_currencies: Currency[];
+  is_active: boolean;
+  is_default: boolean;
+  config_version: string;
+  created_at: Date;
+  updated_at?: Date;
+}
+
+export interface PaymentFailure {
+  status: 'failed';
+  failed_at: Date;
+  reason_code: string;
+  reason_message?: string;
+  is_retryable: boolean;
+}
+
+export interface PaymentCancellation {
+  status: 'cancelled';
+  cancelled_at: Date;
+  reason_code: 'customer_request' | 'provider_request' | 'timeout' | 'system_action' | 'other';
+  reason?: string;
+}
+
 /**
  * Payment record - canonical payment lifecycle source of truth
  * This is the single authoritative record for payment status
  * No financial movement occurs without a related ledger entry
  */
 export interface PaymentRecord {
-  id: EntityId;
-  booking_id: EntityId;
+  id: PaymentId;
+  booking_id: BookingId;
   customer_id: EntityId;
-  provider_id: EntityId; // payment provider ID
-  provider_payment_id?: string; // provider's transaction reference
-  payment_method_type: PaymentMethodType;
-  gross_amount: Money;
+  provider: PaymentProviderReference;
+  provider_transaction_reference?: ProviderTransactionReference;
+  payment_method: PaymentMethod;
+  amount: PaymentAmount;
   currency: Currency;
   status: PaymentStatus;
+  failure?: PaymentFailure;
+  cancellation?: PaymentCancellation;
   initiated_at?: Date;
+  authorized_at?: Date;
   captured_at?: Date;
-  failed_at?: Date;
+  refunded_at?: Date;
   created_at: Date;
   updated_at: Date;
   idempotency_key: string; // unique per operation to prevent duplicates
+}
+
+export interface PaymentProviderReference {
+  provider_id: EntityId;
+  provider_code: PaymentProviderCode;
+}
+
+export interface ProviderTransactionReference {
+  transaction_id?: string;
+  payment_id?: string;
+  order_id?: string;
 }
 
 /**
@@ -90,7 +150,7 @@ export interface PaymentAttempt {
   id: EntityId;
   payment_record_id: EntityId;
   attempt_number: number;
-  provider_operation: 'charge' | 'refund' | 'payout' | 'settlement';
+  provider_operation: 'authorize' | 'capture' | 'refund' | 'payout' | 'settlement';
   idempotency_key: string; // unique per provider operation
   request_hash: string; // hash of request to detect duplicates
   response_code?: string;

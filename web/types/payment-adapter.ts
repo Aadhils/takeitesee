@@ -12,25 +12,9 @@
  * - Provider-specific data is normalized into standard domain models
  */
 
-import type { EntityId, Currency } from './entities';
+import type { Currency, EntityId } from './entities';
 import type { Money } from './money';
-
-/**
- * Payment provider identification and configuration
- */
-export interface PaymentProvider {
-  id: EntityId;
-  code: 'cashfree' | 'razorpay' | string; // extensible for future providers
-  name: string;
-  is_active: boolean;
-  is_default: boolean; // is this the default provider for a region
-  settlement_model: 'provider_managed' | 'platform_managed';
-  country_code: string; // e.g., 'IN' for India
-  supported_currencies: Currency[];
-  config_version: string;
-  created_at: Date;
-  updated_at?: Date;
-}
+import type { PaymentMethod, PaymentProviderCode } from './payment';
 
 /**
  * Payment provider settlement models
@@ -47,7 +31,7 @@ export interface IPaymentAdapter {
   /**
    * Provider identifier
    */
-  provider_code: string;
+  provider_code: PaymentProviderCode;
 
   /**
    * Initialize a payment/checkout intent
@@ -133,7 +117,7 @@ export interface PaymentVerificationResponse {
   provider_payment_id: string;
   status: 'pending' | 'authorized' | 'captured' | 'failed' | 'refunded';
   amount: Money;
-  payment_method: PaymentMethodType;
+  payment_method: PaymentMethod;
   created_at: Date;
   captured_at?: Date;
   failed_at?: Date;
@@ -203,20 +187,12 @@ export type DomainWebhookEventType =
  * Payment method info
  */
 export interface PaymentMethodInfo {
-  type: PaymentMethodType;
+  type: PaymentMethod;
   display_name: string;
   is_available: boolean;
   description?: string;
   icon_url?: string;
 }
-
-export type PaymentMethodType =
-  | 'credit_card'
-  | 'debit_card'
-  | 'net_banking'
-  | 'upi'
-  | 'wallet'
-  | 'emi';
 
 /**
  * Settlement query parameters
@@ -267,7 +243,7 @@ export interface WebhookEvent {
  * Returns appropriate adapter for given provider code
  */
 export interface IPaymentAdapterFactory {
-  get_adapter(provider_code: string): Promise<IPaymentAdapter | null>;
+  get_adapter(provider_code: PaymentProviderCode): Promise<IPaymentAdapter | null>;
   get_default_adapter(): Promise<IPaymentAdapter>;
   list_active_adapters(): Promise<IPaymentAdapter[]>;
 }
