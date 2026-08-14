@@ -34,6 +34,11 @@ export * from './verification';
 // Provider-agnostic payment adapters
 export * from './payment-adapter';
 
+// Notifications, reviews, and operational summaries
+export * from './notifications';
+export * from './reviews';
+export * from './operations';
+
 // === Phase 6B: Authentication, Session & Role Foundation ===
 
 // Authentication domain types
