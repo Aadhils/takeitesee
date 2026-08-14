@@ -60,18 +60,20 @@ Phase 6 must not perform or enable:
 - define provider abstraction, checkout intents, webhook ingestion, and reconciliation contracts
 - keep Cashfree as the preferred India-first option without hard-wiring core logic to it
 
-6F — Commission and ledger foundation
-- define deterministic commission precedence
-- define versioned rule storage and ledger invariants
-- define settlement and payout linkage rules
-
-6G — Notifications and reviews
+6F — Notifications, reviews, and operational domain foundation
 - define notifications, ratings, and review lifecycle models
+- define provider/business operational summary contracts
 - define event-driven message flows
 
-6H — Security, RLS, and privacy validation
-- validate access rules, webhook integrity, file handling, and audit coverage
-- validate data minimization and privacy separation
+6G — Security, data protection, and RLS readiness foundation
+- define access, ownership, scope, and default-deny contracts
+- define webhook integrity, file security, audit, retention, and RLS metadata
+- define data minimization and privacy boundaries
+
+Deferred financial extension — commission and ledger foundation
+- commission precedence, versioned rules, ledger invariants, settlement, and payout linkage
+- intentionally not implemented in the Phase 6A–6G commit chain
+- requires a separately approved future implementation phase
 
 6I — Testing and staging readiness
 - define unit, integration, RLS, webhook, payment sandbox, commission, and workflow tests
@@ -1362,19 +1364,19 @@ The project should avoid premature complexity, but it should prepare for later e
 - define payment and webhook processing model
 - define duplicate prevention and reconciliation baseline
 
-### 6F — Commission and ledger foundation
-- define rule precedence and conflict rules
-- define transaction commission and ledger invariants
-- define settlement and payout separation rules
-
-### 6G — Notifications and reviews
+### 6F — Notifications, reviews, and operational domain foundation
 - define review flow and event-driven notifications
 - define lifecycle messaging and user visibility rules
+- define provider/business operational summary contracts
 
-### 6H — Security, RLS, and privacy validation
-- validate role scope and sensitive table access
-- validate audit log coverage and data minimization
-- validate webhook and file upload security
+### 6G — Security, data protection, and RLS readiness foundation
+- define role scope and sensitive data access contracts
+- define audit log coverage, retention, and data minimization
+- define webhook and file upload security metadata
+
+### Deferred financial extension
+- commission/ledger implementation remains future work
+- commission rules, settlement, payout, and ledger behavior are not represented as completed Phase 6 implementation
 
 ### 6I — Testing, staging, and rollout readiness
 - define unit, integration, workflow, RLS, sandbox, and commission tests
@@ -2479,22 +2481,23 @@ The safest order is to build the system from foundational data and authorization
 - webhook ingestion and verification
 - payment status reconciliation without live activation
 
-### 12.6 Milestone 6F — Commission/ledger foundation
-- versioned commission rules
-- transaction-specific commission snapshots
-- settlement and payout tracking
-- ledger and adjustment integrity
-
-### 12.7 Milestone 6G — Notifications/reviews
+### 12.6 Milestone 6F — Notifications/reviews/operations
 - notification types and triggers
 - review/rating model
+- provider/business operational summaries
 - event-driven customer/professional updates
 
-### 12.8 Milestone 6H — Security/RLS validation
+### 12.7 Milestone 6G — Security/RLS readiness
 - validate access controls and business ownership checks
 - audit log coverage and sensitive data masking
 - secret isolation and rate limit design
-- webhook and upload hardening
+- webhook and upload security metadata
+
+### 12.8 Deferred financial extension
+- versioned commission rules
+- transaction-specific commission snapshots
+- settlement, payout, ledger, and adjustment integrity
+- not implemented in the current Phase 6A–6G commit chain
 
 ### 12.9 Milestone 6I — Testing and staging readiness
 - unit + integration + RLS + webhook + commission + workflow tests

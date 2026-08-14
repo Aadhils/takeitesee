@@ -9,7 +9,12 @@
  */
 
 import type { EntityId } from './entities';
-import type { PlatformRole, RoleScopeType, RoleAssignment } from './ownership';
+import type {
+  BusinessStaff,
+  PlatformRole,
+  RoleScopeType,
+  RoleAssignment,
+} from './ownership';
 
 /**
  * Authorization action - what the user is trying to do
@@ -62,6 +67,7 @@ export interface AuthorizationContext {
   user_id: EntityId;
   roles: PlatformRole[];
   role_assignments: RoleAssignment[];
+  business_staff_memberships?: BusinessStaff[];
   is_admin: boolean;
   is_super_admin: boolean;
   authenticated_at: Date;

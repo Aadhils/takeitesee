@@ -79,19 +79,6 @@ export interface BusinessStaff {
 }
 
 /**
- * Authorization context
- * Used for server-side policy evaluation
- */
-export interface AuthorizationContext {
-  user_id: EntityId;
-  roles: PlatformRole[];
-  role_assignments: RoleAssignment[];
-  business_staff_memberships?: BusinessStaff[];
-  is_admin: boolean;
-  is_super_admin: boolean;
-}
-
-/**
  * Service ownership discriminated union
  * A service is owned by exactly one entity: either a professional or a business
  */
