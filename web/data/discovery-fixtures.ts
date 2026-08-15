@@ -11,11 +11,18 @@ export type DiscoveryCategory = Pick<Category, 'id' | 'name' | 'slug'> & {
 export type DiscoveryService = Pick<Service, 'id' | 'category_id' | 'service_name' | 'description' | 'pricing'> & {
   provider_name: string;
   provider_type: ServiceOwner['owner_type'];
+  provider_id: EntityId;
   location: string;
   availability: 'Available today' | 'Next available tomorrow' | 'Remote delivery';
   rating: number;
   review_count: number;
   verified: boolean;
+  duration_minutes: number;
+  service_area: string;
+  long_description: string;
+  highlights: string[];
+  inclusions: string[];
+  policy: string;
 };
 
 export type DiscoveryProfessional = Pick<ProfessionalProfile, 'id' | 'headline' | 'availability_mode' | 'status'> & {
@@ -25,6 +32,27 @@ export type DiscoveryProfessional = Pick<ProfessionalProfile, 'id' | 'headline' 
   rating: number;
   review_count: number;
   verified: boolean;
+  summary: string;
+  experience_years: number;
+  service_area: string;
+  services: string[];
+  availability_summary: string;
+  reviews: DiscoveryReview[];
+};
+
+export type DiscoveryAvailability = {
+  date: string;
+  label: string;
+  slots: { time: string; available: boolean }[];
+};
+
+export type DiscoveryReview = {
+  id: string;
+  reviewer_name: string;
+  rating: 1 | 2 | 3 | 4 | 5;
+  comment: string;
+  date: string;
+  verified_booking: boolean;
 };
 
 export type DiscoveryBusiness = Pick<Business, 'id' | 'business_name' | 'status'> & {
@@ -82,19 +110,27 @@ export const discoveryCategories: DiscoveryCategory[] = [
   { id: id(categoryIds.technology), name: text('Technology'), slug: 'technology', description: 'Reliable support for your digital life.', icon: '◇', service_count: 110 },
 ];
 
+const serviceDefaults = { duration_minutes: 90, service_area: 'Chennai, Tamil Nadu', long_description: 'A considered, practical service delivered with clear communication from the first conversation through completion. This presentation fixture describes the expected experience; final scope and timing will be confirmed later.', highlights: ['Clear scope before work begins', 'Experienced service team', 'Simple follow-up guidance'], inclusions: ['Initial consultation', 'Service delivery', 'Completion notes'], policy: 'Free rescheduling up to 24 hours before the selected time. Cancellation and final eligibility will be confirmed by the future booking service.' };
+
 export const discoveryServices: DiscoveryService[] = [
-  { id: id(serviceIds.electrical), category_id: id(categoryIds.home), service_name: text('Home electrical inspection'), description: text('A careful safety check for switches, wiring, and common electrical issues.'), pricing: price(850), provider_name: 'Brightline Services', provider_type: 'business', location: 'Chennai, Tamil Nadu', availability: 'Available today', rating: 4.8, review_count: 124, verified: true },
-  { id: id(serviceIds.design), category_id: id(categoryIds.business), service_name: text('Brand identity starter kit'), description: text('A focused identity system to help a new business show up with confidence.'), pricing: price(4500), provider_name: 'Maya Thomas', provider_type: 'professional', location: 'Remote delivery', availability: 'Remote delivery', rating: 4.9, review_count: 86, verified: true },
-  { id: id(serviceIds.tutoring), category_id: id(categoryIds.learning), service_name: text('Maths coaching for grades 8-10'), description: text('Patient, structured coaching with a plan for stronger fundamentals.'), pricing: price(600, 'hourly'), provider_name: 'Northstar Learning', provider_type: 'business', location: 'Bengaluru, Karnataka', availability: 'Next available tomorrow', rating: 4.7, review_count: 59, verified: true },
-  { id: id(serviceIds.cleaning), category_id: id(categoryIds.home), service_name: text('Deep home cleaning'), description: text('A detailed reset for kitchens, bathrooms, and high-use living spaces.'), pricing: price(1200), provider_name: 'Brightline Services', provider_type: 'business', location: 'Chennai, Tamil Nadu', availability: 'Available today', rating: 4.6, review_count: 210, verified: true },
-  { id: id(serviceIds.photography), category_id: id(categoryIds.events), service_name: text('Small event photography'), description: text('Warm, natural coverage for intimate events and milestone days.'), pricing: price(6500), provider_name: 'Nisha Menon', provider_type: 'professional', location: 'Kochi, Kerala', availability: 'Next available tomorrow', rating: 4.9, review_count: 43, verified: false },
-  { id: id(serviceIds.software), category_id: id(categoryIds.technology), service_name: text('Small business website setup'), description: text('A clear, maintainable website foundation for a growing local business.'), pricing: price(12000, 'negotiable'), provider_name: 'PixelCraft Studio', provider_type: 'business', location: 'Remote delivery', availability: 'Remote delivery', rating: 4.8, review_count: 71, verified: true },
+  { ...serviceDefaults, id: id(serviceIds.electrical), category_id: id(categoryIds.home), service_name: text('Home electrical inspection'), description: text('A careful safety check for switches, wiring, and common electrical issues.'), pricing: price(850), provider_name: 'Brightline Services', provider_type: 'business', provider_id: id(businessIds.brightline), location: 'Chennai, Tamil Nadu', availability: 'Available today', rating: 4.8, review_count: 124, verified: true, duration_minutes: 90 },
+  { ...serviceDefaults, service_area: 'Remote delivery across India', id: id(serviceIds.design), category_id: id(categoryIds.business), service_name: text('Brand identity starter kit'), description: text('A focused identity system to help a new business show up with confidence.'), pricing: price(4500), provider_name: 'Maya Thomas', provider_type: 'professional', provider_id: id(professionalIds.maya), location: 'Remote delivery', availability: 'Remote delivery', rating: 4.9, review_count: 86, verified: true, duration_minutes: 240, highlights: ['Discovery call', 'Two focused design directions', 'Ready-to-use starter files'] },
+  { ...serviceDefaults, service_area: 'Bengaluru and online', id: id(serviceIds.tutoring), category_id: id(categoryIds.learning), service_name: text('Maths coaching for grades 8-10'), description: text('Patient, structured coaching with a plan for stronger fundamentals.'), pricing: price(600, 'hourly'), provider_name: 'Northstar Learning', provider_type: 'business', provider_id: id(businessIds.northstar), location: 'Bengaluru, Karnataka', availability: 'Next available tomorrow', rating: 4.7, review_count: 59, verified: true, duration_minutes: 60 },
+  { ...serviceDefaults, id: id(serviceIds.cleaning), category_id: id(categoryIds.home), service_name: text('Deep home cleaning'), description: text('A detailed reset for kitchens, bathrooms, and high-use living spaces.'), pricing: price(1200), provider_name: 'Brightline Services', provider_type: 'business', provider_id: id(businessIds.brightline), location: 'Chennai, Tamil Nadu', availability: 'Available today', rating: 4.6, review_count: 210, verified: true, duration_minutes: 180 },
+  { ...serviceDefaults, service_area: 'Kochi and nearby areas', id: id(serviceIds.photography), category_id: id(categoryIds.events), service_name: text('Small event photography'), description: text('Warm, natural coverage for intimate events and milestone days.'), pricing: price(6500), provider_name: 'Nisha Menon', provider_type: 'professional', provider_id: id(professionalIds.nisha), location: 'Kochi, Kerala', availability: 'Next available tomorrow', rating: 4.9, review_count: 43, verified: false, duration_minutes: 240 },
+  { ...serviceDefaults, service_area: 'Remote delivery across India', id: id(serviceIds.software), category_id: id(categoryIds.technology), service_name: text('Small business website setup'), description: text('A clear, maintainable website foundation for a growing local business.'), pricing: price(12000, 'negotiable'), provider_name: 'PixelCraft Studio', provider_type: 'business', provider_id: id(businessIds.pixelcraft), location: 'Remote delivery', availability: 'Remote delivery', rating: 4.8, review_count: 71, verified: true, duration_minutes: 300 },
+];
+
+export const discoveryAvailability: DiscoveryAvailability[] = [
+  { date: '2026-08-19', label: 'Wed, Aug 19', slots: [{ time: '10:00 AM', available: true }, { time: '1:30 PM', available: false }, { time: '4:00 PM', available: true }] },
+  { date: '2026-08-20', label: 'Thu, Aug 20', slots: [{ time: '9:00 AM', available: true }, { time: '11:30 AM', available: true }, { time: '3:00 PM', available: false }] },
+  { date: '2026-08-21', label: 'Fri, Aug 21', slots: [{ time: '10:30 AM', available: false }, { time: '2:00 PM', available: true }, { time: '5:00 PM', available: true }] },
 ];
 
 export const discoveryProfessionals: DiscoveryProfessional[] = [
-  { id: id(professionalIds.maya), display_name: 'Maya Thomas', headline: 'Independent brand designer', specialty: 'Brand identity & visual design', location: 'Remote · Based in Chennai', rating: 4.9, review_count: 86, verified: true, availability_mode: 'project_based', status: 'active' },
-  { id: id(professionalIds.arjun), display_name: 'Arjun Rao', headline: 'Certified electrical technician', specialty: 'Home electrical inspection', location: 'Chennai, Tamil Nadu', rating: 4.8, review_count: 124, verified: true, availability_mode: 'full_time', status: 'active' },
-  { id: id(professionalIds.nisha), display_name: 'Nisha Menon', headline: 'Event photographer', specialty: 'Portraits & intimate events', location: 'Kochi, Kerala', rating: 4.9, review_count: 43, verified: false, availability_mode: 'part_time', status: 'active' },
+  { id: id(professionalIds.maya), display_name: 'Maya Thomas', headline: 'Independent brand designer', specialty: 'Brand identity & visual design', location: 'Remote · Based in Chennai', rating: 4.9, review_count: 86, verified: true, availability_mode: 'project_based', status: 'active', summary: 'Maya helps early-stage businesses turn a good idea into a clear, confident visual identity.', experience_years: 8, service_area: 'Remote across India', services: ['Brand identity starter kit'], availability_summary: 'Usually replies within one business day', reviews: [{ id: 'maya-review-1', reviewer_name: 'Ananya S.', rating: 5, comment: 'Thoughtful process and a starter kit that made our launch feel real.', date: 'July 2026', verified_booking: true }] },
+  { id: id(professionalIds.arjun), display_name: 'Arjun Rao', headline: 'Certified electrical technician', specialty: 'Home electrical inspection', location: 'Chennai, Tamil Nadu', rating: 4.8, review_count: 124, verified: true, availability_mode: 'full_time', status: 'active', summary: 'Arjun focuses on careful residential inspections and straightforward safety guidance.', experience_years: 11, service_area: 'Chennai within 18 km', services: ['Home electrical inspection'], availability_summary: 'Available weekdays and selected Saturdays', reviews: [] },
+  { id: id(professionalIds.nisha), display_name: 'Nisha Menon', headline: 'Event photographer', specialty: 'Portraits & intimate events', location: 'Kochi, Kerala', rating: 4.9, review_count: 43, verified: false, availability_mode: 'part_time', status: 'active', summary: 'Nisha documents small gatherings with a relaxed, natural approach and a warm eye for people.', experience_years: 6, service_area: 'Kochi and nearby areas', services: ['Small event photography'], availability_summary: 'Accepting a limited number of events each month', reviews: [] },
 ];
 
 export const discoveryBusinesses: DiscoveryBusiness[] = [

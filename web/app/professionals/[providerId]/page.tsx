@@ -1,0 +1,14 @@
+import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import { Badge, Card } from '../../../components/ui/primitives';
+import { Rating } from '../../../components/discovery/MarketplaceCards';
+import { ReviewSummary, TrustBadges } from '../../../components/detail/DetailPresentation';
+import { discoveryProfessionals, discoveryServices } from '../../../data/discovery-fixtures';
+
+export default async function ProfessionalProfilePage({ params }: { params: Promise<{ providerId: string }> }) {
+  const { providerId } = await params;
+  const provider = discoveryProfessionals.find((item) => item.id === providerId);
+  if (!provider) notFound();
+  const services = discoveryServices.filter((service) => service.provider_id === provider.id);
+  return <div className="profile-page"><section className="profile-hero"><div className="provider-avatar provider-avatar-large" aria-hidden="true">{provider.display_name.split(' ').map((part) => part[0]).join('')}</div><div><TrustBadges verified={provider.verified} providerType="professional" /><h1>{provider.display_name}</h1><p className="profile-headline">{provider.headline}</p><p className="card-location">{provider.location}</p><Rating value={provider.rating} count={provider.review_count} /></div></section><div className="profile-layout"><main><section className="detail-section"><span className="eyebrow">Profile summary</span><h2>About {provider.display_name.split(' ')[0]}</h2><p className="detail-copy">{provider.summary}</p><div className="profile-facts"><span><strong>{provider.experience_years} years</strong> experience</span><span><strong>{provider.service_area}</strong> service area</span><span><strong>{provider.availability_summary}</strong></span></div></section><section className="detail-section"><div className="section-heading"><div><span className="eyebrow">Available services</span><h2>Choose a service</h2></div><Badge tone="info">{services.length} listed</Badge></div><div className="profile-services">{services.length ? services.map((service) => <Card className="profile-service" key={service.id}><div><h3>{service.service_name.values.en}</h3><p>{service.description.values.en}</p><Rating value={service.rating} count={service.review_count} /></div><Link href={`/services/${service.id}/booking`} className="button button-primary">Select service</Link></Card>) : <p className="empty-inline">No services are included in this presentation fixture yet.</p>}</div></section><ReviewSummary rating={provider.rating} count={provider.review_count} reviews={provider.reviews} /></main><aside className="profile-aside"><Card><span className="eyebrow">Availability</span><h2>Plan with confidence</h2><p>{provider.availability_summary}.</p><Link href={services[0] ? `/services/${services[0].id}` : '/explore'} className="button button-primary">Select a service</Link></Card></aside></div></div>;
+}
