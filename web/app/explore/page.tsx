@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button, Input, Select, Skeleton } from '../../components/ui/primitives';
 import { ServiceCard } from '../../components/discovery/MarketplaceCards';
 import { DiscoveryCategoryRail, DiscoveryEmptyState, DiscoveryFilterDrawer, DiscoveryFilterFields, DiscoverySection, FilterChips, defaultDiscoveryFilters, type DiscoveryFilters } from '../../components/discovery/DiscoveryEnhancements';
@@ -12,6 +12,16 @@ export default function ExplorePage() {
   const [sort, setSort] = useState('relevance');
   const [showLoadingExample, setShowLoadingExample] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const categoryParam = params.get('category');
+    const queryParam = params.get('q');
+    if (categoryParam || queryParam) {
+      setFilters((current) => ({ ...current, category: categoryParam ?? current.category }));
+      if (queryParam) setQuery(queryParam);
+    }
+  }, []);
 
   const filteredServices = useMemo(() => discoveryServices
     .filter((service) => filters.category === 'all' || service.category_id === discoveryCategories.find((category) => category.slug === filters.category)?.id)

@@ -12,8 +12,8 @@ export default function Home() {
           <h1>Find the right service for the next thing you need.</h1>
           <p className="hero-lede">Discover trusted professionals and businesses, compare what fits, and move from question to done with less friction.</p>
           <form className="search-panel" action="/explore">
-            <Input label="What do you need help with?" placeholder="Try &quot;AC repair&quot; or &quot;logo design&quot;" aria-label="Search for a service" />
-            <Input label="Where?" placeholder="City or neighbourhood" aria-label="Choose a location" />
+            <Input label="What do you need help with?" name="q" placeholder="Try &quot;AC repair&quot; or &quot;logo design&quot;" aria-label="Search for a service" />
+            <Input label="Where?" name="location" placeholder="City or neighbourhood" aria-label="Choose a location" />
             <Button type="submit">Explore services</Button>
           </form>
           <div className="hero-links">

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
 const primaryLinks = [
@@ -21,6 +22,7 @@ const mobileLinks = [
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   return (
     <div className="app-shell">
@@ -31,7 +33,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <span>TakeItEsee</span>
           </Link>
           <nav className="desktop-nav" aria-label="Main navigation">
-            {primaryLinks.map((link) => <Link key={link.href} href={link.href}>{link.label}</Link>)}
+            {primaryLinks.map((link) => <Link key={link.href} href={link.href} className={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'nav-active' : ''} aria-current={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'page' : undefined}>{link.label}</Link>)}
           </nav>
           <div className="header-actions">
             <Link href="/account" className="header-login">Account</Link>
@@ -51,7 +53,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         {menuOpen ? (
           <nav id="mobile-menu" className="mobile-menu" aria-label="Mobile navigation">
             {primaryLinks.map((link) => (
-              <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)}>{link.label}</Link>
+              <Link key={link.href} href={link.href} className={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'nav-active' : ''} aria-current={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'page' : undefined} onClick={() => setMenuOpen(false)}>{link.label}</Link>
             ))}
             <Link href="/register" className="mobile-menu-join" onClick={() => setMenuOpen(false)}>Create an account</Link>
           </nav>
@@ -77,7 +79,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       <nav className="mobile-bottom-nav" aria-label="Mobile primary navigation">
         {mobileLinks.map((link) => (
-          <Link key={link.href} href={link.href}>
+          <Link key={link.href} href={link.href} className={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'nav-active' : ''} aria-current={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'page' : undefined}>
             <span aria-hidden="true">{link.icon}</span>
             <span>{link.label}</span>
           </Link>
