@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 const primaryLinks = [
   { href: '/explore', label: 'Explore' },
+  { href: '/bookings', label: 'Bookings' },
   { href: '/categories', label: 'Categories' },
   { href: '/professionals', label: 'Professionals' },
   { href: '/businesses', label: 'Businesses' },
@@ -13,7 +14,7 @@ const primaryLinks = [
 const mobileLinks = [
   { href: '/', label: 'Home', icon: '⌂' },
   { href: '/explore', label: 'Explore', icon: '⌕' },
-  { href: '/requirements', label: 'Requests', icon: '＋' },
+  { href: '/bookings', label: 'Bookings', icon: '▣' },
   { href: '/login', label: 'Profile', icon: '◯' },
 ];
 

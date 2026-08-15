@@ -401,3 +401,70 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 	.mobile-sticky-cta { position: sticky; bottom: 0; z-index: 10; display: block; margin: 0 -12px -32px; border-top: 1px solid var(--color-border); background: rgb(247 248 245 / 96%); padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); backdrop-filter: blur(10px); }
 	.mobile-sticky-cta .button { width: 100%; }
 }
+
+.booking-review-page, .confirmation-page, .bookings-page, .booking-detail-page, .review-entry-page { display: grid; gap: 32px; }
+.review-page-heading h1, .booking-detail-heading h1, .confirmation-panel h1, .review-entry-page h1 { margin: 14px 0 12px; font-size: clamp(2.5rem, 6vw, 4.8rem); line-height: .98; letter-spacing: -.04em; }
+.review-page-heading p, .booking-detail-heading p, .confirmation-panel p, .review-entry-page p { max-width: 58ch; margin: 0; color: var(--color-ink-muted); line-height: 1.6; }
+.review-layout, .confirmation-layout, .booking-detail-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; align-items: start; gap: 28px; }
+.review-main, .booking-detail-layout main { display: grid; gap: 16px; min-width: 0; }
+.review-section { display: grid; gap: 14px; padding: 22px; }
+.review-section h2, .review-price h2, .booking-detail-layout h2, .review-entry-page h2 { margin: 0; font-size: 1.4rem; line-height: 1.15; }
+.review-details { display: grid; gap: 12px; margin: 0; }
+.review-details div { display: flex; justify-content: space-between; gap: 18px; border-bottom: 1px solid var(--color-border); padding-bottom: 10px; }
+.review-details dt { color: var(--color-ink-muted); font-size: .8rem; }
+.review-details dd { max-width: 60%; margin: 0; text-align: right; font-size: .85rem; font-weight: 700; }
+.terms-row { display: flex; align-items: flex-start; gap: 10px; color: var(--color-ink-muted); font-size: .84rem; line-height: 1.5; }
+.terms-row input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--color-primary); }
+.review-aside, .booking-detail-aside { position: sticky; top: 104px; display: grid; gap: 12px; }
+.review-price { display: grid; gap: 8px; padding: 22px; }
+.review-price > strong { font-size: 2.2rem; line-height: 1; }
+.review-price > span { color: var(--color-ink-muted); font-size: .8rem; }
+.review-price hr { width: 100%; border: 0; border-top: 1px solid var(--color-border); }
+.review-price div, .payment-line { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: .84rem; }
+.review-price div strong { font-size: .9rem; }
+.review-price p { margin: 4px 0 0; color: var(--color-ink-muted); font-size: .74rem; line-height: 1.5; }
+.review-aside > .button { width: 100%; }
+.confirmation-panel { display: grid; justify-items: center; gap: 12px; padding: 40px 20px; border: 1px solid #b9dec8; border-radius: var(--radius-lg); background: #eef9f1; text-align: center; }
+.confirmation-panel h1 { margin: 0; font-size: clamp(2.4rem, 6vw, 4.8rem); }
+.confirmation-mark { display: grid; width: 56px; height: 56px; place-items: center; border-radius: 50%; background: var(--color-success); color: white; font-size: 1.6rem; font-weight: 700; }
+.confirmation-reference { display: grid; gap: 4px; margin-top: 8px; border: 1px solid #b9dec8; border-radius: var(--radius-md); background: white; padding: 12px 20px; }
+.confirmation-reference span { color: var(--color-ink-muted); font-size: .72rem; }
+.confirmation-reference strong { color: var(--color-primary-strong); letter-spacing: .08em; }
+.confirmation-layout > .card { display: grid; gap: 16px; padding: 22px; }
+.confirmation-actions { display: grid; gap: 10px; }
+.bookings-page .page-intro { max-width: 720px; }
+.booking-group { display: grid; gap: 14px; }
+.booking-group h2 { margin: 0; font-size: 1.6rem; }
+.booking-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.booking-card { display: grid; gap: 12px; padding: 18px; }
+.booking-card-top, .booking-card-meta { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.booking-card h3 { margin: 5px 0 0; font-size: 1.1rem; line-height: 1.2; }
+.booking-card-meta { align-items: center; flex-wrap: wrap; color: var(--color-ink-muted); font-size: .78rem; }
+.booking-card .button { justify-self: start; }
+.booking-detail-heading { display: flex; align-items: end; justify-content: space-between; gap: 24px; border-bottom: 1px solid var(--color-border); padding-bottom: 28px; }
+.booking-detail-heading h1 { margin-bottom: 10px; }
+.detail-status-card, .policy-card, .booking-detail-aside > .card { display: grid; gap: 14px; padding: 22px; }
+.detail-status-card .section-heading { align-items: start; }
+.booking-timeline { display: grid; gap: 16px; border-top: 1px solid var(--color-border); padding-top: 26px; }
+.booking-timeline h2 { margin: 0; font-size: 1.5rem; }
+.booking-timeline ol { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.booking-timeline li { position: relative; display: grid; grid-template-columns: 34px 1fr; gap: 12px; min-height: 76px; color: var(--color-ink-muted); }
+.booking-timeline li:not(:last-child)::before { position: absolute; top: 32px; bottom: 0; left: 15px; width: 2px; background: var(--color-border); content: ''; }
+.timeline-marker { position: relative; z-index: 1; display: grid; width: 32px; height: 32px; place-items: center; border: 1px solid var(--color-border); border-radius: 50%; background: var(--color-canvas); color: var(--color-ink-muted); font-size: .8rem; }
+.timeline-complete { color: var(--color-ink) !important; }
+.timeline-complete .timeline-marker { border-color: var(--color-primary); background: var(--color-primary); color: white; }
+.booking-timeline li div { display: grid; align-content: start; gap: 4px; padding-top: 5px; }
+.booking-timeline li span:not(.timeline-marker) { font-size: .82rem; line-height: 1.45; }
+.policy-card p, .support-note { margin: 0; color: var(--color-ink-muted); font-size: .85rem; line-height: 1.6; }
+.booking-detail-aside .button { width: 100%; }
+.review-entry-page { width: min(100%, 650px); margin: 0 auto; }
+.review-entry-page .card { display: grid; justify-items: start; gap: 14px; padding: 28px; }
+
+@media (max-width: 760px) {
+	.review-layout, .confirmation-layout, .booking-detail-layout { grid-template-columns: 1fr; }
+	.review-aside, .booking-detail-aside { position: static; }
+	.review-aside > .button { order: -1; }
+	.booking-grid { grid-template-columns: 1fr; }
+	.booking-detail-heading { align-items: start; flex-direction: column; gap: 14px; }
+	.confirmation-panel { padding: 30px 16px; }
+}

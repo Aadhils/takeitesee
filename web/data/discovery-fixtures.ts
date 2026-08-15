@@ -1,5 +1,7 @@
 import { createEntityId, type Business, type Category, type EntityId, type ProfessionalProfile, type Service } from '../types/entities';
 import { createMoney, type ServicePricing } from '../types/money';
+import type { BookingStatus } from '../types/booking';
+import type { PaymentStatus } from '../types/payment';
 import type { ServiceOwner } from '../types/ownership';
 
 export type DiscoveryCategory = Pick<Category, 'id' | 'name' | 'slug'> & {
@@ -53,6 +55,26 @@ export type DiscoveryReview = {
   comment: string;
   date: string;
   verified_booking: boolean;
+};
+
+export type DiscoveryBooking = {
+  id: EntityId;
+  booking_reference: string;
+  service_id: EntityId;
+  provider_name: string;
+  provider_type: ServiceOwner['owner_type'];
+  status: BookingStatus;
+  payment_status: PaymentStatus;
+  date: string;
+  date_label: string;
+  time: string;
+  timezone: string;
+  duration_minutes: number;
+  location: string;
+  price: ServicePricing['base_price'];
+  notes?: string;
+  review_eligible: boolean;
+  timeline: { status: BookingStatus; label: string; detail: string; complete: boolean }[];
 };
 
 export type DiscoveryBusiness = Pick<Business, 'id' | 'business_name' | 'status'> & {
@@ -126,6 +148,46 @@ export const discoveryAvailability: DiscoveryAvailability[] = [
   { date: '2026-08-20', label: 'Thu, Aug 20', slots: [{ time: '9:00 AM', available: true }, { time: '11:30 AM', available: true }, { time: '3:00 PM', available: false }] },
   { date: '2026-08-21', label: 'Fri, Aug 21', slots: [{ time: '10:30 AM', available: false }, { time: '2:00 PM', available: true }, { time: '5:00 PM', available: true }] },
 ];
+
+export const discoveryBookings: DiscoveryBooking[] = [
+  {
+    id: id('7b9d5f1a-76e8-4f8b-92c1-5e83b7d9a001'), booking_reference: 'TIE-DEMO-2401', service_id: id(serviceIds.electrical), provider_name: 'Brightline Services', provider_type: 'business', status: 'scheduled', payment_status: 'pending', date: '2026-08-19', date_label: 'Wed, Aug 19', time: '10:00 AM', timezone: 'Asia/Kolkata', duration_minutes: 90, location: 'Chennai, Tamil Nadu', price: createMoney(850, 'INR'), review_eligible: false,
+    timeline: [{ status: 'requested', label: 'Request received', detail: 'Your selection is ready for provider review.', complete: true }, { status: 'accepted', label: 'Provider accepted', detail: 'The provider has accepted this fixture booking.', complete: true }, { status: 'scheduled', label: 'Scheduled', detail: 'Wed, Aug 19 at 10:00 AM IST.', complete: true }, { status: 'in_progress', label: 'Service day', detail: 'This step is shown as future progress.', complete: false }],
+  },
+  {
+    id: id('7b9d5f1a-76e8-4f8b-92c1-5e83b7d9a002'), booking_reference: 'TIE-DEMO-2402', service_id: id(serviceIds.design), provider_name: 'Maya Thomas', provider_type: 'professional', status: 'provider_review', payment_status: 'pending', date: '2026-08-21', date_label: 'Fri, Aug 21', time: '2:00 PM', timezone: 'Asia/Kolkata', duration_minutes: 240, location: 'Remote delivery across India', price: createMoney(4500, 'INR'), review_eligible: false,
+    timeline: [{ status: 'requested', label: 'Request received', detail: 'The provider is reviewing this fixture request.', complete: true }, { status: 'provider_review', label: 'Provider review', detail: 'A response has not been recorded in this presentation data.', complete: true }, { status: 'scheduled', label: 'Scheduled', detail: 'Shown as the next possible step.', complete: false }],
+  },
+  {
+    id: id('7b9d5f1a-76e8-4f8b-92c1-5e83b7d9a003'), booking_reference: 'TIE-DEMO-2398', service_id: id(serviceIds.tutoring), provider_name: 'Northstar Learning', provider_type: 'business', status: 'completed', payment_status: 'captured', date: '2026-07-25', date_label: 'Sat, Jul 25', time: '11:30 AM', timezone: 'Asia/Kolkata', duration_minutes: 60, location: 'Bengaluru and online', price: createMoney(600, 'INR'), review_eligible: true,
+    timeline: [{ status: 'requested', label: 'Request received', detail: 'The request was received.', complete: true }, { status: 'scheduled', label: 'Scheduled', detail: 'The session was scheduled.', complete: true }, { status: 'in_progress', label: 'Service delivered', detail: 'The coaching session took place.', complete: true }, { status: 'completed', label: 'Completed', detail: 'This fixture booking is eligible for a review.', complete: true }],
+  },
+  {
+    id: id('7b9d5f1a-76e8-4f8b-92c1-5e83b7d9a004'), booking_reference: 'TIE-DEMO-2394', service_id: id(serviceIds.cleaning), provider_name: 'Brightline Services', provider_type: 'business', status: 'cancelled', payment_status: 'refunded', date: '2026-07-12', date_label: 'Sun, Jul 12', time: '4:00 PM', timezone: 'Asia/Kolkata', duration_minutes: 180, location: 'Chennai, Tamil Nadu', price: createMoney(1200, 'INR'), review_eligible: false,
+    timeline: [{ status: 'requested', label: 'Request received', detail: 'The request was received.', complete: true }, { status: 'cancelled', label: 'Cancelled', detail: 'This fixture booking was cancelled before service.', complete: true }],
+  },
+];
+
+export function createDiscoveryBookingPreview(service: DiscoveryService, date: string, time: string): DiscoveryBooking {
+  return {
+    id: service.id,
+    booking_reference: `TIE-DEMO-${service.id.slice(0, 8).toUpperCase()}`,
+    service_id: service.id,
+    provider_name: service.provider_name,
+    provider_type: service.provider_type,
+    status: 'requested',
+    payment_status: 'pending',
+    date,
+    date_label: date,
+    time,
+    timezone: 'Asia/Kolkata',
+    duration_minutes: service.duration_minutes,
+    location: service.location,
+    price: service.pricing.base_price,
+    review_eligible: false,
+    timeline: [{ status: 'requested', label: 'Request preview', detail: 'This local fixture demonstrates the first booking state.', complete: true }, { status: 'provider_review', label: 'Provider review', detail: 'A future server response would appear here.', complete: false }],
+  };
+}
 
 export const discoveryProfessionals: DiscoveryProfessional[] = [
   { id: id(professionalIds.maya), display_name: 'Maya Thomas', headline: 'Independent brand designer', specialty: 'Brand identity & visual design', location: 'Remote · Based in Chennai', rating: 4.9, review_count: 86, verified: true, availability_mode: 'project_based', status: 'active', summary: 'Maya helps early-stage businesses turn a good idea into a clear, confident visual identity.', experience_years: 8, service_area: 'Remote across India', services: ['Brand identity starter kit'], availability_summary: 'Usually replies within one business day', reviews: [{ id: 'maya-review-1', reviewer_name: 'Ananya S.', rating: 5, comment: 'Thoughtful process and a starter kit that made our launch feel real.', date: 'July 2026', verified_booking: true }] },
