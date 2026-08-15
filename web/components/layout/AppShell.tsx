@@ -6,6 +6,7 @@ import { useState } from 'react';
 const primaryLinks = [
   { href: '/explore', label: 'Explore' },
   { href: '/bookings', label: 'Bookings' },
+  { href: '/notifications', label: 'Notifications' },
   { href: '/categories', label: 'Categories' },
   { href: '/professionals', label: 'Professionals' },
   { href: '/businesses', label: 'Businesses' },
@@ -15,7 +16,7 @@ const mobileLinks = [
   { href: '/', label: 'Home', icon: '⌂' },
   { href: '/explore', label: 'Explore', icon: '⌕' },
   { href: '/bookings', label: 'Bookings', icon: '▣' },
-  { href: '/login', label: 'Profile', icon: '◯' },
+  { href: '/account', label: 'Account', icon: '◯' },
 ];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -33,8 +34,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             {primaryLinks.map((link) => <Link key={link.href} href={link.href}>{link.label}</Link>)}
           </nav>
           <div className="header-actions">
-            <Link href="/login" className="header-login">Log in</Link>
-            <Link href="/register" className="button button-primary header-join">Join</Link>
+            <Link href="/account" className="header-login">Account</Link>
+            <Link href="/notifications" className="button button-primary header-join">Notifications</Link>
             <button
               className="menu-trigger"
               type="button"

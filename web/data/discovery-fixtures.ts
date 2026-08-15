@@ -1,7 +1,9 @@
 import { createEntityId, type Business, type Category, type EntityId, type ProfessionalProfile, type Service } from '../types/entities';
 import { createMoney, type ServicePricing } from '../types/money';
 import type { BookingStatus } from '../types/booking';
+import type { NotificationStatus, NotificationType } from '../types/notifications';
 import type { PaymentStatus } from '../types/payment';
+import type { ReviewStatus } from '../types/reviews';
 import type { ServiceOwner } from '../types/ownership';
 
 export type DiscoveryCategory = Pick<Category, 'id' | 'name' | 'slug'> & {
@@ -75,6 +77,41 @@ export type DiscoveryBooking = {
   notes?: string;
   review_eligible: boolean;
   timeline: { status: BookingStatus; label: string; detail: string; complete: boolean }[];
+};
+
+export type DiscoveryNotification = {
+  id: EntityId;
+  type: NotificationType;
+  status: NotificationStatus;
+  title: string;
+  body: string;
+  created_label: string;
+  reference_type: 'booking' | 'payment' | 'service' | 'review' | 'none';
+  reference_id?: EntityId;
+};
+
+export type DiscoveryCustomerProfile = {
+  id: EntityId;
+  display_name: string;
+  email: string;
+  phone: string;
+  location: string;
+  service_regions: string[];
+  member_since: string;
+  profile_completion: number;
+  preferred_language: 'English' | 'Tamil' | 'Hindi' | 'Malayalam';
+};
+
+export type DiscoveryCustomerReview = {
+  id: EntityId;
+  booking_id: EntityId;
+  service_id: EntityId;
+  provider_name: string;
+  service_name: string;
+  rating: 1 | 2 | 3 | 4 | 5;
+  comment: string;
+  status: ReviewStatus;
+  date_label: string;
 };
 
 export type DiscoveryBusiness = Pick<Business, 'id' | 'business_name' | 'status'> & {
@@ -166,6 +203,21 @@ export const discoveryBookings: DiscoveryBooking[] = [
     id: id('7b9d5f1a-76e8-4f8b-92c1-5e83b7d9a004'), booking_reference: 'TIE-DEMO-2394', service_id: id(serviceIds.cleaning), provider_name: 'Brightline Services', provider_type: 'business', status: 'cancelled', payment_status: 'refunded', date: '2026-07-12', date_label: 'Sun, Jul 12', time: '4:00 PM', timezone: 'Asia/Kolkata', duration_minutes: 180, location: 'Chennai, Tamil Nadu', price: createMoney(1200, 'INR'), review_eligible: false,
     timeline: [{ status: 'requested', label: 'Request received', detail: 'The request was received.', complete: true }, { status: 'cancelled', label: 'Cancelled', detail: 'This fixture booking was cancelled before service.', complete: true }],
   },
+];
+
+export const discoveryCustomerProfile: DiscoveryCustomerProfile = {
+  id: id('8c4f7a2b-87e9-4f9c-a3d2-6f94c8e0b001'), display_name: 'Ananya Srinivasan', email: 'ananya@example.com', phone: '+91 98765 43210', location: 'Chennai, Tamil Nadu', service_regions: ['Chennai', 'Remote delivery'], member_since: 'March 2026', profile_completion: 78, preferred_language: 'English',
+};
+
+export const discoveryNotifications: DiscoveryNotification[] = [
+  { id: id('8c4f7a2b-87e9-4f9c-a3d2-6f94c8e0b002'), type: 'booking_accepted', status: 'pending', title: 'Your electrical inspection is scheduled', body: 'Brightline Services accepted your fixture booking for Wed, Aug 19 at 10:00 AM.', created_label: 'Today, 10:24 AM', reference_type: 'booking', reference_id: id('7b9d5f1a-76e8-4f8b-92c1-5e83b7d9a001') },
+  { id: id('8c4f7a2b-87e9-4f9c-a3d2-6f94c8e0b003'), type: 'payment_status_changed', status: 'read', title: 'Payment status is still pending', body: 'No payment has been made for your presentation booking.', created_label: 'Yesterday', reference_type: 'payment' },
+  { id: id('8c4f7a2b-87e9-4f9c-a3d2-6f94c8e0b004'), type: 'review_requested', status: 'read', title: 'How was your maths coaching session?', body: 'Your completed fixture booking is eligible for a presentation-only review.', created_label: 'Jul 26, 2026', reference_type: 'review', reference_id: id('7b9d5f1a-76e8-4f8b-92c1-5e83b7d9a003') },
+  { id: id('8c4f7a2b-87e9-4f9c-a3d2-6f94c8e0b005'), type: 'service_completed', status: 'dismissed', title: 'Booking marked complete', body: 'Your Northstar Learning session is now in completed fixture history.', created_label: 'Jul 25, 2026', reference_type: 'booking', reference_id: id('7b9d5f1a-76e8-4f8b-92c1-5e83b7d9a003') },
+];
+
+export const discoveryCustomerReviews: DiscoveryCustomerReview[] = [
+  { id: id('8c4f7a2b-87e9-4f9c-a3d2-6f94c8e0b006'), booking_id: id('7b9d5f1a-76e8-4f8b-92c1-5e83b7d9a003'), service_id: id(serviceIds.tutoring), provider_name: 'Northstar Learning', service_name: 'Maths coaching for grades 8-10', rating: 5, comment: 'Clear, patient, and easy to follow from the first session.', status: 'published', date_label: 'Jul 26, 2026' },
 ];
 
 export function createDiscoveryBookingPreview(service: DiscoveryService, date: string, time: string): DiscoveryBooking {
