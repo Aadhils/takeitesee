@@ -311,6 +311,22 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 	.page-intro h1 { font-size: 2.8rem; }
 }
 
+.admin-activity-timeline { display: grid; gap: 16px; border-top: 1px solid var(--color-border); padding-top: 22px; }
+.admin-activity-timeline h2 { margin: 5px 0 0; font-size: 1.25rem; }
+.admin-activity-timeline ol { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.admin-activity-timeline li { position: relative; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; min-height: 78px; }
+.admin-activity-timeline li:not(:last-child)::before { position: absolute; top: 20px; bottom: 0; left: 8px; width: 2px; background: var(--color-border); content: ''; }
+.admin-timeline-marker { position: relative; z-index: 1; display: grid; width: 18px; height: 18px; place-items: center; border: 2px solid var(--color-primary); border-radius: 50%; background: var(--color-canvas); color: var(--color-primary); font-size: .8rem; line-height: 1; }
+.admin-activity-timeline li > div { display: grid; align-content: start; gap: 5px; }
+.admin-activity-timeline li strong { font-size: .84rem; }
+.admin-activity-timeline li span:not(.admin-timeline-marker) { color: var(--color-ink-muted); font-size: .74rem; }
+.admin-activity-timeline li p { margin: 0; color: var(--color-ink-muted); font-size: .78rem; line-height: 1.5; }
+.admin-activity-timeline li .badge { justify-self: start; }
+.admin-decision-panel { display: grid; gap: 14px; align-content: start; padding: 22px; }
+.admin-decision-panel h2 { margin: 5px 0 0; font-size: 1.3rem; }
+.admin-issue-card { display: grid; gap: 14px; padding: 20px; }
+.admin-issue-card p { margin: 0; color: var(--color-ink-muted); font-size: .84rem; line-height: 1.55; }
+
 .admin-layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); align-items: start; gap: 38px; }
 .admin-sidebar { position: sticky; top: 104px; display: grid; align-content: start; gap: 22px; }
 .admin-sidebar-heading { display: flex; align-items: center; gap: 12px; }

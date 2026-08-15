@@ -52,6 +52,31 @@ export type AdminReview = {
   moderation_status: 'published' | 'pending' | 'flagged' | 'hidden';
 };
 
+export type AdminActivityEvent = {
+  id: EntityId;
+  actor: string;
+  action: string;
+  entity: string;
+  timestamp: string;
+  note: string;
+  resulting_status: string;
+};
+
+export type AdminIssue = {
+  id: EntityId;
+  booking_id: EntityId;
+  booking_reference: string;
+  raised_by: string;
+  customer_name: string;
+  provider_name: string;
+  category: 'booking complaint' | 'provider no-show' | 'customer no-show' | 'service-quality issue' | 'payment-status issue' | 'cancellation dispute' | 'review dispute';
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  status: 'open' | 'investigating' | 'awaiting information' | 'resolved' | 'closed';
+  created_label: string;
+  latest_activity: string;
+  summary: string;
+};
+
 const eid = (value: string) => value as EntityId;
 const bookingWith = (booking: DiscoveryBooking, customer_name: string, service_name: string, dispute = false): AdminBooking => ({ ...booking, customer_name, service_name, dispute });
 
@@ -83,6 +108,18 @@ export const adminReviews: AdminReview[] = [
   { id: eid('aa4f8c1d-1234-4a5b-8c6d-7e8f9a0b1007'), reviewer_name: 'Karthik Rao', target_name: 'Brightline Services', service_name: 'Home electrical inspection', rating: 5, excerpt: 'Clear arrival updates and a careful explanation of what needed attention.', date_label: 'Aug 13, 2026', moderation_status: 'published' },
   { id: eid('aa4f8c1d-1234-4a5b-8c6d-7e8f9a0b1008'), reviewer_name: 'Meera Joseph', target_name: 'Brightline Services', service_name: 'Deep home cleaning', rating: 2, excerpt: 'The timing did not work out and the issue needs a closer look.', date_label: 'Aug 12, 2026', moderation_status: 'flagged' },
   { id: eid('aa4f8c1d-1234-4a5b-8c6d-7e8f9a0b1009'), reviewer_name: 'Ananya Srinivasan', target_name: 'Northstar Learning', service_name: 'Maths coaching for grades 8-10', rating: 5, excerpt: 'Clear, patient, and easy to follow from the first session.', date_label: 'Jul 26, 2026', moderation_status: 'pending' },
+];
+
+export const adminActivities: AdminActivityEvent[] = [
+  { id: eid('aa4f8c1d-1234-4a5b-8c6d-7e8f9a0b1010'), actor: 'Operations preview', action: 'Flagged booking', entity: 'TIE-DEMO-2394', timestamp: 'Today, 9:42 AM', note: 'Cancellation dispute needs review.', resulting_status: 'Dispute attention' },
+  { id: eid('aa4f8c1d-1234-4a5b-8c6d-7e8f9a0b1011'), actor: 'Trust review queue', action: 'Requested changes', entity: 'Nisha Menon', timestamp: 'Yesterday, 4:10 PM', note: 'Service area information needs clarification.', resulting_status: 'Changes requested' },
+  { id: eid('aa4f8c1d-1234-4a5b-8c6d-7e8f9a0b1012'), actor: 'Moderation preview', action: 'Flagged review', entity: 'Review by Meera Joseph', timestamp: 'Aug 12, 2026', note: 'Customer reported a service-quality concern.', resulting_status: 'Flagged' },
+];
+
+export const adminIssues: AdminIssue[] = [
+  { id: eid('aa4f8c1d-1234-4a5b-8c6d-7e8f9a0b1013'), booking_id: adminBookings[3].id, booking_reference: adminBookings[3].booking_reference, raised_by: 'Meera Joseph', customer_name: 'Meera Joseph', provider_name: 'Brightline Services', category: 'cancellation dispute', priority: 'high', status: 'investigating', created_label: 'Aug 12, 2026', latest_activity: 'Admin note added today', summary: 'Customer disputes the cancellation timing and requests a review of the service communication.' },
+  { id: eid('aa4f8c1d-1234-4a5b-8c6d-7e8f9a0b1014'), booking_id: adminBookings[4].id, booking_reference: adminBookings[4].booking_reference, raised_by: 'Operations preview', customer_name: 'Priya Nair', provider_name: 'Brightline Services', category: 'payment-status issue', priority: 'normal', status: 'open', created_label: 'Today', latest_activity: 'Awaiting first investigation', summary: 'Payment status remains pending while the booking is in progress.' },
+  { id: eid('aa4f8c1d-1234-4a5b-8c6d-7e8f9a0b1015'), booking_id: adminBookings[0].id, booking_reference: adminBookings[0].booking_reference, raised_by: 'Ananya Srinivasan', customer_name: 'Ananya Srinivasan', provider_name: 'Brightline Services', category: 'booking complaint', priority: 'low', status: 'resolved', created_label: 'Aug 08, 2026', latest_activity: 'Resolved in presentation history', summary: 'Customer asked for clarification about arrival timing.' },
 ];
 
 export const adminMetrics = {
