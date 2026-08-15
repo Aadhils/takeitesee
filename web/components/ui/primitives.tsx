@@ -164,7 +164,7 @@ export function Alert({ children, tone = 'info', title }: { children: ReactNode;
 
 export function EmptyState({ title, children, action }: { title: string; children: ReactNode; action?: ReactNode }) {
   return (
-    <div className="state-panel">
+    <div className="state-panel" role="status" aria-live="polite">
       <span className="state-mark" aria-hidden="true">--</span>
       <h3>{title}</h3>
       <p>{children}</p>
