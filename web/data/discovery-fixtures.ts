@@ -29,6 +29,24 @@ export type DiscoveryService = Pick<Service, 'id' | 'category_id' | 'service_nam
   policy: string;
 };
 
+export type DiscoveryPriceBand = 'any' | 'under-1000' | '1000-5000' | 'over-5000';
+export type DiscoveryRatingFilter = 'any' | '4-plus' | '4.5-plus';
+export type DiscoveryAvailabilityFilter = 'any' | 'today' | 'tomorrow' | 'remote';
+export type DiscoveryProviderFilter = 'any' | 'professional' | 'business';
+
+export const discoveryPriceBands: { value: DiscoveryPriceBand; label: string }[] = [
+  { value: 'any', label: 'Any price' },
+  { value: 'under-1000', label: 'Under INR 1,000' },
+  { value: '1000-5000', label: 'INR 1,000-5,000' },
+  { value: 'over-5000', label: 'Over INR 5,000' },
+];
+
+export const discoveryRatingFilters: { value: DiscoveryRatingFilter; label: string }[] = [
+  { value: 'any', label: 'Any rating' },
+  { value: '4-plus', label: '4.0 and above' },
+  { value: '4.5-plus', label: '4.5 and above' },
+];
+
 export type DiscoveryProfessional = Pick<ProfessionalProfile, 'id' | 'headline' | 'availability_mode' | 'status'> & {
   display_name: string;
   specialty: string;
