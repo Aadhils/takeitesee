@@ -1,18 +1,7 @@
 import Link from 'next/link';
-import { Badge, Button, Card, Input } from '../components/ui/primitives';
-
-const categories = [
-  { name: 'Home & repair', detail: 'Electricians, plumbers, painters', mark: '01' },
-  { name: 'Learning', detail: 'Tutors, coaches, mentors', mark: '02' },
-  { name: 'Wellness', detail: 'Fitness, beauty, care', mark: '03' },
-  { name: 'Business help', detail: 'Design, accounting, strategy', mark: '04' },
-];
-
-const services = [
-  { title: 'Home electrical inspection', provider: 'Brightline Services', location: 'Chennai · Available today', price: 'From INR 850', tone: 'success' as const },
-  { title: 'Brand identity starter kit', provider: 'Maya Thomas · Professional', location: 'Remote · 4.9 rating', price: 'From INR 4,500', tone: 'info' as const },
-  { title: 'Maths coaching for grades 8-10', provider: 'Northstar Learning', location: 'Bengaluru · Weekday slots', price: 'From INR 600 / hour', tone: 'warning' as const },
-];
+import { Badge, Button, Input } from '../components/ui/primitives';
+import { CategoryCard, ProviderCard, ServiceCard } from '../components/discovery/MarketplaceCards';
+import { discoveryCategories, discoveryProfessionals, discoveryServices } from '../data/discovery-fixtures';
 
 export default function Home() {
   return (
@@ -29,7 +18,7 @@ export default function Home() {
           </form>
           <div className="hero-links">
             <Link href="/requirements">Can&apos;t find it? Post a requirement <span aria-hidden="true">-&gt;</span></Link>
-            <span>English · Tamil · Hindi · Malayalam</span>
+            <span><span aria-hidden="true">⌖</span> Showing services around Chennai</span>
           </div>
         </div>
         <div className="hero-aside" aria-label="TakeItEsee marketplace snapshot">
@@ -48,15 +37,25 @@ export default function Home() {
       <section className="section-block" aria-labelledby="category-heading">
         <div className="section-heading"><div><span className="eyebrow">Start somewhere useful</span><h2 id="category-heading">Explore by category</h2></div><Link href="/categories" className="text-link">View all categories <span aria-hidden="true">-&gt;</span></Link></div>
         <div className="category-grid">
-          {categories.map((category) => <Link href="/categories" className="category-tile" key={category.name}><span className="category-mark">{category.mark}</span><strong>{category.name}</strong><span>{category.detail}</span></Link>)}
+          {discoveryCategories.slice(0, 4).map((category) => <CategoryCard category={category} key={category.id} />)}
         </div>
       </section>
 
       <section className="section-block section-muted" aria-labelledby="services-heading">
         <div className="section-heading"><div><span className="eyebrow">Curated starting points</span><h2 id="services-heading">Popular near you</h2></div><Link href="/explore" className="text-link">See the full explore view <span aria-hidden="true">-&gt;</span></Link></div>
         <div className="service-grid">
-          {services.map((service) => <Card className="service-card" key={service.title}><div className="service-art" aria-hidden="true"><span>{service.title.slice(0, 1)}</span></div><div className="service-content"><div className="service-meta"><Badge tone={service.tone}>{service.tone === 'success' ? 'Available' : service.tone === 'info' ? 'Remote' : 'Popular'}</Badge><span>New listing</span></div><h3>{service.title}</h3><p className="service-provider">{service.provider}</p><p className="service-location">{service.location}</p><div className="service-bottom"><strong>{service.price}</strong><Link href="/explore" className="icon-link" aria-label={`View ${service.title}`}>-&gt;</Link></div></div></Card>)}
+          {discoveryServices.slice(0, 3).map((service) => <ServiceCard service={service} key={service.id} />)}
         </div>
+      </section>
+
+      <section className="section-block provider-preview" aria-labelledby="provider-heading">
+        <div className="section-heading"><div><span className="eyebrow">People behind the service</span><h2 id="provider-heading">Meet trusted professionals</h2></div><Link href="/professionals" className="text-link">Browse professionals <span aria-hidden="true">-&gt;</span></Link></div>
+        <div className="provider-grid">{discoveryProfessionals.slice(0, 2).map((provider) => <ProviderCard provider={provider} key={provider.id} />)}</div>
+      </section>
+
+      <section className="how-it-works section-block" aria-labelledby="how-heading">
+        <div className="section-heading"><div><span className="eyebrow">A clearer way forward</span><h2 id="how-heading">From need to next step</h2></div></div>
+        <div className="steps-grid"><article><span>01</span><h3>Tell us what you need</h3><p>Search by service, category, or the kind of help you have in mind.</p></article><article><span>02</span><h3>Compare with confidence</h3><p>Review providers, ratings, locations, and straightforward starting prices.</p></article><article><span>03</span><h3>Choose what fits</h3><p>Take the next step when you are ready, with the details in view.</p></article></div>
       </section>
 
       <section className="trust-strip" aria-labelledby="trust-heading">
