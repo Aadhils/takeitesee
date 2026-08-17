@@ -2,7 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import BackToTop from './BackToTop';
+import { getSupabaseBrowserUser, isSupabaseConfigured, localDevelopmentAuthAdapter } from '../../services/auth-adapter';
+import type { User } from '../../types/auth-domain';
 
 const primaryLinks = [
   { href: '/explore', label: 'Explore' },
@@ -22,22 +25,33 @@ const mobileLinks = [
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<ReturnType<typeof localDevelopmentAuthAdapter.getCurrentUser>>();
   const pathname = usePathname();
+  const isHomepage = pathname === '/';
+
+  useEffect(() => {
+    const syncUser = async () => {
+      if (isSupabaseConfigured()) {
+        const user = await getSupabaseBrowserUser();
+        setCurrentUser(user ? { id: user.id, name: user.user_metadata?.name ?? user.email ?? 'Account', email: user.email ?? '', phone: user.user_metadata?.phone, role: 'customer', createdAt: user.created_at, updatedAt: user.updated_at ?? user.created_at } satisfies User : undefined);
+      } else setCurrentUser(localDevelopmentAuthAdapter.getCurrentUser());
+    };
+    window.addEventListener('storage', syncUser);
+    syncUser();
+    return () => window.removeEventListener('storage', syncUser);
+  }, [pathname]);
 
   return (
     <div className="app-shell">
       <header className="site-header">
         <div className="shell-bar">
-          <Link href="/" className="brand" aria-label="TakeItEsee home">
-            <span className="brand-mark" aria-hidden="true">T</span>
-            <span>TakeItEsee</span>
-          </Link>
+          {!isHomepage ? <Link href="/" className="inner-page-brand" aria-label="Go to TakeItSee home"><img src="/official-takeitesee-logo.png" alt="" /></Link> : null}
           <nav className="desktop-nav" aria-label="Main navigation">
             {primaryLinks.map((link) => <Link key={link.href} href={link.href} className={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'nav-active' : ''} aria-current={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'page' : undefined}>{link.label}</Link>)}
           </nav>
           <div className="header-actions">
-            <Link href="/account" className="header-login">Account</Link>
-            <Link href="/notifications" className="button button-primary header-join">Notifications</Link>
+            <Link href="/requirements" className="header-requirement">Post a requirement</Link>
+            <Link href="/account" className="header-login"><span aria-hidden="true">◯</span> {currentUser ? currentUser.name : 'Account'}</Link>
             <button
               className="menu-trigger"
               type="button"
@@ -64,16 +78,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       <footer className="site-footer">
         <div className="footer-inner">
-          <div>
-            <Link href="/" className="brand brand-footer"><span className="brand-mark" aria-hidden="true">T</span><span>TakeItEsee</span></Link>
-            <p>Find the right service for the next thing you need.</p>
+          <div className="footer-brand-column">
+            <Link href="/" className="brand brand-footer"><img className="brand-logo" src="/official-takeitesee-logo.png" alt="TakeItSee" /></Link>
+            <p>TakeItSee connects people,<br />professionals and businesses —<br />simply, safely and quickly.</p>
           </div>
-          <div className="footer-links" aria-label="Footer navigation">
-            <Link href="/requirements">Post a requirement</Link>
-            <Link href="/professionals">For professionals</Link>
-            <Link href="/businesses">For businesses</Link>
-          </div>
-          <p className="footer-note">Built for useful connections.</p>
+          <div className="footer-link-column"><strong>For customers</strong><Link href="/help">How it works</Link><Link href="/help">Safety</Link><Link href="/help">Help &amp; Support</Link></div>
+          <div className="footer-link-column"><strong>For professionals</strong><Link href="/register">Join as a professional</Link><Link href="/professionals">Professional resources</Link><Link href="/professionals">Success stories</Link></div>
+          <div className="footer-link-column"><strong>For businesses</strong><Link href="/businesses">List your business</Link><Link href="/businesses">Business resources</Link><Link href="/businesses">Partnerships</Link></div>
+          <div className="footer-link-column footer-connect"><strong>Connect with us</strong><Link href="/help">Instagram</Link><Link href="/help">LinkedIn</Link><Link href="/help">Contact us</Link></div>
+          <div className="footer-legal"><span>© 2026 TakeItSee</span><Link href="/help">Privacy Policy</Link><Link href="/help">Terms of Service</Link><Link href="/help">Cookie Policy</Link></div>
         </div>
       </footer>
 
@@ -85,6 +98,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
         ))}
       </nav>
+      <BackToTop />
     </div>
   );
 }

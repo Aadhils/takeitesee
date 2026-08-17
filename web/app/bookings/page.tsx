@@ -1,5 +1,5 @@
-import { BookingsPage } from '../../components/booking/BookingPresentation';
+import CustomerBookings from '../../components/booking/CustomerBookings';
 
 export default function BookingsRoute() {
-  return <BookingsPage />;
+  return <CustomerBookings />;
 }

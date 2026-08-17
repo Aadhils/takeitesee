@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { Badge, Button, Card } from '../ui/primitives';
 import { Rating } from '../discovery/MarketplaceCards';
 import { Breadcrumbs } from '../layout/NavigationContext';
@@ -53,14 +54,34 @@ export function BookingSummaryCard({ service, date, time }: { service: Discovery
 export function BookingSelection({ service }: { service: DiscoveryService }) {
   const [selectedDate, setSelectedDate] = useState(discoveryAvailability[0].date);
   const [selectedTime, setSelectedTime] = useState('');
+  const routeSearchParams = useSearchParams();
+  const contextQuery = routeSearchParams.toString();
   const day = discoveryAvailability.find((item) => item.date === selectedDate) ?? discoveryAvailability[0];
-  const reviewHref = `/services/${service.id}/review?date=${encodeURIComponent(day.label)}&time=${encodeURIComponent(selectedTime)}`;
-  return <section className="booking-flow" aria-labelledby="booking-heading"><Breadcrumbs items={[{ label: 'Explore', href: '/explore' }, { label: 'Service', href: `/services/${service.id}` }, { label: 'Book' }]} /><StepIndicator currentStep={2} /><div className="booking-flow-header"><span className="eyebrow">Presentation booking flow</span><h1 id="booking-heading">Choose a time that works</h1><p>Review the service and provider, then select from illustrative local availability.</p></div><div className="booking-layout"><div className="booking-controls"><Card><DateSelector availability={discoveryAvailability} selectedDate={selectedDate} onSelect={(date) => { setSelectedDate(date); setSelectedTime(''); }} /><TimeSlotSelector day={day} selectedTime={selectedTime} onSelect={setSelectedTime} /></Card>{selectedTime ? <Link className="button button-primary" href={reviewHref}>Continue to review</Link> : <Button type="button" disabled>Continue to review</Button>}<p className="explore-disclaimer">The continue control demonstrates the next step only. It does not submit or persist anything.</p></div><BookingSummaryCard service={service} date={selectedTime ? day : undefined} time={selectedTime} /></div></section>;
+  const reviewHref = `/services/${service.id}/review?date=${encodeURIComponent(day.date)}&dateLabel=${encodeURIComponent(day.label)}&time=${encodeURIComponent(selectedTime)}`;
+  const exploreHref = contextQuery ? `/explore?${contextQuery}` : '/explore';
+  const serviceHref = contextQuery ? `/services/${service.id}?${contextQuery}` : `/services/${service.id}`;
+  return <section className="booking-flow" aria-labelledby="booking-heading"><Breadcrumbs items={[{ label: 'Explore', href: exploreHref }, { label: 'Service', href: serviceHref }, { label: 'Book' }]} /><StepIndicator currentStep={2} /><div className="booking-flow-header"><span className="eyebrow">Presentation booking flow</span><h1 id="booking-heading">Choose a time that works</h1><p>Review the service and provider, then select from illustrative local availability.</p></div><div className="booking-layout"><div className="booking-controls"><Card><DateSelector availability={discoveryAvailability} selectedDate={selectedDate} onSelect={(date) => { setSelectedDate(date); setSelectedTime(''); }} /><TimeSlotSelector day={day} selectedTime={selectedTime} onSelect={setSelectedTime} /></Card>{selectedTime ? <Link className="button button-primary" href={reviewHref}>Continue to review</Link> : <Button type="button" disabled>Continue to review</Button>}<p className="explore-disclaimer">The continue control demonstrates the next step only. It does not submit or persist anything.</p></div><BookingSummaryCard service={service} date={selectedTime ? day : undefined} time={selectedTime} /></div></section>;
 }
 
 export function ServiceDetail({ service }: { service: DiscoveryService }) {
+  useEffect(() => {
+    try {
+      const key = 'takeitesee.recentlyViewed';
+      const stored = JSON.parse(window.localStorage.getItem(key) ?? '[]');
+      const ids = Array.isArray(stored) ? stored.filter((value): value is string => typeof value === 'string') : [];
+      window.localStorage.setItem(key, JSON.stringify([service.id, ...ids.filter((id) => id !== service.id)].slice(0, 6)));
+    } catch {
+      // Local history is optional presentation state.
+    }
+  }, [service.id]);
+  const routeSearchParams = useSearchParams();
+  const contextQuery = routeSearchParams.toString();
+  const exploreHref = contextQuery ? `/explore?${contextQuery}` : '/explore';
+  const bookingHref = contextQuery ? `/services/${service.id}/booking?${contextQuery}` : `/services/${service.id}/booking`;
   const provider = { id: service.provider_id, display_name: service.provider_name, headline: `${service.provider_type === 'business' ? 'Trusted local business' : 'Independent professional'}`, specialty: categoryName(service.category_id), location: service.location, rating: service.rating, review_count: service.review_count, verified: service.verified, availability_mode: 'full_time' as const, status: 'active' as const, summary: '', experience_years: 0, service_area: service.service_area, services: [displayText(service.service_name)], availability_summary: service.availability, reviews: [] };
-  return <div className="detail-page"><Breadcrumbs items={[{ label: 'Explore', href: '/explore' }, { label: 'Service' }]} /><ServiceHero service={service} /><div className="detail-layout"><main><ProviderSummary provider={provider} providerType={service.provider_type} profileHref={service.provider_type === 'professional' ? `/professionals/${service.provider_id}` : '/businesses'} /><section className="detail-section"><span className="eyebrow">About the service</span><h2>What to expect</h2><p className="detail-copy">{service.long_description}</p><div className="detail-columns"><div><h3>Highlights</h3><ul className="detail-list">{service.highlights.map((item) => <li key={item}>{item}</li>)}</ul></div><div><h3>Included</h3><ul className="detail-list">{service.inclusions.map((item) => <li key={item}>{item}</li>)}</ul></div></div></section><section className="detail-section"><span className="eyebrow">Policies</span><h2>Cancellation and rescheduling</h2><p className="detail-copy">{service.policy}</p></section><ReviewSummary rating={service.rating} count={service.review_count} reviews={[]} /></main><aside className="detail-aside"><BookingSummaryCard service={service} time="" /><Link href={`/services/${service.id}/booking`} className="button button-primary detail-cta">Choose a date and time</Link></aside></div><div className="mobile-sticky-cta"><Link href={`/services/${service.id}/booking`} className="button button-primary">Choose a date and time</Link></div></div>;
+  const profileHref = service.provider_type === 'professional' ? `/professionals/${service.provider_id}` : '/businesses';
+  const contextualProfileHref = contextQuery ? `${profileHref}?${contextQuery}` : profileHref;
+  return <div className="detail-page"><Breadcrumbs items={[{ label: 'Explore', href: exploreHref }, { label: 'Service' }]} /><ServiceHero service={service} /><div className="detail-layout"><main><ProviderSummary provider={provider} providerType={service.provider_type} profileHref={contextualProfileHref} /><section className="detail-section"><span className="eyebrow">About the service</span><h2>What to expect</h2><p className="detail-copy">{service.long_description}</p><div className="detail-columns"><div><h3>Highlights</h3><ul className="detail-list">{service.highlights.map((item) => <li key={item}>{item}</li>)}</ul></div><div><h3>Included</h3><ul className="detail-list">{service.inclusions.map((item) => <li key={item}>{item}</li>)}</ul></div></div></section><section className="detail-section"><span className="eyebrow">Policies</span><h2>Cancellation and rescheduling</h2><p className="detail-copy">{service.policy}</p></section><ReviewSummary rating={service.rating} count={service.review_count} reviews={[]} /></main><aside className="detail-aside"><BookingSummaryCard service={service} time="" /><Link href={bookingHref} className="button button-primary detail-cta">Choose a date and time</Link></aside></div><div className="mobile-sticky-cta"><Link href={bookingHref} className="button button-primary">Choose a date and time</Link></div></div>;
 }
 
 export { discoveryAvailability };

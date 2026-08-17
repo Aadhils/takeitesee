@@ -26,17 +26,20 @@ export function CategoryCard({ category }: { category: DiscoveryCategory }) {
   );
 }
 
-export function ServiceCard({ service }: { service: DiscoveryService }) {
+export function ServiceCard({ service, contextQuery = '' }: { service: DiscoveryService; contextQuery?: string }) {
+  const serviceHref = `/services/${service.id}${contextQuery ? `?${contextQuery}` : ''}`;
+  const providerBaseHref = service.provider_type === 'professional' ? `/professionals/${service.provider_id}` : '/businesses';
+  const providerHref = contextQuery ? `${providerBaseHref}?${contextQuery}` : providerBaseHref;
   return (
     <Card className="discovery-card service-discovery-card">
       <div className="service-card-art" aria-hidden="true"><span>{displayText(service.service_name).slice(0, 1)}</span><span className="art-label">{categoryName(service.category_id)}</span></div>
       <div className="discovery-card-content">
         <div className="card-meta"><Availability label={service.availability} />{service.verified ? <Badge tone="info">Verified provider</Badge> : null}</div>
-        <h3><Link href={`/services/${service.id}`}>{displayText(service.service_name)}</Link></h3>
+        <h3><Link href={serviceHref}>{displayText(service.service_name)}</Link></h3>
         <p className="card-description">{displayText(service.description)}</p>
-        <p className="card-provider">{service.provider_name} <span aria-hidden="true">·</span> {service.provider_type === 'professional' ? 'Professional' : 'Business'}</p>
+        <p className="card-provider"><Link href={providerHref}>{service.provider_name}</Link> <span aria-hidden="true">·</span> {service.provider_type === 'professional' ? 'Professional' : 'Business'}</p>
         <p className="card-location"><span aria-hidden="true">⌖</span> {service.location}</p>
-        <div className="card-footer"><div><Rating value={service.rating} count={service.review_count} /><Price service={service} /></div><Link href={`/services/${service.id}`} className="icon-link" aria-label={`View ${displayText(service.service_name)}`}>-&gt;</Link></div>
+        <div className="card-footer"><div><Rating value={service.rating} count={service.review_count} /><Price service={service} /></div><Link href={serviceHref} className="icon-link" aria-label={`View ${displayText(service.service_name)}`}>-&gt;</Link></div>
       </div>
     </Card>
   );
