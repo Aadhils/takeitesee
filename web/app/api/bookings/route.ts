@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { productionAuthProvider } from '../../../server/auth/session';
 import { productionBookingRepository, type CreateBookingInput } from '../../../server/bookings/repository';
 
+export const runtime = 'nodejs';
+
 export async function GET(request: Request) {
   try {
     const session = await productionAuthProvider.requireCustomer(request);
