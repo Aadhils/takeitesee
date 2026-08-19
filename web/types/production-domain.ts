@@ -55,7 +55,7 @@ export interface ProductionBooking {
   customer_id: EntityId;
   service_id: EntityId;
   provider: ProviderReference;
-  provider_name?: string;
+  provider_name: string;
   service_name: string;
   booking_date: string;
   start_time: string;

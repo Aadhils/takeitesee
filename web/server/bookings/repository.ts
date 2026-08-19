@@ -82,16 +82,30 @@ export const productionBookingRepository: ProductionBookingRepository = {
 
 function createBookingReference(date: string) { return `TIS-${date.replace(/-/g, '').slice(0, 8)}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`; }
 
-function mapBooking(row: Record<string, unknown>): ProductionBooking {
+function mapBooking(row: Record<string, unknown>): Omit<ProductionBooking, 'provider_name'> {
   const providerType = row.provider_type as 'professional' | 'business';
   return { id: row.id as EntityId, booking_reference: row.booking_reference as string, customer_id: row.customer_id as EntityId, service_id: row.service_id as EntityId, provider: providerType === 'professional' ? { provider_type: providerType, provider_id: row.professional_id as EntityId, professional_id: row.professional_id as EntityId } : { provider_type: providerType, provider_id: row.business_id as EntityId, business_id: row.business_id as EntityId }, service_name: row.service_name_snapshot as string, booking_date: row.booking_date as string, start_time: row.start_time as string, timezone: row.timezone as string, duration_minutes: row.duration_minutes as number, location: row.location as string, customer_notes: row.customer_notes as string | undefined, quoted_price: Number(row.quoted_price), currency: row.currency as 'INR' | 'USD', status: row.status as ProductionBooking['status'], payment_status: row.payment_status as ProductionBooking['payment_status'], created_at: new Date(row.created_at as string), updated_at: new Date(row.updated_at as string) };
 }
 
-async function enrichBookingProvider(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, booking: ProductionBooking): Promise<ProductionBooking> {
-  if (booking.provider.provider_type === 'business') {
-    const { data } = await supabase.from('businesses').select('name').eq('id', booking.provider.provider_id).maybeSingle();
-    return { ...booking, provider_name: data?.name ?? 'Business provider' };
+async function enrichBookingProvider(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, booking: Omit<ProductionBooking, 'provider_name'>): Promise<ProductionBooking> {
+  const { data: service, error: serviceError } = await supabase
+    .from('services')
+    .select('provider_type, professional_id, business_id')
+    .eq('id', booking.service_id)
+    .maybeSingle();
+  if (serviceError || !service) throw new Error(serviceError?.message ?? 'Booking provider is unavailable.');
+
+  if (service.provider_type === 'business' && service.business_id) {
+    const { data, error } = await supabase.from('businesses').select('name').eq('id', service.business_id).maybeSingle();
+    if (error || !data) throw new Error(error?.message ?? 'Booking provider is unavailable.');
+    return { ...booking, provider_name: data.name };
   }
-  const { data } = await supabase.from('professional_profiles').select('headline').eq('id', booking.provider.provider_id).maybeSingle();
-  return { ...booking, provider_name: data?.headline ?? 'Professional provider' };
+
+  if (service.provider_type === 'professional' && service.professional_id) {
+    const { data, error } = await supabase.from('professional_profiles').select('headline').eq('id', service.professional_id).maybeSingle();
+    if (error || !data) throw new Error(error?.message ?? 'Booking provider is unavailable.');
+    return { ...booking, provider_name: data.headline?.trim() || 'Professional provider' };
+  }
+
+  throw new Error('Booking provider is unavailable.');
 }

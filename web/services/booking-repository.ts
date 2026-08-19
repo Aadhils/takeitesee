@@ -66,6 +66,7 @@ export function createBooking(draft: BookingDraft): CustomerBooking {
     ...draft,
     bookingId: createId() as CustomerBookingId,
     bookingReference: createReference(draft.bookingDate),
+    providerName: draft.providerType === 'business' ? 'Business provider' : 'Professional provider',
     status: 'pending',
     paymentStatus: 'unpaid',
     createdAt: now,

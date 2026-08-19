@@ -13,7 +13,7 @@ export interface CustomerBooking {
   serviceId: EntityId;
   providerId: EntityId;
   providerType: ServiceOwner['owner_type'];
-  providerName?: string;
+  providerName: string;
   serviceName: string;
   customerName: string;
   customerContactReference?: string;
