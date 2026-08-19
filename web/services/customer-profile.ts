@@ -23,6 +23,26 @@ type CustomerProfileRow = {
   service_regions: string[];
 };
 
+export type AccountSettings = {
+  preferredLanguage: string;
+  notifyBookingUpdates: boolean;
+  notifyReviewReminders: boolean;
+  notifyProductUpdates: boolean;
+  reducedMotion: boolean;
+  largerText: boolean;
+  useHistoryForRecommendations: boolean;
+};
+
+type AccountSettingsRow = {
+  preferred_language: string;
+  notify_booking_updates: boolean;
+  notify_review_reminders: boolean;
+  notify_product_updates: boolean;
+  reduced_motion: boolean;
+  larger_text: boolean;
+  use_history_for_recommendations: boolean;
+};
+
 export async function getCustomerProfile(userId: string, authEmail?: string): Promise<CustomerProfile> {
   const supabase = createSupabaseBrowserClient();
   const [{ data: user, error: userError }, { data: profile, error: profileError }] = await Promise.all([
@@ -58,5 +78,44 @@ function toCustomerProfile(user: UserRow, profile: CustomerProfileRow | null, au
     preferredLanguage: profile?.preferred_language ?? 'English',
     serviceRegions: profile?.service_regions ?? [],
     memberSince: user.created_at,
+  };
+}
+
+export async function getAccountSettings(userId: string): Promise<AccountSettings> {
+  const supabase = createSupabaseBrowserClient();
+  const { data: settings, error } = await supabase
+    .from('customer_profiles')
+    .select('preferred_language, notify_booking_updates, notify_review_reminders, notify_product_updates, reduced_motion, larger_text, use_history_for_recommendations')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return toAccountSettings(settings as AccountSettingsRow | null);
+}
+
+export async function saveAccountSettings(userId: string, input: AccountSettings) {
+  const supabase = createSupabaseBrowserClient();
+  const { error } = await supabase.from('customer_profiles').upsert({
+    user_id: userId,
+    preferred_language: input.preferredLanguage,
+    notify_booking_updates: input.notifyBookingUpdates,
+    notify_review_reminders: input.notifyReviewReminders,
+    notify_product_updates: input.notifyProductUpdates,
+    reduced_motion: input.reducedMotion,
+    larger_text: input.largerText,
+    use_history_for_recommendations: input.useHistoryForRecommendations,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'user_id' });
+  if (error) throw new Error(error.message);
+}
+
+function toAccountSettings(settings: AccountSettingsRow | null): AccountSettings {
+  return {
+    preferredLanguage: settings?.preferred_language ?? 'English',
+    notifyBookingUpdates: settings?.notify_booking_updates ?? true,
+    notifyReviewReminders: settings?.notify_review_reminders ?? true,
+    notifyProductUpdates: settings?.notify_product_updates ?? false,
+    reducedMotion: settings?.reduced_motion ?? false,
+    largerText: settings?.larger_text ?? false,
+    useHistoryForRecommendations: settings?.use_history_for_recommendations ?? true,
   };
 }
