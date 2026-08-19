@@ -9,6 +9,7 @@ import type { PaymentStatus } from '../../types/payment';
 import { formatMoney } from '../../types/money';
 import { Breadcrumbs } from '../layout/NavigationContext';
 import RealBookingReview from './RealBookingReview';
+import type { CatalogService } from '../../services/catalog-repository';
 
 const bookingStatusLabels: Record<BookingStatus, string> = {
   draft: 'Draft', requested: 'Requested', provider_review: 'Provider review', rejected: 'Rejected', accepted: 'Accepted', reschedule_requested: 'Reschedule requested', scheduled: 'Scheduled', in_progress: 'In progress', completion_pending: 'Completion pending', completed: 'Completed', cancelled: 'Cancelled', no_show: 'No-show', refund_pending: 'Refund pending', closed: 'Closed',
@@ -41,7 +42,7 @@ export function BookingCard({ booking }: { booking: DiscoveryBooking }) {
   return <Card className="booking-card"><div className="booking-card-top"><div><span className="eyebrow">{booking.booking_reference}</span><h3>{service ? displayText(service.service_name) : 'Service booking'}</h3></div><BookingStatusBadge status={booking.status} /></div><p className="card-provider">{booking.provider_name} <span aria-hidden="true">·</span> {booking.provider_type === 'business' ? 'Business' : 'Professional'}</p><div className="booking-card-meta"><span>{booking.date_label}, {booking.time}</span><span>{formatMoney(booking.price)}</span><PaymentStatusBadge status={booking.payment_status} /></div><Link href={`/bookings/${booking.id}`} className="button button-secondary">View booking details</Link></Card>;
 }
 
-export function BookingReview({ service, date, dateLabel, time }: { service: DiscoveryService; date: string; dateLabel?: string; time: string }) {
+export function BookingReview({ service, date, dateLabel, time }: { service: CatalogService; date: string; dateLabel?: string; time: string }) {
   return <RealBookingReview service={service} date={date} dateLabel={dateLabel} time={time} />;
   /*
   const [notes, setNotes] = useState('');
