@@ -2,12 +2,15 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Badge, Button, Card, Checkbox, EmptyState, Input, Select, Textarea } from '../ui/primitives';
+import { useEffect } from 'react';
+import { Badge, Button, Card, Checkbox, EmptyState, ErrorState, Input, Select, Textarea } from '../ui/primitives';
 import { BookingCard } from '../booking/BookingPresentation';
 import { discoveryBookings, discoveryCustomerProfile, discoveryCustomerReviews, discoveryNotifications, discoveryServices, displayText, type DiscoveryCustomerReview, type DiscoveryNotification } from '../../data/discovery-fixtures';
 import type { NotificationStatus, NotificationType } from '../../types/notifications';
 import type { ReviewStatus } from '../../types/reviews';
 import { Rating } from '../discovery/MarketplaceCards';
+import { getSupabaseBrowserUser, isSupabaseConfigured } from '../../services/auth-adapter';
+import { getCustomerProfile, saveCustomerProfile, type CustomerProfile } from '../../services/customer-profile';
 
 const accountLinks = [
   { href: '/account', label: 'Overview' },
@@ -18,8 +21,9 @@ const accountLinks = [
   { href: '/help', label: 'Help center' },
 ];
 
-export function AccountShell({ children, active }: { children: React.ReactNode; active: string }) {
-  return <div className="account-layout"><aside className="account-sidebar"><div className="account-sidebar-heading"><div className="provider-avatar account-avatar" aria-hidden="true">AS</div><div><strong>{discoveryCustomerProfile.display_name}</strong><span>Customer account</span></div></div><nav aria-label="Customer account navigation">{accountLinks.map((link) => <Link href={link.href} className={active === link.href ? 'account-nav-active' : ''} aria-current={active === link.href ? 'page' : undefined} key={link.href}>{link.label}{link.href === '/notifications' ? <span className="account-nav-count">1</span> : null}</Link>)}</nav></aside><main className="account-content">{children}</main></div>;
+export function AccountShell({ children, active, customerName = discoveryCustomerProfile.display_name }: { children: React.ReactNode; active: string; customerName?: string }) {
+  const initials = customerName.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
+  return <div className="account-layout"><aside className="account-sidebar"><div className="account-sidebar-heading"><div className="provider-avatar account-avatar" aria-hidden="true">{initials || '?'}</div><div><strong>{customerName}</strong><span>Customer account</span></div></div><nav aria-label="Customer account navigation">{accountLinks.map((link) => <Link href={link.href} className={active === link.href ? 'account-nav-active' : ''} aria-current={active === link.href ? 'page' : undefined} key={link.href}>{link.label}{link.href === '/notifications' ? <span className="account-nav-count">1</span> : null}</Link>)}</nav></aside><main className="account-content">{children}</main></div>;
 }
 
 export function ProfileSummary({ compact = false }: { compact?: boolean }) {
@@ -63,7 +67,54 @@ export function ReviewsPage() {
 function CustomerReviewCard({ review }: { review: DiscoveryCustomerReview }) { return <Card className="customer-review-card"><div className="review-card-top"><div><h3>{review.service_name}</h3><span>{review.provider_name}</span></div><Badge tone={review.status === 'published' ? 'success' : 'neutral'}>{reviewStatusLabel(review.status)}</Badge></div><Rating value={review.rating} count={0} /><p>{review.comment}</p><time>{review.date_label}</time></Card>; }
 
 export function ProfilePage() {
-  return <AccountShell active="/account/profile"><section className="account-page-heading"><span className="eyebrow">Account profile</span><h1>Your profile</h1><p>A presentation view of the information customers may use to manage their account and service preferences.</p></section><ProfileSummary /><div className="profile-detail-grid"><Card><span className="eyebrow">Identity</span><h2>Contact details</h2><dl className="account-details"><div><dt>Name</dt><dd>{discoveryCustomerProfile.display_name}</dd></div><div><dt>Email</dt><dd>{discoveryCustomerProfile.email}</dd></div><div><dt>Phone</dt><dd>{discoveryCustomerProfile.phone}</dd></div><div><dt>Location</dt><dd>{discoveryCustomerProfile.location}</dd></div></dl><Button type="button" variant="secondary" onClick={() => undefined}>Edit profile</Button><p className="explore-disclaimer">Editing is presentation-only. Changes are not persisted.</p></Card><Card><span className="eyebrow">Preferences</span><h2>Service regions</h2><div className="profile-region-list">{discoveryCustomerProfile.service_regions.map((region) => <Badge tone="neutral" key={region}>{region}</Badge>)}</div><dl className="account-details"><div><dt>Preferred language</dt><dd>{discoveryCustomerProfile.preferred_language}</dd></div><div><dt>Member since</dt><dd>{discoveryCustomerProfile.member_since}</dd></div></dl></Card></div></AccountShell>;
+  const [profile, setProfile] = useState<CustomerProfile>();
+  const [form, setForm] = useState<CustomerProfile>();
+  const [userId, setUserId] = useState<string>();
+  const [editing, setEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string>();
+  const [saved, setSaved] = useState(false);
+
+  const loadProfile = async () => {
+    try {
+      setLoading(true);
+      setError(undefined);
+      if (!isSupabaseConfigured()) throw new Error('Live profile data is unavailable until Supabase is configured.');
+      const user = await getSupabaseBrowserUser();
+      if (!user) throw new Error('Sign in to view your profile.');
+      const currentProfile = await getCustomerProfile(user.id, user.email ?? undefined);
+      setUserId(user.id);
+      setProfile(currentProfile);
+      setForm(currentProfile);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Unable to load your profile.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { void loadProfile(); }, []);
+
+  const updateField = <K extends keyof CustomerProfile>(field: K, value: CustomerProfile[K]) => setForm((current) => current ? { ...current, [field]: value } : current);
+  const save = async () => {
+    if (!userId || !form || !form.displayName.trim()) return;
+    try {
+      setSaving(true);
+      setError(undefined);
+      await saveCustomerProfile(userId, form);
+      setProfile(form);
+      setEditing(false);
+      setSaved(true);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : 'Unable to save your profile.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const customerName = profile?.displayName ?? 'Your account';
+  return <AccountShell active="/account/profile" customerName={customerName}><section className="account-page-heading"><span className="eyebrow">Account profile</span><h1>Your profile</h1><p>Manage the information connected to your authenticated TakeItSee account.</p></section>{loading ? <Card><p>Loading your profile...</p></Card> : error && !profile ? <ErrorState title="Profile unavailable">{error}</ErrorState> : profile && form ? <><div className="profile-summary card"><div className="provider-avatar provider-avatar-large" aria-hidden="true">{profile.displayName.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase()}</div><div><span className="eyebrow">Customer profile</span><h2>{profile.displayName}</h2><p>{profile.email}</p><span className="card-location">{profile.location || 'Location not added'}</span></div><Badge tone="success">Authenticated</Badge></div><div className="profile-detail-grid"><Card><span className="eyebrow">Identity</span><h2>Contact details</h2>{editing ? <div className="profile-form"><Input label="Display name" value={form.displayName} required onChange={(event) => updateField('displayName', event.target.value)} /><Input label="Email" type="email" value={form.email} readOnly hint="Email is managed by your authenticated Supabase account." /><Input label="Phone" type="tel" value={form.phone} onChange={(event) => updateField('phone', event.target.value)} /><Input label="Location" value={form.location} onChange={(event) => updateField('location', event.target.value)} /></div> : <dl className="account-details"><div><dt>Name</dt><dd>{profile.displayName}</dd></div><div><dt>Email</dt><dd>{profile.email}</dd></div><div><dt>Phone</dt><dd>{profile.phone || 'Not added'}</dd></div><div><dt>Location</dt><dd>{profile.location || 'Not added'}</dd></div></dl>}{editing ? <div className="account-actions"><Button type="button" variant="secondary" onClick={() => { setForm(profile); setEditing(false); }}>Cancel</Button><Button type="button" loading={saving} onClick={save}>Save profile</Button></div> : <Button type="button" variant="secondary" onClick={() => { setSaved(false); setEditing(true); }}>Edit profile</Button>}{saved ? <p className="explore-disclaimer" role="status">Profile saved.</p> : null}{error ? <p className="field-error" role="alert">{error}</p> : null}</Card><Card><span className="eyebrow">Preferences</span><h2>Service preferences</h2>{editing ? <div className="profile-form"><Select label="Preferred language" value={form.preferredLanguage} onChange={(event) => updateField('preferredLanguage', event.target.value)}><option>English</option><option>Tamil</option><option>Hindi</option><option>Malayalam</option></Select><Input label="Service regions" value={form.serviceRegions.join(', ')} hint="Separate regions with commas." onChange={(event) => updateField('serviceRegions', event.target.value.split(',').map((region) => region.trim()).filter(Boolean))} /></div> : <><div className="profile-region-list">{profile.serviceRegions.length ? profile.serviceRegions.map((region) => <Badge tone="neutral" key={region}>{region}</Badge>) : <span>Not added</span>}</div><dl className="account-details"><div><dt>Preferred language</dt><dd>{profile.preferredLanguage}</dd></div><div><dt>Member since</dt><dd>{new Date(profile.memberSince).toLocaleDateString()}</dd></div></dl></>}</Card></div></> : null}</AccountShell>;
 }
 
 export function SettingsPage() {
