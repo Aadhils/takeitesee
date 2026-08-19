@@ -10,7 +10,7 @@ import type { NotificationStatus, NotificationType } from '../../types/notificat
 import type { ReviewStatus } from '../../types/reviews';
 import { Rating } from '../discovery/MarketplaceCards';
 import { getSupabaseBrowserUser, isSupabaseConfigured } from '../../services/auth-adapter';
-import { getCustomerProfile, saveCustomerProfile, type CustomerProfile } from '../../services/customer-profile';
+import { getAccountSettings, getCustomerProfile, saveAccountSettings, saveCustomerProfile, type AccountSettings, type CustomerProfile } from '../../services/customer-profile';
 
 const accountLinks = [
   { href: '/account', label: 'Overview' },
@@ -118,8 +118,52 @@ export function ProfilePage() {
 }
 
 export function SettingsPage() {
+  const [settings, setSettings] = useState<AccountSettings>();
+  const [form, setForm] = useState<AccountSettings>();
+  const [userId, setUserId] = useState<string>();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string>();
   const [saved, setSaved] = useState(false);
-  return <AccountShell active="/account/settings"><section className="account-page-heading"><span className="eyebrow">Account settings</span><h1>Settings</h1><p>Review presentation preferences. Nothing on this page changes a live account.</p></section>{saved ? <div className="alert alert-success" role="status"><strong>Preferences preview updated.</strong><span>These changes exist only in this browser session.</span></div> : null}<div className="settings-grid"><Card className="settings-section"><span className="eyebrow">Communication</span><h2>Notification preferences</h2><Checkbox label="Booking updates" description="Show schedule and status updates in the presentation inbox." defaultChecked /><Checkbox label="Review reminders" description="Show reminders after a completed fixture booking." defaultChecked /><Checkbox label="Product information" description="Show occasional platform information." /></Card><Card className="settings-section"><span className="eyebrow">Experience</span><h2>Language and accessibility</h2><Select label="Language" defaultValue="English"><option>English</option><option>Tamil</option><option>Hindi</option><option>Malayalam</option></Select><Checkbox label="Reduced motion" description="Prefer less animation where supported." /><Checkbox label="Larger text" description="Preview a more spacious reading scale." /></Card><Card className="settings-section"><span className="eyebrow">Privacy</span><h2>Account visibility</h2><Checkbox label="Use service history for recommendations" description="Presentation preference only; no data is shared from this fixture." defaultChecked /><p className="settings-note">Privacy controls and account security actions will require authenticated, server-backed behavior later.</p></Card><Card className="settings-section settings-danger"><span className="eyebrow">Danger zone</span><h2>Account actions</h2><p>Account deletion and password changes are unavailable in this presentation phase.</p><Button type="button" variant="danger" disabled>Delete account</Button></Card></div><Button type="button" onClick={() => setSaved(true)}>Preview preference changes</Button></AccountShell>;
+
+  const loadSettings = async () => {
+    try {
+      setLoading(true);
+      setError(undefined);
+      if (!isSupabaseConfigured()) throw new Error('Live settings are unavailable until Supabase is configured.');
+      const user = await getSupabaseBrowserUser();
+      if (!user) throw new Error('Sign in to manage your settings.');
+      const current = await getAccountSettings(user.id);
+      setUserId(user.id);
+      setSettings(current);
+      setForm(current);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Unable to load your settings.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { void loadSettings(); }, []);
+
+  const updateField = <K extends keyof AccountSettings>(field: K, value: AccountSettings[K]) => { setSaved(false); setForm((current) => current ? { ...current, [field]: value } : current); };
+
+  const save = async () => {
+    if (!userId || !form) return;
+    try {
+      setSaving(true);
+      setError(undefined);
+      await saveAccountSettings(userId, form);
+      setSettings(form);
+      setSaved(true);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : 'Unable to save your settings.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return <AccountShell active="/account/settings"><section className="account-page-heading"><span className="eyebrow">Account settings</span><h1>Settings</h1><p>Manage the preferences connected to your authenticated TakeItSee account.</p></section>{saved ? <div className="alert alert-success" role="status"><strong>Settings saved.</strong><span>Your preferences have been updated.</span></div> : null}{loading ? <Card><p>Loading your settings...</p></Card> : error && !settings ? <ErrorState title="Settings unavailable">{error}</ErrorState> : settings && form ? <><div className="settings-grid"><Card className="settings-section"><span className="eyebrow">Communication</span><h2>Notification preferences</h2><Checkbox label="Booking updates" description="Show schedule and status updates in the presentation inbox." checked={form.notifyBookingUpdates} onChange={(event) => updateField('notifyBookingUpdates', event.target.checked)} /><Checkbox label="Review reminders" description="Show reminders after a completed fixture booking." checked={form.notifyReviewReminders} onChange={(event) => updateField('notifyReviewReminders', event.target.checked)} /><Checkbox label="Product information" description="Show occasional platform information." checked={form.notifyProductUpdates} onChange={(event) => updateField('notifyProductUpdates', event.target.checked)} /></Card><Card className="settings-section"><span className="eyebrow">Experience</span><h2>Language and accessibility</h2><Select label="Language" value={form.preferredLanguage} onChange={(event) => updateField('preferredLanguage', event.target.value)}><option>English</option><option>Tamil</option><option>Hindi</option><option>Malayalam</option></Select><Checkbox label="Reduced motion" description="Prefer less animation where supported." checked={form.reducedMotion} onChange={(event) => updateField('reducedMotion', event.target.checked)} /><Checkbox label="Larger text" description="Preview a more spacious reading scale." checked={form.largerText} onChange={(event) => updateField('largerText', event.target.checked)} /></Card><Card className="settings-section"><span className="eyebrow">Privacy</span><h2>Account visibility</h2><Checkbox label="Use service history for recommendations" description="Used to personalize the service recommendations shown to you." checked={form.useHistoryForRecommendations} onChange={(event) => updateField('useHistoryForRecommendations', event.target.checked)} /><p className="settings-note">Privacy controls and account security actions will require authenticated, server-backed behavior later.</p></Card><Card className="settings-section settings-danger"><span className="eyebrow">Danger zone</span><h2>Account actions</h2><p>Account deletion and password changes are unavailable in this presentation phase.</p><Button type="button" variant="danger" disabled>Delete account</Button></Card></div>{error ? <p className="field-error" role="alert">{error}</p> : null}<Button type="button" loading={saving} onClick={save}>Save settings</Button></> : null}</AccountShell>;
 }
 
 export function AccountOverviewPage() {
