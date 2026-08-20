@@ -1,12 +1,12 @@
 'use client';
 
-import { FormEvent, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Alert, Button, Card, Input, Radio, Select, Textarea } from '../ui/primitives';
 
 type ProviderType = 'professional' | 'business';
 
-type OnboardingDraft = {
+export type OnboardingDraft = {
   providerType: ProviderType;
   displayName: string;
   headline: string;
@@ -15,6 +15,8 @@ type OnboardingDraft = {
   experienceYears: string;
   summary: string;
 };
+
+export const providerOnboardingStorageKey = 'takeitesee.providerOnboardingDraft';
 
 const emptyDraft: OnboardingDraft = {
   providerType: 'professional',
@@ -38,9 +40,25 @@ const categories = [
 
 export function ProviderOnboarding() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedType = searchParams.get('type');
   const [draft, setDraft] = useState<OnboardingDraft>(emptyDraft);
   const [saved, setSaved] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const savedDraft = window.localStorage.getItem(providerOnboardingStorageKey);
+    let nextDraft = { ...emptyDraft };
+    if (savedDraft) {
+      try {
+        nextDraft = { ...nextDraft, ...(JSON.parse(savedDraft) as Partial<OnboardingDraft>) };
+      } catch {
+        window.localStorage.removeItem(providerOnboardingStorageKey);
+      }
+    }
+    if (requestedType === 'professional' || requestedType === 'business') nextDraft.providerType = requestedType;
+    setDraft(nextDraft);
+  }, [requestedType]);
 
   const providerLabel = useMemo(
     () => (draft.providerType === 'professional' ? 'Professional' : 'Business'),
@@ -58,7 +76,7 @@ export function ProviderOnboarding() {
     setSubmitting(true);
 
     // Phase 7B development-only onboarding draft. No production role/profile mutation yet.
-    window.localStorage.setItem('takeitesee.providerOnboardingDraft', JSON.stringify(draft));
+    window.localStorage.setItem(providerOnboardingStorageKey, JSON.stringify(draft));
     setSaved(true);
     setSubmitting(false);
     router.push('/provider');
