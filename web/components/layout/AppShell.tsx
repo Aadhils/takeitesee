@@ -100,6 +100,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         .account-provider-entry { width: 100%; margin-top: 28px; padding: 32px; overflow: hidden; }
         .account-provider-entry > p { max-width: 72ch; line-height: 1.65; }
         .account-provider-entry .account-actions { align-items: stretch; gap: 12px; }
+        .provider-draft-banner { width: 100%; margin-bottom: 28px; min-width: 0; }
+        .provider-draft-banner > .card { width: 100%; padding: 30px 32px; overflow: hidden; }
+        .provider-draft-banner > .card > p { max-width: 72ch; line-height: 1.6; }
+        .provider-draft-banner .account-actions { gap: 12px; align-items: stretch; }
+        .provider-draft-banner h2 { margin-top: 8px; overflow-wrap: anywhere; }
 
         @media (max-width: 1100px) {
           .shell-bar { gap: 16px; }
@@ -108,6 +113,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           .footer-inner { grid-template-columns: repeat(3, minmax(0, 1fr)); }
           .footer-brand-column { grid-column: 1 / -1; }
           .account-provider-entry { padding: 28px; }
+          .provider-draft-banner > .card { padding: 28px; }
         }
 
         @media (max-width: 900px) {
@@ -120,6 +126,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           .page-frame { padding-top: 36px; }
           .provider-onboarding-page { width: min(100%, 680px); }
           .account-provider-entry { padding: 24px; }
+          .provider-draft-banner > .card { padding: 24px; }
         }
 
         @media (max-width: 640px) {
@@ -140,6 +147,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           .account-provider-entry .account-actions { margin-top: 18px; gap: 10px; }
           .account-provider-entry h2 { font-size: clamp(1.45rem, 7vw, 1.9rem); line-height: 1.12; }
           .account-provider-entry > p { font-size: .92rem; line-height: 1.6; }
+          .provider-draft-banner { margin-bottom: 22px; }
+          .provider-draft-banner > .card { padding: 20px; border-radius: 14px; }
+          .provider-draft-banner > .card > p { font-size: .92rem; line-height: 1.6; }
+          .provider-draft-banner h2 { font-size: clamp(1.35rem, 6.5vw, 1.8rem); line-height: 1.15; }
+          .provider-draft-banner .account-actions { margin-top: 18px; gap: 10px; }
           .alert { align-items: flex-start; overflow-wrap: anywhere; }
           .footer-inner { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 18px; padding-top: 36px; }
           .footer-brand-column, .footer-legal { grid-column: 1 / -1; }
@@ -154,6 +166,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           .header-login { max-width: 92px; font-size: .8rem; }
           .provider-onboarding-form > .card { padding: 15px; }
           .account-provider-entry { padding: 16px; }
+          .provider-draft-banner > .card { padding: 16px; }
           .footer-inner { grid-template-columns: 1fr; }
           .footer-brand-column, .footer-legal, .footer-connect { grid-column: auto; }
         }
