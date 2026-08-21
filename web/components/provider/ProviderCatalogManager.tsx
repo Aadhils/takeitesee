@@ -114,13 +114,13 @@ export function ProviderCatalogManager() {
       />
 
       <Card className="mb-6">
-        <div className="flex flex-col gap-4 p-1 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+        <div className="flex flex-col gap-5 p-4 sm:p-5 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0">
             <span className="eyebrow">Phase 7C development mode</span>
-            <h2 className="mt-1 text-xl font-semibold">Catalog controls are local preview state</h2>
-            <p className="mt-1 max-w-2xl text-sm text-slate-600">No Supabase service record is created or changed yet. This lets us validate the full provider catalog UX safely first.</p>
+            <h2 className="mt-1 break-words text-xl font-semibold">Catalog controls are local preview state</h2>
+            <p className="mt-2 max-w-2xl break-words text-sm leading-6 text-slate-600">No Supabase service record is created or changed yet. This lets us validate the full provider catalog UX safely first.</p>
           </div>
-          <div className="grid grid-cols-3 gap-2 text-center sm:min-w-72">
+          <div className="grid w-full grid-cols-3 gap-2 text-center md:w-auto md:min-w-72">
             <div className="rounded-xl border p-3"><strong className="block text-lg">{activeCount}</strong><span className="text-xs text-slate-500">Active</span></div>
             <div className="rounded-xl border p-3"><strong className="block text-lg">{draftCount}</strong><span className="text-xs text-slate-500">Draft</span></div>
             <div className="rounded-xl border p-3"><strong className="block text-lg">{pausedCount}</strong><span className="text-xs text-slate-500">Paused</span></div>
@@ -139,11 +139,11 @@ export function ProviderCatalogManager() {
 
       {formOpen ? (
         <Card className="mb-6">
-          <form onSubmit={saveDraft} className="grid gap-5 p-1">
+          <form onSubmit={saveDraft} className="grid gap-5 p-4 sm:p-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-              <div>
+              <div className="min-w-0">
                 <span className="eyebrow">{editingId ? 'Edit service' : 'New service'}</span>
-                <h2 className="mt-1 text-2xl font-semibold">{editingId ? 'Update catalog details' : 'Add a service to your catalog'}</h2>
+                <h2 className="mt-1 break-words text-2xl font-semibold">{editingId ? 'Update catalog details' : 'Add a service to your catalog'}</h2>
               </div>
               <Button type="button" variant="quiet" onClick={closeForm}>Close</Button>
             </div>
@@ -183,7 +183,7 @@ export function ProviderCatalogManager() {
       <div className="grid gap-4 lg:grid-cols-2">
         {visibleItems.map((item) => (
           <Card key={item.id} className="min-w-0">
-            <div className="flex min-w-0 flex-col gap-4 p-1">
+            <div className="flex min-w-0 flex-col gap-5 p-4 sm:p-5">
               <div className="flex min-w-0 items-start justify-between gap-3">
                 <div className="min-w-0">
                   <span className="eyebrow">{item.category}</span>
@@ -192,12 +192,12 @@ export function ProviderCatalogManager() {
                 <Badge tone={statusTone(item.status)}>{item.status[0].toUpperCase() + item.status.slice(1)}</Badge>
               </div>
 
-              <p className="break-words text-sm text-slate-600">{item.description || 'No description added yet.'}</p>
+              <p className="break-words text-sm leading-6 text-slate-600">{item.description || 'No description added yet.'}</p>
 
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 <div className="rounded-xl border p-3"><span className="block text-xs text-slate-500">Price</span><strong>INR {item.price.toLocaleString('en-IN')}</strong></div>
                 <div className="rounded-xl border p-3"><span className="block text-xs text-slate-500">Duration</span><strong>{item.duration} min</strong></div>
-                <div className="col-span-2 rounded-xl border p-3 sm:col-span-1"><span className="block text-xs text-slate-500">Visibility</span><strong>{item.status === 'active' ? 'Catalog visible' : item.status === 'paused' ? 'Temporarily hidden' : 'Not published'}</strong></div>
+                <div className="rounded-xl border p-3"><span className="block text-xs text-slate-500">Visibility</span><strong>{item.status === 'active' ? 'Catalog visible' : item.status === 'paused' ? 'Temporarily hidden' : 'Not published'}</strong></div>
               </div>
 
               <div className="flex flex-wrap gap-2">
