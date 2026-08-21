@@ -1,9 +1,10 @@
 import './globals.css';
+import './responsive-overrides.css';
 import { ReactNode } from 'react';
 import AppShell from '../components/layout/AppShell';
 
 export const metadata = {
-  title: 'TakeItEsee',
+  title: 'takeitesee',
   description: 'Find Services. Find Professionals. Grow Your Business.'
 };
 
