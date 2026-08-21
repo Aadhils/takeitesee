@@ -74,8 +74,6 @@ export function ProviderOnboarding() {
     event.preventDefault();
     if (submitting) return;
     setSubmitting(true);
-
-    // Phase 7B development-only onboarding draft. No production role/profile mutation yet.
     window.localStorage.setItem(providerOnboardingStorageKey, JSON.stringify(draft));
     setSaved(true);
     setSubmitting(false);
@@ -83,10 +81,10 @@ export function ProviderOnboarding() {
   };
 
   return (
-    <div className="auth-page">
+    <div className="auth-page provider-onboarding-page">
       <section className="page-intro">
         <span className="eyebrow">Provider onboarding</span>
-        <h1>Start offering services on TakeItSee.</h1>
+        <h1>Start offering services on takeitesee.</h1>
         <p>
           Choose how you want to operate, add the basics, and continue to the provider workspace. This development step saves a local onboarding draft only.
         </p>
@@ -96,84 +94,30 @@ export function ProviderOnboarding() {
         This screen does not create a Supabase role, professional profile, business record, payment account, or verification record yet.
       </Alert>
 
-      <form onSubmit={submit} className="auth-card">
+      <form onSubmit={submit} className="auth-card provider-onboarding-form">
         <Card>
           <span className="badge badge-info">Step 1 of 2</span>
           <h2>How will you provide services?</h2>
           <div className="choice-stack">
-            <Radio
-              name="providerType"
-              value="professional"
-              checked={draft.providerType === 'professional'}
-              onChange={() => update('providerType', 'professional')}
-              label="Professional"
-              description="For an individual specialist, freelancer, technician, consultant, or independent service provider."
-            />
-            <Radio
-              name="providerType"
-              value="business"
-              checked={draft.providerType === 'business'}
-              onChange={() => update('providerType', 'business')}
-              label="Business"
-              description="For a company, shop, agency, team, clinic, hotel, or other organization offering services."
-            />
+            <Radio name="providerType" value="professional" checked={draft.providerType === 'professional'} onChange={() => update('providerType', 'professional')} label="Professional" description="For an individual specialist, freelancer, technician, consultant, or independent service provider." />
+            <Radio name="providerType" value="business" checked={draft.providerType === 'business'} onChange={() => update('providerType', 'business')} label="Business" description="For a company, shop, agency, team, clinic, hotel, or other organization offering services." />
           </div>
         </Card>
 
         <Card>
           <span className="badge badge-info">Step 2 of 2</span>
           <h2>{providerLabel} profile basics</h2>
-          <Input
-            label={draft.providerType === 'professional' ? 'Professional name' : 'Business name'}
-            required
-            value={draft.displayName}
-            onChange={(event) => update('displayName', event.target.value)}
-            placeholder={draft.providerType === 'professional' ? 'Your public professional name' : 'Your business name'}
-          />
-          <Input
-            label="Headline"
-            required
-            value={draft.headline}
-            onChange={(event) => update('headline', event.target.value)}
-            placeholder="Example: Website developer for small businesses"
-          />
+          <Input label={draft.providerType === 'professional' ? 'Professional name' : 'Business name'} required value={draft.displayName} onChange={(event) => update('displayName', event.target.value)} placeholder={draft.providerType === 'professional' ? 'Your public professional name' : 'Your business name'} />
+          <Input label="Headline" required value={draft.headline} onChange={(event) => update('headline', event.target.value)} placeholder="Example: Website developer for small businesses" />
           <div className="form-grid">
-            <Input
-              label="City / service area"
-              required
-              value={draft.city}
-              onChange={(event) => update('city', event.target.value)}
-              placeholder="Example: Chennai"
-            />
-            <Select
-              label="Primary category"
-              required
-              value={draft.category}
-              onChange={(event) => update('category', event.target.value)}
-            >
+            <Input label="City / service area" required value={draft.city} onChange={(event) => update('city', event.target.value)} placeholder="Example: Chennai" />
+            <Select label="Primary category" required value={draft.category} onChange={(event) => update('category', event.target.value)}>
               <option value="">Select a category</option>
               {categories.map((category) => <option key={category} value={category}>{category}</option>)}
             </Select>
           </div>
-          {draft.providerType === 'professional' ? (
-            <Input
-              label="Experience (years)"
-              type="number"
-              min="0"
-              max="80"
-              value={draft.experienceYears}
-              onChange={(event) => update('experienceYears', event.target.value)}
-              placeholder="0"
-            />
-          ) : null}
-          <Textarea
-            label="About your services"
-            required
-            rows={5}
-            value={draft.summary}
-            onChange={(event) => update('summary', event.target.value)}
-            placeholder="Describe what you offer, who you serve, and the area you cover."
-          />
+          {draft.providerType === 'professional' ? <Input label="Experience (years)" type="number" min="0" max="80" value={draft.experienceYears} onChange={(event) => update('experienceYears', event.target.value)} placeholder="0" /> : null}
+          <Textarea label="About your services" required rows={5} value={draft.summary} onChange={(event) => update('summary', event.target.value)} placeholder="Describe what you offer, who you serve, and the area you cover." />
         </Card>
 
         {saved ? <Alert tone="success">Onboarding draft saved on this device.</Alert> : null}
