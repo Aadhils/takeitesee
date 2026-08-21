@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from '../../lib/supabase/server';
 export interface ServerAuthProvider {
   getSession(request: Request): Promise<ServerCustomerSession | null>;
   requireCustomer(request: Request): Promise<ServerCustomerSession>;
+  requireProvider(request: Request): Promise<ServerCustomerSession>;
 }
 
 /** Production boundary. Wire this to the selected OIDC/Supabase/Auth.js provider. */
@@ -23,6 +24,11 @@ export const productionAuthProvider: ServerAuthProvider = {
   async requireCustomer(request: Request) {
     const session = await this.getSession(request);
     if (!session || !session.roles.includes('customer')) throw new Error('Authentication required.');
+    return session;
+  },
+  async requireProvider(request: Request) {
+    const session = await this.getSession(request);
+    if (!session || (!session.roles.includes('professional') && !session.roles.includes('business_owner'))) throw new Error('Provider authentication required.');
     return session;
   },
 };
