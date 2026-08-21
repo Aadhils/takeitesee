@@ -1,5 +1,5 @@
-import { ProviderSchedule } from '../../../components/provider/ProviderPresentation';
+import { ProviderAvailabilityManager } from '../../../components/provider/ProviderAvailabilityManager';
 
 export default function ProviderScheduleRoute() {
-  return <ProviderSchedule />;
+  return <ProviderAvailabilityManager />;
 }
