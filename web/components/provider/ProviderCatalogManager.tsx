@@ -1,11 +1,12 @@
 'use client';
 
-import { FormEvent, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import type { FormEvent } from 'react';
 import { Badge, Button, Card, Input, Select } from '../ui/primitives';
 import { ProviderHeading, ProviderShell } from './ProviderPresentation';
 import { providerServices } from '../../data/provider-fixtures';
 
- type CatalogStatus = 'draft' | 'active' | 'paused';
+type CatalogStatus = 'draft' | 'active' | 'paused';
 
 type CatalogItem = {
   id: string;
@@ -23,8 +24,8 @@ const categories = ['Home services', 'Business services', 'Technology', 'Educati
 
 const initialItems: CatalogItem[] = providerServices.map((service, index) => ({
   id: String(service.id),
-  name: service.service_name.values.en,
-  description: service.description.values.en,
+  name: service.service_name.values.en ?? 'Untitled service',
+  description: service.description.values.en ?? '',
   category: index === 0 ? 'Home services' : 'Business services',
   price: service.pricing.base_price.amount,
   duration: service.duration_minutes,
