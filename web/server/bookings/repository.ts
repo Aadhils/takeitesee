@@ -3,6 +3,7 @@ import type { ProductionBooking, ProductionBookingStatus, ServerCustomerSession 
 import { assertProductionBackendConfigured } from '../config';
 import { assertOwnsCustomerRecord } from '../auth/session';
 import { createSupabaseServerClient } from '../../lib/supabase/server';
+import { assertBookingAvailability } from './availability';
 
 export interface CreateBookingInput {
   service_id: EntityId;
@@ -51,6 +52,7 @@ export const productionBookingRepository: ProductionBookingRepository = {
     const providerColumn = input.provider_type === 'professional' ? 'professional_id' : 'business_id';
     const { data: service, error: serviceError } = await supabase.from('services').select('id,name,provider_type,professional_id,business_id,active').eq('id', input.service_id).eq('active', true).maybeSingle();
     if (serviceError || !service || service.provider_type !== input.provider_type || service[providerColumn] !== input.provider_id) throw new Error('Service or provider is unavailable.');
+    await assertBookingAvailability(input);
     const providerFields = input.provider_type === 'professional' ? { professional_id: input.provider_id, business_id: null } : { professional_id: null, business_id: input.provider_id };
     const { data, error } = await supabase.from('bookings').insert({ booking_reference: createBookingReference(input.booking_date), idempotency_key: input.idempotency_key, customer_id: session.user_id, service_id: input.service_id, provider_type: input.provider_type, ...providerFields, service_name_snapshot: service.name, booking_date: input.booking_date, start_time: input.start_time, timezone: input.timezone, duration_minutes: input.duration_minutes, location: input.location.trim(), customer_notes: input.customer_notes?.trim() || null, quoted_price: input.quoted_price, currency: input.currency, status: 'pending', payment_status: 'unpaid' }).select('*').single();
     if (error || !data) throw new Error(error?.message ?? 'Booking could not be created.');
