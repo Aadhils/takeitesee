@@ -1,0 +1,218 @@
+'use client';
+
+import { FormEvent, useMemo, useState } from 'react';
+import { Badge, Button, Card, Input, Select } from '../ui/primitives';
+import { ProviderHeading, ProviderShell } from './ProviderPresentation';
+import { providerServices } from '../../data/provider-fixtures';
+
+ type CatalogStatus = 'draft' | 'active' | 'paused';
+
+type CatalogItem = {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  price: number;
+  duration: number;
+  status: CatalogStatus;
+};
+
+type CatalogDraft = Omit<CatalogItem, 'id'>;
+
+const categories = ['Home services', 'Business services', 'Technology', 'Education', 'Wellness', 'Other'];
+
+const initialItems: CatalogItem[] = providerServices.map((service, index) => ({
+  id: String(service.id),
+  name: service.service_name.values.en,
+  description: service.description.values.en,
+  category: index === 0 ? 'Home services' : 'Business services',
+  price: service.pricing.base_price.amount,
+  duration: service.duration_minutes,
+  status: 'active',
+}));
+
+const emptyDraft: CatalogDraft = {
+  name: '',
+  description: '',
+  category: 'Home services',
+  price: 0,
+  duration: 60,
+  status: 'draft',
+};
+
+function statusTone(status: CatalogStatus): 'success' | 'warning' | 'neutral' {
+  if (status === 'active') return 'success';
+  if (status === 'paused') return 'warning';
+  return 'neutral';
+}
+
+export function ProviderCatalogManager() {
+  const [items, setItems] = useState<CatalogItem[]>(initialItems);
+  const [draft, setDraft] = useState<CatalogDraft>(emptyDraft);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [filter, setFilter] = useState<'all' | CatalogStatus>('all');
+
+  const visibleItems = useMemo(
+    () => items.filter((item) => filter === 'all' || item.status === filter),
+    [items, filter],
+  );
+
+  const activeCount = items.filter((item) => item.status === 'active').length;
+  const draftCount = items.filter((item) => item.status === 'draft').length;
+  const pausedCount = items.filter((item) => item.status === 'paused').length;
+
+  const openAdd = () => {
+    setEditingId(null);
+    setDraft(emptyDraft);
+    setFormOpen(true);
+  };
+
+  const openEdit = (item: CatalogItem) => {
+    setEditingId(item.id);
+    setDraft({
+      name: item.name,
+      description: item.description,
+      category: item.category,
+      price: item.price,
+      duration: item.duration,
+      status: item.status,
+    });
+    setFormOpen(true);
+  };
+
+  const closeForm = () => {
+    setEditingId(null);
+    setDraft(emptyDraft);
+    setFormOpen(false);
+  };
+
+  const saveDraft = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!draft.name.trim() || !draft.category || draft.price < 0 || draft.duration <= 0) return;
+
+    if (editingId) {
+      setItems((current) => current.map((item) => item.id === editingId ? { ...item, ...draft } : item));
+    } else {
+      setItems((current) => [{ ...draft, id: `local-${Date.now()}` }, ...current]);
+    }
+    closeForm();
+  };
+
+  const setStatus = (id: string, status: CatalogStatus) => {
+    setItems((current) => current.map((item) => item.id === id ? { ...item, status } : item));
+  };
+
+  return (
+    <ProviderShell active="/provider/services">
+      <ProviderHeading
+        eyebrow="Catalog"
+        title="Services"
+        description="Create, edit, and organize provider services in a safe development catalog before live persistence is connected."
+        action={<Button type="button" onClick={openAdd}>Add service</Button>}
+      />
+
+      <Card className="mb-6">
+        <div className="flex flex-col gap-4 p-1 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <span className="eyebrow">Phase 7C development mode</span>
+            <h2 className="mt-1 text-xl font-semibold">Catalog controls are local preview state</h2>
+            <p className="mt-1 max-w-2xl text-sm text-slate-600">No Supabase service record is created or changed yet. This lets us validate the full provider catalog UX safely first.</p>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-center sm:min-w-72">
+            <div className="rounded-xl border p-3"><strong className="block text-lg">{activeCount}</strong><span className="text-xs text-slate-500">Active</span></div>
+            <div className="rounded-xl border p-3"><strong className="block text-lg">{draftCount}</strong><span className="text-xs text-slate-500">Draft</span></div>
+            <div className="rounded-xl border p-3"><strong className="block text-lg">{pausedCount}</strong><span className="text-xs text-slate-500">Paused</span></div>
+          </div>
+        </div>
+      </Card>
+
+      <div className="mb-5 max-w-xs">
+        <Select label="Filter services" value={filter} onChange={(event) => setFilter(event.target.value as 'all' | CatalogStatus)}>
+          <option value="all">All services</option>
+          <option value="active">Active</option>
+          <option value="draft">Draft</option>
+          <option value="paused">Paused</option>
+        </Select>
+      </div>
+
+      {formOpen ? (
+        <Card className="mb-6">
+          <form onSubmit={saveDraft} className="grid gap-5 p-1">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <span className="eyebrow">{editingId ? 'Edit service' : 'New service'}</span>
+                <h2 className="mt-1 text-2xl font-semibold">{editingId ? 'Update catalog details' : 'Add a service to your catalog'}</h2>
+              </div>
+              <Button type="button" variant="quiet" onClick={closeForm}>Close</Button>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <Input label="Service name" value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} required />
+              <Select label="Primary category" value={draft.category} onChange={(event) => setDraft((current) => ({ ...current, category: event.target.value }))}>
+                {categories.map((category) => <option key={category} value={category}>{category}</option>)}
+              </Select>
+              <Input label="Price (INR)" type="number" min="0" step="1" value={draft.price} onChange={(event) => setDraft((current) => ({ ...current, price: Number(event.target.value) }))} required />
+              <Input label="Duration (minutes)" type="number" min="15" step="15" value={draft.duration} onChange={(event) => setDraft((current) => ({ ...current, duration: Number(event.target.value) }))} required />
+              <Select label="Service status" value={draft.status} onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value as CatalogStatus }))}>
+                <option value="draft">Draft</option>
+                <option value="active">Active</option>
+                <option value="paused">Paused</option>
+              </Select>
+            </div>
+
+            <label className="grid gap-2 text-sm font-medium">
+              About this service
+              <textarea
+                className="min-h-32 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                value={draft.description}
+                onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
+                placeholder="Describe what is included, who this service is for, and any important details."
+              />
+            </label>
+
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button type="submit">{editingId ? 'Save changes' : 'Add service'}</Button>
+              <Button type="button" variant="secondary" onClick={() => setDraft((current) => ({ ...current, status: 'draft' }))}>Save as draft</Button>
+            </div>
+          </form>
+        </Card>
+      ) : null}
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        {visibleItems.map((item) => (
+          <Card key={item.id} className="min-w-0">
+            <div className="flex min-w-0 flex-col gap-4 p-1">
+              <div className="flex min-w-0 items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <span className="eyebrow">{item.category}</span>
+                  <h2 className="mt-1 break-words text-xl font-semibold">{item.name}</h2>
+                </div>
+                <Badge tone={statusTone(item.status)}>{item.status[0].toUpperCase() + item.status.slice(1)}</Badge>
+              </div>
+
+              <p className="break-words text-sm text-slate-600">{item.description || 'No description added yet.'}</p>
+
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <div className="rounded-xl border p-3"><span className="block text-xs text-slate-500">Price</span><strong>INR {item.price.toLocaleString('en-IN')}</strong></div>
+                <div className="rounded-xl border p-3"><span className="block text-xs text-slate-500">Duration</span><strong>{item.duration} min</strong></div>
+                <div className="col-span-2 rounded-xl border p-3 sm:col-span-1"><span className="block text-xs text-slate-500">Visibility</span><strong>{item.status === 'active' ? 'Catalog visible' : item.status === 'paused' ? 'Temporarily hidden' : 'Not published'}</strong></div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="secondary" onClick={() => openEdit(item)}>Edit</Button>
+                {item.status !== 'active' ? <Button type="button" onClick={() => setStatus(item.id, 'active')}>Activate</Button> : null}
+                {item.status === 'active' ? <Button type="button" variant="quiet" onClick={() => setStatus(item.id, 'paused')}>Pause</Button> : null}
+                {item.status !== 'draft' ? <Button type="button" variant="quiet" onClick={() => setStatus(item.id, 'draft')}>Move to draft</Button> : null}
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {!visibleItems.length ? <Card><div className="p-5 text-center"><h2 className="text-xl font-semibold">No services in this state</h2><p className="mt-2 text-sm text-slate-600">Change the filter or add a new service.</p></div></Card> : null}
+
+      <p className="provider-fixture-note mt-4">Phase 7C currently validates catalog UX only. Database persistence, authorization, and publication APIs remain unchanged.</p>
+    </ProviderShell>
+  );
+}
