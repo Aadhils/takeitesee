@@ -34,7 +34,7 @@ export default function AuthenticatedAccount() {
   if (!user) {
     return (
       <div className="account-page-heading">
-        <span className="eyebrow">TakeItSee account</span>
+        <span className="eyebrow">takeitesee account</span>
         <h1>Your account</h1>
         <p>Sign in to view your development account and bookings.</p>
         <div className="account-actions">
@@ -53,7 +53,7 @@ export default function AuthenticatedAccount() {
 
   return (
     <div className="account-page-heading">
-      <span className="eyebrow">TakeItSee account</span>
+      <span className="eyebrow">takeitesee account</span>
       <h1>Welcome, {user.name.split(' ')[0]}.</h1>
       <p>{isSupabaseConfigured() ? 'Your Supabase account session is active.' : 'Your local development session is active. This session is not production authentication.'}</p>
 
@@ -79,7 +79,7 @@ export default function AuthenticatedAccount() {
       </div>
 
       <Card className="account-provider-entry">
-        <span className="eyebrow">Offer services on TakeItSee</span>
+        <span className="eyebrow">Offer services on takeitesee</span>
         <h2>Grow from customer to provider.</h2>
         <p>Create a professional profile for your own services or register a business workspace for a team. This development flow saves a local draft only and does not change live roles or verification.</p>
         <div className="account-actions">
