@@ -16,7 +16,7 @@ export default function Home() {
       <section className="hero-grid hero-centered">
         <div className="hero-copy hero-centered-copy">
           <div className="hero-logo-wrap">
-            <img className="hero-logo" src="/official-takeitesee-logo.png" alt="TakeItSee" />
+            <img className="hero-logo" src="/official-takeitesee-logo.png" alt="takeitesee" />
           </div>
           <span className="hero-eyebrow">A better way to find help</span>
           <h1>Find the right service<br />for the <span className="text-accent">next thing you need.</span></h1>
