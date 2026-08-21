@@ -1,5 +1,5 @@
-import { ProviderServices } from '../../../components/provider/ProviderPresentation';
+import { ProviderCatalogManager } from '../../../components/provider/ProviderCatalogManager';
 
 export default function ProviderServicesRoute() {
-  return <ProviderServices />;
+  return <ProviderCatalogManager />;
 }
