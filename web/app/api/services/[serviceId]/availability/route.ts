@@ -37,7 +37,6 @@ function dateLabel(date: Date) {
 function candidateEpoch(date: string, totalMinutes: number, timezone: string) {
   const hh = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
   const mm = String(totalMinutes % 60).padStart(2, '0');
-  // Phase 9 currently supports the configured India marketplace timezone.
   const offset = timezone === 'Asia/Kolkata' ? '+05:30' : 'Z';
   return new Date(`${date}T${hh}:${mm}:00${offset}`).getTime();
 }
@@ -49,11 +48,11 @@ export async function GET(_request: Request, context: RouteContext) {
 
     const { data: service, error: serviceError } = await supabase
       .from('services')
-      .select('id,duration_minutes,provider_type,professional_id,business_id,status')
+      .select('id,duration_minutes,provider_type,professional_id,business_id,active')
       .eq('id', serviceId)
       .maybeSingle();
     if (serviceError) throw new Error(serviceError.message);
-    if (!service || service.status !== 'active') throw new Error('This service is not available for booking.');
+    if (!service || service.active === false) throw new Error('This service is not available for booking.');
 
     const [{ data: setting, error: settingError }, { data: windows, error: windowsError }, { data: blackouts, error: blackoutsError }] = await Promise.all([
       supabase.from('service_availability').select('mode,timezone').eq('service_id', serviceId).maybeSingle(),
@@ -97,7 +96,7 @@ export async function GET(_request: Request, context: RouteContext) {
       const ranges = mode === 'scheduled'
         ? windowRows.filter((row) => row.day_of_week === weekday).map((row) => [minutes(row.start_time), minutes(row.end_time)] as const)
         : [[9 * 60, 18 * 60] as const];
-      const slots: Array<{ time: string; value: string; available: boolean; reason?: string }> = [];
+      const slots: Array<{ time: string; available: boolean; reason?: string }> = [];
 
       for (const [rangeStart, rangeEnd] of ranges) {
         for (let slotStart = rangeStart; slotStart + duration <= rangeEnd; slotStart += SLOT_STEP_MINUTES) {
@@ -111,7 +110,7 @@ export async function GET(_request: Request, context: RouteContext) {
             const existingEnd = existingStart + Number(booking.duration_minutes);
             return slotStart < existingEnd && slotEnd > existingStart;
           });
-          slots.push({ time: timeLabel(slotStart), value: `${String(Math.floor(slotStart / 60)).padStart(2, '0')}:${String(slotStart % 60).padStart(2, '0')}`, available: !blackout && !conflict, reason: blackout ? 'Provider blackout' : conflict ? 'Already booked' : undefined });
+          slots.push({ time: timeLabel(slotStart), available: !blackout && !conflict, reason: blackout ? 'Provider blackout' : conflict ? 'Already booked' : undefined });
         }
       }
 
