@@ -1,5 +1,5 @@
-import { ProviderBookingList } from '../../../components/provider/ProviderPresentation';
+import ProviderBookingsManager from '../../../components/provider/ProviderBookingsManager';
 
 export default function ProviderBookingsRoute() {
-  return <ProviderBookingList />;
+  return <ProviderBookingsManager />;
 }
