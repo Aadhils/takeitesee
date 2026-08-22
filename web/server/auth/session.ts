@@ -1,4 +1,5 @@
 import type { EntityId } from '../../types/entities';
+import type { PlatformRole } from '../../types/ownership';
 import type { ServerCustomerSession } from '../../types/production-domain';
 import { assertProductionBackendConfigured } from '../config';
 import { createSupabaseServerClient } from '../../lib/supabase/server';
@@ -24,7 +25,7 @@ export const productionAuthProvider: ServerAuthProvider = {
       .maybeSingle();
     if (profileError) throw new Error(profileError.message);
 
-    const roles: ServerCustomerSession['roles'] = [];
+    const roles: PlatformRole[] = [];
     const storedRole = profile?.role;
     if (storedRole === 'admin') roles.push('admin');
     if (storedRole === 'professional') roles.push('professional');
