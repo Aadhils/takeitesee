@@ -4,7 +4,7 @@ import type { CreateBookingInput } from './repository';
 
 type AvailabilityMode = 'always_available' | 'on_request' | 'scheduled';
 
-const BLOCKING_STATUSES = ['pending', 'confirmed', 'accepted', 'scheduled', 'in_progress', 'completion_pending'];
+const BLOCKING_STATUSES = ['pending', 'confirmed', 'rescheduled'];
 
 function minutes(value: string) {
   const [hour, minute] = value.slice(0, 5).split(':').map(Number);
