@@ -1,0 +1,21 @@
+import { NextResponse } from 'next/server';
+import { productionAuthProvider } from '../../../../../server/auth/session';
+import { productionProviderBookingRepository } from '../../../../../server/provider-bookings/repository';
+import type { EntityId } from '../../../../../types/entities';
+
+export const runtime = 'nodejs';
+
+export async function PATCH(request: Request, context: { params: Promise<{ bookingId: string }> }) {
+  try {
+    const session = await productionAuthProvider.requireProvider(request);
+    const { bookingId } = await context.params;
+    const body = await request.json() as { action?: 'accept' | 'decline' };
+    if (!body.action || !['accept', 'decline'].includes(body.action)) {
+      return NextResponse.json({ error: 'A valid provider action is required.' }, { status: 400 });
+    }
+    const booking = await productionProviderBookingRepository.updateStatus(session, bookingId as EntityId, body.action);
+    return NextResponse.json({ booking });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to update booking.' }, { status: 400 });
+  }
+}
