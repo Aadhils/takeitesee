@@ -33,10 +33,10 @@ type ProviderOwner =
 async function resolveOwner(session: ServerCustomerSession): Promise<ProviderOwner> {
   const supabase = await createSupabaseServerClient();
   if (session.roles.includes('professional')) {
-    const { data, error } = await supabase.from('professional_profiles').select('id,display_name').eq('user_id', session.user_id).maybeSingle();
+    const { data, error } = await supabase.from('professional_profiles').select('id,headline').eq('user_id', session.user_id).maybeSingle();
     if (error) throw new Error(error.message);
     if (!data) throw new Error('Professional profile is required.');
-    return { provider_type: 'professional', provider_id: data.id as EntityId, provider_name: (data.display_name as string | null) || 'Professional' };
+    return { provider_type: 'professional', provider_id: data.id as EntityId, provider_name: (data.headline as string | null) || 'Professional' };
   }
   if (session.roles.includes('business_owner')) {
     const { data, error } = await supabase.from('businesses').select('id,name').eq('owner_user_id', session.user_id).limit(1).maybeSingle();
