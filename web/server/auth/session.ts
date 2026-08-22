@@ -1,4 +1,5 @@
 import type { EntityId } from '../../types/entities';
+import type { PlatformRole } from '../../types/ownership';
 import type { ServerCustomerSession } from '../../types/production-domain';
 import { assertProductionBackendConfigured } from '../config';
 import { createSupabaseServerClient } from '../../lib/supabase/server';
@@ -9,17 +10,56 @@ export interface ServerAuthProvider {
   requireProvider(request: Request): Promise<ServerCustomerSession>;
 }
 
-/** Production boundary. Wire this to the selected OIDC/Supabase/Auth.js provider. */
+/** Production boundary backed by Supabase auth plus owned provider records. */
 export const productionAuthProvider: ServerAuthProvider = {
   async getSession(_request: Request) {
     assertProductionBackendConfigured();
     const supabase = await createSupabaseServerClient();
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error || !user) return null;
-    const { data: profile, error: profileError } = await supabase.from('users').select('role').eq('id', user.id).maybeSingle();
+
+    const { data: profile, error: profileError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
     if (profileError) throw new Error(profileError.message);
-    const role = profile?.role === 'admin' ? 'admin' : profile?.role === 'professional' ? 'professional' : profile?.role === 'business' ? 'business_owner' : 'customer';
-    return { user_id: user.id as EntityId, roles: [role], expires_at: new Date(Date.now() + 60 * 60 * 1000) };
+
+    const roles: PlatformRole[] = [];
+    const storedRole = profile?.role;
+    if (storedRole === 'admin') roles.push('admin');
+    if (storedRole === 'professional') roles.push('professional');
+    if (storedRole === 'business') roles.push('business_owner');
+
+    if (!roles.includes('professional')) {
+      const { data: professional, error: professionalError } = await supabase
+        .from('professional_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1)
+        .maybeSingle();
+      if (professionalError) throw new Error(professionalError.message);
+      if (professional) roles.push('professional');
+    }
+
+    if (!roles.includes('business_owner')) {
+      const { data: business, error: businessError } = await supabase
+        .from('businesses')
+        .select('id')
+        .eq('owner_user_id', user.id)
+        .limit(1)
+        .maybeSingle();
+      if (businessError) throw new Error(businessError.message);
+      if (business) roles.push('business_owner');
+    }
+
+    if (!roles.includes('customer')) roles.push('customer');
+
+    return {
+      user_id: user.id as EntityId,
+      roles,
+      expires_at: new Date(Date.now() + 60 * 60 * 1000),
+    };
   },
   async requireCustomer(request: Request) {
     const session = await this.getSession(request);
@@ -28,7 +68,9 @@ export const productionAuthProvider: ServerAuthProvider = {
   },
   async requireProvider(request: Request) {
     const session = await this.getSession(request);
-    if (!session || (!session.roles.includes('professional') && !session.roles.includes('business_owner'))) throw new Error('Provider authentication required.');
+    if (!session || (!session.roles.includes('professional') && !session.roles.includes('business_owner'))) {
+      throw new Error('Provider authentication required.');
+    }
     return session;
   },
 };
