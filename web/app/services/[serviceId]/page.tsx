@@ -1,9 +1,6 @@
 import { notFound } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
-import { ServiceDetail } from '../../../components/detail/DetailPresentation';
-import { discoveryCategories } from '../../../data/discovery-fixtures';
-
-const text = (value: string) => ({ default_locale: 'en' as const, values: { en: value } });
+import LiveServiceDetail from '../../../components/detail/LiveServiceDetail';
 
 export default async function ServiceDetailPage({ params }: { params: Promise<{ serviceId: string }> }) {
   const { serviceId } = await params;
@@ -35,39 +32,34 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
   const reviews = (reviewRows ?? []).map((review: any) => ({
     id: review.id,
     reviewer_name: review.users?.name || 'Customer',
-    rating: review.rating,
+    rating: Number(review.rating),
     comment: review.comment || '',
     date: new Date(review.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
     verified_booking: true,
   }));
-  const rating = reviews.length ? reviews.reduce((sum: number, review: any) => sum + Number(review.rating), 0) / reviews.length : 0;
-
-  const categorySlug = String(row.category || 'other').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  const category = discoveryCategories.find((item) => item.slug === categorySlug);
+  const rating = reviews.length ? reviews.reduce((sum: number, review: any) => sum + review.rating, 0) / reviews.length : 0;
   const providerName = row.provider_type === 'business' ? provider.name : provider.headline;
+  const providerDescription = provider.description || '';
   const providerLocation = row.provider_type === 'business' ? provider.location : provider.service_area;
 
-  const service: any = {
+  const service = {
     id: row.id,
-    category_id: category?.id ?? categorySlug,
-    service_name: text(row.name),
-    description: text(row.description || ''),
-    pricing: { base_price: { amount: Math.round(Number(row.base_price || 0) * 100), currency: row.currency || 'INR' }, pricing_model: 'fixed' },
+    name: row.name,
+    description: row.description || '',
+    category: row.category || 'Service',
     provider_name: providerName || 'Provider',
-    provider_type: row.provider_type,
+    provider_type: row.provider_type as 'professional' | 'business',
     provider_id: row.business_id || row.professional_id || row.id,
+    provider_description: providerDescription,
     location: row.location || providerLocation || '',
-    availability: 'Available today',
+    service_area: providerLocation || row.location || '',
+    duration_minutes: row.duration_minutes || 0,
+    base_price: Number(row.base_price || 0),
+    currency: row.currency || 'INR',
+    verified: true,
     rating,
     review_count: reviews.length,
-    verified: true,
-    duration_minutes: row.duration_minutes || 0,
-    service_area: providerLocation || row.location || '',
-    long_description: row.description || '',
-    highlights: [],
-    inclusions: [],
-    policy: 'Cancellation and rescheduling terms are confirmed during booking.',
   };
 
-  return <ServiceDetail service={service} reviews={reviews} />;
+  return <LiveServiceDetail service={service} reviews={reviews} />;
 }
