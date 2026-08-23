@@ -72,6 +72,13 @@ function mapBooking(row: Record<string, unknown>, owner: ProviderOwner): Provide
   };
 }
 
+async function ownedBookingQuery(owner: ProviderOwner, bookingId: EntityId) {
+  const supabase = await createSupabaseServerClient();
+  let query = supabase.from('bookings').select('*').eq('id', bookingId);
+  query = owner.provider_type === 'professional' ? query.eq('professional_id', owner.provider_id) : query.eq('business_id', owner.provider_id);
+  return query.maybeSingle();
+}
+
 export const productionProviderBookingRepository = {
   async list(session: ServerCustomerSession): Promise<ProviderBookingRecord[]> {
     assertProductionBackendConfigured();
@@ -84,16 +91,25 @@ export const productionProviderBookingRepository = {
     return (data ?? []).map((row) => mapBooking(row as Record<string, unknown>, owner));
   },
 
-  async updateStatus(session: ServerCustomerSession, bookingId: EntityId, action: 'accept' | 'decline'): Promise<ProviderBookingRecord> {
+  async getById(session: ServerCustomerSession, bookingId: EntityId): Promise<ProviderBookingRecord | null> {
+    assertProductionBackendConfigured();
+    const owner = await resolveOwner(session);
+    const { data, error } = await ownedBookingQuery(owner, bookingId);
+    if (error) throw new Error(error.message);
+    return data ? mapBooking(data as Record<string, unknown>, owner) : null;
+  },
+
+  async updateStatus(session: ServerCustomerSession, bookingId: EntityId, action: 'accept' | 'decline' | 'complete'): Promise<ProviderBookingRecord> {
     assertProductionBackendConfigured();
     const owner = await resolveOwner(session);
     const supabase = await createSupabaseServerClient();
-    const nextStatus: ProductionBookingStatus = action === 'accept' ? 'confirmed' : 'cancelled';
-    let query = supabase.from('bookings').update({ status: nextStatus, updated_at: new Date().toISOString() }).eq('id', bookingId).eq('status', 'pending');
+    const expectedStatus: ProductionBookingStatus = action === 'complete' ? 'confirmed' : 'pending';
+    const nextStatus: ProductionBookingStatus = action === 'accept' ? 'confirmed' : action === 'complete' ? 'completed' : 'cancelled';
+    let query = supabase.from('bookings').update({ status: nextStatus, updated_at: new Date().toISOString() }).eq('id', bookingId).eq('status', expectedStatus);
     query = owner.provider_type === 'professional' ? query.eq('professional_id', owner.provider_id) : query.eq('business_id', owner.provider_id);
     const { data, error } = await query.select('*').maybeSingle();
     if (error) throw new Error(error.message);
-    if (!data) throw new Error('Booking was not found, is no longer pending, or is not owned by this provider.');
+    if (!data) throw new Error(`Booking was not found, is no longer ${expectedStatus}, or is not owned by this provider.`);
     return mapBooking(data as Record<string, unknown>, owner);
   },
 };
