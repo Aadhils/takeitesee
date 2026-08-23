@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Badge, Card, EmptyState } from '../ui/primitives';
 import { ProviderDashboardSummary, ProviderHeading, ProviderShell } from './ProviderPresentation';
 
-type Profile = { display_name: string; business_name: string; provider_type: string; verification: string; active_services: number; total_services: number; service_area: string };
+type Profile = { display_name: string; provider_type: string; verified: boolean; services_active: number; services_total: number; location: string };
 type Earnings = { currency: string; available_balance: number; pending_earnings: number; total_earnings: number; total_completed_count: number };
 type Booking = { id: string; booking_reference: string; service_name?: string; status: string; payment_status?: string; booking_date?: string | null; booking_time?: string | null; quoted_price?: number | null; currency?: string | null };
 
@@ -60,9 +60,9 @@ export default function ProviderDashboardManager() {
       </div>
       <div className="provider-profile-grid">
         <Card className="provider-profile-card">
-          <div className="section-heading"><div><span className="eyebrow">Live provider</span><h2>{profile.business_name}</h2></div><Badge tone="success">{profile.verification}</Badge></div>
-          <p>{profile.provider_type === 'business' ? 'Business provider' : 'Professional provider'} · {profile.service_area || 'Service area not set'}</p>
-          <div className="provider-profile-services"><div><strong>Active services</strong><span>{profile.active_services} of {profile.total_services}</span></div><div><strong>Total earnings</strong><span>{money(earnings.total_earnings, currency)}</span></div></div>
+          <div className="section-heading"><div><span className="eyebrow">Live provider</span><h2>{profile.display_name}</h2></div><Badge tone={profile.verified ? 'success' : 'warning'}>{profile.verified ? 'Verified' : 'Unverified'}</Badge></div>
+          <p>{profile.provider_type === 'business' ? 'Business provider' : 'Professional provider'} · {profile.location || 'Service area not set'}</p>
+          <div className="provider-profile-services"><div><strong>Active services</strong><span>{profile.services_active} of {profile.services_total}</span></div><div><strong>Total earnings</strong><span>{money(earnings.total_earnings, currency)}</span></div></div>
           <Link href="/provider/profile" className="text-link">View live profile</Link>
         </Card>
         <Card className="provider-profile-card">
