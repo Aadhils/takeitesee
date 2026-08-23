@@ -15,6 +15,42 @@ function matchingOption(value: string | null, options: string[], fallback: strin
   return normalized ? options.find((option) => option.toLowerCase() === normalized) ?? value!.trim() : fallback;
 }
 
+function localized(value: unknown) {
+  if (typeof value === 'string') return value;
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, any>;
+    return record.en ?? record.values?.en ?? record.values?.[record.default_locale] ?? '';
+  }
+  return '';
+}
+
+function normalizeService(service: MarketplaceService) {
+  const categorySlug = service.category_slug || service.category_id || 'other';
+  const category = discoveryCategories.find((item) => item.slug === categorySlug);
+  return {
+    ...service,
+    provider_id: service.provider_id || service.business_id || service.professional_id || service.id,
+    service_name: { default_locale: 'en', values: { en: localized(service.service_name) } },
+    description: { default_locale: 'en', values: { en: localized(service.description) } },
+    category_id: category?.id ?? categorySlug,
+    category_slug: categorySlug,
+    pricing: {
+      base_price: service.pricing?.base_price ?? { amount: 0, currency: 'INR' },
+      pricing_model: service.pricing?.pricing_model ?? 'fixed',
+    },
+    availability: service.availability === 'Remote delivery' || service.availability === 'Next available tomorrow' ? service.availability : 'Available today',
+    rating: Number(service.rating || 0),
+    review_count: Number(service.review_count || 0),
+    verified: Boolean(service.verified),
+    duration_minutes: Number(service.duration_minutes || 0),
+    service_area: service.service_area || service.location || '',
+    long_description: localized(service.description),
+    highlights: [],
+    inclusions: [],
+    policy: '',
+  };
+}
+
 export default function ExplorePage() {
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<DiscoveryFilters>(defaultDiscoveryFilters);
@@ -48,7 +84,7 @@ export default function ExplorePage() {
         const response = await fetch('/api/marketplace/services', { cache: 'no-store' });
         if (!response.ok) throw new Error('Marketplace catalog unavailable');
         const payload = await response.json();
-        if (!cancelled) setServices(Array.isArray(payload.services) ? payload.services : []);
+        if (!cancelled) setServices(Array.isArray(payload.services) ? payload.services.map(normalizeService) : []);
       } catch (error) {
         if (!cancelled) setLoadError(error instanceof Error ? error.message : 'Unable to load services');
       } finally { if (!cancelled) setLoading(false); }
@@ -72,7 +108,7 @@ export default function ExplorePage() {
 
   const filteredServices = useMemo(() => services
     .filter((service) => filters.category === 'all' || service.category_slug === filters.category)
-    .filter((service) => !query.trim() || `${service.service_name?.en ?? service.service_name ?? ''} ${service.provider_name ?? ''} ${service.description?.en ?? service.description ?? ''} ${service.location ?? ''} ${service.service_area ?? ''}`.toLowerCase().includes(query.trim().toLowerCase()))
+    .filter((service) => !query.trim() || `${localized(service.service_name)} ${service.provider_name ?? ''} ${localized(service.description)} ${service.location ?? ''} ${service.service_area ?? ''}`.toLowerCase().includes(query.trim().toLowerCase()))
     .filter((service) => filters.location === 'Anywhere' || `${service.location ?? ''} ${service.service_area ?? ''}`.toLowerCase().includes(filters.location.toLowerCase()))
     .filter((service) => filters.price === 'any' || (filters.price === 'under-1000' && service.pricing.base_price.amount < 100000) || (filters.price === '1000-5000' && service.pricing.base_price.amount >= 100000 && service.pricing.base_price.amount <= 500000) || (filters.price === 'over-5000' && service.pricing.base_price.amount > 500000))
     .filter((service) => filters.rating === 'any' || (filters.rating === '4-plus' && service.rating >= 4) || (filters.rating === '4.5-plus' && service.rating >= 4.5))
