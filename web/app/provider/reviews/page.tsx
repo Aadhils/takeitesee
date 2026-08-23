@@ -1,5 +1,5 @@
-import { ProviderReviews } from '../../../components/provider/ProviderPresentation';
+import ProviderReviewsManager from '../../../components/provider/ProviderReviewsManager';
 
 export default function ProviderReviewsRoute() {
-  return <ProviderReviews />;
+  return <ProviderReviewsManager />;
 }
