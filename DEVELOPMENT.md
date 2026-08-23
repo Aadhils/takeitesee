@@ -1,18 +1,20 @@
-Phase 1 — Safe Foundation
+# take it eSee — Development
 
-Purpose
-- Prepare a safe, non-destructive development foundation for TakeItEsee development.
-- Preserve the existing coming-soon site exactly as-is on the default branch.
+## Active application
 
-What this adds
-- EditorConfig, Prettier, ESLint config and `package.json` scripts for future tooling.
-- `.gitignore` entries to avoid committing local files.
-- This file describing Phase 1 guidelines.
+The active application lives in `web/` and is deployed to Vercel.
 
-Rules
-- Do not modify `index.html`, `styles.css`, `script.js`, or `official-takeitesee-logo.png` without explicit approval.
-- Do not push or deploy changes until Phase 2 approval.
+## Production
 
-Next steps (Phase 2 preview)
-- Scaffold app folder structure (`/web`, `/api`) and CI when approved.
-- Add build tooling, tests, and dependency installs after review.
+- Primary production domain: `takeitesee.com`
+- `www.takeitesee.com` may redirect to the primary domain.
+- The former standalone Coming Soon page is retired from the active branch.
+
+## Workflow
+
+- `main` is the production branch.
+- New work should be developed on feature branches.
+- Verify feature-branch previews before promoting changes to `main`.
+- After a production deploy, validate the change directly on `takeitesee.com`.
+
+The retired Coming Soon implementation remains recoverable from Git history if ever needed.
