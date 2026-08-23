@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card, EmptyState, Select } from '../ui/primitives';
 import { ProviderHeading, ProviderShell } from './ProviderPresentation';
@@ -65,30 +66,21 @@ export default function ProviderBookingsManager() {
     setError('');
     try {
       const response = await fetch(`/api/provider/bookings/${encodeURIComponent(bookingId)}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }),
       });
       const payload = await response.json() as { booking?: ProviderBooking; error?: string };
       if (!response.ok || !payload.booking) throw new Error(payload.error ?? 'Unable to update booking.');
       setItems((current) => current.map((booking) => booking.id === bookingId ? payload.booking! : booking));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to update booking.');
-    } finally {
-      setBusyId(null);
-    }
+    } finally { setBusyId(null); }
   };
 
   return <ProviderShell active="/provider/bookings">
     <ProviderHeading eyebrow="Operations" title="Bookings" description="Review real incoming customer bookings and respond from the provider workspace." />
     <div className="provider-toolbar">
       <Select label="Filter bookings" value={filter} onChange={(event) => setFilter(event.target.value)}>
-        <option value="all">All statuses</option>
-        <option value="pending">Pending requests</option>
-        <option value="confirmed">Confirmed</option>
-        <option value="rescheduled">Rescheduled</option>
-        <option value="completed">Completed</option>
-        <option value="cancelled">Cancelled</option>
+        <option value="all">All statuses</option><option value="pending">Pending requests</option><option value="confirmed">Confirmed</option><option value="rescheduled">Rescheduled</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option>
       </Select>
       <span className="provider-fixture-note">{pendingCount} pending request{pendingCount === 1 ? '' : 's'}</span>
     </div>
@@ -97,14 +89,10 @@ export default function ProviderBookingsManager() {
       {visible.map((booking) => <Card className="provider-booking-card" key={booking.id}>
         <div className="provider-booking-top"><div><span className="eyebrow">{booking.booking_reference}</span><h2>{booking.service_name}</h2></div><Badge tone={statusTone(booking.status)}>{booking.status}</Badge></div>
         <p className="provider-service-name">Customer booking · {booking.provider_name}</p>
-        <dl className="provider-booking-details">
-          <div><dt>When</dt><dd>{booking.booking_date}, {booking.start_time} {booking.timezone}</dd></div>
-          <div><dt>Duration</dt><dd>{booking.duration_minutes} minutes</dd></div>
-          <div><dt>Location</dt><dd>{booking.location}</dd></div>
-          <div><dt>Value</dt><dd>{money(booking)}</dd></div>
-        </dl>
+        <dl className="provider-booking-details"><div><dt>When</dt><dd>{booking.booking_date}, {booking.start_time} {booking.timezone}</dd></div><div><dt>Duration</dt><dd>{booking.duration_minutes} minutes</dd></div><div><dt>Location</dt><dd>{booking.location}</dd></div><div><dt>Value</dt><dd>{money(booking)}</dd></div></dl>
         {booking.customer_notes ? <p className="provider-customer-note">Customer note: {booking.customer_notes}</p> : null}
         <div className="provider-booking-footer"><Badge tone="neutral">Payment {booking.payment_status}</Badge><div className="provider-actions">
+          <Link className="button button-secondary" href={`/provider/bookings/${encodeURIComponent(booking.id)}`}>View details</Link>
           {booking.status === 'pending' ? <><Button type="button" variant="secondary" disabled={busyId === booking.id} onClick={() => void act(booking.id, 'accept')}>{busyId === booking.id ? 'Updating…' : 'Accept'}</Button><Button type="button" variant="quiet" disabled={busyId === booking.id} onClick={() => void act(booking.id, 'decline')}>Decline</Button></> : null}
         </div></div>
       </Card>)}
