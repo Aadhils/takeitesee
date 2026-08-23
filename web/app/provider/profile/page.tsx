@@ -1,5 +1,5 @@
-import { ProviderProfile } from '../../../components/provider/ProviderPresentation';
+import ProviderProfileManager from '../../../components/provider/ProviderProfileManager';
 
 export default function ProviderProfileRoute() {
-  return <ProviderProfile />;
+  return <ProviderProfileManager />;
 }
