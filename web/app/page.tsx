@@ -1,13 +1,12 @@
 import Link from 'next/link';
 import HomepageSearchForm from '../components/discovery/HomepageSearchForm';
-import { discoveryCategories } from '../data/discovery-fixtures';
 
-const homepageCategories = [
-  { slug: 'home-repair', title: 'Home & Repair', description: 'Practical help for the spaces you live in.', icon: '⌂' },
-  { slug: 'business-help', title: 'Business Help', description: 'Specialists to help your work move forward.', icon: '▦' },
-  { slug: 'technology', title: 'Tech & Digital', description: 'Reliable support for your digital life.', icon: '◇' },
-  { slug: 'learning', title: 'Learning & Tuition', description: 'Tutors, coaches, and mentors for every goal.', icon: '↗' },
-  { slug: 'wellness', title: 'Health & Wellness', description: 'Make time for your health and wellbeing.', icon: '✦' },
+const marketplacePaths = [
+  { query: 'home', title: 'Home services', description: 'Cleaning, inspection, repair, and practical help for your space.', icon: '⌂' },
+  { query: 'business', title: 'Business services', description: 'Find support for business, operations, and professional needs.', icon: '▦' },
+  { query: 'technology', title: 'Tech & digital', description: 'Browse active technology and digital service listings.', icon: '◇' },
+  { query: 'learning', title: 'Learning', description: 'Explore tutoring, coaching, and learning services when available.', icon: '↗' },
+  { query: '', title: 'All live services', description: 'See the full marketplace catalog currently published on takeitesee.', icon: '✦' },
 ];
 
 export default function Home() {
@@ -20,26 +19,26 @@ export default function Home() {
           </div>
           <span className="hero-eyebrow">A better way to find help</span>
           <h1>Find the right service<br />for the <span className="text-accent">next thing you need.</span></h1>
-          <p className="hero-lede">Discover trusted professionals and businesses, compare what fits, and move from question to done with less friction.</p>
+          <p className="hero-lede">Search the live marketplace, compare published services, and book with verified providers as the catalog grows.</p>
           <HomepageSearchForm />
-          <div className="hero-trust-row" aria-label="Trust indicators">
-            <span><b aria-hidden="true">✓</b><strong>Verified professionals</strong><small>Quality you can trust</small></span>
-            <span><b aria-hidden="true">◷</b><strong>Transparent reviews</strong><small>Real feedback, real people</small></span>
-            <span><b aria-hidden="true">◇</b><strong>Secure and safe</strong><small>Your safety, our priority</small></span>
-            <span><b aria-hidden="true">✦</b><strong>Thousands of services</strong><small>All in one place</small></span>
+          <div className="hero-trust-row" aria-label="Marketplace information">
+            <span><b aria-hidden="true">✓</b><strong>Verified providers</strong><small>Live listings require verification</small></span>
+            <span><b aria-hidden="true">◷</b><strong>Published reviews</strong><small>Ratings come from approved reviews</small></span>
+            <span><b aria-hidden="true">◇</b><strong>Live booking data</strong><small>Availability is checked during booking</small></span>
+            <span><b aria-hidden="true">✦</b><strong>Growing catalog</strong><small>Only active services are shown</small></span>
           </div>
         </div>
       </section>
 
       <section className="section-block homepage-categories" aria-labelledby="category-heading">
-        <div className="category-heading-centered"><span className="eyebrow">Popular near you</span><h2 id="category-heading">Explore services by category</h2><p>Top categories people are using right now</p></div>
+        <div className="category-heading-centered"><span className="eyebrow">Live marketplace</span><h2 id="category-heading">Explore active services</h2><p>These shortcuts search the services currently published in the marketplace.</p></div>
         <div className="homepage-category-grid">
-          {homepageCategories.map((item, index) => {
-            const category = discoveryCategories.find((entry) => entry.slug === item.slug);
-            return category ? <Link href={`/explore?category=${category.slug}`} className={`homepage-category-card category-accent-${index + 1}`} key={category.id}><span className="homepage-category-icon" aria-hidden="true">{item.icon}</span><strong>{item.title}</strong><p>{item.description}</p><span className="homepage-category-link">Explore services <span aria-hidden="true">-&gt;</span></span></Link> : null;
+          {marketplacePaths.map((item, index) => {
+            const href = item.query ? `/explore?q=${encodeURIComponent(item.query)}` : '/explore';
+            return <Link href={href} className={`homepage-category-card category-accent-${index + 1}`} key={item.title}><span className="homepage-category-icon" aria-hidden="true">{item.icon}</span><strong>{item.title}</strong><p>{item.description}</p><span className="homepage-category-link">Explore services <span aria-hidden="true">-&gt;</span></span></Link>;
           })}
         </div>
-        <Link href="/categories" className="category-view-all">View all categories <span aria-hidden="true">-&gt;</span></Link>
+        <Link href="/explore" className="category-view-all">Browse live marketplace <span aria-hidden="true">-&gt;</span></Link>
       </section>
     </div>
   );
