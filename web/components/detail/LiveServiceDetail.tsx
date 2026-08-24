@@ -34,7 +34,7 @@ function Stars({ rating, count }: { rating: number; count: number }) {
 }
 
 export default function LiveServiceDetail({ service, reviews }: { service: LiveService; reviews: Review[] }) {
-  const providerHref = service.provider_type === 'professional' ? `/professionals/${service.provider_id}` : '/businesses';
+  const providerHref = service.provider_type === 'professional' ? `/professionals/${service.provider_id}` : `/businesses/${service.provider_id}`;
   const bookingHref = `/services/${service.id}/booking`;
   const counts = [5, 4, 3, 2, 1].map((star) => ({ star, count: reviews.filter((review) => Math.round(review.rating) === star).length }));
 
@@ -47,12 +47,12 @@ export default function LiveServiceDetail({ service, reviews }: { service: LiveS
 
       <section className="detail-section"><span className="eyebrow">About the service</span><h2>Service details</h2><p className="detail-copy">{service.description || 'The provider will confirm the final scope and timing before the booking is accepted.'}</p></section>
 
-      <section className="detail-section"><span className="eyebrow">Policies</span><h2>Cancellation and rescheduling</h2><p className="detail-copy">Cancellation and rescheduling terms will be confirmed during booking before final confirmation.</p></section>
+      <section className="detail-section"><span className="eyebrow">Policies</span><h2>Cancellation and rescheduling</h2><p className="detail-copy">Cancellation and rescheduling terms will be shown during booking before you confirm your request.</p></section>
 
       <section className="detail-section" aria-labelledby="reviews-heading"><div className="section-heading"><div><span className="eyebrow">Customer voice</span><h2 id="reviews-heading">Reviews</h2></div><Stars rating={service.rating} count={service.review_count} /></div>{reviews.length ? <><div className="review-summary"><strong>{service.rating.toFixed(1)} <span aria-hidden="true">★</span></strong><div className="rating-bars">{counts.map(({ star, count }) => { const pct = reviews.length ? Math.round((count / reviews.length) * 100) : 0; return <span key={star}><i style={{ width: `${pct}%` }} />{star} <small>{pct}%</small></span>; })}</div></div><div className="review-list">{reviews.map((review) => <Card className="review-card" key={review.id}><div className="review-card-top"><strong>{review.reviewer_name}</strong><span>{review.date}</span></div><Stars rating={review.rating} count={0} />{review.verified_booking ? <Badge tone="success">Completed booking</Badge> : null}{review.comment ? <p>{review.comment}</p> : null}</Card>)}</div></> : <p className="empty-inline">No published customer reviews yet.</p>}</section>
     </main>
 
-    <aside className="detail-aside"><Card className="booking-summary"><div className="section-heading"><div><span className="eyebrow">Live service</span><h2>Booking summary</h2></div><Badge tone="success">Supabase connected</Badge></div><dl><div><dt>Service</dt><dd>{service.name}</dd></div><div><dt>Provider</dt><dd>{service.provider_name}</dd></div><div><dt>Estimated price</dt><dd>{money(service.base_price, service.currency)}</dd></div></dl></Card><Link href={bookingHref} className="button button-primary detail-cta">Choose a date and time</Link></aside>
+    <aside className="detail-aside"><Card className="booking-summary"><div className="section-heading"><div><span className="eyebrow">Booking</span><h2>Booking summary</h2></div><Badge tone="success">Live service</Badge></div><dl><div><dt>Service</dt><dd>{service.name}</dd></div><div><dt>Provider</dt><dd>{service.provider_name}</dd></div><div><dt>Estimated price</dt><dd>{money(service.base_price, service.currency)}</dd></div></dl></Card><Link href={bookingHref} className="button button-primary detail-cta">Choose a date and time</Link></aside>
     </div>
     <div className="mobile-sticky-cta"><Link href={bookingHref} className="button button-primary">Choose a date and time</Link></div>
   </div>;
