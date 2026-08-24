@@ -1,5 +1,5 @@
-import { NotificationsPage } from '../../components/account/AccountPresentation';
+import LiveNotificationsPage from '../../components/account/LiveNotificationsPage';
 
 export default function NotificationsRoute() {
-  return <NotificationsPage />;
+  return <LiveNotificationsPage />;
 }
