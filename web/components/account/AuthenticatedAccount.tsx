@@ -105,13 +105,12 @@ export default function AuthenticatedAccount() {
       </div>
 
       <Card className="account-provider-entry">
-        <span className="eyebrow">Offer services on takeitesee</span>
-        <h2>Grow from customer to provider.</h2>
-        <p>Create a professional profile for your own services or register a business workspace for a team.</p>
+        <span className="eyebrow">Provider workspace</span>
+        <h2>Already provide services on takeitesee?</h2>
+        <p>Open your provider workspace to manage live bookings, services, schedule, earnings, reviews, and profile details.</p>
         <div className="account-actions">
-          <Link href="/provider/onboarding?type=professional" className="button button-primary">Become a Professional</Link>
-          <Link href="/provider/onboarding?type=business" className="button button-secondary">Register a Business</Link>
-          <Link href="/provider" className="button button-quiet">Open provider workspace</Link>
+          <Link href="/provider" className="button button-primary">Open provider workspace</Link>
+          <span className="card-location">New provider registration will appear here when production onboarding is enabled.</span>
         </div>
       </Card>
     </div>
