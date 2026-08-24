@@ -1,6 +1,22 @@
-import { ProviderCard } from '../../components/discovery/MarketplaceCards';
-import { discoveryProfessionals } from '../../data/discovery-fixtures';
+import Link from 'next/link';
+import { Alert, Card } from '../../components/ui/primitives';
 
 export default function ProfessionalsPage() {
-  return <div className="discovery-page"><section className="page-intro"><span className="eyebrow">People with a craft</span><h1>Meet independent professionals.</h1><p>Compare specialties, service areas, ratings, and working styles before you take the next step.</p></section><div className="directory-toolbar"><span>3 professionals in presentation data</span><span>Verification and availability are shown as supplied profile metadata.</span></div><div className="provider-grid">{discoveryProfessionals.map((provider) => <ProviderCard provider={provider} key={provider.id} />)}</div></div>;
+  return (
+    <div className="discovery-page">
+      <section className="page-intro">
+        <span className="eyebrow">Professional directory</span>
+        <h1>Independent professionals are coming to takeitesee.</h1>
+        <p>Only verified, live professional profiles will appear here once provider registration and marketplace publishing are enabled.</p>
+      </section>
+      <Alert title="Directory is being prepared" tone="info">
+        Presentation profiles have been removed from this production page so customers are never shown sample providers as real listings.
+      </Alert>
+      <Card>
+        <h2>Looking for a service?</h2>
+        <p>Browse the live service marketplace to see services that are currently active and published by verified providers.</p>
+        <div className="button-row"><Link href="/explore" className="button button-primary">Explore live services</Link></div>
+      </Card>
+    </div>
+  );
 }
