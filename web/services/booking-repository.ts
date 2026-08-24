@@ -5,10 +5,7 @@ import { isSupabaseConfigured } from '../lib/supabase/config';
 const storageKey = 'takeitesee.customerBookings';
 const bookingDraftKey = 'takeitesee.bookingDraft';
 
-function readBookings(): CustomerBooking[] {
-  if (typeof window === 'undefined') return [];
-  try { const value = JSON.parse(window.localStorage.getItem(storageKey) ?? '[]'); return Array.isArray(value) ? value as CustomerBooking[] : []; } catch { return []; }
-}
+function readBookings(): CustomerBooking[] { if (typeof window === 'undefined') return []; try { const value = JSON.parse(window.localStorage.getItem(storageKey) ?? '[]'); return Array.isArray(value) ? value as CustomerBooking[] : []; } catch { return []; } }
 function writeBookings(bookings: CustomerBooking[]) { try { window.localStorage.setItem(storageKey, JSON.stringify(bookings)); } catch {} }
 function createId() { return typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `local-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`; }
 function createReference(date: string) { const compactDate = date.replace(/-/g, '').slice(0, 8) || new Date().toISOString().slice(0, 10).replace(/-/g, ''); return `TIS-${compactDate}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`; }
@@ -34,7 +31,7 @@ export async function createBookingThroughConfiguredRepository(draft: BookingDra
 }
 
 function fromProductionBooking(booking: ProductionBooking): CustomerBooking {
-  return { bookingId: booking.id, bookingReference: booking.booking_reference, idempotencyKey: '', customerId: booking.customer_id, serviceId: booking.service_id, providerId: booking.provider.provider_id, providerType: booking.provider.provider_type, serviceName: booking.service_name, customerName: '', bookingDate: booking.booking_date, startTime: booking.start_time, timezone: booking.timezone, durationMinutes: booking.duration_minutes, location: booking.location, customerNotes: booking.customer_notes, basePrice: Math.round(Number(booking.quoted_price) * 100), currency: booking.currency, paymentStatus: booking.payment_status === 'paid' ? 'paid' : booking.payment_status, status: booking.status, createdAt: booking.created_at.toISOString(), updatedAt: booking.updated_at.toISOString() };
+  return { bookingId: booking.id, bookingReference: booking.booking_reference, idempotencyKey: '', customerId: booking.customer_id, serviceId: booking.service_id, providerId: booking.provider.provider_id, providerType: booking.provider.provider_type, providerName: booking.provider_name, serviceName: booking.service_name, customerName: '', bookingDate: booking.booking_date, startTime: booking.start_time, timezone: booking.timezone, durationMinutes: booking.duration_minutes, location: booking.location, customerNotes: booking.customer_notes, basePrice: Math.round(Number(booking.quoted_price) * 100), currency: booking.currency, paymentStatus: booking.payment_status === 'paid' ? 'paid' : booking.payment_status, status: booking.status, createdAt: booking.created_at.toISOString(), updatedAt: booking.updated_at.toISOString() };
 }
 
 export async function getBookingThroughConfiguredRepository(bookingId: CustomerBookingId) {
