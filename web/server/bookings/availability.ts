@@ -28,7 +28,7 @@ function isoForBooking(input: CreateBookingInput, end = false) {
   return `${base.toISOString().slice(0, 10)}T${hour}:${minute}:00`;
 }
 
-export async function assertBookingAvailability(input: CreateBookingInput) {
+export async function assertBookingAvailability(input: CreateBookingInput, excludeBookingId?: EntityId) {
   const supabase = await createSupabaseServerClient();
   const { data: setting, error: settingError } = await supabase
     .from('service_availability')
@@ -63,12 +63,14 @@ export async function assertBookingAvailability(input: CreateBookingInput) {
   if ((blackouts ?? []).length) throw new Error('The selected time is blocked by the provider.');
 
   const providerColumn = input.provider_type === 'professional' ? 'professional_id' : 'business_id';
-  const { data: bookings, error: bookingError } = await supabase
+  let query = supabase
     .from('bookings')
-    .select('booking_date,start_time,duration_minutes,status')
+    .select('id,booking_date,start_time,duration_minutes,status')
     .eq(providerColumn, input.provider_id)
     .eq('booking_date', input.booking_date)
     .in('status', BLOCKING_STATUSES);
+  if (excludeBookingId) query = query.neq('id', excludeBookingId);
+  const { data: bookings, error: bookingError } = await query;
   if (bookingError) throw new Error(bookingError.message);
 
   const requested = bookingRange(input);
