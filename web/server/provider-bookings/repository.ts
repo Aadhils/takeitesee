@@ -30,6 +30,31 @@ type ProviderOwner =
   | { provider_type: 'professional'; provider_id: EntityId; provider_name: string }
   | { provider_type: 'business'; provider_id: EntityId; provider_name: string };
 
+function zonedDateTimeToEpoch(date: string, time: string, timeZone: string) {
+  const [year, month, day] = date.split('-').map(Number);
+  const [hour, minute, second = 0] = time.slice(0, 8).split(':').map(Number);
+  const targetUtc = Date.UTC(year, month - 1, day, hour, minute, second);
+  let guess = targetUtc;
+
+  for (let index = 0; index < 3; index += 1) {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone,
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+    }).formatToParts(new Date(guess));
+    const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+    const representedUtc = Date.UTC(Number(values.year), Number(values.month) - 1, Number(values.day), Number(values.hour), Number(values.minute), Number(values.second));
+    guess += targetUtc - representedUtc;
+  }
+
+  return guess;
+}
+
+function completionEligibleAt(row: Record<string, unknown>) {
+  const start = zonedDateTimeToEpoch(String(row.booking_date), String(row.start_time), String(row.timezone || 'Asia/Kolkata'));
+  return start + Number(row.duration_minutes || 0) * 60_000;
+}
+
 async function resolveOwner(session: ServerCustomerSession): Promise<ProviderOwner> {
   const supabase = await createSupabaseServerClient();
   if (session.roles.includes('professional')) {
@@ -105,6 +130,18 @@ export const productionProviderBookingRepository = {
     const supabase = await createSupabaseServerClient();
     const expectedStatus: ProductionBookingStatus = action === 'complete' ? 'confirmed' : 'pending';
     const nextStatus: ProductionBookingStatus = action === 'accept' ? 'confirmed' : action === 'complete' ? 'completed' : 'cancelled';
+
+    if (action === 'complete') {
+      const { data: current, error: currentError } = await ownedBookingQuery(owner, bookingId);
+      if (currentError) throw new Error(currentError.message);
+      if (!current || current.status !== 'confirmed') throw new Error('Only a confirmed booking can be completed.');
+      const eligibleAt = completionEligibleAt(current as Record<string, unknown>);
+      if (Date.now() < eligibleAt) {
+        const label = new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: String(current.timezone || 'Asia/Kolkata') }).format(new Date(eligibleAt));
+        throw new Error(`This service can be marked completed after the scheduled service time (${label}).`);
+      }
+    }
+
     let query = supabase.from('bookings').update({ status: nextStatus, updated_at: new Date().toISOString() }).eq('id', bookingId).eq('status', expectedStatus);
     query = owner.provider_type === 'professional' ? query.eq('professional_id', owner.provider_id) : query.eq('business_id', owner.provider_id);
     const { data, error } = await query.select('*').maybeSingle();
