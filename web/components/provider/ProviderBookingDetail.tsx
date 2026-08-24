@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card } from '../ui/primitives';
 import { ProviderHeading, ProviderShell } from './ProviderPresentation';
 
@@ -18,10 +18,25 @@ function tone(status: Booking['status']) {
   return 'info' as const;
 }
 
+function zonedDateTimeToEpoch(date: string, time: string, timeZone: string) {
+  const [year, month, day] = date.split('-').map(Number);
+  const [hour, minute, second = 0] = time.slice(0, 8).split(':').map(Number);
+  const targetUtc = Date.UTC(year, month - 1, day, hour, minute, second);
+  let guess = targetUtc;
+  for (let index = 0; index < 3; index += 1) {
+    const parts = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(guess));
+    const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+    const representedUtc = Date.UTC(Number(values.year), Number(values.month) - 1, Number(values.day), Number(values.hour), Number(values.minute), Number(values.second));
+    guess += targetUtc - representedUtc;
+  }
+  return guess;
+}
+
 export default function ProviderBookingDetail({ bookingId }: { bookingId: string }) {
   const [booking, setBooking] = useState<Booking | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     void (async () => {
@@ -33,6 +48,22 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
       } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to load booking.'); }
     })();
   }, [bookingId]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const completion = useMemo(() => {
+    if (!booking || booking.status !== 'confirmed') return null;
+    const start = zonedDateTimeToEpoch(booking.booking_date, booking.start_time, booking.timezone || 'Asia/Kolkata');
+    const eligibleAt = start + booking.duration_minutes * 60_000;
+    return {
+      eligibleAt,
+      allowed: now >= eligibleAt,
+      label: new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: booking.timezone || 'Asia/Kolkata' }).format(new Date(eligibleAt)),
+    };
+  }, [booking, now]);
 
   const act = async (action: 'accept' | 'decline' | 'complete') => {
     setBusy(true); setError('');
@@ -61,7 +92,7 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
       </Card>
       <Card className="provider-detail-card"><span className="eyebrow">Next action</span><h2>Provider controls</h2>
         {booking.status === 'pending' ? <><p>Accept this request to confirm the booking, or decline it.</p><div className="provider-actions"><Button type="button" disabled={busy} onClick={() => void act('accept')}>Accept booking</Button><Button type="button" variant="quiet" disabled={busy} onClick={() => void act('decline')}>Decline</Button></div></> : null}
-        {booking.status === 'confirmed' ? <><p>The booking is confirmed. Mark it completed after the service has been delivered.</p><Button type="button" disabled={busy} onClick={() => void act('complete')}>{busy ? 'Updating…' : 'Mark service completed'}</Button></> : null}
+        {booking.status === 'confirmed' ? <>{completion?.allowed ? <><p>The scheduled service time has ended. You can now mark the service completed.</p><Button type="button" disabled={busy} onClick={() => void act('complete')}>{busy ? 'Updating…' : 'Mark service completed'}</Button></> : <><p>This service can be marked completed only after the scheduled service time.</p><p className="summary-note">Completion available after {completion?.label}.</p><Button type="button" disabled>Mark service completed</Button></>}</> : null}
         {booking.status === 'completed' ? <p>This service has been completed. It is ready for the customer review flow.</p> : null}
         {booking.status === 'cancelled' ? <p>This booking is cancelled. No further provider action is available.</p> : null}
         {booking.status === 'rescheduled' ? <p>This booking has been rescheduled. Review the updated schedule before continuing.</p> : null}
