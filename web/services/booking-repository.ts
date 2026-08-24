@@ -7,73 +7,22 @@ const bookingDraftKey = 'takeitesee.bookingDraft';
 
 function readBookings(): CustomerBooking[] {
   if (typeof window === 'undefined') return [];
-  try {
-    const value = JSON.parse(window.localStorage.getItem(storageKey) ?? '[]');
-    return Array.isArray(value) ? value as CustomerBooking[] : [];
-  } catch {
-    return [];
-  }
+  try { const value = JSON.parse(window.localStorage.getItem(storageKey) ?? '[]'); return Array.isArray(value) ? value as CustomerBooking[] : []; } catch { return []; }
 }
+function writeBookings(bookings: CustomerBooking[]) { try { window.localStorage.setItem(storageKey, JSON.stringify(bookings)); } catch {} }
+function createId() { return typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `local-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`; }
+function createReference(date: string) { const compactDate = date.replace(/-/g, '').slice(0, 8) || new Date().toISOString().slice(0, 10).replace(/-/g, ''); return `TIS-${compactDate}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`; }
 
-function writeBookings(bookings: CustomerBooking[]) {
-  try {
-    window.localStorage.setItem(storageKey, JSON.stringify(bookings));
-  } catch {
-    // Local presentation persistence is optional.
-  }
-}
-
-function createId() {
-  return typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `local-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-}
-
-function createReference(date: string) {
-  const compactDate = date.replace(/-/g, '').slice(0, 8) || new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  return `TIS-${compactDate}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-}
-
-export function saveBookingDraft(draft: BookingDraft) {
-  try {
-    window.localStorage.setItem(bookingDraftKey, JSON.stringify(draft));
-  } catch {
-    // Draft recovery is best effort when storage is unavailable.
-  }
-}
-
-export function getBookingDraft(): BookingDraft | undefined {
-  if (typeof window === 'undefined') return undefined;
-  try {
-    const value = JSON.parse(window.localStorage.getItem(bookingDraftKey) ?? 'null');
-    return value && typeof value === 'object' ? value as BookingDraft : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-export function clearBookingDraft() {
-  try {
-    window.localStorage.removeItem(bookingDraftKey);
-  } catch {
-    // Nothing to clear when storage is unavailable.
-  }
-}
+export function saveBookingDraft(draft: BookingDraft) { try { window.localStorage.setItem(bookingDraftKey, JSON.stringify(draft)); } catch {} }
+export function getBookingDraft(): BookingDraft | undefined { if (typeof window === 'undefined') return undefined; try { const value = JSON.parse(window.localStorage.getItem(bookingDraftKey) ?? 'null'); return value && typeof value === 'object' ? value as BookingDraft : undefined; } catch { return undefined; } }
+export function clearBookingDraft() { try { window.localStorage.removeItem(bookingDraftKey); } catch {} }
 
 export function createBooking(draft: BookingDraft): CustomerBooking {
   const existing = readBookings().find((booking) => booking.idempotencyKey === draft.idempotencyKey);
   if (existing) return existing;
   const now = new Date().toISOString();
-  const booking: CustomerBooking = {
-    ...draft,
-    bookingId: createId() as CustomerBookingId,
-    bookingReference: createReference(draft.bookingDate),
-    status: 'pending',
-    paymentStatus: 'unpaid',
-    createdAt: now,
-    updatedAt: now,
-  };
-  writeBookings([booking, ...readBookings()]);
-  clearBookingDraft();
-  return booking;
+  const booking: CustomerBooking = { ...draft, bookingId: createId() as CustomerBookingId, bookingReference: createReference(draft.bookingDate), status: 'pending', paymentStatus: 'unpaid', createdAt: now, updatedAt: now };
+  writeBookings([booking, ...readBookings()]); clearBookingDraft(); return booking;
 }
 
 export async function createBookingThroughConfiguredRepository(draft: BookingDraft): Promise<CustomerBooking> {
@@ -99,8 +48,7 @@ export async function getBookingThroughConfiguredRepository(bookingId: CustomerB
 
 export async function getBookingsThroughConfiguredRepository(customerId: string) {
   if (!isSupabaseConfigured()) return getBookingsForCustomer(customerId);
-  const response = await fetch('/api/bookings');
-  const payload = await response.json() as { bookings?: ProductionBooking[]; error?: string };
+  const response = await fetch('/api/bookings'); const payload = await response.json() as { bookings?: ProductionBooking[]; error?: string };
   if (!response.ok || !payload.bookings) throw new Error(payload.error ?? 'Unable to load bookings.');
   return payload.bookings.map((booking) => fromProductionBooking({ ...booking, created_at: new Date(booking.created_at), updated_at: new Date(booking.updated_at) }));
 }
@@ -113,30 +61,15 @@ export async function cancelBookingThroughConfiguredRepository(bookingId: Custom
   return fromProductionBooking({ ...payload.booking, created_at: new Date(payload.booking.created_at), updated_at: new Date(payload.booking.updated_at) });
 }
 
-export function getBookingById(bookingId: CustomerBookingId) {
-  return readBookings().find((booking) => booking.bookingId === bookingId);
+export async function rescheduleBookingThroughConfiguredRepository(bookingId: CustomerBookingId, bookingDate: string, startTime: string) {
+  if (!isSupabaseConfigured()) return rescheduleBooking(bookingId, bookingDate, startTime);
+  const response = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'rescheduled', booking_date: bookingDate, start_time: startTime }) });
+  const payload = await response.json() as { booking?: ProductionBooking; error?: string };
+  if (!response.ok || !payload.booking) throw new Error(payload.error ?? 'Unable to reschedule booking.');
+  return fromProductionBooking({ ...payload.booking, created_at: new Date(payload.booking.created_at), updated_at: new Date(payload.booking.updated_at) });
 }
 
-export function getBookingsForCustomer(customerId: string) {
-  return readBookings().filter((booking) => booking.customerId === customerId);
-}
-
-export function cancelBooking(bookingId: CustomerBookingId) {
-  const bookings = readBookings();
-  const index = bookings.findIndex((booking) => booking.bookingId === bookingId);
-  if (index < 0 || ['completed', 'cancelled'].includes(bookings[index].status)) return undefined;
-  const updated = { ...bookings[index], status: 'cancelled' as const, updatedAt: new Date().toISOString() };
-  bookings[index] = updated;
-  writeBookings(bookings);
-  return updated;
-}
-
-export function rescheduleBooking(bookingId: CustomerBookingId, bookingDate: string, startTime: string) {
-  const bookings = readBookings();
-  const index = bookings.findIndex((booking) => booking.bookingId === bookingId);
-  if (index < 0 || ['completed', 'cancelled'].includes(bookings[index].status)) return undefined;
-  const updated = { ...bookings[index], bookingDate, startTime, status: 'rescheduled' as const, updatedAt: new Date().toISOString() };
-  bookings[index] = updated;
-  writeBookings(bookings);
-  return updated;
-}
+export function getBookingById(bookingId: CustomerBookingId) { return readBookings().find((booking) => booking.bookingId === bookingId); }
+export function getBookingsForCustomer(customerId: string) { return readBookings().filter((booking) => booking.customerId === customerId); }
+export function cancelBooking(bookingId: CustomerBookingId) { const bookings = readBookings(); const index = bookings.findIndex((booking) => booking.bookingId === bookingId); if (index < 0 || ['completed', 'cancelled'].includes(bookings[index].status)) return undefined; const updated = { ...bookings[index], status: 'cancelled' as const, updatedAt: new Date().toISOString() }; bookings[index] = updated; writeBookings(bookings); return updated; }
+export function rescheduleBooking(bookingId: CustomerBookingId, bookingDate: string, startTime: string) { const bookings = readBookings(); const index = bookings.findIndex((booking) => booking.bookingId === bookingId); if (index < 0 || ['completed', 'cancelled'].includes(bookings[index].status)) return undefined; const updated = { ...bookings[index], bookingDate, startTime, status: 'rescheduled' as const, updatedAt: new Date().toISOString() }; bookings[index] = updated; writeBookings(bookings); return updated; }
