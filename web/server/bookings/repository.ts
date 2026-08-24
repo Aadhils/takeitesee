@@ -1,7 +1,6 @@
 import type { EntityId } from '../../types/entities';
 import type { ProductionBooking, ProductionBookingStatus, ServerCustomerSession } from '../../types/production-domain';
 import { assertProductionBackendConfigured } from '../config';
-import { assertOwnsCustomerRecord } from '../auth/session';
 import { createSupabaseServerClient } from '../../lib/supabase/server';
 import { assertBookingAvailability } from './availability';
 
@@ -21,11 +20,18 @@ export interface CreateBookingInput {
   service_name: string;
 }
 
+export interface RescheduleBookingInput {
+  booking_date: string;
+  start_time: string;
+  reason?: string;
+}
+
 export interface ProductionBookingRepository {
   createBooking(session: ServerCustomerSession, input: CreateBookingInput): Promise<ProductionBooking>;
   getBookingById(session: ServerCustomerSession, bookingId: EntityId): Promise<ProductionBooking | null>;
   getCustomerBookings(session: ServerCustomerSession): Promise<ProductionBooking[]>;
   updateBookingStatus(session: ServerCustomerSession, bookingId: EntityId, status: ProductionBookingStatus, reason?: string): Promise<ProductionBooking>;
+  rescheduleBooking(session: ServerCustomerSession, bookingId: EntityId, input: RescheduleBookingInput): Promise<ProductionBooking>;
 }
 
 export function validateCreateBookingInput(input: CreateBookingInput) {
@@ -78,6 +84,38 @@ export const productionBookingRepository: ProductionBookingRepository = {
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase.rpc('cancel_owned_booking', { target_booking_id: bookingId, cancel_reason: reason ?? null }).maybeSingle();
     if (error || !data) throw new Error(error?.message ?? 'Booking could not be updated.');
+    return mapBooking(data as Record<string, unknown>);
+  },
+  async rescheduleBooking(session, bookingId, input) {
+    assertProductionBackendConfigured();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(input.booking_date) || !/^\d{2}:\d{2}/.test(input.start_time)) throw new Error('New booking date and time are required.');
+    const current = await this.getBookingById(session, bookingId);
+    if (!current) throw new Error('Booking not found.');
+    if (!['pending', 'confirmed', 'rescheduled'].includes(current.status)) throw new Error(`Booking cannot be rescheduled from status ${current.status}.`);
+    const availabilityInput: CreateBookingInput = {
+      service_id: current.service_id,
+      provider_id: current.provider.provider_id,
+      provider_type: current.provider.provider_type,
+      booking_date: input.booking_date,
+      start_time: input.start_time,
+      timezone: current.timezone,
+      duration_minutes: current.duration_minutes,
+      location: current.location,
+      customer_notes: current.customer_notes,
+      quoted_price: current.quoted_price,
+      currency: current.currency,
+      idempotency_key: `reschedule:${bookingId}:${input.booking_date}:${input.start_time}`,
+      service_name: current.service_name,
+    };
+    await assertBookingAvailability(availabilityInput, bookingId);
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.rpc('reschedule_owned_booking', {
+      target_booking_id: bookingId,
+      new_booking_date: input.booking_date,
+      new_start_time: input.start_time,
+      reschedule_reason: input.reason ?? null,
+    }).maybeSingle();
+    if (error || !data) throw new Error(error?.message ?? 'Booking could not be rescheduled.');
     return mapBooking(data as Record<string, unknown>);
   },
 };
