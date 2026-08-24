@@ -18,10 +18,17 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ bo
   try {
     const { bookingId } = await params;
     const session = await productionAuthProvider.requireCustomer(request);
-    const body = await request.json() as { status?: 'cancelled'; reason?: string };
-    if (body.status !== 'cancelled') return NextResponse.json({ error: 'Only cancellation is currently supported.' }, { status: 400 });
-    const booking = await productionBookingRepository.updateBookingStatus(session, bookingId as EntityId, body.status, body.reason);
-    return NextResponse.json({ booking });
+    const body = await request.json() as { status?: 'cancelled' | 'rescheduled'; reason?: string; booking_date?: string; start_time?: string };
+    if (body.status === 'cancelled') {
+      const booking = await productionBookingRepository.updateBookingStatus(session, bookingId as EntityId, body.status, body.reason);
+      return NextResponse.json({ booking });
+    }
+    if (body.status === 'rescheduled') {
+      if (!body.booking_date || !body.start_time) return NextResponse.json({ error: 'New booking date and time are required.' }, { status: 400 });
+      const booking = await productionBookingRepository.rescheduleBooking(session, bookingId as EntityId, { booking_date: body.booking_date, start_time: body.start_time, reason: body.reason });
+      return NextResponse.json({ booking });
+    }
+    return NextResponse.json({ error: 'Unsupported booking update.' }, { status: 400 });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to update booking.' }, { status: 400 });
   }
