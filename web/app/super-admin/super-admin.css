@@ -1,0 +1,294 @@
+.super-admin-workspace {
+  width: 100%;
+}
+
+.super-admin-workspace .admin-sidebar {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(180deg, #ffffff 0%, #fbfaff 100%);
+  box-shadow: var(--shadow-sm);
+  padding: 18px;
+}
+
+.super-admin-workspace .admin-sidebar-heading {
+  padding-bottom: 4px;
+}
+
+.super-admin-workspace .admin-mark {
+  background: linear-gradient(145deg, var(--color-primary-strong), var(--color-primary));
+  box-shadow: 0 10px 24px rgb(76 79 227 / 20%);
+}
+
+.super-admin-workspace .admin-sidebar nav a {
+  border-radius: 10px;
+}
+
+.super-admin-workspace .admin-sidebar nav a:hover {
+  border-left-color: transparent;
+  background: var(--color-selected);
+}
+
+.super-admin-workspace .admin-scope-note {
+  border: 1px solid #e6e0ff;
+  border-radius: var(--radius-md);
+  background: var(--color-brand-subtle);
+  padding: 12px;
+}
+
+.super-admin-workspace .admin-content > .container {
+  width: 100%;
+  padding: 0;
+}
+
+.super-admin-workspace .page-intro {
+  display: grid;
+  gap: 10px;
+  max-width: 780px;
+}
+
+.super-admin-workspace .page-intro h1 {
+  margin: 0;
+  font-size: clamp(2.35rem, 5vw, 4.25rem);
+  line-height: .98;
+  letter-spacing: -.045em;
+}
+
+.super-admin-workspace .page-intro p {
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.super-admin-workspace .page-intro > a {
+  width: fit-content;
+  margin-top: 4px;
+  color: var(--color-primary);
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+.super-admin-workspace .dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.super-admin-workspace .dashboard-grid .card {
+  min-height: 132px;
+  padding: 20px;
+}
+
+.super-admin-workspace .dashboard-grid h2 {
+  margin: 10px 0 0;
+  color: var(--color-primary-strong);
+  font-size: 2rem;
+}
+
+.super-admin-workspace section.card,
+.super-admin-workspace article.card,
+.super-admin-workspace section.section-stack > .card,
+.super-admin-workspace .section-stack > article.card,
+.super-admin-workspace .section-stack > div.card {
+  padding: 22px;
+}
+
+.super-admin-workspace section.card > h2,
+.super-admin-workspace .section-stack > h2 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.super-admin-workspace form.section-stack {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.super-admin-workspace form.section-stack label,
+.super-admin-workspace article.card form label {
+  display: grid;
+  gap: 7px;
+  color: var(--color-ink);
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+.super-admin-workspace form.section-stack label:has(textarea),
+.super-admin-workspace form.section-stack button {
+  grid-column: 1 / -1;
+}
+
+.super-admin-workspace input,
+.super-admin-workspace select,
+.super-admin-workspace textarea {
+  width: 100%;
+  min-height: 46px;
+  box-sizing: border-box;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  padding: 11px 13px;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.super-admin-workspace textarea {
+  min-height: 112px;
+  resize: vertical;
+}
+
+.super-admin-workspace input:focus,
+.super-admin-workspace select:focus,
+.super-admin-workspace textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgb(99 82 217 / 12%);
+}
+
+.super-admin-workspace button {
+  width: fit-content;
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: #fff;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 700;
+  box-shadow: 0 8px 18px rgb(109 61 245 / 16%);
+}
+
+.super-admin-workspace button:hover {
+  background: var(--color-primary-hover);
+}
+
+.super-admin-workspace article.card h3 {
+  margin: 8px 0 4px;
+  font-size: 1.2rem;
+}
+
+.super-admin-workspace article.card p,
+.super-admin-workspace div.card p {
+  color: var(--color-ink-muted);
+  line-height: 1.55;
+}
+
+.super-admin-workspace article.card form:not(.section-stack) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.super-admin-workspace article.card form:not(.section-stack) label {
+  min-width: 210px;
+  flex: 1 1 210px;
+}
+
+@media (max-width: 980px) {
+  .super-admin-workspace .admin-sidebar {
+    border-radius: var(--radius-lg);
+    padding: 14px;
+  }
+
+  .super-admin-workspace .admin-sidebar nav {
+    margin-inline: -4px;
+    scrollbar-width: thin;
+  }
+
+  .super-admin-workspace .admin-sidebar nav a {
+    border-left: 0;
+    border-radius: 8px 8px 0 0;
+  }
+
+  .super-admin-workspace .admin-scope-note {
+    display: grid;
+  }
+
+  .super-admin-workspace .dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .super-admin-workspace .admin-layout {
+    gap: 20px;
+  }
+
+  .super-admin-workspace .admin-sidebar {
+    padding: 12px;
+  }
+
+  .super-admin-workspace .admin-sidebar-heading {
+    padding: 4px;
+  }
+
+  .super-admin-workspace .admin-sidebar nav {
+    gap: 2px;
+    margin-inline: -12px;
+    padding-inline: 12px;
+  }
+
+  .super-admin-workspace .admin-sidebar nav a {
+    min-height: 40px;
+    padding: 8px 10px;
+    font-size: .8rem;
+  }
+
+  .super-admin-workspace .admin-scope-note {
+    padding: 10px;
+  }
+
+  .super-admin-workspace .page-intro h1 {
+    font-size: clamp(2.15rem, 12vw, 3.3rem);
+  }
+
+  .super-admin-workspace .dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .super-admin-workspace .dashboard-grid .card {
+    min-height: 110px;
+    padding: 16px;
+  }
+
+  .super-admin-workspace .dashboard-grid h2 {
+    font-size: 1.65rem;
+  }
+
+  .super-admin-workspace section.card,
+  .super-admin-workspace article.card,
+  .super-admin-workspace section.section-stack > .card,
+  .super-admin-workspace .section-stack > article.card,
+  .super-admin-workspace .section-stack > div.card {
+    padding: 16px;
+  }
+
+  .super-admin-workspace form.section-stack {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+
+  .super-admin-workspace form.section-stack label:has(textarea),
+  .super-admin-workspace form.section-stack button {
+    grid-column: auto;
+  }
+
+  .super-admin-workspace button {
+    width: 100%;
+  }
+
+  .super-admin-workspace article.card form:not(.section-stack) {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .super-admin-workspace article.card form:not(.section-stack) label {
+    width: 100%;
+    min-width: 0;
+  }
+}
