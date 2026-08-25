@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
+import { SuperAdminShell } from '../../components/super-admin/SuperAdminShell';
 import { productionAuthProvider } from '../../server/auth/session';
 
 export default async function SuperAdminLayout({ children }: { children: ReactNode }) {
@@ -10,5 +11,5 @@ export default async function SuperAdminLayout({ children }: { children: ReactNo
     redirect('/account');
   }
 
-  return children;
+  return <SuperAdminShell>{children}</SuperAdminShell>;
 }
