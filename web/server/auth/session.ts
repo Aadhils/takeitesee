@@ -48,9 +48,15 @@ export const productionAuthProvider: ServerAuthProvider = {
         .eq('admin_membership_id', adminMembership.id);
       if (adminScopesError) throw new Error(adminScopesError.message);
 
-      const platformScope = adminScopes?.find((scope) => scope.scope_type === 'platform');
-      if (platformScope?.can_view && !roles.includes('admin')) roles.push('admin');
-      if (platformScope?.can_manage && !roles.includes('super_admin')) roles.push('super_admin');
+      const hasDelegatedAdminAccess = (adminScopes ?? []).some((scope) => scope.can_view || scope.can_manage);
+      const platformManageScope = (adminScopes ?? []).find(
+        (scope) => scope.scope_type === 'platform' && scope.can_manage,
+      );
+
+      // Any active delegated scope grants entry to the Admin workspace.
+      // Only platform-wide manage authority grants Super Admin control-plane access.
+      if (hasDelegatedAdminAccess && !roles.includes('admin')) roles.push('admin');
+      if (platformManageScope && !roles.includes('super_admin')) roles.push('super_admin');
     }
 
     if (!roles.includes('professional')) {
