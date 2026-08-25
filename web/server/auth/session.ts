@@ -5,14 +5,15 @@ import { assertProductionBackendConfigured } from '../config';
 import { createSupabaseServerClient } from '../../lib/supabase/server';
 
 export interface ServerAuthProvider {
-  getSession(request: Request): Promise<ServerCustomerSession | null>;
-  requireCustomer(request: Request): Promise<ServerCustomerSession>;
-  requireProvider(request: Request): Promise<ServerCustomerSession>;
+  getSession(request?: Request): Promise<ServerCustomerSession | null>;
+  requireCustomer(request?: Request): Promise<ServerCustomerSession>;
+  requireProvider(request?: Request): Promise<ServerCustomerSession>;
+  requireAdmin(request?: Request): Promise<ServerCustomerSession>;
 }
 
-/** Production boundary backed by Supabase auth plus owned provider records. */
+/** Production boundary backed by Supabase auth plus owned provider/admin records. */
 export const productionAuthProvider: ServerAuthProvider = {
-  async getSession(_request: Request) {
+  async getSession(_request?: Request) {
     assertProductionBackendConfigured();
     const supabase = await createSupabaseServerClient();
     const { data: { user }, error } = await supabase.auth.getUser();
@@ -28,8 +29,29 @@ export const productionAuthProvider: ServerAuthProvider = {
     const roles: PlatformRole[] = [];
     const storedRole = profile?.role;
     if (storedRole === 'admin') roles.push('admin');
+    if (storedRole === 'super_admin') roles.push('admin', 'super_admin');
     if (storedRole === 'professional') roles.push('professional');
     if (storedRole === 'business') roles.push('business_owner');
+
+    const { data: adminMembership, error: adminMembershipError } = await supabase
+      .from('admin_memberships')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('active', true)
+      .maybeSingle();
+    if (adminMembershipError) throw new Error(adminMembershipError.message);
+
+    if (adminMembership) {
+      const { data: adminScopes, error: adminScopesError } = await supabase
+        .from('admin_scopes')
+        .select('scope_type, can_view, can_manage')
+        .eq('admin_membership_id', adminMembership.id);
+      if (adminScopesError) throw new Error(adminScopesError.message);
+
+      const platformScope = adminScopes?.find((scope) => scope.scope_type === 'platform');
+      if (platformScope?.can_view && !roles.includes('admin')) roles.push('admin');
+      if (platformScope?.can_manage && !roles.includes('super_admin')) roles.push('super_admin');
+    }
 
     if (!roles.includes('professional')) {
       const { data: professional, error: professionalError } = await supabase
@@ -61,15 +83,22 @@ export const productionAuthProvider: ServerAuthProvider = {
       expires_at: new Date(Date.now() + 60 * 60 * 1000),
     };
   },
-  async requireCustomer(request: Request) {
+  async requireCustomer(request?: Request) {
     const session = await this.getSession(request);
     if (!session || !session.roles.includes('customer')) throw new Error('Authentication required.');
     return session;
   },
-  async requireProvider(request: Request) {
+  async requireProvider(request?: Request) {
     const session = await this.getSession(request);
     if (!session || (!session.roles.includes('professional') && !session.roles.includes('business_owner'))) {
       throw new Error('Provider authentication required.');
+    }
+    return session;
+  },
+  async requireAdmin(request?: Request) {
+    const session = await this.getSession(request);
+    if (!session || (!session.roles.includes('admin') && !session.roles.includes('super_admin'))) {
+      throw new Error('Admin authentication required.');
     }
     return session;
   },
