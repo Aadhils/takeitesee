@@ -42,6 +42,7 @@ export default async function SuperAdminPage() {
         <p>Application registry, hierarchical locations, category scopes, delegated admin permissions, and audit logging are protected behind Super Admin access.</p>
         <p><Link href="/super-admin/applications">Manage applications →</Link></p>
         <p><Link href="/super-admin/locations">Manage locations & markets →</Link></p>
+        <p><Link href="/super-admin/categories">Manage categories →</Link></p>
         <p className="muted">Signed in as platform user {session.user_id.slice(0, 8)}…</p>
       </section>
     </main>
