@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { createSupabaseServerClient } from '../../lib/supabase/server';
 import { productionAuthProvider } from '../../server/auth/session';
 
@@ -37,8 +38,9 @@ export default async function SuperAdminPage() {
       </section>
 
       <section className="card">
-        <h2>Control plane foundation active</h2>
+        <h2>Control plane</h2>
         <p>Application registry, hierarchical locations, category scopes, delegated admin permissions, and audit logging are protected behind Super Admin access.</p>
+        <p><Link href="/super-admin/applications">Manage applications →</Link></p>
         <p className="muted">Signed in as platform user {session.user_id.slice(0, 8)}…</p>
       </section>
     </main>
