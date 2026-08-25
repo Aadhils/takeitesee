@@ -28,7 +28,7 @@ export default async function AdminsPage() {
     userIds.length ? supabase.from('users').select('id, name, email').in('id', userIds) : Promise.resolve({ data: [], error: null }),
     membershipIds.length ? supabase.from('admin_scopes').select('id, admin_membership_id, scope_type, application_id, location_id, category_id, service_id, can_view, can_manage').in('admin_membership_id', membershipIds) : Promise.resolve({ data: [], error: null }),
     supabase.from('platform_applications').select('id, name, code').order('name'),
-    supabase.from('platform_locations').select('id, name, location_type').order('name'),
+    supabase.from('platform_locations').select('id, name, type').order('name'),
     supabase.from('platform_categories').select('id, name, code').order('name'),
     supabase.from('services').select('id, name').order('name').limit(200),
   ]);
@@ -94,7 +94,7 @@ export default async function AdminsPage() {
             <select name="target_id" required defaultValue="">
               <option value="" disabled>Select the matching resource</option>
               {(applications ?? []).length ? <optgroup label="Applications">{(applications ?? []).map((item) => <option key={`app-${item.id}`} value={item.id}>{item.name} ({item.code})</option>)}</optgroup> : null}
-              {(locations ?? []).length ? <optgroup label="Locations & markets">{(locations ?? []).map((item) => <option key={`loc-${item.id}`} value={item.id}>{item.name} · {item.location_type}</option>)}</optgroup> : null}
+              {(locations ?? []).length ? <optgroup label="Locations & markets">{(locations ?? []).map((item) => <option key={`loc-${item.id}`} value={item.id}>{item.name} · {item.type}</option>)}</optgroup> : null}
               {(categories ?? []).length ? <optgroup label="Categories">{(categories ?? []).map((item) => <option key={`cat-${item.id}`} value={item.id}>{item.name} ({item.code})</option>)}</optgroup> : null}
               {(services ?? []).length ? <optgroup label="Services">{(services ?? []).map((item) => <option key={`svc-${item.id}`} value={item.id}>{item.name}</option>)}</optgroup> : null}
             </select>
