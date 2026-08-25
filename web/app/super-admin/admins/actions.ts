@@ -78,7 +78,7 @@ export async function assignAdministrator(formData: FormData) {
       .single();
     if (error) throw new Error(error.message);
     membershipId = data.id;
-  } else if (!existingMembership.active) {
+  } else if (existingMembership && !existingMembership.active) {
     const { error } = await supabase
       .from('admin_memberships')
       .update({ active: true, updated_at: new Date().toISOString() })
