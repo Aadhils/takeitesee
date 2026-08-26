@@ -6,11 +6,12 @@ export default async function SuperAdminPage() {
   const session = await productionAuthProvider.requireAdmin();
   const supabase = await createSupabaseServerClient();
 
-  const [applications, locations, categories, admins] = await Promise.all([
+  const [applications, locations, categories, admins, auditEvents] = await Promise.all([
     supabase.from('platform_applications').select('id', { count: 'exact', head: true }),
     supabase.from('platform_locations').select('id', { count: 'exact', head: true }),
     supabase.from('platform_categories').select('id', { count: 'exact', head: true }),
     supabase.from('admin_memberships').select('id', { count: 'exact', head: true }).eq('active', true),
+    supabase.from('admin_audit_log').select('id', { count: 'exact', head: true }),
   ]);
 
   const metrics = [
@@ -18,6 +19,7 @@ export default async function SuperAdminPage() {
     ['Locations', locations.count ?? 0],
     ['Categories', categories.count ?? 0],
     ['Active admins', admins.count ?? 0],
+    ['Audit events', auditEvents.count ?? 0],
   ] as const;
 
   return (
@@ -43,6 +45,7 @@ export default async function SuperAdminPage() {
         <p><Link href="/super-admin/applications">Manage applications →</Link></p>
         <p><Link href="/super-admin/locations">Manage locations & markets →</Link></p>
         <p><Link href="/super-admin/categories">Manage categories →</Link></p>
+        <p><Link href="/super-admin/audit">Review admin audit log →</Link></p>
         <p className="muted">Signed in as platform user {session.user_id.slice(0, 8)}…</p>
       </section>
     </main>
