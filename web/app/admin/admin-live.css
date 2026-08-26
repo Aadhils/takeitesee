@@ -33,3 +33,9 @@
   font-size: 0.78rem;
   line-height: 1.45;
 }
+
+/* The legacy presentation shell contains a hard-coded provider queue count.
+   Hide that fixture badge whenever the real scoped admin layer is active. */
+.admin-live-access-enabled .admin-nav-count {
+  display: none;
+}

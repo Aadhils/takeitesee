@@ -24,6 +24,17 @@ type LiveService = {
   active: boolean;
 };
 
+type ScopedServiceMapping = {
+  service_id: string;
+  category_id: string | null;
+};
+
+type PlatformCategory = {
+  id: string;
+  name: string;
+  code: string;
+};
+
 function formatInr(value: number) {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
@@ -44,16 +55,20 @@ export default async function AdminReportsRoute() {
   await productionAuthProvider.requireAdmin();
   const supabase = await createSupabaseServerClient();
 
-  const { data: mappedScopes, error: scopeError } = await supabase
+  const { data: mappedScopeData, error: scopeError } = await supabase
     .from('service_ecosystem_scope')
-    .select('service_id')
+    .select('service_id,category_id')
     .eq('enabled', true);
 
   if (scopeError) throw new Error(scopeError.message);
 
-  const serviceIds = Array.from(new Set((mappedScopes ?? []).map((row) => String(row.service_id))));
+  const mappedScopes = (mappedScopeData ?? []) as ScopedServiceMapping[];
+  const serviceIds = Array.from(new Set(mappedScopes.map((row) => String(row.service_id))));
+  const categoryIds = Array.from(new Set(mappedScopes.map((row) => row.category_id).filter(Boolean))) as string[];
+
   let bookings: LiveBooking[] = [];
   let services: LiveService[] = [];
+  let platformCategories: PlatformCategory[] = [];
 
   if (serviceIds.length) {
     const [{ data: bookingData, error: bookingError }, { data: serviceData, error: serviceError }] = await Promise.all([
@@ -73,6 +88,16 @@ export default async function AdminReportsRoute() {
     if (serviceError) throw new Error(serviceError.message);
     bookings = (bookingData ?? []) as LiveBooking[];
     services = (serviceData ?? []) as LiveService[];
+  }
+
+  if (categoryIds.length) {
+    const { data: categoryData, error: categoryError } = await supabase
+      .from('platform_categories')
+      .select('id,name,code')
+      .in('id', categoryIds);
+
+    if (categoryError) throw new Error(categoryError.message);
+    platformCategories = (categoryData ?? []) as PlatformCategory[];
   }
 
   const totalBookings = bookings.length;
@@ -105,15 +130,19 @@ export default async function AdminReportsRoute() {
   const maxMonthCount = Math.max(1, ...months.map((month) => month.count));
 
   const serviceById = new Map(services.map((service) => [service.id, service]));
+  const categoryById = new Map(platformCategories.map((category) => [category.id, category.name]));
+  const categoryByServiceId = new Map(
+    mappedScopes.map((scope) => [scope.service_id, scope.category_id ? categoryById.get(scope.category_id) ?? null : null]),
+  );
   const categoryCounts = new Map<string, number>();
   bookings.forEach((booking) => {
-    const category = serviceById.get(booking.service_id)?.category || 'Uncategorised';
-    categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1);
+    const category = categoryByServiceId.get(booking.service_id) || serviceById.get(booking.service_id)?.category || 'Uncategorised';
+    categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1;
   });
   if (!bookings.length) {
     services.forEach((service) => {
-      const category = service.category || 'Uncategorised';
-      categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1);
+      const category = categoryByServiceId.get(service.id) || service.category || 'Uncategorised';
+      categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1;
     });
   }
   const categories = [...categoryCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
