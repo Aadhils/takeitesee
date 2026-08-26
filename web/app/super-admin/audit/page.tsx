@@ -33,6 +33,11 @@ function formatTime(value: string) {
   }).format(new Date(value));
 }
 
+function targetUserId(row: AuditRow) {
+  const value = row.metadata?.target_user_id;
+  return typeof value === 'string' ? value : null;
+}
+
 function metadataSummary(row: AuditRow) {
   const metadata = row.metadata ?? {};
   if (row.action === 'settings.update') {
@@ -43,6 +48,19 @@ function metadataSummary(row: AuditRow) {
     }
     return 'Scoped operational settings updated';
   }
+
+  if (row.action === 'admin.scope.updated' || row.action === 'admin.scope.revoked') {
+    const after = metadata.after;
+    const scopeType = typeof metadata.scope_type === 'string' ? titleCase(metadata.scope_type) : 'Delegated';
+    if (after && typeof after === 'object') {
+      const values = after as Record<string, unknown>;
+      return `${scopeType} scope · View ${values.can_view === true ? 'On' : 'Off'} · Manage ${values.can_manage === true ? 'On' : 'Off'}`;
+    }
+    return `${scopeType} scope permissions changed`;
+  }
+
+  if (row.action === 'admin.membership.activated') return 'Delegated Admin workspace access activated';
+  if (row.action === 'admin.membership.revoked') return 'Delegated Admin workspace access revoked';
 
   const name = metadata.name;
   if (typeof name === 'string') return name;
@@ -68,13 +86,15 @@ export default async function SuperAdminAuditPage() {
   if (error) throw new Error(error.message);
 
   const auditRows = (auditData ?? []) as AuditRow[];
-  const actorIds = Array.from(new Set(auditRows.map((row) => row.actor_user_id).filter((id): id is string => Boolean(id))));
+  const actorIds = auditRows.map((row) => row.actor_user_id).filter((id): id is string => Boolean(id));
+  const targetIds = auditRows.map(targetUserId).filter((id): id is string => Boolean(id));
+  const userIds = Array.from(new Set([...actorIds, ...targetIds]));
   const applicationIds = Array.from(new Set(auditRows.map((row) => row.application_id).filter((id): id is string => Boolean(id))));
   const locationIds = Array.from(new Set(auditRows.map((row) => row.location_id).filter((id): id is string => Boolean(id))));
 
   const [usersResult, applicationsResult, locationsResult] = await Promise.all([
-    actorIds.length
-      ? supabase.from('users').select('id,name,email').in('id', actorIds)
+    userIds.length
+      ? supabase.from('users').select('id,name,email').in('id', userIds)
       : Promise.resolve({ data: [] as UserRow[], error: null }),
     applicationIds.length
       ? supabase.from('platform_applications').select('id,name').in('id', applicationIds)
@@ -98,7 +118,7 @@ export default async function SuperAdminAuditPage() {
         <span className="eyebrow">Platform governance</span>
         <h1>Admin audit log</h1>
         <p>Review the latest protected Super Admin and delegated Admin changes recorded by Supabase.</p>
-        <p><Link href="/super-admin">← Super Admin</Link></p>
+        <p><Link href="/super-admin">← Super Admin</Link> · <Link href="/super-admin/admins">Delegated admins →</Link></p>
       </section>
 
       <section className="card">
@@ -112,6 +132,8 @@ export default async function SuperAdminAuditPage() {
         <section className="section-stack" aria-label="Recent admin audit events">
           {auditRows.map((row) => {
             const actor = row.actor_user_id ? users.get(row.actor_user_id) : undefined;
+            const targetId = targetUserId(row);
+            const target = targetId ? users.get(targetId) : undefined;
             return (
               <article className="card" key={row.id}>
                 <span className="eyebrow">{titleCase(row.resource_type)}</span>
@@ -119,6 +141,7 @@ export default async function SuperAdminAuditPage() {
                 <p>{metadataSummary(row)}</p>
                 <div className="detail-list">
                   <div><strong>Actor</strong><span>{actor?.name || actor?.email || 'System'}</span></div>
+                  {targetId ? <div><strong>Target admin</strong><span>{target?.name || target?.email || `${targetId.slice(0, 8)}…`}</span></div> : null}
                   <div><strong>When</strong><span>{formatTime(row.created_at)} IST</span></div>
                   {row.application_id ? <div><strong>Application</strong><span>{applications.get(row.application_id) ?? 'Assigned application'}</span></div> : null}
                   {row.location_id ? <div><strong>Location</strong><span>{locations.get(row.location_id) ?? 'Assigned location'}</span></div> : null}
