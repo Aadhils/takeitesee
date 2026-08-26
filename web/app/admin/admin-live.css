@@ -21,14 +21,14 @@
 }
 
 .admin-live-access-enabled[data-admin-mode='delegated'] .admin-scope-note::after {
-  content: 'Delegated permissions connected · ' attr(data-admin-scope-types) ' scope · Supabase enforced. Dashboard, bookings, providers, customers and services use live scoped data.';
+  content: 'Delegated permissions connected · ' attr(data-admin-scope-types) ' scope · Supabase enforced. Dashboard, bookings, providers, customers, services, reviews, issues and reports use live scoped data.';
   color: var(--muted, #667085);
   font-size: 0.78rem;
   line-height: 1.45;
 }
 
 .admin-live-access-enabled[data-admin-mode='super'] .admin-scope-note::after {
-  content: 'Super Admin platform permissions connected · Supabase enforced. Dashboard, bookings, providers, customers and services use live data.';
+  content: 'Super Admin platform permissions connected · Supabase enforced. Dashboard, bookings, providers, customers, services, reviews, issues and reports use live data.';
   color: var(--muted, #667085);
   font-size: 0.78rem;
   line-height: 1.45;
