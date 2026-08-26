@@ -45,6 +45,7 @@ export default async function SuperAdminPage() {
         <p><Link href="/super-admin/applications">Manage applications →</Link></p>
         <p><Link href="/super-admin/locations">Manage locations & markets →</Link></p>
         <p><Link href="/super-admin/categories">Manage categories →</Link></p>
+        <p><Link href="/super-admin/admins">Manage delegated admins →</Link></p>
         <p><Link href="/super-admin/audit">Review admin audit log →</Link></p>
         <p className="muted">Signed in as platform user {session.user_id.slice(0, 8)}…</p>
       </section>
