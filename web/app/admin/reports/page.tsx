@@ -137,12 +137,12 @@ export default async function AdminReportsRoute() {
   const categoryCounts = new Map<string, number>();
   bookings.forEach((booking) => {
     const category = categoryByServiceId.get(booking.service_id) || serviceById.get(booking.service_id)?.category || 'Uncategorised';
-    categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1;
+    categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1);
   });
   if (!bookings.length) {
     services.forEach((service) => {
       const category = categoryByServiceId.get(service.id) || service.category || 'Uncategorised';
-      categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1;
+      categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1);
     });
   }
   const categories = [...categoryCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
