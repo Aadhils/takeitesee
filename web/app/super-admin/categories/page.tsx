@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
 import { productionAuthProvider } from '../../../server/auth/session';
-import { createCategory, setCategoryActive } from './actions';
+import { createCategory, seedHomeServicesCategories, setCategoryActive } from './actions';
 
 export default async function CategoriesPage() {
   const session = await productionAuthProvider.requireAdmin();
@@ -16,6 +16,10 @@ export default async function CategoriesPage() {
   if (appError || categoryError) throw new Error(appError?.message || categoryError?.message);
 
   const appName = new Map((applications ?? []).map((app) => [app.id, app.name]));
+  const childCount = new Map<string, number>();
+  for (const category of categories ?? []) {
+    if (category.parent_id) childCount.set(category.parent_id, (childCount.get(category.parent_id) ?? 0) + 1);
+  }
 
   return (
     <main className="container section-stack">
@@ -51,13 +55,37 @@ export default async function CategoriesPage() {
       </section>
 
       <section className="section-stack">
-        <h2>Registered categories</h2>
+        <div className="admin-section-heading">
+          <div><span className="eyebrow">Catalog structure</span><h2>Registered categories</h2></div>
+          <span>{(categories ?? []).length} total</span>
+        </div>
         {(categories ?? []).length ? (categories ?? []).map((category) => (
-          <article className="card" key={category.id}>
-            <span className="eyebrow">{appName.get(category.application_id) ?? 'Application'} · {category.code}</span>
-            <h3>{category.name}</h3>
-            <p>{category.description || 'No description yet.'}</p>
-            <p><strong>Status:</strong> {category.active ? 'Active' : 'Inactive'}{category.parent_id ? ' · Child category' : ' · Root category'}</p>
+          <article className="card section-stack" key={category.id}>
+            <div className="admin-record-top">
+              <div>
+                <span className="eyebrow">{appName.get(category.application_id) ?? 'Application'} · {category.code}</span>
+                <h3>{category.name}</h3>
+                <p>{category.description || 'No description yet.'}</p>
+              </div>
+              <span className={`badge ${category.active ? 'badge-success' : 'badge-neutral'}`}>{category.active ? 'Active' : 'Inactive'}</span>
+            </div>
+            <p><strong>{category.parent_id ? 'Child category' : 'Root category'}</strong>{!category.parent_id ? ` · ${childCount.get(category.id) ?? 0} child categories` : ''}</p>
+
+            {category.code === 'home_services' && !category.parent_id ? (
+              <div className="card section-stack">
+                <div>
+                  <span className="eyebrow">Starter catalog</span>
+                  <h4>Home Services starter set</h4>
+                  <p>Add the standard child categories in one safe, repeatable action. Existing categories such as Plumbing are skipped automatically.</p>
+                </div>
+                <form action={seedHomeServicesCategories}>
+                  <input type="hidden" name="application_id" value={category.application_id} />
+                  <input type="hidden" name="parent_id" value={category.id} />
+                  <button className="button button-secondary" type="submit">Add starter categories</button>
+                </form>
+              </div>
+            ) : null}
+
             <form action={setCategoryActive}>
               <input type="hidden" name="id" value={category.id} />
               <input type="hidden" name="application_id" value={category.application_id} />
