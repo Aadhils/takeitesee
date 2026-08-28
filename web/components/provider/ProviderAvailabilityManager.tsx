@@ -24,6 +24,7 @@ export function ProviderAvailabilityManager() {
   const [saving, setSaving] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [message, setMessage] = useState('');
+  const [blackoutMessage, setBlackoutMessage] = useState('');
   const [blackoutDraft, setBlackoutDraft] = useState<Blackout>({ starts_at: '', ends_at: '', reason: '' });
 
   useEffect(() => {
@@ -58,6 +59,7 @@ export function ProviderAvailabilityManager() {
   useEffect(() => {
     let cancelled = false;
     setSaveState('idle');
+    setBlackoutMessage('');
     if (!selectedServiceId) {
       setAvailability(null);
       return () => { cancelled = true; };
@@ -122,19 +124,29 @@ export function ProviderAvailabilityManager() {
     setAvailability({ ...availability, weekly_windows: availability.weekly_windows.filter((_, currentIndex) => currentIndex !== index) });
   };
 
+  const updateBlackoutDraft = (patch: Partial<Blackout>) => {
+    setBlackoutMessage('');
+    setBlackoutDraft((current) => ({ ...current, ...patch }));
+  };
+
   const addBlackout = () => {
     if (!availability) return;
     if (!blackoutDraft.starts_at || !blackoutDraft.ends_at) {
+      const errorMessage = 'Choose both a start and end time for the blackout.';
       setSaveState('error');
-      setMessage('Choose both a start and end time for the blackout.');
+      setMessage(errorMessage);
+      setBlackoutMessage(errorMessage);
       return;
     }
     if (new Date(blackoutDraft.ends_at) <= new Date(blackoutDraft.starts_at)) {
+      const errorMessage = 'End time must be after start time. 12:00 AM is midnight; choose a later time such as 11:00 AM or 12:00 PM.';
       setSaveState('error');
-      setMessage('Blackout end time must be after the start time.');
+      setMessage(errorMessage);
+      setBlackoutMessage(errorMessage);
       return;
     }
     markChanged();
+    setBlackoutMessage('');
     setAvailability({ ...availability, blackout_periods: [...availability.blackout_periods, blackoutDraft] });
     setBlackoutDraft({ starts_at: '', ends_at: '', reason: '' });
     setMessage('Blackout added. Click Save availability to persist it.');
@@ -207,11 +219,12 @@ export function ProviderAvailabilityManager() {
     <Card className="overflow-hidden"><div style={sectionPad}>
       <div style={{ marginBottom: '18px' }}><span className="eyebrow">Blocked periods</span><h2 className="mt-2 text-xl font-semibold">Blackouts</h2><p className="mt-2 text-sm leading-6 text-slate-600">Block holidays, leave, or any period that should not accept bookings.</p></div>
       <div className="grid gap-4 md:grid-cols-3">
-        <Input label="Starts" type="datetime-local" value={blackoutDraft.starts_at} onChange={(event) => setBlackoutDraft((current) => ({ ...current, starts_at: event.target.value }))} />
-        <Input label="Ends" type="datetime-local" value={blackoutDraft.ends_at} onChange={(event) => setBlackoutDraft((current) => ({ ...current, ends_at: event.target.value }))} />
-        <Input label="Reason" value={blackoutDraft.reason ?? ''} onChange={(event) => setBlackoutDraft((current) => ({ ...current, reason: event.target.value }))} />
+        <Input label="Starts" type="datetime-local" value={blackoutDraft.starts_at} onChange={(event) => updateBlackoutDraft({ starts_at: event.target.value })} />
+        <Input label="Ends" type="datetime-local" value={blackoutDraft.ends_at} onChange={(event) => updateBlackoutDraft({ ends_at: event.target.value })} />
+        <Input label="Reason" value={blackoutDraft.reason ?? ''} onChange={(event) => updateBlackoutDraft({ reason: event.target.value })} />
       </div>
       <div style={{ marginTop: '16px' }}><Button type="button" variant="secondary" onClick={addBlackout} disabled={!availability}>Add blackout</Button></div>
+      {blackoutMessage ? <div style={{ marginTop: '12px', padding: '12px 14px' }} className="rounded-xl border border-red-200 bg-red-50 text-sm leading-6 text-red-700" role="alert" aria-live="polite">{blackoutMessage}</div> : null}
       {availability?.blackout_periods.length ? <div className="mt-5 grid gap-3">{availability.blackout_periods.map((item, index) => <div style={{ padding: '16px 18px' }} className="flex flex-col gap-3 rounded-xl border sm:flex-row sm:items-center sm:justify-between" key={`${item.starts_at}-${index}`}>
         <div className="min-w-0"><strong className="break-words">{new Date(item.starts_at).toLocaleString()}</strong><span className="block break-words text-sm leading-6 text-slate-500">to {new Date(item.ends_at).toLocaleString()} · {item.reason || 'Blocked'}</span></div>
         <Button type="button" variant="quiet" onClick={() => { if (!availability) return; markChanged(); setAvailability({ ...availability, blackout_periods: availability.blackout_periods.filter((_, currentIndex) => currentIndex !== index) }); }}>Remove</Button>
