@@ -34,6 +34,22 @@ function timezoneOffsetSuffix(timezone: string) {
   throw new Error(`Unsupported booking timezone: ${timezone}`);
 }
 
+export function localDateTimeToInstantIso(value: string, timezone: string) {
+  const trimmed = value.trim();
+  if (/[zZ]$|[+-]\d{2}:\d{2}$/.test(trimmed)) {
+    const instant = new Date(trimmed);
+    if (Number.isNaN(instant.getTime())) throw new Error('Blackout period is invalid.');
+    return instant.toISOString();
+  }
+
+  const match = trimmed.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/);
+  if (!match) throw new Error('Blackout period is invalid.');
+  const [, date, hour, minute, second = '00'] = match;
+  const instant = new Date(`${date}T${hour}:${minute}:${second}${timezoneOffsetSuffix(timezone)}`);
+  if (Number.isNaN(instant.getTime())) throw new Error('Blackout period is invalid.');
+  return instant.toISOString();
+}
+
 export function bookingInstantIso(date: string, totalMinutes: number, timezone: string) {
   const dayOffset = Math.floor(totalMinutes / 1440);
   const normalized = ((totalMinutes % 1440) + 1440) % 1440;

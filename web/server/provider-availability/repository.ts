@@ -2,6 +2,7 @@ import type { EntityId } from '../../types/entities';
 import type { ServerCustomerSession } from '../../types/production-domain';
 import { createSupabaseServerClient } from '../../lib/supabase/server';
 import { assertProductionBackendConfigured } from '../config';
+import { localDateTimeToInstantIso } from '../bookings/time';
 
 export type AvailabilityMode = 'always_available' | 'on_request' | 'scheduled';
 
@@ -30,6 +31,20 @@ export interface ProviderAvailabilityRecord extends ProviderAvailabilityInput {
 
 function assertTime(value: string) {
   if (!/^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(value)) throw new Error('Availability time is invalid.');
+}
+
+function normalize(input: ProviderAvailabilityInput): ProviderAvailabilityInput {
+  const timezone = input.timezone.trim();
+  if (!timezone) throw new Error('Timezone is required.');
+  return {
+    ...input,
+    timezone,
+    blackout_periods: input.blackout_periods.map((blackout) => ({
+      starts_at: localDateTimeToInstantIso(blackout.starts_at, timezone),
+      ends_at: localDateTimeToInstantIso(blackout.ends_at, timezone),
+      reason: blackout.reason,
+    })),
+  };
 }
 
 function validate(input: ProviderAvailabilityInput) {
@@ -91,24 +106,25 @@ export const productionProviderAvailabilityRepository = {
 
   async save(session: ServerCustomerSession, serviceId: EntityId, input: ProviderAvailabilityInput): Promise<ProviderAvailabilityRecord> {
     assertProductionBackendConfigured();
-    validate(input);
+    const normalizedInput = normalize(input);
+    validate(normalizedInput);
     await assertOwnService(session, serviceId);
     const supabase = await createSupabaseServerClient();
 
-    const { error: settingError } = await supabase.from('service_availability').upsert({ service_id: serviceId, mode: input.mode, timezone: input.timezone.trim(), updated_at: new Date().toISOString() }, { onConflict: 'service_id' });
+    const { error: settingError } = await supabase.from('service_availability').upsert({ service_id: serviceId, mode: normalizedInput.mode, timezone: normalizedInput.timezone, updated_at: new Date().toISOString() }, { onConflict: 'service_id' });
     if (settingError) throw new Error(settingError.message);
 
     const { error: clearWindowsError } = await supabase.from('service_availability_windows').delete().eq('service_id', serviceId);
     if (clearWindowsError) throw new Error(clearWindowsError.message);
-    if (input.weekly_windows.length) {
-      const { error } = await supabase.from('service_availability_windows').insert(input.weekly_windows.map((window) => ({ service_id: serviceId, ...window })));
+    if (normalizedInput.weekly_windows.length) {
+      const { error } = await supabase.from('service_availability_windows').insert(normalizedInput.weekly_windows.map((window) => ({ service_id: serviceId, ...window })));
       if (error) throw new Error(error.message);
     }
 
     const { error: clearBlackoutsError } = await supabase.from('service_availability_blackouts').delete().eq('service_id', serviceId);
     if (clearBlackoutsError) throw new Error(clearBlackoutsError.message);
-    if (input.blackout_periods.length) {
-      const { error } = await supabase.from('service_availability_blackouts').insert(input.blackout_periods.map((blackout) => ({ service_id: serviceId, starts_at: blackout.starts_at, ends_at: blackout.ends_at, reason: blackout.reason?.trim() || null })));
+    if (normalizedInput.blackout_periods.length) {
+      const { error } = await supabase.from('service_availability_blackouts').insert(normalizedInput.blackout_periods.map((blackout) => ({ service_id: serviceId, starts_at: blackout.starts_at, ends_at: blackout.ends_at, reason: blackout.reason?.trim() || null })));
       if (error) throw new Error(error.message);
     }
 
