@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card, EmptyState, Select } from '../ui/primitives';
-import { ProviderHeading, ProviderShell } from './ProviderPresentation';
+import { ProviderHeading } from './ProviderPresentation';
+import { LiveProviderShell } from './LiveProviderShell';
 
 type ProviderBooking = {
   id: string;
@@ -76,7 +77,7 @@ export default function ProviderBookingsManager() {
     } finally { setBusyId(null); }
   };
 
-  return <ProviderShell active="/provider/bookings">
+  return <LiveProviderShell active="/provider/bookings">
     <ProviderHeading eyebrow="Operations" title="Bookings" description="Review real incoming customer bookings and respond from the provider workspace." />
     <div className="provider-toolbar">
       <Select label="Filter bookings" value={filter} onChange={(event) => setFilter(event.target.value)}>
@@ -97,5 +98,5 @@ export default function ProviderBookingsManager() {
         </div></div>
       </Card>)}
     </div> : <Card><EmptyState title="No bookings in this state">New provider booking activity will appear here.</EmptyState></Card>}
-  </ProviderShell>;
+  </LiveProviderShell>;
 }

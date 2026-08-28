@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card } from '../ui/primitives';
-import { ProviderHeading, ProviderShell } from './ProviderPresentation';
+import { ProviderHeading } from './ProviderPresentation';
+import { LiveProviderShell } from './LiveProviderShell';
 
 type Booking = {
   id: string; booking_reference: string; service_name: string; booking_date: string; start_time: string; timezone: string;
@@ -76,7 +77,7 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
     finally { setBusy(false); }
   };
 
-  return <ProviderShell active="/provider/bookings">
+  return <LiveProviderShell active="/provider/bookings">
     <Link href="/provider/bookings">← Back to bookings</Link>
     <ProviderHeading eyebrow={booking?.booking_reference ?? 'Booking'} title={booking?.service_name ?? 'Booking details'} description="Review the customer request and manage the service lifecycle." />
     {error ? <Card><p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p></Card> : null}
@@ -98,5 +99,5 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
         {booking.status === 'rescheduled' ? <p>This booking has been rescheduled. Review the updated schedule before continuing.</p> : null}
       </Card>
     </div>}
-  </ProviderShell>;
+  </LiveProviderShell>;
 }
