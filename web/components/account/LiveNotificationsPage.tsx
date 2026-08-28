@@ -57,6 +57,17 @@ export default function LiveNotificationsPage() {
   useEffect(() => { void load(); }, []);
   const unread = useMemo(() => items.filter((item) => !item.read_at).length, [items]);
 
+  // AccountShell still renders the legacy presentation badge. Keep that badge in
+  // sync with the live inbox while this production notifications page is active.
+  // Running after every render also keeps it correct during mark-read mutations.
+  useEffect(() => {
+    const badge = document.querySelector<HTMLElement>('.account-nav-count');
+    if (!badge) return;
+    badge.textContent = String(unread);
+    badge.style.display = unread ? '' : 'none';
+    badge.setAttribute('aria-label', `${unread} unread notification${unread === 1 ? '' : 's'}`);
+  });
+
   const markRead = async (id: string) => {
     const response = await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
     if (!response.ok) return;
