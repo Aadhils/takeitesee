@@ -10,6 +10,7 @@ export async function transitionProviderBookingStatus(
   session: ServerCustomerSession,
   bookingId: EntityId,
   action: ProviderBookingAction,
+  reason?: string,
 ): Promise<ProviderBookingRecord> {
   assertProductionBackendConfigured();
   const supabase = await createSupabaseServerClient();
@@ -17,6 +18,7 @@ export async function transitionProviderBookingStatus(
   const { error } = await supabase.rpc('provider_update_booking_status', {
     p_booking_id: bookingId,
     p_action: action,
+    p_reason: reason?.trim() || null,
   });
 
   if (error) throw new Error(error.message);

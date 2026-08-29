@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Badge, Card, EmptyState } from '../ui/primitives';
+import BookingReasonDialog from './BookingReasonDialog';
 import { cancelBookingThroughConfiguredRepository, getBookingThroughConfiguredRepository } from '../../services/booking-repository';
 import type { CustomerBooking } from '../../types/booking-domain';
 import { discoveryServices, displayText } from '../../data/discovery-fixtures';
 import { formatMoney } from '../../types/money';
 
 type SavedReview = { id: string; rating: number; comment?: string | null };
+const cancellationReasons = ['Plans changed', 'Booked by mistake', 'Timing no longer works', 'Found another provider', 'Other'];
 
 export default function CustomerBookingDetail({ bookingId }: { bookingId: string }) {
   const [booking, setBooking] = useState<CustomerBooking>();
@@ -42,12 +44,12 @@ export default function CustomerBookingDetail({ bookingId }: { bookingId: string
   const canManage = ['pending', 'confirmed', 'rescheduled'].includes(booking.status);
   const providerLabel = booking.providerName || (booking.providerType === 'business' ? 'Business provider' : 'Professional provider');
 
-  const handleCancel = async () => {
+  const handleCancel = async (reason: string) => {
     if (!canManage || cancelBusy) return;
     setCancelBusy(true);
     setCancelError('');
     try {
-      const updated = await cancelBookingThroughConfiguredRepository(booking.bookingId);
+      const updated = await cancelBookingThroughConfiguredRepository(booking.bookingId, reason);
       if (!updated) throw new Error('Booking could not be cancelled.');
       setBooking((current) => updated.providerName ? updated : { ...updated, providerName: current?.providerName });
       setCancelConfirmOpen(false);
@@ -163,33 +165,21 @@ export default function CustomerBookingDetail({ bookingId }: { bookingId: string
             {cancelError ? <p role="alert" style={{ color: '#b42318' }}>{cancelError}</p> : null}
             <Link href="/explore" className="button button-secondary">Find another service</Link>
           </Card>
-          <p className="support-note">Rescheduling uses live provider availability and updates the shared booking record. Cancellation releases the reserved slot.</p>
+          <p className="support-note">Rescheduling uses live provider availability and updates the shared booking record. Cancellation releases the reserved slot and records your reason.</p>
         </aside>
       </div>
 
-      {cancelConfirmOpen ? (
-        <div
-          role="presentation"
-          onClick={() => { if (!cancelBusy) setCancelConfirmOpen(false); }}
-          style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'grid', placeItems: 'center', padding: '1rem', background: 'rgba(15, 23, 42, .5)' }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="cancel-booking-title"
-            onClick={(event) => event.stopPropagation()}
-            style={{ width: 'min(100%, 32rem)', background: '#fff', borderRadius: '1rem', padding: '1.25rem', boxShadow: '0 20px 60px rgba(15, 23, 42, .25)' }}
-          >
-            <span className="eyebrow">Confirm cancellation</span>
-            <h2 id="cancel-booking-title" style={{ marginTop: '.5rem' }}>Cancel this booking?</h2>
-            <p className="detail-copy">The provider will see the booking status update and the released time slot can become available again. This action cannot be undone.</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.75rem', marginTop: '1rem' }}>
-              <button type="button" className="button button-secondary" disabled={cancelBusy} onClick={() => setCancelConfirmOpen(false)}>Keep booking</button>
-              <button type="button" className="button" disabled={cancelBusy} onClick={() => void handleCancel()}>{cancelBusy ? 'Cancelling…' : 'Cancel booking'}</button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <BookingReasonDialog
+        open={cancelConfirmOpen}
+        eyebrow="Cancel booking"
+        title="Why are you cancelling?"
+        description="Choose a reason before cancelling. The provider will be notified and the reserved time will be released."
+        options={cancellationReasons}
+        confirmLabel="Cancel booking"
+        busy={cancelBusy}
+        onClose={() => setCancelConfirmOpen(false)}
+        onConfirm={handleCancel}
+      />
     </div>
   );
 }
