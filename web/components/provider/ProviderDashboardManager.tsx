@@ -8,7 +8,7 @@ import { LiveProviderShell } from './LiveProviderShell';
 
 type Profile = { display_name: string; provider_type: string; verified: boolean; services_active: number; services_total: number; location: string };
 type Earnings = { currency: string; available_balance: number; pending_earnings: number; total_earnings: number; total_completed_count: number };
-type Booking = { id: string; booking_reference: string; service_name?: string; status: string; payment_status?: string; booking_date?: string | null; booking_time?: string | null; quoted_price?: number | null; currency?: string | null };
+type Booking = { id: string; booking_reference: string; service_name?: string; status: string; payment_status?: string; booking_date?: string | null; start_time?: string | null; booking_time?: string | null; quoted_price?: number | null; currency?: string | null };
 
 function money(amount: number, currency = 'INR') {
   try { return new Intl.NumberFormat('en-IN', { style: 'currency', currency, minimumFractionDigits: 2 }).format(amount); }
@@ -43,8 +43,8 @@ export default function ProviderDashboardManager() {
     finally { setLoading(false); }
   })(); }, []);
 
-  const pending = bookings.filter((b) => ['requested', 'provider_review', 'reschedule_requested'].includes(b.status));
-  const upcoming = bookings.filter((b) => ['accepted', 'scheduled', 'in_progress'].includes(b.status)).slice(0, 4);
+  const pending = bookings.filter((b) => ['pending', 'rescheduled'].includes(b.status));
+  const upcoming = bookings.filter((b) => b.status === 'confirmed').slice(0, 4);
   const completed = bookings.filter((b) => b.status === 'completed');
   const currency = earnings?.currency ?? 'INR';
 
@@ -54,8 +54,8 @@ export default function ProviderDashboardManager() {
     {error ? <Card><p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p></Card> : null}
     {profile && earnings ? <>
       <div className="provider-summary-grid">
-        <ProviderDashboardSummary label="Pending requests" value={String(pending.length)} detail="Needs provider attention" tone={pending.length ? 'warning' : 'success'} />
-        <ProviderDashboardSummary label="Upcoming work" value={String(upcoming.length)} detail="Accepted, scheduled or active" tone="info" />
+        <ProviderDashboardSummary label="Requests needing action" value={String(pending.length)} detail="New bookings and reschedule requests" tone={pending.length ? 'warning' : 'success'} />
+        <ProviderDashboardSummary label="Upcoming work" value={String(upcoming.length)} detail="Confirmed bookings" tone="info" />
         <ProviderDashboardSummary label="Completed jobs" value={String(completed.length)} detail={`${earnings.total_completed_count} reflected in earnings`} tone="success" />
         <ProviderDashboardSummary label="Available balance" value={money(earnings.available_balance, currency)} detail={`${money(earnings.pending_earnings, currency)} awaiting payment`} tone="success" />
       </div>
@@ -68,7 +68,7 @@ export default function ProviderDashboardManager() {
         </Card>
         <Card className="provider-profile-card">
           <div className="section-heading"><div><span className="eyebrow">Upcoming</span><h2>Next jobs</h2></div><Badge tone="success">Live bookings</Badge></div>
-          {upcoming.length ? <div className="provider-profile-services">{upcoming.map((booking) => <div key={booking.id}><strong>{booking.service_name || booking.booking_reference}</strong><span>{booking.booking_date || 'Date pending'}{booking.booking_time ? ` · ${booking.booking_time}` : ''} · {booking.status}</span><Link href={`/provider/bookings/${booking.id}`} className="text-link">View</Link></div>)}</div> : <EmptyState title="No upcoming jobs">Accepted and scheduled work will appear here.</EmptyState>}
+          {upcoming.length ? <div className="provider-profile-services">{upcoming.map((booking) => <div key={booking.id}><strong>{booking.service_name || booking.booking_reference}</strong><span>{booking.booking_date || 'Date pending'}{(booking.start_time || booking.booking_time) ? ` · ${booking.start_time || booking.booking_time}` : ''} · {booking.status}</span><Link href={`/provider/bookings/${booking.id}`} className="text-link">View</Link></div>)}</div> : <EmptyState title="No upcoming jobs">Confirmed work will appear here.</EmptyState>}
         </Card>
       </div>
       <Card className="provider-profile-card"><div className="section-heading"><div><span className="eyebrow">Provider status</span><h2>Production connection</h2></div><Badge tone="success">Supabase connected</Badge></div><p>Dashboard values are read from the signed-in provider's live profile, booking, service, and earnings APIs. Fixture dashboard totals are no longer used.</p></Card>
