@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert, Badge, Card, EmptyState } from '../ui/primitives';
 import { ProviderDashboardSummary, ProviderHeading } from './ProviderPresentation';
 import { LiveProviderShell } from './LiveProviderShell';
+import ProviderPayoutDestinationPanel from './ProviderPayoutDestinationPanel';
 
 type FinancePolicy = {
   currency: string;
@@ -46,13 +47,16 @@ type Settlement = {
 type Payout = {
   id: string;
   currency: string;
-  status: 'ready' | 'processing' | 'paid' | 'failed' | 'cancelled';
+  status: 'ready' | 'processing' | 'paid' | 'failed' | 'cancelled' | 'reversed';
   settlement_count: number;
   gross_minor: number;
   platform_fee_minor: number;
   provider_net_minor: number;
   external_reference?: string | null;
   failure_message?: string | null;
+  transfer_status?: string | null;
+  transfer_status_code?: string | null;
+  transfer_utr?: string | null;
   created_at: string;
   paid_at?: string | null;
 };
@@ -145,7 +149,7 @@ export default function ProviderEarningsManager() {
   const bookingReferenceById = useMemo(() => new Map(activity.map((item) => [item.id, item.booking_reference])), [activity]);
 
   return <LiveProviderShell active="/provider/earnings">
-    <ProviderHeading eyebrow="Finance" title="Earnings & payouts" description="Track paid service value, platform commission, provider net earnings, settlement holds, available balance, and payout batches from the immutable finance ledger." />
+    <ProviderHeading eyebrow="Finance" title="Earnings & payouts" description="Track paid service value, platform commission, provider net earnings, settlement holds, available balance, payout destination, and real payout transfer status." />
 
     {loading ? <Card><p>Loading finance ledger…</p></Card> : null}
     {error ? <Card><p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p></Card> : null}
@@ -153,11 +157,13 @@ export default function ProviderEarningsManager() {
     {payload && bookingSummary ? <>
       {!policy?.active ? <Alert tone="warning" title="Platform finance policy not active">Paid bookings are still safely recorded in the booking payment ledger, but provider commission and payout snapshots will start only after the platform activates a finance policy.</Alert> : null}
 
+      <ProviderPayoutDestinationPanel />
+
       <div className="provider-summary-grid">
         <ProviderDashboardSummary label="Available for payout" value={formatMinor(summary.available_minor, currency)} detail={`${summary.available_count} eligible settlement${summary.available_count === 1 ? '' : 's'}`} tone="success" />
         <ProviderDashboardSummary label="On settlement hold" value={formatMinor(summary.held_minor, currency)} detail={policy?.active ? `${policy.settlement_hold_days} day hold policy` : 'Policy not active'} tone="warning" />
         <ProviderDashboardSummary label="Provider net" value={formatMinor(summary.provider_net_minor, currency)} detail={`${summary.settlement_count} settled paid job${summary.settlement_count === 1 ? '' : 's'}`} tone="info" />
-        <ProviderDashboardSummary label="Paid out" value={formatMinor(summary.paid_minor, currency)} detail="Transferred payout batches" />
+        <ProviderDashboardSummary label="Paid out" value={formatMinor(summary.paid_minor, currency)} detail="Completed provider transfers" />
       </div>
 
       <Card className="provider-profile-card">
@@ -184,10 +190,10 @@ export default function ProviderEarningsManager() {
       </Card>
 
       <Card className="provider-transactions">
-        <div className="section-heading"><div><span className="eyebrow">Payout history</span><h2>Provider payout batches</h2></div><Badge tone="neutral">Bank transfer follows platform processing</Badge></div>
+        <div className="section-heading"><div><span className="eyebrow">Payout history</span><h2>Provider payout transfers</h2></div><Badge tone="info">Gateway reconciled</Badge></div>
         {payouts.length ? <div className="provider-transaction-list">{payouts.map((item) => <div key={item.id}>
-          <div><strong>{formatMinor(item.provider_net_minor, item.currency)}</strong><span>{item.settlement_count} settlements · {new Date(item.created_at).toLocaleString('en-IN')}</span></div>
-          <strong>{item.external_reference || 'No transfer reference yet'}</strong>
+          <div><strong>{formatMinor(item.provider_net_minor, item.currency)}</strong><span>{item.settlement_count} settlements · {new Date(item.created_at).toLocaleString('en-IN')}{item.transfer_status ? ` · ${item.transfer_status}${item.transfer_status_code ? `/${item.transfer_status_code}` : ''}` : ''}</span></div>
+          <strong>{item.transfer_utr || item.external_reference || 'Transfer not sent yet'}</strong>
           <Badge tone={financeTone(item.status)}>{item.status}</Badge>
         </div>)}</div> : <EmptyState title="No payouts prepared yet">Available settlement balance will appear in a payout batch after platform finance review.</EmptyState>}
       </Card>
@@ -198,7 +204,7 @@ export default function ProviderEarningsManager() {
           const date = item.booking_date ? new Date(`${item.booking_date}T00:00:00`) : new Date(item.created_at);
           return <div key={item.id}><div><strong>{item.service_name}</strong><span>{date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} · {item.booking_reference} · {item.booking_status}</span></div><strong>{formatCurrency(item.amount, item.currency)}</strong><Badge tone={paymentTone(item.payment_status)}>Payment {item.payment_status}</Badge></div>;
         })}</div> : <EmptyState title="No booking activity yet">New provider bookings will appear here.</EmptyState>}
-        <p className="provider-fixture-note">Payout batches in this module are finance-ledger instructions only. Actual bank transfer requires the payout gateway module and an approved payout destination.</p>
+        <p className="provider-fixture-note">A payout is marked paid only after the payout gateway confirms a completed transfer. Failed or reversed transfers release the affected settlement balance for finance review and retry.</p>
       </Card>
     </> : null}
   </LiveProviderShell>;
