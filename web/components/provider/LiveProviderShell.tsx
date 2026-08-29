@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 
 const providerLinks = [
   { href: '/provider', label: 'Dashboard' },
+  { href: '/provider/setup', label: 'Setup' },
   { href: '/provider/bookings', label: 'Bookings' },
   { href: '/provider/schedule', label: 'Schedule' },
   { href: '/provider/services', label: 'Services' },
