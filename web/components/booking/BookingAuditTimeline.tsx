@@ -82,10 +82,12 @@ export function BookingAuditList({ events, timezone }: { events: BookingAuditEve
 
 export default function BookingAuditTimeline({
   bookingId,
+  refreshKey,
   title = 'Booking & payment timeline',
   description = 'A chronological audit trail combining booking lifecycle and payment state changes.',
 }: {
   bookingId: string;
+  refreshKey?: string | number;
   title?: string;
   description?: string;
 }) {
@@ -94,6 +96,7 @@ export default function BookingAuditTimeline({
 
   useEffect(() => {
     let active = true;
+    setError('');
     void (async () => {
       try {
         const response = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}/audit`, { cache: 'no-store' });
@@ -105,7 +108,7 @@ export default function BookingAuditTimeline({
       }
     })();
     return () => { active = false; };
-  }, [bookingId]);
+  }, [bookingId, refreshKey]);
 
   return (
     <Card className="policy-card">
