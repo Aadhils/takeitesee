@@ -9,7 +9,6 @@ type WindowRow = { day_of_week: number; start_time: string; end_time: string };
 type BlackoutRow = { starts_at: string; ends_at: string };
 type BookingRow = { booking_date: string; start_time: string; duration_minutes: number; status: string };
 
-const BLOCKING_STATUSES = ['pending', 'confirmed', 'rescheduled'];
 const SLOT_STEP_MINUTES = 30;
 const DAYS_AHEAD = 14;
 
@@ -70,18 +69,17 @@ export async function GET(_request: Request, context: RouteContext) {
     const end = new Date(start);
     end.setUTCDate(end.getUTCDate() + DAYS_AHEAD - 1);
 
-    const providerColumn = service.provider_type === 'professional' ? 'professional_id' : 'business_id';
     const providerId = service.provider_type === 'professional' ? service.professional_id : service.business_id;
     let bookings: BookingRow[] = [];
     if (providerId) {
-      const { data, error } = await supabase
-        .from('bookings')
-        .select('booking_date,start_time,duration_minutes,status')
-        .eq(providerColumn, providerId)
-        .gte('booking_date', isoDate(start))
-        .lte('booking_date', isoDate(end))
-        .in('status', BLOCKING_STATUSES);
-      if (!error) bookings = (data ?? []) as BookingRow[];
+      const { data, error } = await supabase.rpc('get_public_booking_conflicts', {
+        target_provider_type: service.provider_type,
+        target_provider_id: providerId,
+        from_date: isoDate(start),
+        to_date: isoDate(end),
+      });
+      if (error) throw new Error(error.message);
+      bookings = (data ?? []) as BookingRow[];
     }
 
     const blackoutRows = (blackouts ?? []) as BlackoutRow[];
