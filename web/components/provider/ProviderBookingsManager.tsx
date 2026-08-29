@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card, EmptyState, Select } from '../ui/primitives';
+import BookingReasonDialog from '../booking/BookingReasonDialog';
 import { ProviderHeading } from './ProviderPresentation';
 import { LiveProviderShell } from './LiveProviderShell';
 
@@ -24,6 +25,8 @@ type ProviderBooking = {
   provider_name: string;
 };
 
+const declineReasons = ['Schedule conflict', 'Service unavailable', 'Outside service area', 'Unable to fulfil request', 'Other'];
+
 function statusTone(status: ProviderBooking['status']) {
   if (status === 'confirmed' || status === 'completed') return 'success' as const;
   if (status === 'cancelled') return 'danger' as const;
@@ -41,6 +44,7 @@ export default function ProviderBookingsManager() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [declineTarget, setDeclineTarget] = useState<ProviderBooking | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -62,18 +66,20 @@ export default function ProviderBookingsManager() {
   const visible = useMemo(() => items.filter((booking) => filter === 'all' || booking.status === filter), [items, filter]);
   const pendingCount = items.filter((booking) => booking.status === 'pending').length;
 
-  const act = async (bookingId: string, action: 'accept' | 'decline') => {
+  const act = async (bookingId: string, action: 'accept' | 'decline', reason?: string) => {
     setBusyId(bookingId);
     setError('');
     try {
       const response = await fetch(`/api/provider/bookings/${encodeURIComponent(bookingId)}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }),
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, reason }),
       });
       const payload = await response.json() as { booking?: ProviderBooking; error?: string };
       if (!response.ok || !payload.booking) throw new Error(payload.error ?? 'Unable to update booking.');
       setItems((current) => current.map((booking) => booking.id === bookingId ? payload.booking! : booking));
+      return true;
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to update booking.');
+      return false;
     } finally { setBusyId(null); }
   };
 
@@ -94,9 +100,23 @@ export default function ProviderBookingsManager() {
         {booking.customer_notes ? <p className="provider-customer-note">Customer note: {booking.customer_notes}</p> : null}
         <div className="provider-booking-footer"><Badge tone="neutral">Payment {booking.payment_status}</Badge><div className="provider-actions">
           <Link className="button button-secondary" href={`/provider/bookings/${encodeURIComponent(booking.id)}`}>View details</Link>
-          {booking.status === 'pending' ? <><Button type="button" variant="secondary" disabled={busyId === booking.id} onClick={() => void act(booking.id, 'accept')}>{busyId === booking.id ? 'Updating…' : 'Accept'}</Button><Button type="button" variant="quiet" disabled={busyId === booking.id} onClick={() => void act(booking.id, 'decline')}>Decline</Button></> : null}
+          {booking.status === 'pending' ? <><Button type="button" variant="secondary" disabled={busyId === booking.id} onClick={() => void act(booking.id, 'accept')}>{busyId === booking.id ? 'Updating…' : 'Accept'}</Button><Button type="button" variant="quiet" disabled={busyId === booking.id} onClick={() => setDeclineTarget(booking)}>Decline</Button></> : null}
         </div></div>
       </Card>)}
     </div> : <Card><EmptyState title="No bookings in this state">New provider booking activity will appear here.</EmptyState></Card>}
+    <BookingReasonDialog
+      open={Boolean(declineTarget)}
+      eyebrow="Decline booking"
+      title={declineTarget ? `Decline ${declineTarget.service_name}?` : 'Decline booking?'}
+      description="Choose the clearest reason. It will be saved in the booking lifecycle for support and audit history."
+      options={declineReasons}
+      confirmLabel="Decline booking"
+      busy={Boolean(declineTarget && busyId === declineTarget.id)}
+      onClose={() => setDeclineTarget(null)}
+      onConfirm={async (reason) => {
+        if (!declineTarget) return;
+        if (await act(declineTarget.id, 'decline', reason)) setDeclineTarget(null);
+      }}
+    />
   </LiveProviderShell>;
 }
