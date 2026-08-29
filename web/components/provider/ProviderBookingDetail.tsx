@@ -114,6 +114,7 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
       <div style={{ gridColumn: '1 / -1' }}>
         <BookingAuditTimeline
           bookingId={booking.id}
+          refreshKey={booking.updated_at}
           title="Operational booking & payment timeline"
           description="Booking decisions and payment-state changes are merged into one chronological audit trail."
         />
