@@ -5,7 +5,7 @@ import { Badge, Card } from '../ui/primitives';
 
 export type BookingAuditEvent = {
   id: string;
-  category: 'booking' | 'payment';
+  category: 'booking' | 'payment' | 'review' | 'support';
   actor: 'customer' | 'provider' | 'admin' | 'gateway' | 'system' | 'migration';
   status: string;
   title: string;
@@ -44,6 +44,12 @@ function eventTone(event: BookingAuditEvent): 'neutral' | 'success' | 'warning' 
     if (event.status === 'pending' || event.status === 'unpaid') return 'warning';
     return 'neutral';
   }
+  if (event.category === 'review') return event.status === 'published' || event.status === 'responded' ? 'success' : 'info';
+  if (event.category === 'support') {
+    if (event.status === 'resolved' || event.status === 'closed') return 'success';
+    if (event.status === 'open' || event.status === 'investigating' || event.status === 'awaiting_information') return 'warning';
+    return 'info';
+  }
   if (event.status === 'confirmed' || event.status === 'completed') return 'success';
   if (event.status === 'cancelled') return 'danger';
   if (event.status === 'pending' || event.status === 'rescheduled') return 'warning';
@@ -64,7 +70,7 @@ function formatMoment(value: string, timeZone: string) {
 
 export function BookingAuditList({ events, timezone }: { events: BookingAuditEvent[]; timezone: string }) {
   return (
-    <ol aria-label="Booking and payment audit timeline" style={{ listStyle: 'none', padding: 0, margin: '1rem 0 0', display: 'grid', gap: '0.9rem' }}>
+    <ol aria-label="Booking lifecycle audit timeline" style={{ listStyle: 'none', padding: 0, margin: '1rem 0 0', display: 'grid', gap: '0.9rem' }}>
       {events.map((event) => (
         <li key={event.id} style={{ borderLeft: '3px solid var(--border, #d9dce5)', paddingLeft: '1rem' }}>
           <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -83,8 +89,8 @@ export function BookingAuditList({ events, timezone }: { events: BookingAuditEve
 export default function BookingAuditTimeline({
   bookingId,
   refreshKey,
-  title = 'Booking & payment timeline',
-  description = 'A chronological audit trail combining booking lifecycle and payment state changes.',
+  title = 'Lifecycle timeline',
+  description = 'A chronological audit trail combining booking, payment, review, and support events.',
 }: {
   bookingId: string;
   refreshKey?: string | number;
@@ -93,6 +99,16 @@ export default function BookingAuditTimeline({
 }) {
   const [payload, setPayload] = useState<BookingAuditPayload | null>(null);
   const [error, setError] = useState('');
+  const [eventRefresh, setEventRefresh] = useState(0);
+
+  useEffect(() => {
+    const refresh = (event: Event) => {
+      const detail = (event as CustomEvent<{ bookingId?: string }>).detail;
+      if (!detail?.bookingId || detail.bookingId === bookingId) setEventRefresh((value) => value + 1);
+    };
+    window.addEventListener('booking:audit-refresh', refresh);
+    return () => window.removeEventListener('booking:audit-refresh', refresh);
+  }, [bookingId]);
 
   useEffect(() => {
     let active = true;
@@ -108,7 +124,7 @@ export default function BookingAuditTimeline({
       }
     })();
     return () => { active = false; };
-  }, [bookingId, refreshKey]);
+  }, [bookingId, refreshKey, eventRefresh]);
 
   return (
     <Card className="policy-card">
