@@ -1,6 +1,6 @@
 import { createSupabaseServerClient } from '../../lib/supabase/server';
 
-export type BookingAuditCategory = 'booking' | 'payment' | 'review' | 'support' | 'closeout';
+export type BookingAuditCategory = 'booking' | 'payment' | 'refund' | 'review' | 'support' | 'closeout';
 export type BookingAuditActor = 'customer' | 'provider' | 'admin' | 'gateway' | 'system' | 'migration';
 
 export interface BookingAuditEvent {
@@ -82,8 +82,29 @@ function paymentCopy(row: Record<string, unknown>) {
   if (toStatus === 'pending') return { title: 'Payment processing', detail: `Payment of ${formattedAmount} is being processed.` };
   if (toStatus === 'paid') return { title: 'Payment recorded as paid', detail: `Payment of ${formattedAmount} was successfully recorded.` };
   if (toStatus === 'failed') return { title: 'Payment failed', detail: `Payment of ${formattedAmount} was not completed.` };
-  if (toStatus === 'refunded') return { title: 'Payment refunded', detail: `Payment of ${formattedAmount} was recorded as refunded.` };
+  if (toStatus === 'refunded') return { title: 'Payment refunded', detail: `Payment of ${formattedAmount} was recorded as refunded after verified gateway reconciliation.` };
   return { title: `Payment status changed to ${toStatus}`, detail: fromStatus ? `Previous payment status: ${fromStatus}.` : 'Payment status updated.' };
+}
+
+function relationRow(value: unknown): Record<string, unknown> | null {
+  const row = Array.isArray(value) ? value[0] : value;
+  return row && typeof row === 'object' ? row as Record<string, unknown> : null;
+}
+function refundCopy(row: Record<string, unknown>) {
+  const toStatus = String(row.to_status ?? '');
+  const refund = relationRow(row.booking_refunds);
+  const amountMinor = Number(refund?.amount_minor ?? 0);
+  const currency = String(refund?.currency ?? 'INR');
+  let formattedAmount = `${currency} ${(amountMinor / 100).toFixed(2)}`;
+  try { formattedAmount = new Intl.NumberFormat('en-IN', { style: 'currency', currency }).format(amountMinor / 100); } catch {}
+  if (toStatus === 'created') return { title: 'Full refund requested', detail: `A full refund of ${formattedAmount} was reserved for gateway processing.` };
+  if (toStatus === 'pending') return { title: 'Refund processing', detail: `Cashfree is processing the full refund of ${formattedAmount}.` };
+  if (toStatus === 'onhold') return { title: 'Refund on hold', detail: `The ${formattedAmount} refund is temporarily on hold with the payment gateway and needs follow-up.` };
+  if (toStatus === 'succeeded') return { title: 'Refund completed', detail: `Cashfree confirmed the full refund of ${formattedAmount}. The booking payment is now refunded.` };
+  if (toStatus === 'failed') return { title: 'Refund failed', detail: `The ${formattedAmount} refund was not completed by the payment gateway and needs finance follow-up.` };
+  if (toStatus === 'cancelled') return { title: 'Refund cancelled', detail: `The ${formattedAmount} gateway refund was cancelled before completion.` };
+  if (toStatus === 'requires_review') return { title: 'Refund requires finance review', detail: `The ${formattedAmount} refund was not sent because the provider payout has reached a protected transfer state. Finance recovery review is required first.` };
+  return { title: `Refund status changed to ${toStatus}`, detail: `Refund processing status changed to ${toStatus.replaceAll('_', ' ')}.` };
 }
 
 function supportCopy(row: Record<string, unknown>) {
@@ -116,16 +137,17 @@ export async function getBookingAuditReadModel(bookingId: string): Promise<Booki
   if (bookingError) throw new Error(bookingError.message);
   if (!bookingRow) return null;
 
-  const [statusResult, paymentResult, reviewResult, issueResult, issueEventResult, closeoutEventResult] = await Promise.all([
+  const [statusResult, paymentResult, refundResult, reviewResult, issueResult, issueEventResult, closeoutEventResult] = await Promise.all([
     supabase.from('booking_status_history').select('id,from_status,to_status,changed_by,reason,created_at').eq('booking_id', bookingId).order('created_at', { ascending: true }),
     supabase.from('booking_payment_events').select('id,from_status,to_status,amount,currency,source,created_at').eq('booking_id', bookingId).order('created_at', { ascending: true }),
+    supabase.from('booking_refund_events').select('id,refund_id,from_status,to_status,status_description,recorded_at,booking_refunds(amount_minor,currency)').eq('booking_id', bookingId).order('recorded_at', { ascending: true }),
     supabase.from('reviews').select('id,rating,status,provider_response,provider_responded_at,provider_response_updated_at,created_at').eq('booking_id', bookingId).order('created_at', { ascending: true }),
     supabase.from('marketplace_issues').select('id,category,summary,status,created_at').eq('booking_id', bookingId).order('created_at', { ascending: true }),
     supabase.from('marketplace_issue_events').select('id,issue_id,actor_type,event_type,from_status,to_status,note,created_at').eq('booking_id', bookingId).order('created_at', { ascending: true }),
     supabase.from('booking_closeout_events').select('id,actor_type,event_type,note,created_at').eq('booking_id', bookingId).order('created_at', { ascending: true }),
   ]);
 
-  for (const result of [statusResult, paymentResult, reviewResult, issueResult, issueEventResult, closeoutEventResult]) {
+  for (const result of [statusResult, paymentResult, refundResult, reviewResult, issueResult, issueEventResult, closeoutEventResult]) {
     if (result.error) throw new Error(result.error.message);
   }
 
@@ -137,6 +159,7 @@ export async function getBookingAuditReadModel(bookingId: string): Promise<Booki
     { id: `booking-created:${bookingRow.id}`, category: 'booking', actor: 'customer', status: 'pending', title: 'Booking requested', detail: 'The customer created the booking request.', occurred_at: String(bookingRow.created_at) },
     ...(statusResult.data ?? []).map((row): BookingAuditEvent => { const copy = bookingCopy(row as Record<string, unknown>); const reason = String(row.reason ?? ''); return { id: String(row.id), category: 'booking', actor: bookingActor(reason), status: String(row.to_status), title: copy.title, detail: copy.detail, occurred_at: String(row.created_at) }; }),
     ...(paymentResult.data ?? []).map((row): BookingAuditEvent => { const copy = paymentCopy(row as Record<string, unknown>); return { id: String(row.id), category: 'payment', actor: paymentActor(String(row.source ?? 'system')), status: String(row.to_status), title: copy.title, detail: copy.detail, occurred_at: String(row.created_at) }; }),
+    ...(refundResult.data ?? []).map((row): BookingAuditEvent => { const copy = refundCopy(row as Record<string, unknown>); return { id: `refund:${String(row.id)}`, category: 'refund', actor: row.from_status == null ? 'admin' : 'gateway', status: String(row.to_status), title: copy.title, detail: copy.detail, occurred_at: String(row.recorded_at) }; }),
     ...(reviewResult.data ?? []).flatMap((row): BookingAuditEvent[] => {
       const items: BookingAuditEvent[] = [{ id: `review:${row.id}`, category: 'review', actor: 'customer', status: String(row.status), title: 'Customer review submitted', detail: `The customer rated the completed service ${Number(row.rating)}/5.`, occurred_at: String(row.created_at) }];
       if (row.provider_response) items.push({ id: `review-response:${row.id}`, category: 'review', actor: 'provider', status: 'responded', title: 'Provider responded to review', detail: 'The provider published an official response to the customer review.', occurred_at: String(row.provider_response_updated_at || row.provider_responded_at || row.created_at) });
