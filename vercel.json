@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "git": {
+    "deploymentEnabled": {
+      "*": false,
+      "main": true
+    }
+  },
+  "ignoreCommand": "test \"$VERCEL_PROJECT_ID\" != \"prj_tnzTyndMigNpGqH1x0SZ2sRpAUlf\""
+}
