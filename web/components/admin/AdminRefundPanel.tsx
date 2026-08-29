@@ -22,9 +22,10 @@ type RefundState = {
   updated_at: string;
 };
 
+type RefundGateway = { enabled: boolean; mode: 'sandbox' | 'production'; provider: string };
 type RefundPayload = {
   refund?: RefundState | null;
-  gateway?: { enabled: boolean; mode: 'sandbox' | 'production'; provider: string };
+  gateway?: RefundGateway;
   requires_review?: boolean;
   message?: string;
   error?: string;
@@ -57,7 +58,7 @@ export default function AdminRefundPanel({
   currency: string;
 }) {
   const [refund, setRefund] = useState<RefundState | null>(null);
-  const [gateway, setGateway] = useState<RefundPayload['gateway']>(null);
+  const [gateway, setGateway] = useState<RefundGateway | null>(null);
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
