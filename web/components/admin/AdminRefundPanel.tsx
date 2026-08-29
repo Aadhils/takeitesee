@@ -24,6 +24,7 @@ type RefundState = {
 
 type RefundGateway = { enabled: boolean; mode: 'sandbox' | 'production'; provider: string };
 type RefundPayload = {
+  authorized?: boolean;
   refund?: RefundState | null;
   gateway?: RefundGateway;
   requires_review?: boolean;
@@ -57,6 +58,7 @@ export default function AdminRefundPanel({
   amount: number;
   currency: string;
 }) {
+  const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [refund, setRefund] = useState<RefundState | null>(null);
   const [gateway, setGateway] = useState<RefundGateway | null>(null);
   const [reason, setReason] = useState('');
@@ -70,7 +72,14 @@ export default function AdminRefundPanel({
       setError('');
       const response = await fetch(`/api/admin/bookings/${encodeURIComponent(bookingId)}/refund`, { cache: 'no-store' });
       const body = await response.json() as RefundPayload;
+      if (response.status === 403 || body.authorized === false) {
+        setAuthorized(false);
+        setRefund(null);
+        setGateway(null);
+        return;
+      }
       if (!response.ok) throw new Error(body.error ?? 'Unable to load refund state.');
+      setAuthorized(true);
       setRefund(body.refund ?? null);
       setGateway(body.gateway ?? null);
       if (body.refund?.reason) setReason((current) => current || body.refund!.reason);
@@ -119,6 +128,8 @@ export default function AdminRefundPanel({
     } finally { setBusy(''); }
   };
 
+  if (loaded && authorized === false) return null;
+
   const lifecycleEligible = paymentStatus === 'paid' && (bookingStatus === 'cancelled' || bookingStatus === 'completed');
   const canCreateAttempt = lifecycleEligible && (!refund || refund.status === 'failed' || refund.status === 'cancelled');
   const canRetryReserved = refund?.status === 'created';
@@ -130,7 +141,7 @@ export default function AdminRefundPanel({
       {refund ? <Badge tone={refundTone(refund.status)}>{refund.status.replaceAll('_', ' ')}</Badge> : <Badge tone="neutral">No refund</Badge>}
     </div>
 
-    {!loaded ? <p>Loading refund state…</p> : null}
+    {!loaded || authorized === null ? <p>Loading refund access…</p> : null}
     {error ? <Alert tone="danger" title="Refund action needs attention">{error}</Alert> : null}
     {notice ? <Alert tone="info" title="Refund status">{notice}</Alert> : null}
     {gateway && !gateway.enabled ? <Alert tone="warning" title="Cashfree refund submission disabled">Payment gateway credentials are not configured for this deployment. A reserved refund must not be duplicated; configure the gateway and retry the same refund.</Alert> : null}
