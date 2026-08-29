@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from '../../lib/supabase/server';
 import { assertProductionBackendConfigured } from '../config';
 
 export type ProviderServiceStatus = 'draft' | 'active' | 'paused';
+export type ProviderTrustStatus = 'normal' | 'reverification_required' | 'suspended';
 
 export interface ProviderServiceRecord {
   id: EntityId;
@@ -25,7 +26,7 @@ export interface ProviderServiceRecord {
 export interface CreateProviderServiceInput { name: string; description: string; category?: string; location?: string; duration_minutes: number; base_price: number; currency?: 'INR' | 'USD'; status?: ProviderServiceStatus; }
 export interface UpdateProviderServiceInput extends Partial<CreateProviderServiceInput> {}
 
-type ResolvedOwner = { provider_type: 'professional' | 'business'; professional_id: EntityId | null; business_id: EntityId | null; verified: boolean };
+type ResolvedOwner = { provider_type: 'professional' | 'business'; professional_id: EntityId | null; business_id: EntityId | null; verified: boolean; trust_status: ProviderTrustStatus };
 
 function validateInput(input: CreateProviderServiceInput | UpdateProviderServiceInput, partial = false) {
   if (!partial || input.name !== undefined) if (!input.name?.trim()) throw new Error('Service name is required.');
@@ -36,25 +37,40 @@ function validateInput(input: CreateProviderServiceInput | UpdateProviderService
   if (input.status !== undefined && !['draft', 'active', 'paused'].includes(input.status)) throw new Error('Service status is invalid.');
 }
 
+async function resolveTrustStatus(owner: Omit<ResolvedOwner, 'trust_status'>): Promise<ProviderTrustStatus> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc('provider_trust_status', {
+    p_provider_type: owner.provider_type,
+    p_professional_id: owner.professional_id,
+    p_business_id: owner.business_id,
+  });
+  if (error) throw new Error(error.message);
+  return (data ?? 'normal') as ProviderTrustStatus;
+}
+
 async function resolveOwner(session: ServerCustomerSession): Promise<ResolvedOwner> {
   const supabase = await createSupabaseServerClient();
   if (session.roles.includes('professional')) {
     const { data, error } = await supabase.from('professional_profiles').select('id,verified').eq('user_id', session.user_id).maybeSingle();
     if (error) throw new Error(error.message);
     if (!data) throw new Error('Professional profile is required before adding services.');
-    return { provider_type: 'professional', professional_id: data.id as EntityId, business_id: null, verified: Boolean(data.verified) };
+    const owner = { provider_type: 'professional' as const, professional_id: data.id as EntityId, business_id: null, verified: Boolean(data.verified) };
+    return { ...owner, trust_status: await resolveTrustStatus(owner) };
   }
   if (session.roles.includes('business_owner')) {
     const { data, error } = await supabase.from('businesses').select('id,verified').eq('owner_user_id', session.user_id).limit(1).maybeSingle();
     if (error) throw new Error(error.message);
     if (!data) throw new Error('Business profile is required before adding services.');
-    return { provider_type: 'business', professional_id: null, business_id: data.id as EntityId, verified: Boolean(data.verified) };
+    const owner = { provider_type: 'business' as const, professional_id: null, business_id: data.id as EntityId, verified: Boolean(data.verified) };
+    return { ...owner, trust_status: await resolveTrustStatus(owner) };
   }
   throw new Error('Provider role is required.');
 }
 
 async function assertPublishAllowed(owner: ResolvedOwner, status: ProviderServiceStatus | undefined, serviceId?: EntityId) {
   if (status !== 'active') return;
+  if (owner.trust_status === 'suspended') throw new Error('Provider suspension must be resolved by the platform before services can be activated.');
+  if (owner.trust_status === 'reverification_required') throw new Error('Provider re-verification is required before services can be activated. Open Verification to submit current evidence.');
   if (!owner.verified) throw new Error('Provider verification is required before a service can be published. Complete Verification first.');
   const supabase = await createSupabaseServerClient();
   const { data: profileComplete, error: profileError } = await supabase.rpc('provider_profile_is_complete', {
