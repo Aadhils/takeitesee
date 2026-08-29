@@ -26,11 +26,12 @@ type ProviderBooking = {
 };
 
 const declineReasons = ['Schedule conflict', 'Service unavailable', 'Outside service area', 'Unable to fulfil request', 'Other'];
+const rescheduleDeclineReasons = ['New time unavailable', 'Schedule conflict', 'Unable to fulfil at requested time', 'Service unavailable', 'Other'];
 
 function statusTone(status: ProviderBooking['status']) {
   if (status === 'confirmed' || status === 'completed') return 'success' as const;
   if (status === 'cancelled') return 'danger' as const;
-  if (status === 'pending') return 'warning' as const;
+  if (status === 'pending' || status === 'rescheduled') return 'warning' as const;
   return 'info' as const;
 }
 
@@ -64,7 +65,7 @@ export default function ProviderBookingsManager() {
   useEffect(() => { void load(); }, []);
 
   const visible = useMemo(() => items.filter((booking) => filter === 'all' || booking.status === filter), [items, filter]);
-  const pendingCount = items.filter((booking) => booking.status === 'pending').length;
+  const actionCount = items.filter((booking) => booking.status === 'pending' || booking.status === 'rescheduled').length;
 
   const act = async (bookingId: string, action: 'accept' | 'decline', reason?: string) => {
     setBusyId(bookingId);
@@ -87,30 +88,35 @@ export default function ProviderBookingsManager() {
     <ProviderHeading eyebrow="Operations" title="Bookings" description="Review real incoming customer bookings and respond from the provider workspace." />
     <div className="provider-toolbar">
       <Select label="Filter bookings" value={filter} onChange={(event) => setFilter(event.target.value)}>
-        <option value="all">All statuses</option><option value="pending">Pending requests</option><option value="confirmed">Confirmed</option><option value="rescheduled">Rescheduled</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option>
+        <option value="all">All statuses</option><option value="pending">Pending requests</option><option value="confirmed">Confirmed</option><option value="rescheduled">Reschedule requests</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option>
       </Select>
-      <span className="provider-fixture-note">{pendingCount} pending request{pendingCount === 1 ? '' : 's'}</span>
+      <span className="provider-fixture-note">{actionCount} request{actionCount === 1 ? '' : 's'} need action</span>
     </div>
     {error ? <Card><p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>Try again</Button></Card> : null}
     {loading ? <Card><p>Loading provider bookings…</p></Card> : visible.length ? <div className="provider-booking-list">
-      {visible.map((booking) => <Card className="provider-booking-card" key={booking.id}>
-        <div className="provider-booking-top"><div><span className="eyebrow">{booking.booking_reference}</span><h2>{booking.service_name}</h2></div><Badge tone={statusTone(booking.status)}>{booking.status}</Badge></div>
-        <p className="provider-service-name">Customer booking · {booking.provider_name}</p>
-        <dl className="provider-booking-details"><div><dt>When</dt><dd>{booking.booking_date}, {booking.start_time} {booking.timezone}</dd></div><div><dt>Duration</dt><dd>{booking.duration_minutes} minutes</dd></div><div><dt>Location</dt><dd>{booking.location}</dd></div><div><dt>Value</dt><dd>{money(booking)}</dd></div></dl>
-        {booking.customer_notes ? <p className="provider-customer-note">Customer note: {booking.customer_notes}</p> : null}
-        <div className="provider-booking-footer"><Badge tone="neutral">Payment {booking.payment_status}</Badge><div className="provider-actions">
-          <Link className="button button-secondary" href={`/provider/bookings/${encodeURIComponent(booking.id)}`}>View details</Link>
-          {booking.status === 'pending' ? <><Button type="button" variant="secondary" disabled={busyId === booking.id} onClick={() => void act(booking.id, 'accept')}>{busyId === booking.id ? 'Updating…' : 'Accept'}</Button><Button type="button" variant="quiet" disabled={busyId === booking.id} onClick={() => setDeclineTarget(booking)}>Decline</Button></> : null}
-        </div></div>
-      </Card>)}
+      {visible.map((booking) => {
+        const actionable = booking.status === 'pending' || booking.status === 'rescheduled';
+        const rescheduleRequest = booking.status === 'rescheduled';
+        return <Card className="provider-booking-card" key={booking.id}>
+          <div className="provider-booking-top"><div><span className="eyebrow">{booking.booking_reference}</span><h2>{booking.service_name}</h2></div><Badge tone={statusTone(booking.status)}>{rescheduleRequest ? 'reschedule request' : booking.status}</Badge></div>
+          <p className="provider-service-name">Customer booking · {booking.provider_name}</p>
+          <dl className="provider-booking-details"><div><dt>When</dt><dd>{booking.booking_date}, {booking.start_time} {booking.timezone}</dd></div><div><dt>Duration</dt><dd>{booking.duration_minutes} minutes</dd></div><div><dt>Location</dt><dd>{booking.location}</dd></div><div><dt>Value</dt><dd>{money(booking)}</dd></div></dl>
+          {rescheduleRequest ? <p className="provider-customer-note">Customer requested this new time. Confirm or decline the updated schedule.</p> : null}
+          {booking.customer_notes ? <p className="provider-customer-note">Customer note: {booking.customer_notes}</p> : null}
+          <div className="provider-booking-footer"><Badge tone="neutral">Payment {booking.payment_status}</Badge><div className="provider-actions">
+            <Link className="button button-secondary" href={`/provider/bookings/${encodeURIComponent(booking.id)}`}>View details</Link>
+            {actionable ? <><Button type="button" variant="secondary" disabled={busyId === booking.id} onClick={() => void act(booking.id, 'accept')}>{busyId === booking.id ? 'Updating…' : rescheduleRequest ? 'Accept new time' : 'Accept'}</Button><Button type="button" variant="quiet" disabled={busyId === booking.id} onClick={() => setDeclineTarget(booking)}>{rescheduleRequest ? 'Decline new time' : 'Decline'}</Button></> : null}
+          </div></div>
+        </Card>;
+      })}
     </div> : <Card><EmptyState title="No bookings in this state">New provider booking activity will appear here.</EmptyState></Card>}
     <BookingReasonDialog
       open={Boolean(declineTarget)}
-      eyebrow="Decline booking"
-      title={declineTarget ? `Decline ${declineTarget.service_name}?` : 'Decline booking?'}
-      description="Choose the clearest reason. It will be saved in the booking lifecycle for support and audit history."
-      options={declineReasons}
-      confirmLabel="Decline booking"
+      eyebrow={declineTarget?.status === 'rescheduled' ? 'Decline new time' : 'Decline booking'}
+      title={declineTarget ? (declineTarget.status === 'rescheduled' ? `Decline the new time for ${declineTarget.service_name}?` : `Decline ${declineTarget.service_name}?`) : 'Decline booking?'}
+      description={declineTarget?.status === 'rescheduled' ? 'Choose why the new time cannot be accepted. Declining this reschedule cancels the booking because the previous slot has already been released.' : 'Choose the clearest reason. It will be saved in the booking lifecycle for support and audit history.'}
+      options={declineTarget?.status === 'rescheduled' ? rescheduleDeclineReasons : declineReasons}
+      confirmLabel={declineTarget?.status === 'rescheduled' ? 'Decline new time' : 'Decline booking'}
       busy={Boolean(declineTarget && busyId === declineTarget.id)}
       onClose={() => setDeclineTarget(null)}
       onConfirm={async (reason) => {
