@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { Badge, Card, EmptyState } from '../ui/primitives';
-import { ProviderDashboardSummary, ProviderHeading, ProviderShell } from './ProviderPresentation';
+import { ProviderDashboardSummary, ProviderHeading } from './ProviderPresentation';
+import { LiveProviderShell } from './LiveProviderShell';
 
 type EarningsSummary = {
   currency: string;
@@ -68,7 +69,7 @@ export default function ProviderEarningsManager() {
 
   const currency = summary?.currency ?? 'INR';
 
-  return <ProviderShell active="/provider/earnings">
+  return <LiveProviderShell active="/provider/earnings">
     <ProviderHeading eyebrow="Operations" title="Earnings overview" description="Live service-value and payment status from your bookings. Available balance only includes completed bookings marked paid." />
 
     {loading ? <Card><p>Loading real earnings data…</p></Card> : null}
@@ -95,5 +96,5 @@ export default function ProviderEarningsManager() {
         <p className="provider-fixture-note">Amounts come from booking quoted prices. This page does not create payouts or transfer funds.</p>
       </Card>
     </> : null}
-  </ProviderShell>;
+  </LiveProviderShell>;
 }
