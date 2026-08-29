@@ -13,6 +13,7 @@ type RefundPayload = {
   refund_amount?: number | null;
   refund_currency?: string | null;
   refund_status?: string | null;
+  refund_reason?: string | null;
   status_description?: string | null;
   refund_arn?: string | null;
   processed_at?: string | null;
@@ -55,12 +56,22 @@ function minimalRefund(payload: RefundPayload | null) {
     refund_amount: payload.refund_amount ?? null,
     refund_currency: payload.refund_currency ?? null,
     refund_status: payload.refund_status ?? null,
+    refund_reason: payload.refund_reason ?? null,
     status_description: payload.status_description ?? null,
     refund_arn: payload.refund_arn ?? null,
     processed_at: payload.processed_at ?? null,
     requested_speed: payload.requested_speed ?? null,
     processed_speed: payload.processed_speed ?? null,
   };
+}
+
+async function finishWebhook(service: ReturnType<typeof createSupabaseServiceClient>, eventId: string, status: 'processed' | 'ignored' | 'failed', error: string | null) {
+  const { error: finishError } = await service.rpc('gateway_finish_webhook_event', {
+    target_event_id: eventId,
+    target_processing_status: status,
+    target_processing_error: error,
+  });
+  if (finishError) throw new Error(finishError.message);
 }
 
 export async function POST(request: Request) {
@@ -84,9 +95,10 @@ export async function POST(request: Request) {
   const eventType = String(payload.type ?? 'REFUND_STATUS_WEBHOOK').trim() || 'REFUND_STATUS_WEBHOOK';
 
   if (!refund) {
-    const identity = autoRefund?.refund_id ?? autoRefund?.cf_refund_id ?? autoRefund?.order_id ?? 'unknown';
+    const identity = autoRefund?.cf_refund_id ?? autoRefund?.refund_id ?? autoRefund?.order_id ?? 'unknown';
     const status = String(autoRefund?.refund_status ?? 'UNKNOWN').toUpperCase();
     const eventKey = `${eventType}:auto:${String(identity)}:${status}`;
+    let webhookEventId: string | null = null;
     try {
       const { data: webhookEvent, error: eventError } = await service.rpc('gateway_record_webhook_event', {
         target_gateway: 'cashfree',
@@ -102,17 +114,70 @@ export async function POST(request: Request) {
       }).maybeSingle();
       if (eventError || !webhookEvent) throw new Error(eventError?.message ?? 'Auto-refund webhook event could not be recorded.');
       const row = webhookEvent as WebhookEventRow;
-      if (row.processing_status !== 'processed' && row.processing_status !== 'ignored') {
-        const { error: finishError } = await service.rpc('gateway_finish_webhook_event', {
-          target_event_id: row.id,
-          target_processing_status: 'ignored',
-          target_processing_error: 'Cashfree auto-refund requires reconciliation-exception handling and was not mapped to a merchant refund.',
-        });
-        if (finishError) throw new Error(finishError.message);
+      webhookEventId = row.id;
+      if (row.processing_status === 'processed' || row.processing_status === 'ignored') {
+        return NextResponse.json({ received: true, duplicate: true });
       }
-      return NextResponse.json({ received: true, ignored: true, auto_refund: Boolean(autoRefund) });
+
+      if (!autoRefund) {
+        await finishWebhook(service, row.id, 'ignored', 'No merchant refund or auto-refund payload was supplied.');
+        return NextResponse.json({ received: true, ignored: true });
+      }
+
+      const cfRefundId = String(autoRefund.cf_refund_id ?? autoRefund.refund_id ?? '').trim();
+      const cfPaymentId = String(autoRefund.cf_payment_id ?? '').trim();
+      const orderId = String(autoRefund.order_id ?? '').trim();
+      const amountMinor = autoRefund.refund_amount == null ? null : Math.round(Number(autoRefund.refund_amount) * 100);
+      const currency = String(autoRefund.refund_currency ?? '').trim().toUpperCase();
+      const refundStatus = String(autoRefund.refund_status ?? '').trim().toUpperCase();
+      const payloadHash = sha256Hex(rawBody);
+
+      if (!cfRefundId || !cfPaymentId || !orderId || amountMinor == null || !Number.isFinite(amountMinor) || amountMinor <= 0 || !currency || !refundStatus) {
+        const { error: exceptionError } = await service.rpc('gateway_upsert_payment_exception', {
+          target_exception_key: `auto-incomplete:${String(identity)}`,
+          target_event_type: eventType,
+          target_category: 'gateway_exception',
+          target_booking_id: null,
+          target_payment_intent_id: null,
+          target_gateway_order_id: orderId || '',
+          target_gateway_payment_id: cfPaymentId || '',
+          target_gateway_reference: cfRefundId || String(identity),
+          target_amount_minor: amountMinor && amountMinor > 0 ? amountMinor : null,
+          target_currency: currency === 'INR' || currency === 'USD' ? currency : null,
+          target_severity: 'warning',
+          target_status: 'open',
+          target_summary: 'Incomplete Cashfree auto-refund webhook',
+          target_detail: 'A signed Cashfree auto-refund webhook was received without enough payment identity to reconcile automatically.',
+          target_payload_sha256: payloadHash,
+        });
+        if (exceptionError) throw new Error(exceptionError.message);
+        await finishWebhook(service, row.id, 'processed', null);
+        return NextResponse.json({ received: true, exception: true });
+      }
+
+      const { error: applyError } = await service.rpc('gateway_apply_cashfree_auto_refund', {
+        target_cf_refund_id: cfRefundId,
+        target_cf_payment_id: cfPaymentId,
+        target_order_id: orderId,
+        target_amount_minor: amountMinor,
+        target_currency: currency,
+        target_refund_status: refundStatus,
+        target_refund_reason: autoRefund.refund_reason ?? null,
+        target_status_description: autoRefund.status_description ?? null,
+        target_payload_sha256: payloadHash,
+      });
+      if (applyError) throw new Error(applyError.message);
+      await finishWebhook(service, row.id, 'processed', null);
+      return NextResponse.json({ received: true, auto_refund: true });
     } catch (error) {
-      return NextResponse.json({ error: error instanceof Error ? error.message : 'Auto-refund webhook auditing failed.' }, { status: 500 });
+      if (webhookEventId) {
+        await service.rpc('gateway_finish_webhook_event', {
+          target_event_id: webhookEventId,
+          target_processing_status: 'failed',
+          target_processing_error: error instanceof Error ? error.message : 'Auto-refund reconciliation failed.',
+        });
+      }
+      return NextResponse.json({ error: error instanceof Error ? error.message : 'Auto-refund reconciliation failed.' }, { status: 500 });
     }
   }
 
@@ -153,11 +218,7 @@ export async function POST(request: Request) {
     if (refundError) throw new Error(refundError.message);
     const refundRow = refundData as RefundRow | null;
     if (!refundRow) {
-      await service.rpc('gateway_finish_webhook_event', {
-        target_event_id: webhookEventId,
-        target_processing_status: 'ignored',
-        target_processing_error: 'No matching Takeitesee merchant refund.',
-      });
+      await finishWebhook(service, webhookEventId, 'ignored', 'No matching Takeitesee merchant refund.');
       return NextResponse.json({ received: true, ignored: true });
     }
 
@@ -184,12 +245,7 @@ export async function POST(request: Request) {
     });
     if (applyError) throw new Error(applyError.message);
 
-    const { error: finishError } = await service.rpc('gateway_finish_webhook_event', {
-      target_event_id: webhookEventId,
-      target_processing_status: 'processed',
-      target_processing_error: null,
-    });
-    if (finishError) throw new Error(finishError.message);
+    await finishWebhook(service, webhookEventId, 'processed', null);
     return NextResponse.json({ received: true });
   } catch (error) {
     if (webhookEventId) {

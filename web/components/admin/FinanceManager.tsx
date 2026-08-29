@@ -36,6 +36,7 @@ type ProviderFinance = {
   available_minor: number;
   held_minor: number;
   assigned_minor: number;
+  recovery_open_minor: number;
   settlement_count: number;
   payout_destination?: PayoutDestination | null;
 };
@@ -49,6 +50,8 @@ type Payout = {
   gross_minor: number;
   platform_fee_minor: number;
   provider_net_minor: number;
+  recovery_offset_minor: number;
+  transfer_amount_minor: number;
   external_reference?: string | null;
   failure_message?: string | null;
   created_at: string;
@@ -179,7 +182,7 @@ export default function FinanceManager() {
       });
       const body = await response.json() as { error?: string };
       if (!response.ok) throw new Error(body.error ?? 'Payout could not be prepared.');
-      setNotice(`Payout prepared for ${provider.display_name}. No transfer has been sent yet.`);
+      setNotice(`Payout prepared for ${provider.display_name}. Recovery offsets are reserved before any external transfer.`);
       await load();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Payout could not be prepared.');
@@ -196,7 +199,7 @@ export default function FinanceManager() {
       });
       const body = await response.json() as { error?: string };
       if (!response.ok) throw new Error(body.error ?? 'Payout could not be cancelled.');
-      setNotice('Payout batch cancelled and eligible settlements released.');
+      setNotice('Payout batch cancelled; recovery offsets were reversed and eligible settlements released.');
       setCancelBatchId(null); setCancelReason(''); await load();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Payout could not be cancelled.');
@@ -216,7 +219,9 @@ export default function FinanceManager() {
         setNotice(body.error ?? 'Payout submission is awaiting status verification.'); await load(); return;
       }
       if (!response.ok) throw new Error(body.error ?? 'Payout could not be sent.');
-      setNotice('Payout submitted to Cashfree. Final paid status will come from verified gateway status/webhook.');
+      setNotice(Number(batch.transfer_amount_minor) === 0
+        ? 'Recovery-only payout completed internally. No bank or UPI transfer was created.'
+        : 'Payout submitted to Cashfree. Final paid status will come from verified gateway status/webhook.');
       await load();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Payout could not be sent.');
@@ -247,7 +252,7 @@ export default function FinanceManager() {
   return <div className="section-stack">
     {error ? <Alert tone="danger" title="Finance action needs attention">{error}</Alert> : null}
     {notice ? <Alert tone="success" title="Finance control updated">{notice}</Alert> : null}
-    {gateway && !gateway.enabled ? <Alert tone="warning" title="Real provider transfers are disabled">Cashfree Payouts credentials / production 2FA are not configured. Finance ledger and payout preparation remain available, but Send payout is disabled.</Alert> : null}
+    {gateway && !gateway.enabled ? <Alert tone="warning" title="Real provider transfers are disabled">Cashfree Payouts credentials / production 2FA are not configured. Finance ledger, payout preparation, and recovery-only internal offsets remain available; external bank/UPI transfers are disabled.</Alert> : null}
 
     <section className="section-stack">
       <div><span className="eyebrow">Policy</span><h2>Commission & settlement rules</h2><p>Policy changes apply only to future settlement snapshots. Existing booking settlement amounts remain immutable.</p></div>
@@ -276,7 +281,7 @@ export default function FinanceManager() {
     </section>
 
     <section className="section-stack">
-      <div><span className="eyebrow">Provider balances</span><h2>Settlement & payout queue</h2><p>Preparing a batch reserves eligible balances. A verified payout destination is required only when the batch is actually sent.</p></div>
+      <div><span className="eyebrow">Provider balances</span><h2>Settlement & payout queue</h2><p>Preparing a batch reserves eligible balances and applies outstanding provider recovery before any money can leave Takeitesee.</p></div>
       {providers.length > 0 ? providers.map((provider) => {
         const policy = policiesByCurrency.get(provider.currency);
         const canPrepare = Boolean(policy?.active) && Number(provider.available_minor) > 0;
@@ -285,7 +290,7 @@ export default function FinanceManager() {
         return <Card key={key}>
           <div className="section-heading">
             <div><span className="eyebrow">{provider.provider_type} · {provider.currency}</span><h2>{provider.display_name}</h2></div>
-            <Badge tone={destination?.status === 'verified' ? 'success' : 'warning'}>{destination?.status === 'verified' ? 'Destination verified' : 'Destination missing'}</Badge>
+            <Badge tone={Number(provider.recovery_open_minor) > 0 ? 'warning' : destination?.status === 'verified' ? 'success' : 'warning'}>{Number(provider.recovery_open_minor) > 0 ? 'Recovery outstanding' : destination?.status === 'verified' ? 'Destination verified' : 'Destination missing'}</Badge>
           </div>
           <dl className="provider-profile-details">
             <div><dt>Gross settled</dt><dd>{money(provider.gross_minor, provider.currency)}</dd></div>
@@ -293,6 +298,7 @@ export default function FinanceManager() {
             <div><dt>Provider net</dt><dd>{money(provider.provider_net_minor, provider.currency)}</dd></div>
             <div><dt>Available</dt><dd>{money(provider.available_minor, provider.currency)}</dd></div>
             <div><dt>On hold</dt><dd>{money(provider.held_minor, provider.currency)}</dd></div>
+            <div><dt>Recovery outstanding</dt><dd>{money(provider.recovery_open_minor, provider.currency)}</dd></div>
             <div><dt>Payout destination</dt><dd>{destination ? `${destination.masked_destination} · ${destination.status}` : 'Not registered'}</dd></div>
           </dl>
           <Button type="button" disabled={!canPrepare || Boolean(busy)} loading={busy === `prepare:${key}`} onClick={() => void preparePayout(provider)}>Prepare payout batch</Button>
@@ -301,19 +307,21 @@ export default function FinanceManager() {
     </section>
 
     <section className="section-stack">
-      <div><span className="eyebrow">Payout batches</span><h2>Gateway transfer history</h2></div>
+      <div><span className="eyebrow">Payout batches</span><h2>Gateway transfer & recovery history</h2></div>
       {payouts.length > 0 ? payouts.map((batch) => {
         const provider = providersByOwner.get(batch.owner_user_id);
         const destination = provider?.payout_destination;
-        const canSend = batch.status === 'ready' && Boolean(gateway?.enabled) && destination?.status === 'verified';
+        const recoveryOnly = Number(batch.transfer_amount_minor) === 0 && Number(batch.recovery_offset_minor) > 0;
+        const canSend = batch.status === 'ready' && (recoveryOnly || (Boolean(gateway?.enabled) && destination?.status === 'verified'));
         return <Card key={batch.id}>
           <div className="section-heading">
-            <div><span className="eyebrow">{batch.currency} · {batch.settlement_count} settlements</span><h2>{money(batch.provider_net_minor, batch.currency)}</h2></div>
+            <div><span className="eyebrow">{batch.currency} · {batch.settlement_count} settlements</span><h2>{money(batch.transfer_amount_minor, batch.currency)} transfer</h2></div>
             <Badge tone={payoutTone(batch.status)}>{batch.status}</Badge>
           </div>
           <p>Gross {money(batch.gross_minor, batch.currency)} · Platform fee {money(batch.platform_fee_minor, batch.currency)} · Provider net {money(batch.provider_net_minor, batch.currency)}</p>
-          <p><strong>Destination:</strong> {destination?.masked_destination ?? 'No verified destination'}</p>
-          {batch.transfer_status ? <p><strong>Gateway:</strong> {batch.transfer_status}{batch.transfer_status_code ? ` / ${batch.transfer_status_code}` : ''}</p> : null}
+          <p><strong>Recovery offset:</strong> {money(batch.recovery_offset_minor, batch.currency)} · <strong>Actual transfer:</strong> {money(batch.transfer_amount_minor, batch.currency)}</p>
+          <p><strong>Destination:</strong> {recoveryOnly ? 'Not required — fully applied to recovery' : destination?.masked_destination ?? 'No verified destination'}</p>
+          {batch.transfer_status ? <p><strong>Gateway / settlement:</strong> {batch.transfer_status}{batch.transfer_status_code ? ` / ${batch.transfer_status_code}` : ''}</p> : null}
           {batch.transfer_utr
             ? <p><strong>UTR:</strong> {batch.transfer_utr}</p>
             : batch.external_reference ? <p><strong>Transfer reference:</strong> {batch.external_reference}</p> : null}
@@ -321,7 +329,7 @@ export default function FinanceManager() {
 
           {batch.status === 'ready' ? <div className="section-stack" style={{ marginTop: '1rem' }}>
             <div className="flex flex-wrap gap-3">
-              <Button type="button" disabled={!canSend || Boolean(busy)} loading={busy === `send:${batch.id}`} onClick={() => void sendPayout(batch)}>Send payout</Button>
+              <Button type="button" disabled={!canSend || Boolean(busy)} loading={busy === `send:${batch.id}`} onClick={() => void sendPayout(batch)}>{recoveryOnly ? 'Apply recovery' : 'Send payout'}</Button>
               {cancelBatchId !== batch.id ? <Button type="button" variant="secondary" disabled={Boolean(busy)} onClick={() => setCancelBatchId(batch.id)}>Cancel prepared payout</Button> : null}
             </div>
             {cancelBatchId === batch.id ? <div className="grid gap-3">

@@ -64,6 +64,30 @@ export type CashfreeRefund = {
   processed_speed?: string | null;
 };
 
+export type CashfreeDispute = {
+  dispute_id: string | number;
+  dispute_type: 'DISPUTE' | 'RETRIEVAL' | 'CHARGEBACK' | 'PRE_ARBITRATION' | 'ARBITRATION' | string;
+  reason_code?: string | number | null;
+  reason_description?: string | null;
+  dispute_amount: number;
+  dispute_amount_currency?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  resolved_at?: string | null;
+  respond_by?: string | null;
+  dispute_status: string;
+  cf_dispute_remarks?: string | null;
+  dispute_action_on?: 'MERCHANT' | 'CASHFREE' | string | null;
+  order_details: {
+    order_id: string;
+    order_amount?: number | null;
+    order_currency?: string | null;
+    cf_payment_id: string | number;
+    payment_amount?: number | null;
+    payment_currency?: string | null;
+  };
+};
+
 export class CashfreeApiError extends Error {
   readonly httpStatus: number;
   readonly payload: unknown;
@@ -162,6 +186,17 @@ export async function createCashfreeRefund(input: {
   const refund = Array.isArray(result) ? result[0] : result;
   if (!refund) throw new Error('Cashfree refund response did not contain a refund entity.');
   return refund;
+}
+
+export function fetchCashfreeDispute(disputeId: string): Promise<CashfreeDispute> {
+  return cashfreeRequest<CashfreeDispute>(`/disputes/${encodeURIComponent(disputeId)}`, { method: 'GET' });
+}
+
+export function acceptCashfreeDispute(disputeId: string, idempotencyKey: string): Promise<CashfreeDispute> {
+  return cashfreeRequest<CashfreeDispute>(`/disputes/${encodeURIComponent(disputeId)}/accept`, {
+    method: 'PUT',
+    idempotencyKey,
+  });
 }
 
 export async function createCashfreeOrder(input: {
