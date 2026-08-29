@@ -35,6 +35,13 @@ export interface CreateProviderServiceInput {
 
 export interface UpdateProviderServiceInput extends Partial<CreateProviderServiceInput> {}
 
+type ResolvedOwner = {
+  provider_type: 'professional' | 'business';
+  professional_id: EntityId | null;
+  business_id: EntityId | null;
+  verified: boolean;
+};
+
 function validateInput(input: CreateProviderServiceInput | UpdateProviderServiceInput, partial = false) {
   if (!partial || input.name !== undefined) {
     if (!input.name?.trim()) throw new Error('Service name is required.');
@@ -52,21 +59,27 @@ function validateInput(input: CreateProviderServiceInput | UpdateProviderService
   if (input.status !== undefined && !['draft', 'active', 'paused'].includes(input.status)) throw new Error('Service status is invalid.');
 }
 
-async function resolveOwner(session: ServerCustomerSession) {
+async function resolveOwner(session: ServerCustomerSession): Promise<ResolvedOwner> {
   const supabase = await createSupabaseServerClient();
   if (session.roles.includes('professional')) {
-    const { data, error } = await supabase.from('professional_profiles').select('id').eq('user_id', session.user_id).maybeSingle();
+    const { data, error } = await supabase.from('professional_profiles').select('id,verified').eq('user_id', session.user_id).maybeSingle();
     if (error) throw new Error(error.message);
     if (!data) throw new Error('Professional profile is required before adding services.');
-    return { provider_type: 'professional' as const, professional_id: data.id as EntityId, business_id: null };
+    return { provider_type: 'professional', professional_id: data.id as EntityId, business_id: null, verified: Boolean(data.verified) };
   }
   if (session.roles.includes('business_owner')) {
-    const { data, error } = await supabase.from('businesses').select('id').eq('owner_user_id', session.user_id).limit(1).maybeSingle();
+    const { data, error } = await supabase.from('businesses').select('id,verified').eq('owner_user_id', session.user_id).limit(1).maybeSingle();
     if (error) throw new Error(error.message);
     if (!data) throw new Error('Business profile is required before adding services.');
-    return { provider_type: 'business' as const, professional_id: null, business_id: data.id as EntityId };
+    return { provider_type: 'business', professional_id: null, business_id: data.id as EntityId, verified: Boolean(data.verified) };
   }
   throw new Error('Provider role is required.');
+}
+
+function assertPublishAllowed(owner: ResolvedOwner, status: ProviderServiceStatus | undefined) {
+  if (status === 'active' && !owner.verified) {
+    throw new Error('Provider verification is required before a service can be published. Save the service as a draft and complete verification first.');
+  }
 }
 
 function mapService(row: Record<string, unknown>): ProviderServiceRecord {
@@ -88,6 +101,10 @@ function mapService(row: Record<string, unknown>): ProviderServiceRecord {
   };
 }
 
+function ownerFields(owner: ResolvedOwner) {
+  return { provider_type: owner.provider_type, professional_id: owner.professional_id, business_id: owner.business_id };
+}
+
 export const productionProviderServiceRepository = {
   async list(session: ServerCustomerSession): Promise<ProviderServiceRecord[]> {
     assertProductionBackendConfigured();
@@ -104,10 +121,11 @@ export const productionProviderServiceRepository = {
     assertProductionBackendConfigured();
     validateInput(input);
     const owner = await resolveOwner(session);
-    const supabase = await createSupabaseServerClient();
     const status = input.status ?? 'draft';
+    assertPublishAllowed(owner, status);
+    const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase.from('services').insert({
-      ...owner,
+      ...ownerFields(owner),
       name: input.name.trim(),
       description: input.description.trim(),
       category: input.category?.trim() || null,
@@ -126,6 +144,7 @@ export const productionProviderServiceRepository = {
     assertProductionBackendConfigured();
     validateInput(input, true);
     const owner = await resolveOwner(session);
+    assertPublishAllowed(owner, input.status);
     const supabase = await createSupabaseServerClient();
     const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (input.name !== undefined) patch.name = input.name.trim();
