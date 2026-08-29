@@ -24,6 +24,22 @@ export type CashfreeOrder = {
   order_expiry_time?: string | null;
 };
 
+export type CashfreePayment = {
+  cf_payment_id: string | number;
+  payment_status: string;
+  payment_amount: number;
+  payment_currency: string;
+  payment_message?: string | null;
+  payment_time?: string | null;
+  payment_completion_time?: string | null;
+  bank_reference?: string | null;
+  error_details?: {
+    error_code?: string | null;
+    error_description?: string | null;
+    error_reason?: string | null;
+  } | null;
+};
+
 export function getCashfreeConfig(): CashfreeConfig {
   const selected = (process.env.PAYMENT_GATEWAY_PROVIDER ?? '').trim().toLowerCase();
   const mode: CashfreeMode = process.env.CASHFREE_ENVIRONMENT === 'production' ? 'production' : 'sandbox';
@@ -83,6 +99,10 @@ export function fetchCashfreeOrder(orderId: string): Promise<CashfreeOrder> {
   return cashfreeRequest<CashfreeOrder>(`/orders/${encodeURIComponent(orderId)}`, { method: 'GET' });
 }
 
+export function fetchCashfreePayments(orderId: string): Promise<CashfreePayment[]> {
+  return cashfreeRequest<CashfreePayment[]>(`/orders/${encodeURIComponent(orderId)}/payments`, { method: 'GET' });
+}
+
 export async function createCashfreeOrder(input: {
   intentId: string;
   bookingId: string;
@@ -108,7 +128,7 @@ export async function createCashfreeOrder(input: {
     if (cause instanceof Error && cause.message.includes('does not match')) throw cause;
   }
 
-  const returnUrl = `${input.returnBaseUrl}/bookings/${encodeURIComponent(input.bookingId)}?payment_return=1&cf_order_id={order_id}`;
+  const returnUrl = `${input.returnBaseUrl}/bookings/${encodeURIComponent(input.bookingId)}?payment_return=1&order_id={order_id}`;
   const notifyUrl = `${input.returnBaseUrl}/api/payments/cashfree/webhook`;
   return cashfreeRequest<CashfreeOrder>('/orders', {
     method: 'POST',
