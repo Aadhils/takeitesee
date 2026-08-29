@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { productionAuthProvider } from '../../../../../../../server/auth/session';
-import { createSupabaseServerClient } from '../../../../../../../lib/supabase/server';
-import { getBookingCloseoutReadModel } from '../../../../../../../server/bookings/closeout';
+import { productionAuthProvider } from '../../../../../../server/auth/session';
+import { createSupabaseServerClient } from '../../../../../../lib/supabase/server';
+import { getBookingCloseoutReadModel } from '../../../../../../server/bookings/closeout';
 
 export const runtime = 'nodejs';
 
