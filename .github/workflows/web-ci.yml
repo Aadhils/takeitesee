@@ -1,4 +1,4 @@
-name: Module 6 CI
+name: Web CI
 
 on:
   pull_request:
