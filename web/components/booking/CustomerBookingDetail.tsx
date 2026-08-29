@@ -125,7 +125,7 @@ export default function CustomerBookingDetail({ bookingId }: { bookingId: string
             </dl>
           </Card>
 
-          <BookingAuditTimeline bookingId={booking.bookingId} />
+          <BookingAuditTimeline bookingId={booking.bookingId} refreshKey={booking.updatedAt} />
 
           {booking.status === 'completed' ? (
             <Card className="policy-card">
