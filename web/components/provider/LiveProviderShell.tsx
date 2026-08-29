@@ -30,11 +30,15 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
     let cancelled = false;
     void fetch('/api/provider/context', { cache: 'no-store' })
       .then(async (response) => {
+        if (response.status === 401) {
+          if (!cancelled) window.location.replace(`/login?returnTo=${encodeURIComponent(active)}`);
+          return null;
+        }
         const payload = await response.json() as { provider?: ProviderContext };
         if (!response.ok || !payload.provider) throw new Error('Provider context unavailable.');
         return payload.provider;
       })
-      .then((value) => { if (!cancelled) setProvider(value); })
+      .then((value) => { if (!cancelled && value) setProvider(value); })
       .catch(() => { if (!cancelled) setProvider(null); });
     return () => { cancelled = true; };
   }, [active]);

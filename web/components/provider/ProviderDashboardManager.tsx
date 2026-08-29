@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Badge, Card, EmptyState } from '../ui/primitives';
-import { ProviderDashboardSummary, ProviderHeading, ProviderShell } from './ProviderPresentation';
+import { ProviderDashboardSummary, ProviderHeading } from './ProviderPresentation';
+import { LiveProviderShell } from './LiveProviderShell';
 
 type Profile = { display_name: string; provider_type: string; verified: boolean; services_active: number; services_total: number; location: string };
 type Earnings = { currency: string; available_balance: number; pending_earnings: number; total_earnings: number; total_completed_count: number };
@@ -47,7 +48,7 @@ export default function ProviderDashboardManager() {
   const completed = bookings.filter((b) => b.status === 'completed');
   const currency = earnings?.currency ?? 'INR';
 
-  return <ProviderShell active="/provider">
+  return <LiveProviderShell active="/provider">
     <ProviderHeading eyebrow="Provider workspace" title={profile ? `${profile.display_name} dashboard` : 'Provider dashboard'} description="Live operational summary from your provider profile, bookings, services, and earnings." />
     {loading ? <Card><p>Loading live provider dashboard…</p></Card> : null}
     {error ? <Card><p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p></Card> : null}
@@ -72,5 +73,5 @@ export default function ProviderDashboardManager() {
       </div>
       <Card className="provider-profile-card"><div className="section-heading"><div><span className="eyebrow">Provider status</span><h2>Production connection</h2></div><Badge tone="success">Supabase connected</Badge></div><p>Dashboard values are read from the signed-in provider's live profile, booking, service, and earnings APIs. Fixture dashboard totals are no longer used.</p></Card>
     </> : null}
-  </ProviderShell>;
+  </LiveProviderShell>;
 }
