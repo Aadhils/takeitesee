@@ -21,10 +21,10 @@ export type BookingAuditPayload = { booking: BookingAuditSummary; events: Bookin
 
 function eventTone(event: BookingAuditEvent): 'neutral' | 'success' | 'warning' | 'danger' | 'info' {
   if (event.category === 'payment') {
-    if (event.status === 'paid') return 'success';
-    if (event.status === 'failed') return 'danger';
+    if (event.status === 'paid' || event.status === 'won' || event.status === 'resolved') return 'success';
+    if (event.status === 'failed' || event.status === 'lost' || event.status === 'accepted' || event.status === 'recovery_required') return 'danger';
     if (event.status === 'refunded') return 'info';
-    if (event.status === 'pending' || event.status === 'unpaid') return 'warning';
+    if (['pending','unpaid','action_required','under_review','open'].includes(event.status)) return 'warning';
     return 'neutral';
   }
   if (event.category === 'refund') {
@@ -65,7 +65,7 @@ export function BookingAuditList({ events, timezone }: { events: BookingAuditEve
   </ol>;
 }
 
-export default function BookingAuditTimeline({ bookingId, refreshKey, title = 'Lifecycle timeline', description = 'A chronological audit trail combining booking, payment, refund, attendance, review, support, and final closeout events.' }: { bookingId: string; refreshKey?: string | number; title?: string; description?: string }) {
+export default function BookingAuditTimeline({ bookingId, refreshKey, title = 'Lifecycle timeline', description = 'A chronological audit trail combining booking, payment, refund, payment-risk, attendance, review, support, and final closeout events.' }: { bookingId: string; refreshKey?: string | number; title?: string; description?: string }) {
   const [payload, setPayload] = useState<BookingAuditPayload | null>(null);
   const [error, setError] = useState('');
   const [eventRefresh, setEventRefresh] = useState(0);
