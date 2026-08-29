@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { productionAuthProvider } from '../../../server/auth/session';
 import { productionBookingRepository, type CreateBookingInput } from '../../../server/bookings/repository';
+import { assertCustomerIsNotProviderOwner } from '../../../server/bookings/ownership';
 
 export const runtime = 'nodejs';
 
@@ -17,6 +18,7 @@ export async function POST(request: Request) {
   try {
     const session = await productionAuthProvider.requireCustomer(request);
     const input = await request.json() as CreateBookingInput;
+    await assertCustomerIsNotProviderOwner(session, input.provider_type, input.provider_id);
     const booking = await productionBookingRepository.createBooking(session, input);
     return NextResponse.json({ booking }, { status: 201 });
   } catch (error) {
