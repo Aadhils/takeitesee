@@ -8,6 +8,7 @@ const providerLinks = [
   { href: '/provider/bookings', label: 'Bookings' },
   { href: '/provider/schedule', label: 'Schedule' },
   { href: '/provider/services', label: 'Services' },
+  { href: '/provider/verification', label: 'Verification' },
   { href: '/provider/earnings', label: 'Earnings' },
   { href: '/provider/reviews', label: 'Reviews' },
   { href: '/provider/profile', label: 'Profile' },
@@ -51,7 +52,7 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
     <aside className="provider-sidebar">
       <div className="provider-sidebar-heading">
         <div className="provider-avatar provider-avatar-large" aria-hidden="true">{avatar}</div>
-        <div><strong>{displayName}</strong><span>{provider?.verified ? 'Verified provider workspace' : 'Provider workspace'}</span></div>
+        <div><strong>{displayName}</strong><span>{provider?.verified ? 'Verified provider workspace' : 'Verification required to publish'}</span></div>
       </div>
       <nav aria-label="Provider workspace navigation">
         {providerLinks.map((link) => <Link href={link.href} className={active === link.href ? 'provider-nav-active' : ''} aria-current={active === link.href ? 'page' : undefined} key={link.href}>

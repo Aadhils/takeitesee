@@ -1,8 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import type { CSSProperties, FormEvent } from 'react';
-import { Badge, Button, Card, Input, Select } from '../ui/primitives';
+import { Alert, Badge, Button, Card, Input, Select } from '../ui/primitives';
 import { ProviderHeading } from './ProviderPresentation';
 import { LiveProviderShell } from './LiveProviderShell';
 
@@ -24,6 +25,7 @@ function mapApiItem(service: ProviderServiceApiRecord): CatalogItem { return { i
 
 export function ProviderCatalogManager() {
   const [items, setItems] = useState<CatalogItem[]>([]);
+  const [verified, setVerified] = useState<boolean | null>(null);
   const [draft, setDraft] = useState<CatalogDraft>(emptyDraft);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -35,18 +37,21 @@ export function ProviderCatalogManager() {
 
   const loadServices = async () => {
     try {
-      setLoading(true);
-      setError('');
-      const response = await fetch('/api/provider/services', { cache: 'no-store' });
-      const payload = await response.json() as { services?: ProviderServiceApiRecord[]; error?: string };
-      if (!response.ok) throw new Error(payload.error || 'Unable to load provider services.');
-      setItems((payload.services ?? []).map(mapApiItem));
+      setLoading(true); setError('');
+      const [serviceResponse, verificationResponse] = await Promise.all([
+        fetch('/api/provider/services', { cache: 'no-store' }),
+        fetch('/api/provider/verification', { cache: 'no-store' }),
+      ]);
+      const servicePayload = await serviceResponse.json() as { services?: ProviderServiceApiRecord[]; error?: string };
+      const verificationPayload = await verificationResponse.json() as { provider?: { verified?: boolean }; error?: string };
+      if (!serviceResponse.ok) throw new Error(servicePayload.error || 'Unable to load provider services.');
+      if (!verificationResponse.ok || !verificationPayload.provider) throw new Error(verificationPayload.error || 'Unable to load provider verification state.');
+      setItems((servicePayload.services ?? []).map(mapApiItem));
+      setVerified(Boolean(verificationPayload.provider.verified));
     } catch (cause) {
-      setItems([]);
+      setItems([]); setVerified(null);
       setError(cause instanceof Error ? cause.message : 'Unable to load provider services.');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   useEffect(() => { void loadServices(); }, []);
@@ -62,25 +67,24 @@ export function ProviderCatalogManager() {
   const saveDraft = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!draft.name.trim() || !draft.category || draft.price < 0 || draft.duration <= 0 || saving) return;
+    if (draft.status === 'active' && verified !== true) { setError('Provider verification is required before a service can be published.'); return; }
     setSaving(true); setNotice(''); setError('');
     try {
       const response = await fetch(editingId ? `/api/provider/services/${editingId}` : '/api/provider/services', {
-        method: editingId ? 'PATCH' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: editingId ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: draft.name, description: draft.description, category: draft.category, duration_minutes: draft.duration, base_price: draft.price, currency: 'INR', status: draft.status }),
       });
       const payload = await response.json() as { service?: ProviderServiceApiRecord; error?: string };
       if (!response.ok || !payload.service) throw new Error(payload.error || 'Service could not be saved.');
       const saved = mapApiItem(payload.service);
       setItems((current) => editingId ? current.map((item) => item.id === editingId ? saved : item) : [saved, ...current]);
-      setNotice(editingId ? 'Service changes saved.' : 'New service added.');
-      closeForm();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Service could not be saved.');
-    } finally { setSaving(false); }
+      setNotice(editingId ? 'Service changes saved.' : 'New service added.'); closeForm();
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Service could not be saved.'); }
+    finally { setSaving(false); }
   };
 
   const setStatus = async (id: string, status: CatalogStatus) => {
+    if (status === 'active' && verified !== true) { setError('Provider verification is required before a service can be published.'); return; }
     setNotice(''); setError('');
     try {
       const response = await fetch(`/api/provider/services/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
@@ -89,21 +93,21 @@ export function ProviderCatalogManager() {
       const saved = mapApiItem(payload.service);
       setItems((current) => current.map((item) => item.id === id ? saved : item));
       setNotice(`Service moved to ${status}.`);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Service status could not be updated.');
-    }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Service status could not be updated.'); }
   };
 
   return <LiveProviderShell active="/provider/services">
-    <ProviderHeading eyebrow="Catalog" title="Services" description="Create, edit, publish, pause, or save your provider services as drafts." action={<Button type="button" onClick={openAdd}>Add service</Button>} />
+    <ProviderHeading eyebrow="Catalog" title="Services" description="Create and edit drafts at any time. Public publishing is available only after provider verification." action={<Button type="button" onClick={openAdd}>Add service</Button>} />
 
-    <Card className="mb-6 overflow-hidden"><div style={cardInset} className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between"><div className="min-w-0"><span className="eyebrow">Service catalog</span><h2 className="mt-2 break-words text-xl font-semibold">{loading ? 'Loading services' : error ? 'Unable to load services' : 'Catalog connected'}</h2><p className="mt-3 max-w-2xl break-words text-sm leading-6 text-slate-600">{error || notice || 'Your catalog is connected to your live provider account.'}</p></div><div className="grid w-full grid-cols-3 gap-2 text-center md:w-auto md:min-w-72"><div className="rounded-xl border" style={metaInset}><strong className="block text-lg">{activeCount}</strong><span className="text-xs text-slate-500">Active</span></div><div className="rounded-xl border" style={metaInset}><strong className="block text-lg">{draftCount}</strong><span className="text-xs text-slate-500">Draft</span></div><div className="rounded-xl border" style={metaInset}><strong className="block text-lg">{pausedCount}</strong><span className="text-xs text-slate-500">Paused</span></div></div></div>{error ? <div style={{ padding: '0 24px 24px' }}><Button type="button" variant="secondary" onClick={() => void loadServices()}>Retry</Button></div> : null}</Card>
+    {verified === false ? <Alert title="Verification required to publish" tone="warning">Your drafts are safe, but Activate is locked until platform verification is approved. <Link href="/provider/verification">Open verification →</Link></Alert> : verified === true ? <Alert title="Publishing enabled" tone="success">Your provider is verified. Active services are eligible for public discovery.</Alert> : null}
+
+    <Card className="mb-6 overflow-hidden"><div style={cardInset} className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between"><div className="min-w-0"><span className="eyebrow">Service catalog</span><h2 className="mt-2 break-words text-xl font-semibold">{loading ? 'Loading services' : error ? 'Catalog needs attention' : 'Catalog connected'}</h2><p className="mt-3 max-w-2xl break-words text-sm leading-6 text-slate-600">{error || notice || 'Your catalog is connected to your live provider account.'}</p></div><div className="grid w-full grid-cols-3 gap-2 text-center md:w-auto md:min-w-72"><div className="rounded-xl border" style={metaInset}><strong className="block text-lg">{activeCount}</strong><span className="text-xs text-slate-500">Active</span></div><div className="rounded-xl border" style={metaInset}><strong className="block text-lg">{draftCount}</strong><span className="text-xs text-slate-500">Draft</span></div><div className="rounded-xl border" style={metaInset}><strong className="block text-lg">{pausedCount}</strong><span className="text-xs text-slate-500">Paused</span></div></div></div>{error ? <div style={{ padding: '0 24px 24px' }}><Button type="button" variant="secondary" onClick={() => void loadServices()}>Retry</Button></div> : null}</Card>
 
     <div className="mb-5 max-w-xs"><Select label="Filter services" value={filter} onChange={(event) => setFilter(event.target.value as 'all' | CatalogStatus)}><option value="all">All services</option><option value="active">Active</option><option value="draft">Draft</option><option value="paused">Paused</option></Select></div>
 
     {formOpen ? <Card className="mb-6 overflow-hidden"><form onSubmit={saveDraft} style={cardInset} className="grid gap-5"><div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div><span className="eyebrow">{editingId ? 'Edit service' : 'New service'}</span><h2 className="mt-2 text-2xl font-semibold">{editingId ? 'Update catalog details' : 'Add a service to your catalog'}</h2></div><Button type="button" variant="quiet" onClick={closeForm}>Close</Button></div><div className="grid gap-4 md:grid-cols-2"><Input label="Service name" value={draft.name} onChange={(event) => setDraft((c) => ({ ...c, name: event.target.value }))} required /><Select label="Primary category" value={draft.category} onChange={(event) => setDraft((c) => ({ ...c, category: event.target.value }))}>{categories.map((category) => <option key={category}>{category}</option>)}</Select><Input label="Price (INR)" type="number" min="0" value={draft.price} onChange={(event) => setDraft((c) => ({ ...c, price: Number(event.target.value) }))} required /><Input label="Duration (minutes)" type="number" min="15" step="15" value={draft.duration} onChange={(event) => setDraft((c) => ({ ...c, duration: Number(event.target.value) }))} required /></div><label className="grid gap-2 text-sm font-medium">About this service<textarea className="min-h-32 w-full rounded-xl border border-slate-200 bg-white px-4 py-3" value={draft.description} onChange={(event) => setDraft((c) => ({ ...c, description: event.target.value }))} /></label><div style={actionRowStyle}><Button type="submit" style={actionButtonStyle} loading={saving}>{editingId ? 'Save changes' : 'Add service'}</Button><Button type="button" variant="secondary" style={outlinedActionStyle} onClick={() => setDraft((c) => ({ ...c, status: 'draft' }))}>Save as draft</Button></div></form></Card> : null}
 
-    <div className="grid gap-5 lg:grid-cols-2">{visibleItems.map((item) => <Card key={item.id} className="min-w-0 overflow-hidden"><div style={cardInset} className="flex min-w-0 flex-col gap-5"><div className="flex min-w-0 items-start justify-between gap-3"><div className="min-w-0"><span className="eyebrow">{item.category}</span><h2 className="mt-2 break-words text-xl font-semibold">{item.name}</h2></div><Badge tone={statusTone(item.status)}>{item.status[0].toUpperCase() + item.status.slice(1)}</Badge></div><p className="break-words text-sm leading-6 text-slate-600">{item.description || 'No description added yet.'}</p><div className="grid grid-cols-1 gap-3 sm:grid-cols-3"><div className="rounded-xl border" style={metaInset}><span className="block text-xs text-slate-500">Price</span><strong>INR {item.price.toLocaleString('en-IN')}</strong></div><div className="rounded-xl border" style={metaInset}><span className="block text-xs text-slate-500">Duration</span><strong>{item.duration} min</strong></div><div className="rounded-xl border" style={metaInset}><span className="block text-xs text-slate-500">Visibility</span><strong>{item.status === 'active' ? 'Catalog visible' : item.status === 'paused' ? 'Temporarily hidden' : 'Not published'}</strong></div></div><div style={actionRowStyle}><Button type="button" variant="secondary" style={outlinedActionStyle} onClick={() => openEdit(item)}>Edit</Button>{item.status !== 'active' ? <Button type="button" style={actionButtonStyle} onClick={() => void setStatus(item.id, 'active')}>Activate</Button> : null}{item.status === 'active' ? <Button type="button" variant="secondary" style={outlinedActionStyle} onClick={() => void setStatus(item.id, 'paused')}>Pause</Button> : null}{item.status !== 'draft' ? <Button type="button" variant="secondary" style={outlinedActionStyle} onClick={() => void setStatus(item.id, 'draft')}>Move to draft</Button> : null}</div></div></Card>)}</div>
+    <div className="grid gap-5 lg:grid-cols-2">{visibleItems.map((item) => <Card key={item.id} className="min-w-0 overflow-hidden"><div style={cardInset} className="flex min-w-0 flex-col gap-5"><div className="flex min-w-0 items-start justify-between gap-3"><div className="min-w-0"><span className="eyebrow">{item.category}</span><h2 className="mt-2 break-words text-xl font-semibold">{item.name}</h2></div><Badge tone={statusTone(item.status)}>{item.status[0].toUpperCase() + item.status.slice(1)}</Badge></div><p className="break-words text-sm leading-6 text-slate-600">{item.description || 'No description added yet.'}</p><div className="grid grid-cols-1 gap-3 sm:grid-cols-3"><div className="rounded-xl border" style={metaInset}><span className="block text-xs text-slate-500">Price</span><strong>INR {item.price.toLocaleString('en-IN')}</strong></div><div className="rounded-xl border" style={metaInset}><span className="block text-xs text-slate-500">Duration</span><strong>{item.duration} min</strong></div><div className="rounded-xl border" style={metaInset}><span className="block text-xs text-slate-500">Visibility</span><strong>{item.status === 'active' ? 'Catalog visible' : item.status === 'paused' ? 'Temporarily hidden' : 'Not published'}</strong></div></div><div style={actionRowStyle}><Button type="button" variant="secondary" style={outlinedActionStyle} onClick={() => openEdit(item)}>Edit</Button>{item.status !== 'active' ? <Button type="button" style={actionButtonStyle} disabled={verified !== true} title={verified === false ? 'Complete provider verification to publish' : undefined} onClick={() => void setStatus(item.id, 'active')}>Activate</Button> : null}{item.status === 'active' ? <Button type="button" variant="secondary" style={outlinedActionStyle} onClick={() => void setStatus(item.id, 'paused')}>Pause</Button> : null}{item.status !== 'draft' ? <Button type="button" variant="secondary" style={outlinedActionStyle} onClick={() => void setStatus(item.id, 'draft')}>Move to draft</Button> : null}</div></div></Card>)}</div>
 
     {!loading && !error && !visibleItems.length ? <Card><div style={cardInset} className="text-center"><h2 className="text-xl font-semibold">No services in this state</h2><p className="mt-2 text-sm text-slate-600">Change the filter or add a new service.</p></div></Card> : null}
   </LiveProviderShell>;
