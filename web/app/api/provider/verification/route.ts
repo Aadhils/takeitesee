@@ -3,6 +3,7 @@ import { productionAuthProvider } from '../../../../server/auth/session';
 import { createSupabaseServerClient } from '../../../../lib/supabase/server';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
@@ -22,13 +23,19 @@ export async function GET(request: Request) {
     }
     if (!provider) throw new Error('Provider profile is required.');
 
-    const { data: requests, error } = await supabase
-      .from('provider_verification_requests')
-      .select('id,provider_type,professional_id,business_id,legal_name,contact_phone,address,evidence_type,evidence_reference,evidence_note,status,review_note,reviewed_at,created_at,updated_at')
-      .eq('applicant_user_id', session.user_id)
-      .order('created_at', { ascending: false });
+    const [{ data: requests, error }, { data: documents, error: documentError }] = await Promise.all([
+      supabase.from('provider_verification_requests')
+        .select('id,provider_type,professional_id,business_id,legal_name,contact_phone,address,evidence_type,evidence_reference,evidence_note,status,review_note,reviewed_at,created_at,updated_at')
+        .eq('applicant_user_id', session.user_id)
+        .order('created_at', { ascending: false }),
+      supabase.from('provider_verification_documents')
+        .select('id,verification_request_id,original_filename,mime_type,size_bytes,status,created_at,deleted_at')
+        .eq('applicant_user_id', session.user_id)
+        .order('created_at', { ascending: false }),
+    ]);
     if (error) throw new Error(error.message);
-    return NextResponse.json({ provider, requests: requests ?? [] });
+    if (documentError) throw new Error(documentError.message);
+    return NextResponse.json({ provider, requests: requests ?? [], documents: documents ?? [] });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to load verification status.' }, { status: 401 });
   }
