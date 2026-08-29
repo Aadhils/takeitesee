@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { AdminHeading, AdminShell } from '../../../components/admin/AdminPresentation';
 import { Badge, Card, EmptyState } from '../../../components/ui/primitives';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
@@ -44,12 +45,10 @@ export default async function AdminDisputesRoute() {
     .from('service_ecosystem_scope')
     .select('service_id')
     .eq('enabled', true);
-
   if (scopeError) throw new Error(scopeError.message);
 
   const serviceIds = Array.from(new Set((mappedScopes ?? []).map((row) => String(row.service_id))));
   let issues: LiveIssue[] = [];
-
   if (serviceIds.length) {
     const { data, error } = await supabase
       .from('marketplace_issues')
@@ -57,7 +56,6 @@ export default async function AdminDisputesRoute() {
       .in('service_id', serviceIds)
       .order('created_at', { ascending: false })
       .limit(200);
-
     if (error) throw new Error(error.message);
     issues = (data ?? []) as LiveIssue[];
   }
@@ -72,7 +70,6 @@ export default async function AdminDisputesRoute() {
     if (error) throw new Error(error.message);
     bookings = (data ?? []) as BookingRow[];
   }
-
   if (reporterIds.length) {
     const { data, error } = await supabase.from('users').select('id,name,email').in('id', reporterIds);
     if (error) throw new Error(error.message);
@@ -82,45 +79,23 @@ export default async function AdminDisputesRoute() {
   const bookingById = new Map(bookings.map((booking) => [booking.id, booking]));
   const userById = new Map(users.map((user) => [user.id, user]));
 
-  return (
-    <AdminShell active="/admin/disputes">
-      <AdminHeading
-        eyebrow="Scoped operations queue"
-        title="Live issues and disputes"
-        description="Complaints and service issues are loaded from Supabase and restricted to this administrator’s assigned service scope."
-      />
-
-      {issues.length ? (
-        <div className="admin-record-grid">
-          {issues.map((issue) => {
-            const reporter = userById.get(issue.reported_by);
-            const booking = bookingById.get(issue.booking_id);
-            return (
-              <Card className="admin-issue-card" key={issue.id}>
-                <div className="admin-record-top">
-                  <div>
-                    <span className="eyebrow">{booking?.booking_reference || 'Scoped booking'}</span>
-                    <h2>{issue.category}</h2>
-                  </div>
-                  <Badge tone={statusTone(issue.status)}>{issue.status.replaceAll('_', ' ')}</Badge>
-                </div>
-                <p>{issue.summary}</p>
-                <dl className="admin-detail-list">
-                  <div><dt>Raised by</dt><dd>{reporter?.name || reporter?.email || 'Customer'}</dd></div>
-                  <div><dt>Priority</dt><dd><Badge tone={priorityTone(issue.priority)}>{issue.priority}</Badge></dd></div>
-                  <div><dt>Created</dt><dd>{formatDate(issue.created_at)}</dd></div>
-                </dl>
-              </Card>
-            );
-          })}
-        </div>
-      ) : (
-        <Card>
-          <EmptyState title="No scoped issues yet">
-            Issues will appear automatically when a customer raises a concern for a booking inside this administrator scope.
-          </EmptyState>
-        </Card>
-      )}
-    </AdminShell>
-  );
+  return <AdminShell active="/admin/disputes">
+    <AdminHeading eyebrow="Scoped operations queue" title="Live issues and disputes" description="Complaints and service issues are loaded from Supabase and restricted to this administrator’s assigned service scope." />
+    {issues.length ? <div className="admin-record-grid">
+      {issues.map((issue) => {
+        const reporter = userById.get(issue.reported_by);
+        const booking = bookingById.get(issue.booking_id);
+        return <Card className="admin-issue-card" key={issue.id}>
+          <div className="admin-record-top"><div><span className="eyebrow">{booking?.booking_reference || 'Scoped booking'}</span><h2>{issue.category}</h2></div><Badge tone={statusTone(issue.status)}>{issue.status.replaceAll('_', ' ')}</Badge></div>
+          <p>{issue.summary}</p>
+          <dl className="admin-detail-list">
+            <div><dt>Raised by</dt><dd>{reporter?.name || reporter?.email || 'Customer'}</dd></div>
+            <div><dt>Priority</dt><dd><Badge tone={priorityTone(issue.priority)}>{issue.priority}</Badge></dd></div>
+            <div><dt>Created</dt><dd>{formatDate(issue.created_at)}</dd></div>
+          </dl>
+          <Link href={`/admin/disputes/${encodeURIComponent(issue.id)}`} className="text-link">Open support case</Link>
+        </Card>;
+      })}
+    </div> : <Card><EmptyState title="No scoped issues yet">Issues will appear automatically when a customer raises a concern for a booking inside this administrator scope.</EmptyState></Card>}
+  </AdminShell>;
 }
