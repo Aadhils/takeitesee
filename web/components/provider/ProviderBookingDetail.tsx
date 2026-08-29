@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card } from '../ui/primitives';
+import BookingReasonDialog from '../booking/BookingReasonDialog';
 import { ProviderHeading } from './ProviderPresentation';
 import { LiveProviderShell } from './LiveProviderShell';
 
@@ -14,6 +15,8 @@ type Booking = {
   status: BookingStatus; payment_status: 'unpaid' | 'pending' | 'paid' | 'failed' | 'refunded'; provider_name: string;
   created_at: string; updated_at: string; history: BookingHistoryEntry[];
 };
+
+const declineReasons = ['Schedule conflict', 'Service unavailable', 'Outside service area', 'Unable to fulfil request', 'Other'];
 
 function tone(status: Booking['status']) {
   if (status === 'confirmed' || status === 'completed') return 'success' as const;
@@ -44,13 +47,25 @@ function timelineTime(value: string, timeZone: string) {
   }).format(new Date(value));
 }
 
+function lifecycleReason(reason: string, prefix: string) {
+  return reason.startsWith(prefix) ? reason.slice(prefix.length).trim() : '';
+}
+
 function timelineCopy(entry: BookingHistoryEntry) {
   const reason = entry.reason || '';
   if (entry.to_status === 'confirmed') return { title: 'Booking confirmed', detail: 'Provider accepted the customer request.' };
   if (entry.to_status === 'completed') return { title: 'Service completed', detail: 'Provider marked the scheduled service as completed.' };
   if (entry.to_status === 'rescheduled') return { title: 'Booking rescheduled', detail: 'The booking date or time was changed and availability was revalidated.' };
+  if (entry.to_status === 'cancelled' && reason.startsWith('provider:decline')) {
+    const detail = lifecycleReason(reason, 'provider:decline |');
+    return { title: 'Booking declined', detail: detail ? `Provider declined the booking. Reason: ${detail}` : 'Provider declined the booking request.' };
+  }
+  if (entry.to_status === 'cancelled' && reason.startsWith('customer:cancel')) {
+    const detail = lifecycleReason(reason, 'customer:cancel |');
+    return { title: 'Booking cancelled', detail: detail ? `Customer cancelled the booking. Reason: ${detail}` : 'Customer cancelled the booking.' };
+  }
   if (entry.to_status === 'cancelled' && reason.startsWith('provider:')) return { title: 'Booking declined', detail: 'Provider declined the booking request.' };
-  if (entry.to_status === 'cancelled') return { title: 'Booking cancelled', detail: 'The booking was cancelled and its reserved time was released.' };
+  if (entry.to_status === 'cancelled') return { title: 'Booking cancelled', detail: reason ? `Reason: ${reason}` : 'The booking was cancelled and its reserved time was released.' };
   return { title: `Status changed to ${entry.to_status}`, detail: entry.from_status ? `Previous status: ${entry.from_status}.` : 'Booking status updated.' };
 }
 
@@ -58,6 +73,7 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
   const [booking, setBooking] = useState<Booking | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [declineOpen, setDeclineOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -87,15 +103,18 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
     };
   }, [booking, now]);
 
-  const act = async (action: 'accept' | 'decline' | 'complete') => {
+  const act = async (action: 'accept' | 'decline' | 'complete', reason?: string) => {
     setBusy(true); setError('');
     try {
-      const response = await fetch(`/api/provider/bookings/${encodeURIComponent(bookingId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) });
+      const response = await fetch(`/api/provider/bookings/${encodeURIComponent(bookingId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, reason }) });
       const payload = await response.json() as { booking?: Booking; error?: string };
       if (!response.ok || !payload.booking) throw new Error(payload.error ?? 'Unable to update booking.');
       setBooking(payload.booking);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to update booking.'); }
-    finally { setBusy(false); }
+      return true;
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to update booking.');
+      return false;
+    } finally { setBusy(false); }
   };
 
   return <LiveProviderShell active="/provider/bookings">
@@ -113,10 +132,10 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
         </dl><Badge tone="neutral">Payment {booking.payment_status}</Badge>
       </Card>
       <Card className="provider-detail-card"><span className="eyebrow">Next action</span><h2>Provider controls</h2>
-        {booking.status === 'pending' ? <><p>Accept this request to confirm the booking, or decline it.</p><div className="provider-actions"><Button type="button" disabled={busy} onClick={() => void act('accept')}>Accept booking</Button><Button type="button" variant="quiet" disabled={busy} onClick={() => void act('decline')}>Decline</Button></div></> : null}
+        {booking.status === 'pending' ? <><p>Accept this request to confirm the booking, or decline it with a reason.</p><div className="provider-actions"><Button type="button" disabled={busy} onClick={() => void act('accept')}>Accept booking</Button><Button type="button" variant="quiet" disabled={busy} onClick={() => setDeclineOpen(true)}>Decline</Button></div></> : null}
         {booking.status === 'confirmed' ? <>{completion?.allowed ? <><p>The scheduled service time has ended. You can now mark the service completed.</p><Button type="button" disabled={busy} onClick={() => void act('complete')}>{busy ? 'Updating…' : 'Mark service completed'}</Button></> : <><p>This service can be marked completed only after the scheduled service time.</p><p className="summary-note">Completion available after {completion?.label}.</p><Button type="button" disabled>Mark service completed</Button></>}</> : null}
         {booking.status === 'completed' ? <p>This service has been completed. It is ready for the customer review flow.</p> : null}
-        {booking.status === 'cancelled' ? <p>This booking is cancelled. No further provider action is available.</p> : null}
+        {booking.status === 'cancelled' ? <p>This booking is cancelled. See the lifecycle timeline for the cancellation or decline reason.</p> : null}
         {booking.status === 'rescheduled' ? <p>This booking has been rescheduled. Review the updated schedule before continuing.</p> : null}
       </Card>
       <div style={{ gridColumn: '1 / -1' }}>
@@ -142,5 +161,16 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
         </Card>
       </div>
     </div>}
+    <BookingReasonDialog
+      open={declineOpen}
+      eyebrow="Decline booking"
+      title="Why can’t you accept this request?"
+      description="Choose the clearest reason. It will be saved in the booking lifecycle for support and audit history."
+      options={declineReasons}
+      confirmLabel="Decline booking"
+      busy={busy}
+      onClose={() => setDeclineOpen(false)}
+      onConfirm={async (reason) => { if (await act('decline', reason)) setDeclineOpen(false); }}
+    />
   </LiveProviderShell>;
 }
