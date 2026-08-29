@@ -1,6 +1,61 @@
 -- Phase 12 Module 3: production-grade customer reschedule lifecycle.
 -- Customer reschedules become provider-confirmation requests, preserving old/new slots in history.
 
+alter table public.notifications drop constraint if exists notifications_event_type_check;
+alter table public.notifications add constraint notifications_event_type_check check (
+  event_type in (
+    'booking_created', 'booking_accepted', 'booking_declined', 'booking_rescheduled', 'booking_cancelled', 'service_completed',
+    'reschedule_requested', 'reschedule_accepted', 'reschedule_declined'
+  )
+);
+
+create or replace function public.get_reschedule_booking_conflicts(
+  target_booking_id uuid,
+  from_date date,
+  to_date date
+)
+returns table (
+  booking_date date,
+  start_time time,
+  duration_minutes integer,
+  status public.booking_status
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_target public.bookings;
+begin
+  if auth.uid() is null then
+    raise exception 'Authentication required.';
+  end if;
+
+  select b.* into v_target
+  from public.bookings b
+  where b.id = target_booking_id
+    and b.customer_id = auth.uid();
+
+  if not found then
+    raise exception 'Booking not found or does not belong to this customer.';
+  end if;
+
+  return query
+  select b.booking_date, b.start_time, b.duration_minutes, b.status
+  from public.bookings b
+  where b.id <> target_booking_id
+    and b.status in ('pending', 'confirmed', 'rescheduled')
+    and b.booking_date between from_date and to_date
+    and (
+      (v_target.provider_type = 'business' and b.business_id = v_target.business_id)
+      or (v_target.provider_type = 'professional' and b.professional_id = v_target.professional_id)
+    );
+end;
+$$;
+
+revoke all on function public.get_reschedule_booking_conflicts(uuid, date, date) from public;
+grant execute on function public.get_reschedule_booking_conflicts(uuid, date, date) to authenticated;
+
 create or replace function public.reschedule_owned_booking(
   target_booking_id uuid,
   new_booking_date date,
