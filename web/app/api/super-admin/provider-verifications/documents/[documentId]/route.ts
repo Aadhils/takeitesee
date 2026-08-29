@@ -11,7 +11,7 @@ export async function GET(request: Request, context: { params: Promise<{ documen
     const supabase = await createSupabaseServerClient();
     const { data: document, error } = await supabase
       .from('provider_verification_documents')
-      .select('id,object_path,original_filename,status')
+      .select('id,object_path,status')
       .eq('id', documentId)
       .eq('status', 'active')
       .maybeSingle();
@@ -25,7 +25,7 @@ export async function GET(request: Request, context: { params: Promise<{ documen
 
     const { error: auditError } = await supabase.rpc('record_provider_verification_document_access', { target_document_id: document.id });
     if (auditError) throw new Error(auditError.message);
-    return NextResponse.json({ url: signed.signedUrl, expires_in_seconds: 300, filename: document.original_filename });
+    return NextResponse.redirect(signed.signedUrl);
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Verification document could not be opened.' }, { status: 403 });
   }
