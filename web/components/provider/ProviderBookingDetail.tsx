@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card } from '../ui/primitives';
 import BookingAuditTimeline from '../booking/BookingAuditTimeline';
+import BookingCloseoutPanel from '../booking/BookingCloseoutPanel';
 import BookingReasonDialog from '../booking/BookingReasonDialog';
 import { ProviderHeading } from './ProviderPresentation';
 import { LiveProviderShell } from './LiveProviderShell';
@@ -74,6 +75,11 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
     };
   }, [booking, now]);
 
+  const refreshLifecycle = () => {
+    window.dispatchEvent(new CustomEvent('booking:audit-refresh', { detail: { bookingId } }));
+    window.dispatchEvent(new CustomEvent('booking:closeout-refresh', { detail: { bookingId } }));
+  };
+
   const act = async (action: 'accept' | 'decline' | 'complete', reason?: string) => {
     setBusy(true); setError('');
     try {
@@ -81,6 +87,7 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
       const payload = await response.json() as { booking?: Booking; error?: string };
       if (!response.ok || !payload.booking) throw new Error(payload.error ?? 'Unable to update booking.');
       setBooking(payload.booking);
+      refreshLifecycle();
       return true;
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to update booking.');
@@ -108,16 +115,12 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
         {booking.status === 'pending' ? <><p>Accept this request to confirm the booking, or decline it with a reason.</p><div className="provider-actions"><Button type="button" disabled={busy} onClick={() => void act('accept')}>Accept booking</Button><Button type="button" variant="quiet" disabled={busy} onClick={() => setDeclineOpen(true)}>Decline</Button></div></> : null}
         {booking.status === 'rescheduled' ? <><p>The customer requested this new time. Confirm it to return the booking to confirmed status, or decline the new time with a reason.</p><div className="provider-actions"><Button type="button" disabled={busy} onClick={() => void act('accept')}>Accept new time</Button><Button type="button" variant="quiet" disabled={busy} onClick={() => setDeclineOpen(true)}>Decline new time</Button></div></> : null}
         {booking.status === 'confirmed' ? <>{completion?.allowed ? <><p>The scheduled service time has ended. You can now mark the service completed.</p><Button type="button" disabled={busy} onClick={() => void act('complete')}>{busy ? 'Updating…' : 'Mark service completed'}</Button></> : <><p>This service can be marked completed only after the scheduled service time.</p><p className="summary-note">Completion available after {completion?.label}.</p><Button type="button" disabled>Mark service completed</Button></>}</> : null}
-        {booking.status === 'completed' ? <p>This service has been completed. It is ready for the customer review flow.</p> : null}
-        {booking.status === 'cancelled' ? <p>This booking is cancelled. See the audit timeline for the cancellation or decline reason.</p> : null}
+        {booking.status === 'completed' ? <p>This service has been completed. Review and support closeout now stay linked to the booking.</p> : null}
+        {booking.status === 'cancelled' ? <p>This booking is cancelled. Any support follow-up remains visible in the closeout and audit views.</p> : null}
       </Card>
+      <div style={{ gridColumn: '1 / -1' }}><BookingCloseoutPanel bookingId={booking.id} /></div>
       <div style={{ gridColumn: '1 / -1' }}>
-        <BookingAuditTimeline
-          bookingId={booking.id}
-          refreshKey={booking.updated_at}
-          title="Operational booking & payment timeline"
-          description="Booking decisions and payment-state changes are merged into one chronological audit trail."
-        />
+        <BookingAuditTimeline bookingId={booking.id} refreshKey={booking.updated_at} title="Operational lifecycle timeline" description="Booking, payment, review, and support events are merged into one chronological audit trail." />
       </div>
     </div>}
     <BookingReasonDialog
