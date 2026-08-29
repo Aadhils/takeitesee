@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { AdminHeading, AdminShell } from '../../../components/admin/AdminPresentation';
 import { Badge, Card, EmptyState } from '../../../components/ui/primitives';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
@@ -20,10 +21,18 @@ type LiveBooking = {
 };
 
 function toneForStatus(status: string): 'neutral' | 'success' | 'warning' | 'danger' | 'info' {
-  if (['completed', 'scheduled', 'accepted'].includes(status)) return 'success';
-  if (['cancelled', 'rejected', 'no_show'].includes(status)) return 'danger';
-  if (['requested', 'provider_review'].includes(status)) return 'warning';
+  if (status === 'confirmed' || status === 'completed') return 'success';
+  if (status === 'cancelled') return 'danger';
+  if (status === 'pending' || status === 'rescheduled') return 'warning';
   return 'info';
+}
+
+function toneForPayment(status: string): 'neutral' | 'success' | 'warning' | 'danger' | 'info' {
+  if (status === 'paid') return 'success';
+  if (status === 'failed') return 'danger';
+  if (status === 'refunded') return 'info';
+  if (status === 'unpaid' || status === 'pending') return 'warning';
+  return 'neutral';
 }
 
 function formatAmount(value: number | string, currency: string) {
@@ -83,8 +92,11 @@ export default async function AdminBookingsRoute() {
               <dl className="admin-record-details">
                 <div><dt>Date/time</dt><dd>{booking.booking_date} · {booking.start_time}</dd></div>
                 <div><dt>Amount</dt><dd>{formatAmount(booking.quoted_price, booking.currency)}</dd></div>
-                <div><dt>Payment</dt><dd><Badge tone={booking.payment_status === 'captured' || booking.payment_status === 'settled' ? 'success' : booking.payment_status === 'failed' || booking.payment_status === 'cancelled' ? 'danger' : 'warning'}>{booking.payment_status.replaceAll('_', ' ')}</Badge></dd></div>
+                <div><dt>Payment</dt><dd><Badge tone={toneForPayment(booking.payment_status)}>{booking.payment_status.replaceAll('_', ' ')}</Badge></dd></div>
               </dl>
+              <div className="admin-actions">
+                <Link href={`/admin/bookings/${encodeURIComponent(booking.id)}`} className="text-link">Open unified audit</Link>
+              </div>
             </Card>
           ))}
         </div>

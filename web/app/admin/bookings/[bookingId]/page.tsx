@@ -1,9 +1,10 @@
-import { notFound } from 'next/navigation';
-import { AdminBookingOperationalDetail } from '../../../../components/admin/AdminPresentation';
-import { adminBookings } from '../../../../data/admin-fixtures';
+import AdminLiveBookingDetail from '../../../../components/admin/AdminLiveBookingDetail';
+import { productionAuthProvider } from '../../../../server/auth/session';
+
+export const dynamic = 'force-dynamic';
 
 export default async function AdminBookingDetailRoute({ params }: { params: Promise<{ bookingId: string }> }) {
+  await productionAuthProvider.requireAdmin();
   const { bookingId } = await params;
-  if (!adminBookings.some((booking) => booking.id === bookingId)) notFound();
-  return <AdminBookingOperationalDetail bookingId={bookingId} />;
+  return <AdminLiveBookingDetail bookingId={bookingId} />;
 }
