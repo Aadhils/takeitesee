@@ -3,17 +3,17 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card } from '../ui/primitives';
+import BookingAuditTimeline from '../booking/BookingAuditTimeline';
 import BookingReasonDialog from '../booking/BookingReasonDialog';
 import { ProviderHeading } from './ProviderPresentation';
 import { LiveProviderShell } from './LiveProviderShell';
 
 type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'rescheduled';
-type BookingHistoryEntry = { from_status: BookingStatus | null; to_status: BookingStatus; reason?: string; created_at: string };
 type Booking = {
   id: string; booking_reference: string; service_name: string; booking_date: string; start_time: string; timezone: string;
   duration_minutes: number; location: string; customer_notes?: string; quoted_price: number; currency: 'INR' | 'USD';
   status: BookingStatus; payment_status: 'unpaid' | 'pending' | 'paid' | 'failed' | 'refunded'; provider_name: string;
-  created_at: string; updated_at: string; history: BookingHistoryEntry[];
+  created_at: string; updated_at: string;
 };
 
 const declineReasons = ['Schedule conflict', 'Service unavailable', 'Outside service area', 'Unable to fulfil request', 'Other'];
@@ -38,57 +38,6 @@ function zonedDateTimeToEpoch(date: string, time: string, timeZone: string) {
     guess += targetUtc - representedUtc;
   }
   return guess;
-}
-
-function timelineTime(value: string, timeZone: string) {
-  return new Intl.DateTimeFormat('en-IN', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone: timeZone || 'Asia/Kolkata',
-  }).format(new Date(value));
-}
-
-function lifecycleReason(reason: string, prefix: string) {
-  return reason.startsWith(prefix) ? reason.slice(prefix.length).trim() : '';
-}
-
-function parseRescheduleAudit(reason: string) {
-  if (!reason.startsWith('customer:reschedule |')) return null;
-  const parts = reason.split(' | ');
-  return {
-    reason: parts[1] ?? '',
-    from: (parts.find((part) => part.startsWith('from=')) ?? '').replace(/^from=/, ''),
-    to: (parts.find((part) => part.startsWith('to=')) ?? '').replace(/^to=/, ''),
-  };
-}
-
-function timelineCopy(entry: BookingHistoryEntry) {
-  const reason = entry.reason || '';
-  if (entry.to_status === 'confirmed' && (entry.from_status === 'rescheduled' || reason === 'provider:accept_reschedule')) {
-    return { title: 'New time confirmed', detail: 'Provider accepted the customer’s reschedule request.' };
-  }
-  if (entry.to_status === 'confirmed') return { title: 'Booking confirmed', detail: 'Provider accepted the customer request.' };
-  if (entry.to_status === 'completed') return { title: 'Service completed', detail: 'Provider marked the scheduled service as completed.' };
-  if (entry.to_status === 'rescheduled') {
-    const audit = parseRescheduleAudit(reason);
-    if (audit) {
-      const movement = audit.from && audit.to ? ` from ${audit.from} to ${audit.to}` : '';
-      return { title: 'New time requested', detail: `Customer requested a schedule change${movement}. Reason: ${audit.reason}. Provider confirmation is required.` };
-    }
-    return { title: 'Booking rescheduled', detail: 'The booking date or time was changed and availability was revalidated.' };
-  }
-  if (entry.to_status === 'cancelled' && reason.startsWith('provider:decline')) {
-    const detail = lifecycleReason(reason, 'provider:decline |');
-    if (entry.from_status === 'rescheduled') return { title: 'New time declined', detail: detail ? `Provider declined the reschedule request. Reason: ${detail}` : 'Provider declined the reschedule request.' };
-    return { title: 'Booking declined', detail: detail ? `Provider declined the booking. Reason: ${detail}` : 'Provider declined the booking request.' };
-  }
-  if (entry.to_status === 'cancelled' && reason.startsWith('customer:cancel')) {
-    const detail = lifecycleReason(reason, 'customer:cancel |');
-    return { title: 'Booking cancelled', detail: detail ? `Customer cancelled the booking. Reason: ${detail}` : 'Customer cancelled the booking.' };
-  }
-  if (entry.to_status === 'cancelled' && reason.startsWith('provider:')) return { title: 'Booking declined', detail: 'Provider declined the booking request.' };
-  if (entry.to_status === 'cancelled') return { title: 'Booking cancelled', detail: reason ? `Reason: ${reason}` : 'The booking was cancelled and its reserved time was released.' };
-  return { title: `Status changed to ${entry.to_status}`, detail: entry.from_status ? `Previous status: ${entry.from_status}.` : 'Booking status updated.' };
 }
 
 export default function ProviderBookingDetail({ bookingId }: { bookingId: string }) {
@@ -160,29 +109,14 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
         {booking.status === 'rescheduled' ? <><p>The customer requested this new time. Confirm it to return the booking to confirmed status, or decline the new time with a reason.</p><div className="provider-actions"><Button type="button" disabled={busy} onClick={() => void act('accept')}>Accept new time</Button><Button type="button" variant="quiet" disabled={busy} onClick={() => setDeclineOpen(true)}>Decline new time</Button></div></> : null}
         {booking.status === 'confirmed' ? <>{completion?.allowed ? <><p>The scheduled service time has ended. You can now mark the service completed.</p><Button type="button" disabled={busy} onClick={() => void act('complete')}>{busy ? 'Updating…' : 'Mark service completed'}</Button></> : <><p>This service can be marked completed only after the scheduled service time.</p><p className="summary-note">Completion available after {completion?.label}.</p><Button type="button" disabled>Mark service completed</Button></>}</> : null}
         {booking.status === 'completed' ? <p>This service has been completed. It is ready for the customer review flow.</p> : null}
-        {booking.status === 'cancelled' ? <p>This booking is cancelled. See the lifecycle timeline for the cancellation or decline reason.</p> : null}
+        {booking.status === 'cancelled' ? <p>This booking is cancelled. See the audit timeline for the cancellation or decline reason.</p> : null}
       </Card>
       <div style={{ gridColumn: '1 / -1' }}>
-        <Card className="provider-detail-card">
-          <span className="eyebrow">Lifecycle</span>
-          <h2>Booking timeline</h2>
-          <p className="summary-note">A shared operational history of the booking from request through rescheduling, completion, or cancellation.</p>
-          <ol aria-label="Booking lifecycle" style={{ listStyle: 'none', padding: 0, margin: '1rem 0 0', display: 'grid', gap: '0.9rem' }}>
-            <li style={{ borderLeft: '3px solid var(--border, #d9dce5)', paddingLeft: '1rem' }}>
-              <strong>Booking requested</strong>
-              <p style={{ margin: '0.25rem 0' }}>Customer created the booking request.</p>
-              <small>{timelineTime(booking.created_at, booking.timezone)}</small>
-            </li>
-            {(booking.history ?? []).map((entry, index) => {
-              const copy = timelineCopy(entry);
-              return <li key={`${entry.created_at}-${entry.to_status}-${index}`} style={{ borderLeft: '3px solid var(--border, #d9dce5)', paddingLeft: '1rem' }}>
-                <strong>{copy.title}</strong>
-                <p style={{ margin: '0.25rem 0' }}>{copy.detail}</p>
-                <small>{timelineTime(entry.created_at, booking.timezone)}</small>
-              </li>;
-            })}
-          </ol>
-        </Card>
+        <BookingAuditTimeline
+          bookingId={booking.id}
+          title="Operational booking & payment timeline"
+          description="Booking decisions and payment-state changes are merged into one chronological audit trail."
+        />
       </div>
     </div>}
     <BookingReasonDialog
