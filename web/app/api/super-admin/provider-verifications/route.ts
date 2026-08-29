@@ -3,17 +3,23 @@ import { productionAuthProvider } from '../../../../server/auth/session';
 import { createSupabaseServerClient } from '../../../../lib/supabase/server';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
     await productionAuthProvider.requireAdmin(request);
     const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase
-      .from('provider_verification_requests')
-      .select('id,applicant_user_id,provider_type,professional_id,business_id,legal_name,contact_phone,address,evidence_type,evidence_reference,evidence_note,status,review_note,reviewed_by,reviewed_at,created_at,updated_at')
-      .order('created_at', { ascending: false });
+    const [{ data, error }, { data: documents, error: documentError }] = await Promise.all([
+      supabase.from('provider_verification_requests')
+        .select('id,applicant_user_id,provider_type,professional_id,business_id,legal_name,contact_phone,address,evidence_type,evidence_reference,evidence_note,status,review_note,reviewed_by,reviewed_at,created_at,updated_at')
+        .order('created_at', { ascending: false }),
+      supabase.from('provider_verification_documents')
+        .select('id,verification_request_id,original_filename,mime_type,size_bytes,status,created_at,deleted_at')
+        .order('created_at', { ascending: false }),
+    ]);
     if (error) throw new Error(error.message);
-    return NextResponse.json({ requests: data ?? [] });
+    if (documentError) throw new Error(documentError.message);
+    return NextResponse.json({ requests: data ?? [], documents: documents ?? [] });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to load verification requests.' }, { status: 403 });
   }
