@@ -10,6 +10,9 @@ export interface ProviderBookingHistoryEntry {
   created_at: string;
 }
 
+export type ProviderAttendanceOutcome = 'pending' | 'service_completed' | 'customer_no_show' | 'provider_no_show';
+export type ProviderCloseoutState = 'open' | 'awaiting_customer' | 'support_open' | 'eligible_to_close' | 'closed';
+
 export interface ProviderBookingRecord {
   id: EntityId;
   booking_reference: string;
@@ -32,11 +35,16 @@ export interface ProviderBookingRecord {
   created_at: string;
   updated_at: string;
   history: ProviderBookingHistoryEntry[];
+  attendance_outcome: ProviderAttendanceOutcome;
+  closeout_state?: ProviderCloseoutState;
+  closed_at?: string;
 }
 
 type ProviderOwner =
   | { provider_type: 'professional'; provider_id: EntityId; provider_name: string }
   | { provider_type: 'business'; provider_id: EntityId; provider_name: string };
+
+type CloseoutRow = { attendance_outcome?: string | null; state?: string | null; closed_at?: string | null };
 
 function zonedDateTimeToEpoch(date: string, time: string, timeZone: string) {
   const [year, month, day] = date.split('-').map(Number);
@@ -89,7 +97,7 @@ function mapHistory(row: Record<string, unknown>): ProviderBookingHistoryEntry {
   };
 }
 
-function mapBooking(row: Record<string, unknown>, owner: ProviderOwner, history: ProviderBookingHistoryEntry[] = []): ProviderBookingRecord {
+function mapBooking(row: Record<string, unknown>, owner: ProviderOwner, history: ProviderBookingHistoryEntry[] = [], closeout?: CloseoutRow | null): ProviderBookingRecord {
   return {
     id: row.id as EntityId,
     booking_reference: row.booking_reference as string,
@@ -112,6 +120,9 @@ function mapBooking(row: Record<string, unknown>, owner: ProviderOwner, history:
     created_at: row.created_at as string,
     updated_at: row.updated_at as string,
     history,
+    attendance_outcome: (closeout?.attendance_outcome as ProviderAttendanceOutcome | undefined) ?? 'pending',
+    closeout_state: (closeout?.state as ProviderCloseoutState | undefined) ?? undefined,
+    closed_at: closeout?.closed_at || undefined,
   };
 }
 
@@ -120,6 +131,17 @@ async function ownedBookingQuery(owner: ProviderOwner, bookingId: EntityId) {
   let query = supabase.from('bookings').select('*').eq('id', bookingId);
   query = owner.provider_type === 'professional' ? query.eq('professional_id', owner.provider_id) : query.eq('business_id', owner.provider_id);
   return query.maybeSingle();
+}
+
+async function loadCloseout(bookingId: EntityId): Promise<CloseoutRow | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('booking_closeouts')
+    .select('attendance_outcome,state,closed_at')
+    .eq('booking_id', bookingId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data as CloseoutRow | null;
 }
 
 export const productionProviderBookingRepository = {
@@ -131,26 +153,45 @@ export const productionProviderBookingRepository = {
     query = owner.provider_type === 'professional' ? query.eq('professional_id', owner.provider_id) : query.eq('business_id', owner.provider_id);
     const { data, error } = await query;
     if (error) throw new Error(error.message);
-    return (data ?? []).map((row) => mapBooking(row as Record<string, unknown>, owner));
+
+    const rows = data ?? [];
+    const bookingIds = rows.map((row) => row.id as string);
+    const closeoutByBooking = new Map<string, CloseoutRow>();
+    if (bookingIds.length) {
+      const { data: closeouts, error: closeoutError } = await supabase
+        .from('booking_closeouts')
+        .select('booking_id,attendance_outcome,state,closed_at')
+        .in('booking_id', bookingIds);
+      if (closeoutError) throw new Error(closeoutError.message);
+      for (const closeout of closeouts ?? []) closeoutByBooking.set(String(closeout.booking_id), closeout as CloseoutRow);
+    }
+
+    return rows.map((row) => mapBooking(row as Record<string, unknown>, owner, [], closeoutByBooking.get(String(row.id))));
   },
 
   async getById(session: ServerCustomerSession, bookingId: EntityId): Promise<ProviderBookingRecord | null> {
     assertProductionBackendConfigured();
     const owner = await resolveOwner(session);
     const supabase = await createSupabaseServerClient();
-    const [{ data, error }, { data: historyRows, error: historyError }] = await Promise.all([
+    const [{ data, error }, { data: historyRows, error: historyError }, { data: closeout, error: closeoutError }] = await Promise.all([
       ownedBookingQuery(owner, bookingId),
       supabase
         .from('booking_status_history')
         .select('from_status,to_status,reason,created_at')
         .eq('booking_id', bookingId)
         .order('created_at', { ascending: true }),
+      supabase
+        .from('booking_closeouts')
+        .select('attendance_outcome,state,closed_at')
+        .eq('booking_id', bookingId)
+        .maybeSingle(),
     ]);
     if (error) throw new Error(error.message);
     if (!data) return null;
     if (historyError) throw new Error(historyError.message);
+    if (closeoutError) throw new Error(closeoutError.message);
     const history = (historyRows ?? []).map((row) => mapHistory(row as Record<string, unknown>));
-    return mapBooking(data as Record<string, unknown>, owner, history);
+    return mapBooking(data as Record<string, unknown>, owner, history, closeout as CloseoutRow | null);
   },
 
   async updateStatus(session: ServerCustomerSession, bookingId: EntityId, action: 'accept' | 'decline' | 'complete'): Promise<ProviderBookingRecord> {
@@ -161,9 +202,15 @@ export const productionProviderBookingRepository = {
     const nextStatus: ProductionBookingStatus = action === 'accept' ? 'confirmed' : action === 'complete' ? 'completed' : 'cancelled';
 
     if (action === 'complete') {
-      const { data: current, error: currentError } = await ownedBookingQuery(owner, bookingId);
+      const [{ data: current, error: currentError }, closeout] = await Promise.all([
+        ownedBookingQuery(owner, bookingId),
+        loadCloseout(bookingId),
+      ]);
       if (currentError) throw new Error(currentError.message);
       if (!current || current.status !== 'confirmed') throw new Error('Only a confirmed booking can be completed.');
+      if (closeout && closeout.attendance_outcome && closeout.attendance_outcome !== 'pending') {
+        throw new Error('This booking already has an attendance outcome and cannot be marked completed.');
+      }
       const eligibleAt = completionEligibleAt(current as Record<string, unknown>);
       if (Date.now() < eligibleAt) {
         const label = new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: String(current.timezone || 'Asia/Kolkata') }).format(new Date(eligibleAt));
@@ -176,6 +223,7 @@ export const productionProviderBookingRepository = {
     const { data, error } = await query.select('*').maybeSingle();
     if (error) throw new Error(error.message);
     if (!data) throw new Error(`Booking was not found, is no longer ${expectedStatus}, or is not owned by this provider.`);
-    return mapBooking(data as Record<string, unknown>, owner);
+    const closeout = await loadCloseout(bookingId);
+    return mapBooking(data as Record<string, unknown>, owner, [], closeout);
   },
 };

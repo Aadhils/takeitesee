@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { productionAuthProvider } from '../../../server/auth/session';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
+import { getBookingCloseoutReadModel } from '../../../server/bookings/closeout';
 
 export const runtime = 'nodejs';
 
@@ -28,6 +29,10 @@ export async function POST(request: Request) {
     const { data: booking, error: bookingError } = await supabase.from('bookings').select('id,customer_id,service_id,provider_type,professional_id,business_id,status').eq('id', input.booking_id).eq('customer_id', session.user_id).maybeSingle();
     if (bookingError || !booking) return NextResponse.json({ error: 'Booking not found.' }, { status: 404 });
     if (booking.status !== 'completed') return NextResponse.json({ error: 'Only completed bookings can be reviewed.' }, { status: 409 });
+
+    const closeout = await getBookingCloseoutReadModel(String(booking.id), session.user_id);
+    if (!closeout?.review_window_open) return NextResponse.json({ error: 'The review window for this booking has ended.' }, { status: 409 });
+
     const { data: existing } = await supabase.from('reviews').select('id').eq('booking_id', booking.id).maybeSingle();
     if (existing) return NextResponse.json({ error: 'You have already reviewed this booking.' }, { status: 409 });
     const { data, error } = await supabase.from('reviews').insert({ booking_id: booking.id, customer_id: session.user_id, service_id: booking.service_id, provider_type: booking.provider_type, professional_id: booking.professional_id, business_id: booking.business_id, rating: input.rating, comment: input.comment?.trim().slice(0, 1000) || null, status: 'published' }).select('*').single();

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card } from '../ui/primitives';
 import BookingAuditTimeline from '../booking/BookingAuditTimeline';
 import BookingCloseoutPanel from '../booking/BookingCloseoutPanel';
@@ -10,11 +10,12 @@ import { ProviderHeading } from './ProviderPresentation';
 import { LiveProviderShell } from './LiveProviderShell';
 
 type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'rescheduled';
+type AttendanceOutcome = 'pending' | 'service_completed' | 'customer_no_show' | 'provider_no_show';
 type Booking = {
   id: string; booking_reference: string; service_name: string; booking_date: string; start_time: string; timezone: string;
   duration_minutes: number; location: string; customer_notes?: string; quoted_price: number; currency: 'INR' | 'USD';
   status: BookingStatus; payment_status: 'unpaid' | 'pending' | 'paid' | 'failed' | 'refunded'; provider_name: string;
-  created_at: string; updated_at: string;
+  created_at: string; updated_at: string; attendance_outcome: AttendanceOutcome; closeout_state?: string; closed_at?: string;
 };
 
 const declineReasons = ['Schedule conflict', 'Service unavailable', 'Outside service area', 'Unable to fulfil request', 'Other'];
@@ -48,24 +49,31 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
   const [declineOpen, setDeclineOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
-  useEffect(() => {
-    void (async () => {
-      try {
-        const response = await fetch(`/api/provider/bookings/${encodeURIComponent(bookingId)}`, { cache: 'no-store' });
-        const payload = await response.json() as { booking?: Booking; error?: string };
-        if (!response.ok || !payload.booking) throw new Error(payload.error ?? 'Unable to load booking.');
-        setBooking(payload.booking);
-      } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to load booking.'); }
-    })();
+  const loadBooking = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/provider/bookings/${encodeURIComponent(bookingId)}`, { cache: 'no-store' });
+      const payload = await response.json() as { booking?: Booking; error?: string };
+      if (!response.ok || !payload.booking) throw new Error(payload.error ?? 'Unable to load booking.');
+      setBooking(payload.booking);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to load booking.'); }
   }, [bookingId]);
 
+  useEffect(() => { void loadBooking(); }, [loadBooking]);
+  useEffect(() => {
+    const refresh = (event: Event) => {
+      const detail = (event as CustomEvent<{ bookingId?: string }>).detail;
+      if (!detail?.bookingId || detail.bookingId === bookingId) void loadBooking();
+    };
+    window.addEventListener('booking:provider-list-refresh', refresh);
+    return () => window.removeEventListener('booking:provider-list-refresh', refresh);
+  }, [bookingId, loadBooking]);
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(timer);
   }, []);
 
   const completion = useMemo(() => {
-    if (!booking || booking.status !== 'confirmed') return null;
+    if (!booking || booking.status !== 'confirmed' || booking.attendance_outcome !== 'pending') return null;
     const start = zonedDateTimeToEpoch(booking.booking_date, booking.start_time, booking.timezone || 'Asia/Kolkata');
     const eligibleAt = start + booking.duration_minutes * 60_000;
     return {
@@ -96,6 +104,7 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
   };
 
   const rescheduleRequest = booking?.status === 'rescheduled';
+  const attendanceTerminal = booking?.attendance_outcome === 'customer_no_show' || booking?.attendance_outcome === 'provider_no_show';
 
   return <LiveProviderShell active="/provider/bookings">
     <Link href="/provider/bookings">← Back to bookings</Link>
@@ -103,7 +112,7 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
     {error ? <Card><p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p></Card> : null}
     {!booking ? <Card><p>{error ? 'Booking could not be loaded.' : 'Loading booking…'}</p></Card> : <div className="provider-detail-grid">
       <Card className="provider-detail-card">
-        <div className="section-heading"><div><span className="eyebrow">Service details</span><h2>{booking.service_name}</h2></div><Badge tone={tone(booking.status)}>{rescheduleRequest ? 'reschedule request' : booking.status}</Badge></div>
+        <div className="section-heading"><div><span className="eyebrow">Service details</span><h2>{booking.service_name}</h2></div><Badge tone={attendanceTerminal ? 'warning' : tone(booking.status)}>{attendanceTerminal ? booking.attendance_outcome.replaceAll('_', ' ') : rescheduleRequest ? 'reschedule request' : booking.status}</Badge></div>
         <dl className="provider-profile-details">
           <div><dt>Provider</dt><dd>{booking.provider_name}</dd></div><div><dt>Date and time</dt><dd>{booking.booking_date}, {booking.start_time} {booking.timezone}</dd></div>
           <div><dt>Duration</dt><dd>{booking.duration_minutes} minutes</dd></div><div><dt>Location</dt><dd>{booking.location}</dd></div>
@@ -114,13 +123,14 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
       <Card className="provider-detail-card"><span className="eyebrow">Next action</span><h2>Provider controls</h2>
         {booking.status === 'pending' ? <><p>Accept this request to confirm the booking, or decline it with a reason.</p><div className="provider-actions"><Button type="button" disabled={busy} onClick={() => void act('accept')}>Accept booking</Button><Button type="button" variant="quiet" disabled={busy} onClick={() => setDeclineOpen(true)}>Decline</Button></div></> : null}
         {booking.status === 'rescheduled' ? <><p>The customer requested this new time. Confirm it to return the booking to confirmed status, or decline the new time with a reason.</p><div className="provider-actions"><Button type="button" disabled={busy} onClick={() => void act('accept')}>Accept new time</Button><Button type="button" variant="quiet" disabled={busy} onClick={() => setDeclineOpen(true)}>Decline new time</Button></div></> : null}
-        {booking.status === 'confirmed' ? <>{completion?.allowed ? <><p>The scheduled service time has ended. You can now mark the service completed.</p><Button type="button" disabled={busy} onClick={() => void act('complete')}>{busy ? 'Updating…' : 'Mark service completed'}</Button></> : <><p>This service can be marked completed only after the scheduled service time.</p><p className="summary-note">Completion available after {completion?.label}.</p><Button type="button" disabled>Mark service completed</Button></>}</> : null}
-        {booking.status === 'completed' ? <p>This service has been completed. Review and support closeout now stay linked to the booking.</p> : null}
+        {booking.status === 'confirmed' && attendanceTerminal ? <p>An attendance outcome is already recorded. Completion is locked; any disagreement must use the support workflow.</p> : null}
+        {booking.status === 'confirmed' && !attendanceTerminal ? <>{completion?.allowed ? <><p>The scheduled service time has ended. You can mark the service completed, or use the closeout panel below if the customer did not attend.</p><Button type="button" disabled={busy} onClick={() => void act('complete')}>{busy ? 'Updating…' : 'Mark service completed'}</Button></> : <><p>This service can be marked completed only after the scheduled service time.</p><p className="summary-note">Completion available after {completion?.label}.</p><Button type="button" disabled>Mark service completed</Button></>}</> : null}
+        {booking.status === 'completed' ? <p>This service has been completed. Review, SLA and support closeout remain linked to the booking.</p> : null}
         {booking.status === 'cancelled' ? <p>This booking is cancelled. Any support follow-up remains visible in the closeout and audit views.</p> : null}
       </Card>
-      <div style={{ gridColumn: '1 / -1' }}><BookingCloseoutPanel bookingId={booking.id} /></div>
+      <div style={{ gridColumn: '1 / -1' }}><BookingCloseoutPanel bookingId={booking.id} viewer="provider" /></div>
       <div style={{ gridColumn: '1 / -1' }}>
-        <BookingAuditTimeline bookingId={booking.id} refreshKey={booking.updated_at} title="Operational lifecycle timeline" description="Booking, payment, review, and support events are merged into one chronological audit trail." />
+        <BookingAuditTimeline bookingId={booking.id} refreshKey={booking.updated_at} title="Operational lifecycle timeline" description="Booking, payment, attendance, review, support, and final closeout events are merged into one chronological audit trail." />
       </div>
     </div>}
     <BookingReasonDialog

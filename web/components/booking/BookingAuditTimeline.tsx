@@ -5,7 +5,7 @@ import { Badge, Card } from '../ui/primitives';
 
 export type BookingAuditEvent = {
   id: string;
-  category: 'booking' | 'payment' | 'review' | 'support';
+  category: 'booking' | 'payment' | 'review' | 'support' | 'closeout';
   actor: 'customer' | 'provider' | 'admin' | 'gateway' | 'system' | 'migration';
   status: string;
   title: string;
@@ -14,26 +14,9 @@ export type BookingAuditEvent = {
 };
 
 export type BookingAuditSummary = {
-  id: string;
-  booking_reference: string;
-  customer_id: string;
-  service_id: string;
-  service_name: string;
-  provider_type: 'professional' | 'business';
-  provider_name: string;
-  booking_date: string;
-  start_time: string;
-  timezone: string;
-  duration_minutes: number;
-  location: string;
-  quoted_price: number;
-  currency: string;
-  status: string;
-  payment_status: string;
-  created_at: string;
-  updated_at: string;
+  id: string; booking_reference: string; customer_id: string; service_id: string; service_name: string; provider_type: 'professional' | 'business'; provider_name: string;
+  booking_date: string; start_time: string; timezone: string; duration_minutes: number; location: string; quoted_price: number; currency: string; status: string; payment_status: string; created_at: string; updated_at: string;
 };
-
 export type BookingAuditPayload = { booking: BookingAuditSummary; events: BookingAuditEvent[] };
 
 function eventTone(event: BookingAuditEvent): 'neutral' | 'success' | 'warning' | 'danger' | 'info' {
@@ -50,6 +33,12 @@ function eventTone(event: BookingAuditEvent): 'neutral' | 'success' | 'warning' 
     if (event.status === 'open' || event.status === 'investigating' || event.status === 'awaiting_information') return 'warning';
     return 'info';
   }
+  if (event.category === 'closeout') {
+    if (event.status === 'closed' || event.status === 'customer_completion_confirmed') return 'success';
+    if (event.status === 'provider_no_show_reported') return 'danger';
+    if (event.status === 'customer_no_show_reported' || event.status === 'eligible_to_close') return 'warning';
+    return 'info';
+  }
   if (event.status === 'confirmed' || event.status === 'completed') return 'success';
   if (event.status === 'cancelled') return 'danger';
   if (event.status === 'pending' || event.status === 'rescheduled') return 'warning';
@@ -57,46 +46,20 @@ function eventTone(event: BookingAuditEvent): 'neutral' | 'success' | 'warning' 
 }
 
 function formatMoment(value: string, timeZone: string) {
-  try {
-    return new Intl.DateTimeFormat('en-IN', {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-      timeZone: timeZone || 'Asia/Kolkata',
-    }).format(new Date(value));
-  } catch {
-    return new Date(value).toLocaleString('en-IN');
-  }
+  try { return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: timeZone || 'Asia/Kolkata' }).format(new Date(value)); }
+  catch { return new Date(value).toLocaleString('en-IN'); }
 }
 
 export function BookingAuditList({ events, timezone }: { events: BookingAuditEvent[]; timezone: string }) {
-  return (
-    <ol aria-label="Booking lifecycle audit timeline" style={{ listStyle: 'none', padding: 0, margin: '1rem 0 0', display: 'grid', gap: '0.9rem' }}>
-      {events.map((event) => (
-        <li key={event.id} style={{ borderLeft: '3px solid var(--border, #d9dce5)', paddingLeft: '1rem' }}>
-          <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            <strong>{event.title}</strong>
-            <Badge tone={eventTone(event)}>{event.category}</Badge>
-            <Badge tone="neutral">{event.actor}</Badge>
-          </div>
-          <p style={{ margin: '0.3rem 0' }}>{event.detail}</p>
-          <small>{formatMoment(event.occurred_at, timezone)}</small>
-        </li>
-      ))}
-    </ol>
-  );
+  return <ol aria-label="Booking lifecycle audit timeline" style={{ listStyle: 'none', padding: 0, margin: '1rem 0 0', display: 'grid', gap: '0.9rem' }}>
+    {events.map((event) => <li key={event.id} style={{ borderLeft: '3px solid var(--border, #d9dce5)', paddingLeft: '1rem' }}>
+      <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center', flexWrap: 'wrap' }}><strong>{event.title}</strong><Badge tone={eventTone(event)}>{event.category}</Badge><Badge tone="neutral">{event.actor}</Badge></div>
+      <p style={{ margin: '0.3rem 0' }}>{event.detail}</p><small>{formatMoment(event.occurred_at, timezone)}</small>
+    </li>)}
+  </ol>;
 }
 
-export default function BookingAuditTimeline({
-  bookingId,
-  refreshKey,
-  title = 'Lifecycle timeline',
-  description = 'A chronological audit trail combining booking, payment, review, and support events.',
-}: {
-  bookingId: string;
-  refreshKey?: string | number;
-  title?: string;
-  description?: string;
-}) {
+export default function BookingAuditTimeline({ bookingId, refreshKey, title = 'Lifecycle timeline', description = 'A chronological audit trail combining booking, payment, attendance, review, support, and final closeout events.' }: { bookingId: string; refreshKey?: string | number; title?: string; description?: string }) {
   const [payload, setPayload] = useState<BookingAuditPayload | null>(null);
   const [error, setError] = useState('');
   const [eventRefresh, setEventRefresh] = useState(0);
@@ -111,29 +74,17 @@ export default function BookingAuditTimeline({
   }, [bookingId]);
 
   useEffect(() => {
-    let active = true;
-    setError('');
+    let active = true; setError('');
     void (async () => {
       try {
         const response = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}/audit`, { cache: 'no-store' });
         const body = await response.json() as BookingAuditPayload & { error?: string };
         if (!response.ok || !body.booking || !Array.isArray(body.events)) throw new Error(body.error ?? 'Unable to load booking timeline.');
         if (active) setPayload(body);
-      } catch (cause) {
-        if (active) setError(cause instanceof Error ? cause.message : 'Unable to load booking timeline.');
-      }
+      } catch (cause) { if (active) setError(cause instanceof Error ? cause.message : 'Unable to load booking timeline.'); }
     })();
     return () => { active = false; };
   }, [bookingId, refreshKey, eventRefresh]);
 
-  return (
-    <Card className="policy-card">
-      <span className="eyebrow">Audit trail</span>
-      <h2>{title}</h2>
-      <p className="summary-note">{description}</p>
-      {error ? <p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p> : null}
-      {!payload && !error ? <p>Loading timeline…</p> : null}
-      {payload ? <BookingAuditList events={payload.events} timezone={payload.booking.timezone} /> : null}
-    </Card>
-  );
+  return <Card className="policy-card"><span className="eyebrow">Audit trail</span><h2>{title}</h2><p className="summary-note">{description}</p>{error ? <p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p> : null}{!payload && !error ? <p>Loading timeline…</p> : null}{payload ? <BookingAuditList events={payload.events} timezone={payload.booking.timezone} /> : null}</Card>;
 }

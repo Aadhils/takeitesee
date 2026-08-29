@@ -18,7 +18,7 @@ export function createBooking(draft: BookingDraft): CustomerBooking {
   const existing = readBookings().find((booking) => booking.idempotencyKey === draft.idempotencyKey);
   if (existing) return existing;
   const now = new Date().toISOString();
-  const booking: CustomerBooking = { ...draft, bookingId: createId() as CustomerBookingId, bookingReference: createReference(draft.bookingDate), status: 'pending', paymentStatus: 'unpaid', createdAt: now, updatedAt: now };
+  const booking: CustomerBooking = { ...draft, bookingId: createId() as CustomerBookingId, bookingReference: createReference(draft.bookingDate), status: 'pending', paymentStatus: 'unpaid', attendanceOutcome: 'pending', createdAt: now, updatedAt: now };
   writeBookings([booking, ...readBookings()]); clearBookingDraft(); return booking;
 }
 
@@ -31,7 +31,33 @@ export async function createBookingThroughConfiguredRepository(draft: BookingDra
 }
 
 function fromProductionBooking(booking: ProductionBooking): CustomerBooking {
-  return { bookingId: booking.id, bookingReference: booking.booking_reference, idempotencyKey: '', customerId: booking.customer_id, serviceId: booking.service_id, providerId: booking.provider.provider_id, providerType: booking.provider.provider_type, providerName: booking.provider_name, serviceName: booking.service_name, customerName: '', bookingDate: booking.booking_date, startTime: booking.start_time, timezone: booking.timezone, durationMinutes: booking.duration_minutes, location: booking.location, customerNotes: booking.customer_notes, basePrice: Math.round(Number(booking.quoted_price) * 100), currency: booking.currency, paymentStatus: booking.payment_status === 'paid' ? 'paid' : booking.payment_status, status: booking.status, createdAt: booking.created_at.toISOString(), updatedAt: booking.updated_at.toISOString() };
+  return {
+    bookingId: booking.id,
+    bookingReference: booking.booking_reference,
+    idempotencyKey: '',
+    customerId: booking.customer_id,
+    serviceId: booking.service_id,
+    providerId: booking.provider.provider_id,
+    providerType: booking.provider.provider_type,
+    providerName: booking.provider_name,
+    serviceName: booking.service_name,
+    customerName: '',
+    bookingDate: booking.booking_date,
+    startTime: booking.start_time,
+    timezone: booking.timezone,
+    durationMinutes: booking.duration_minutes,
+    location: booking.location,
+    customerNotes: booking.customer_notes,
+    basePrice: Math.round(Number(booking.quoted_price) * 100),
+    currency: booking.currency,
+    paymentStatus: booking.payment_status === 'paid' ? 'paid' : booking.payment_status,
+    status: booking.status,
+    attendanceOutcome: booking.attendance_outcome,
+    closeoutState: booking.closeout_state,
+    closedAt: booking.closed_at?.toISOString(),
+    createdAt: booking.created_at.toISOString(),
+    updatedAt: booking.updated_at.toISOString(),
+  };
 }
 
 export async function getBookingThroughConfiguredRepository(bookingId: CustomerBookingId) {
@@ -40,14 +66,15 @@ export async function getBookingThroughConfiguredRepository(bookingId: CustomerB
   if (response.status === 404) return undefined;
   const payload = await response.json() as { booking?: ProductionBooking; error?: string };
   if (!response.ok || !payload.booking) throw new Error(payload.error ?? 'Unable to load booking.');
-  return fromProductionBooking({ ...payload.booking, created_at: new Date(payload.booking.created_at), updated_at: new Date(payload.booking.updated_at) });
+  return fromProductionBooking({ ...payload.booking, created_at: new Date(payload.booking.created_at), updated_at: new Date(payload.booking.updated_at), closed_at: payload.booking.closed_at ? new Date(payload.booking.closed_at) : undefined });
 }
 
 export async function getBookingsThroughConfiguredRepository(customerId: string) {
   if (!isSupabaseConfigured()) return getBookingsForCustomer(customerId);
-  const response = await fetch('/api/bookings'); const payload = await response.json() as { bookings?: ProductionBooking[]; error?: string };
+  const response = await fetch('/api/bookings');
+  const payload = await response.json() as { bookings?: ProductionBooking[]; error?: string };
   if (!response.ok || !payload.bookings) throw new Error(payload.error ?? 'Unable to load bookings.');
-  return payload.bookings.map((booking) => fromProductionBooking({ ...booking, created_at: new Date(booking.created_at), updated_at: new Date(booking.updated_at) }));
+  return payload.bookings.map((booking) => fromProductionBooking({ ...booking, created_at: new Date(booking.created_at), updated_at: new Date(booking.updated_at), closed_at: booking.closed_at ? new Date(booking.closed_at) : undefined }));
 }
 
 export async function cancelBookingThroughConfiguredRepository(bookingId: CustomerBookingId, reason: string) {
@@ -55,7 +82,7 @@ export async function cancelBookingThroughConfiguredRepository(bookingId: Custom
   const response = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'cancelled', reason }) });
   const payload = await response.json() as { booking?: ProductionBooking; error?: string };
   if (!response.ok || !payload.booking) throw new Error(payload.error ?? 'Unable to cancel booking.');
-  return fromProductionBooking({ ...payload.booking, created_at: new Date(payload.booking.created_at), updated_at: new Date(payload.booking.updated_at) });
+  return fromProductionBooking({ ...payload.booking, created_at: new Date(payload.booking.created_at), updated_at: new Date(payload.booking.updated_at), closed_at: payload.booking.closed_at ? new Date(payload.booking.closed_at) : undefined });
 }
 
 export async function rescheduleBookingThroughConfiguredRepository(bookingId: CustomerBookingId, bookingDate: string, startTime: string, reason: string) {
@@ -63,10 +90,10 @@ export async function rescheduleBookingThroughConfiguredRepository(bookingId: Cu
   const response = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'rescheduled', booking_date: bookingDate, start_time: startTime, reason }) });
   const payload = await response.json() as { booking?: ProductionBooking; error?: string };
   if (!response.ok || !payload.booking) throw new Error(payload.error ?? 'Unable to reschedule booking.');
-  return fromProductionBooking({ ...payload.booking, created_at: new Date(payload.booking.created_at), updated_at: new Date(payload.booking.updated_at) });
+  return fromProductionBooking({ ...payload.booking, created_at: new Date(payload.booking.created_at), updated_at: new Date(payload.booking.updated_at), closed_at: payload.booking.closed_at ? new Date(payload.booking.closed_at) : undefined });
 }
 
 export function getBookingById(bookingId: CustomerBookingId) { return readBookings().find((booking) => booking.bookingId === bookingId); }
 export function getBookingsForCustomer(customerId: string) { return readBookings().filter((booking) => booking.customerId === customerId); }
-export function cancelBooking(bookingId: CustomerBookingId) { const bookings = readBookings(); const index = bookings.findIndex((booking) => booking.bookingId === bookingId); if (index < 0 || ['completed', 'cancelled'].includes(bookings[index].status)) return undefined; const updated = { ...bookings[index], status: 'cancelled' as const, updatedAt: new Date().toISOString() }; bookings[index] = updated; writeBookings(bookings); return updated; }
-export function rescheduleBooking(bookingId: CustomerBookingId, bookingDate: string, startTime: string) { const bookings = readBookings(); const index = bookings.findIndex((booking) => booking.bookingId === bookingId); if (index < 0 || ['completed', 'cancelled'].includes(bookings[index].status)) return undefined; const updated = { ...bookings[index], bookingDate, startTime, status: 'rescheduled' as const, updatedAt: new Date().toISOString() }; bookings[index] = updated; writeBookings(bookings); return updated; }
+export function cancelBooking(bookingId: CustomerBookingId) { const bookings = readBookings(); const index = bookings.findIndex((booking) => booking.bookingId === bookingId); if (index < 0 || ['completed', 'cancelled'].includes(bookings[index].status) || ['customer_no_show','provider_no_show'].includes(bookings[index].attendanceOutcome || '')) return undefined; const updated = { ...bookings[index], status: 'cancelled' as const, updatedAt: new Date().toISOString() }; bookings[index] = updated; writeBookings(bookings); return updated; }
+export function rescheduleBooking(bookingId: CustomerBookingId, bookingDate: string, startTime: string) { const bookings = readBookings(); const index = bookings.findIndex((booking) => booking.bookingId === bookingId); if (index < 0 || ['completed', 'cancelled'].includes(bookings[index].status) || ['customer_no_show','provider_no_show'].includes(bookings[index].attendanceOutcome || '')) return undefined; const updated = { ...bookings[index], bookingDate, startTime, status: 'rescheduled' as const, updatedAt: new Date().toISOString() }; bookings[index] = updated; writeBookings(bookings); return updated; }
