@@ -50,9 +50,9 @@ export async function getBookingsThroughConfiguredRepository(customerId: string)
   return payload.bookings.map((booking) => fromProductionBooking({ ...booking, created_at: new Date(booking.created_at), updated_at: new Date(booking.updated_at) }));
 }
 
-export async function cancelBookingThroughConfiguredRepository(bookingId: CustomerBookingId) {
+export async function cancelBookingThroughConfiguredRepository(bookingId: CustomerBookingId, reason: string) {
   if (!isSupabaseConfigured()) return cancelBooking(bookingId);
-  const response = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'cancelled' }) });
+  const response = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'cancelled', reason }) });
   const payload = await response.json() as { booking?: ProductionBooking; error?: string };
   if (!response.ok || !payload.booking) throw new Error(payload.error ?? 'Unable to cancel booking.');
   return fromProductionBooking({ ...payload.booking, created_at: new Date(payload.booking.created_at), updated_at: new Date(payload.booking.updated_at) });
