@@ -72,13 +72,13 @@ export default function AdminRefundPanel({
       if (!response.ok) throw new Error(body.error ?? 'Unable to load refund state.');
       setRefund(body.refund ?? null);
       setGateway(body.gateway ?? null);
-      if (body.refund?.reason && !reason) setReason(body.refund.reason);
+      if (body.refund?.reason) setReason((current) => current || body.refund!.reason);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to load refund state.');
     } finally {
       setLoaded(true);
     }
-  }, [bookingId, reason]);
+  }, [bookingId]);
 
   useEffect(() => { void load(); }, [load]);
 
