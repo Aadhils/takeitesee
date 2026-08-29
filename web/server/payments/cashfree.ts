@@ -79,6 +79,10 @@ async function cashfreeRequest<T>(path: string, init: RequestInit & { idempotenc
   }
 }
 
+export function fetchCashfreeOrder(orderId: string): Promise<CashfreeOrder> {
+  return cashfreeRequest<CashfreeOrder>(`/orders/${encodeURIComponent(orderId)}`, { method: 'GET' });
+}
+
 export async function createCashfreeOrder(input: {
   intentId: string;
   bookingId: string;
@@ -92,6 +96,18 @@ export async function createCashfreeOrder(input: {
   returnBaseUrl: string;
 }): Promise<CashfreeOrder> {
   const orderId = `tis_${input.intentId.replaceAll('-', '')}`;
+
+  // A deterministic order id lets client retries recover the existing Cashfree order safely.
+  try {
+    const existing = await fetchCashfreeOrder(orderId);
+    if (Math.round(Number(existing.order_amount) * 100) !== input.amountMinor || existing.order_currency !== input.currency) {
+      throw new Error('Existing Cashfree order does not match the payment intent amount or currency.');
+    }
+    return existing;
+  } catch (cause) {
+    if (cause instanceof Error && cause.message.includes('does not match')) throw cause;
+  }
+
   const returnUrl = `${input.returnBaseUrl}/bookings/${encodeURIComponent(input.bookingId)}?payment_return=1&cf_order_id={order_id}`;
   const notifyUrl = `${input.returnBaseUrl}/api/payments/cashfree/webhook`;
   return cashfreeRequest<CashfreeOrder>('/orders', {
@@ -112,10 +128,6 @@ export async function createCashfreeOrder(input: {
       order_tags: { booking_id: input.bookingId, payment_intent_id: input.intentId },
     }),
   });
-}
-
-export function fetchCashfreeOrder(orderId: string): Promise<CashfreeOrder> {
-  return cashfreeRequest<CashfreeOrder>(`/orders/${encodeURIComponent(orderId)}`, { method: 'GET' });
 }
 
 export function verifyCashfreeWebhook(rawBody: string, timestamp: string, signature: string) {
