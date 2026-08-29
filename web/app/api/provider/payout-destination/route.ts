@@ -7,7 +7,6 @@ import {
   CashfreePayoutError,
   createCashfreeBeneficiary,
   getCashfreeBeneficiary,
-  getCashfreeBeneficiaryByBank,
   getCashfreePayoutConfig,
   removeCashfreeBeneficiary,
   type CashfreeBeneficiary,
@@ -117,9 +116,9 @@ async function activeDestination(service: ReturnType<typeof createSupabaseServic
 }
 
 async function persistGatewayStatus(service: ReturnType<typeof createSupabaseServiceClient>, row: DestinationRow, beneficiary: CashfreeBeneficiary) {
+  if (beneficiary.beneficiary_id !== row.gateway_beneficiary_id) throw new Error('Gateway beneficiary reference did not match the registered payout destination.');
   const status = mapBeneficiaryStatus(beneficiary.beneficiary_status);
   const { data, error } = await service.from('provider_payout_destinations').update({
-    gateway_beneficiary_id: beneficiary.beneficiary_id,
     status,
     gateway_status: beneficiary.beneficiary_status,
     verified_at: status === 'verified' ? new Date().toISOString() : null,
@@ -216,8 +215,8 @@ export async function POST(request: Request) {
       } catch (cause) {
         if (cause instanceof CashfreePayoutError && cause.httpStatus === 409 && cause.code === 'beneficiary_id_already_exists') {
           beneficiary = await getCashfreeBeneficiary(beneficiaryId);
-        } else if (cause instanceof CashfreePayoutError && cause.httpStatus === 409 && cause.code === 'beneficiary_already_exists' && bankAccount && bankIfsc) {
-          beneficiary = await getCashfreeBeneficiaryByBank(bankAccount, bankIfsc);
+        } else if (cause instanceof CashfreePayoutError && cause.httpStatus === 409 && cause.code === 'beneficiary_already_exists') {
+          throw new Error('This payout instrument is already registered in the merchant payout account and cannot be automatically linked to this provider. Contact platform support for a secure review.');
         } else throw cause;
       }
       const saved = await persistGatewayStatus(service, pendingRow, beneficiary);
