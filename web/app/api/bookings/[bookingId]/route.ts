@@ -28,7 +28,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ bo
     }
     if (body.status === 'rescheduled') {
       if (!body.booking_date || !body.start_time) return NextResponse.json({ error: 'New booking date and time are required.' }, { status: 400 });
-      const booking = await productionBookingRepository.rescheduleBooking(session, bookingId as EntityId, { booking_date: body.booking_date, start_time: body.start_time, reason: body.reason });
+      const reason = body.reason?.trim() ?? '';
+      if (reason.length < 3) return NextResponse.json({ error: 'A reschedule reason is required.' }, { status: 400 });
+      if (reason.length > 500) return NextResponse.json({ error: 'Reschedule reason must be 500 characters or fewer.' }, { status: 400 });
+      const booking = await productionBookingRepository.rescheduleBooking(session, bookingId as EntityId, { booking_date: body.booking_date, start_time: body.start_time, reason });
       return NextResponse.json({ booking });
     }
     return NextResponse.json({ error: 'Unsupported booking update.' }, { status: 400 });

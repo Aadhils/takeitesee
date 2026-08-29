@@ -4,8 +4,8 @@ import type { CreateBookingInput } from './repository';
 import { bookingInstantIso, timeToMinutes } from './time';
 
 type AvailabilityMode = 'always_available' | 'on_request' | 'scheduled';
+type BookingConflict = { booking_date: string; start_time: string; duration_minutes: number; status: string };
 
-const BLOCKING_STATUSES = ['pending', 'confirmed', 'rescheduled'];
 const DEFAULT_START_MINUTES = 9 * 60;
 const DEFAULT_END_MINUTES = 18 * 60;
 
@@ -52,18 +52,22 @@ export async function assertBookingAvailability(input: CreateBookingInput, exclu
   if (blackoutError) throw new Error(blackoutError.message);
   if ((blackouts ?? []).length) throw new Error('The selected time is blocked by the provider.');
 
-  const providerColumn = input.provider_type === 'professional' ? 'professional_id' : 'business_id';
-  let query = supabase
-    .from('bookings')
-    .select('id,booking_date,start_time,duration_minutes,status')
-    .eq(providerColumn, input.provider_id)
-    .eq('booking_date', input.booking_date)
-    .in('status', BLOCKING_STATUSES);
-  if (excludeBookingId) query = query.neq('id', excludeBookingId);
-  const { data: bookings, error: bookingError } = await query;
-  if (bookingError) throw new Error(bookingError.message);
+  const conflictResult = excludeBookingId
+    ? await supabase.rpc('get_reschedule_booking_conflicts', {
+        target_booking_id: excludeBookingId,
+        from_date: input.booking_date,
+        to_date: input.booking_date,
+      })
+    : await supabase.rpc('get_public_booking_conflicts', {
+        target_provider_type: input.provider_type,
+        target_provider_id: input.provider_id,
+        from_date: input.booking_date,
+        to_date: input.booking_date,
+      });
+  if (conflictResult.error) throw new Error(conflictResult.error.message);
 
-  const overlaps = (bookings ?? []).some((booking) => {
+  const overlaps = ((conflictResult.data ?? []) as BookingConflict[]).some((booking) => {
+    if (booking.booking_date !== input.booking_date) return false;
     const existingStart = timeToMinutes(booking.start_time);
     const existingEnd = existingStart + Number(booking.duration_minutes);
     return range.start < existingEnd && range.end > existingStart;

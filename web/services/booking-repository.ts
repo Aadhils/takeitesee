@@ -58,9 +58,9 @@ export async function cancelBookingThroughConfiguredRepository(bookingId: Custom
   return fromProductionBooking({ ...payload.booking, created_at: new Date(payload.booking.created_at), updated_at: new Date(payload.booking.updated_at) });
 }
 
-export async function rescheduleBookingThroughConfiguredRepository(bookingId: CustomerBookingId, bookingDate: string, startTime: string) {
+export async function rescheduleBookingThroughConfiguredRepository(bookingId: CustomerBookingId, bookingDate: string, startTime: string, reason: string) {
   if (!isSupabaseConfigured()) return rescheduleBooking(bookingId, bookingDate, startTime);
-  const response = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'rescheduled', booking_date: bookingDate, start_time: startTime }) });
+  const response = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'rescheduled', booking_date: bookingDate, start_time: startTime, reason }) });
   const payload = await response.json() as { booking?: ProductionBooking; error?: string };
   if (!response.ok || !payload.booking) throw new Error(payload.error ?? 'Unable to reschedule booking.');
   return fromProductionBooking({ ...payload.booking, created_at: new Date(payload.booking.created_at), updated_at: new Date(payload.booking.updated_at) });

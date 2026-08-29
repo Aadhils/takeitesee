@@ -21,7 +21,7 @@ export interface CreateBookingInput {
   service_name: string;
 }
 
-export interface RescheduleBookingInput { booking_date: string; start_time: string; reason?: string; }
+export interface RescheduleBookingInput { booking_date: string; start_time: string; reason: string; }
 
 export interface ProductionBookingRepository {
   createBooking(session: ServerCustomerSession, input: CreateBookingInput): Promise<ProductionBooking>;
@@ -157,10 +157,24 @@ export const productionBookingRepository: ProductionBookingRepository = {
   async rescheduleBooking(session, bookingId, input) {
     assertProductionBackendConfigured();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(input.booking_date)) throw new Error('New booking date is required.');
+    const bookingDate = new Date(`${input.booking_date}T12:00:00Z`);
+    if (Number.isNaN(bookingDate.getTime())) throw new Error('New booking date is invalid.');
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    if (bookingDate.getTime() < today.getTime()) throw new Error('New booking date cannot be in the past.');
+
+    const reason = input.reason?.trim() ?? '';
+    if (reason.length < 3) throw new Error('A reschedule reason is required.');
+    if (reason.length > 500) throw new Error('Reschedule reason must be 500 characters or fewer.');
+
     const normalizedStartTime = normalizeBookingTime(input.start_time);
     const current = await this.getBookingById(session, bookingId);
     if (!current) throw new Error('Booking not found.');
     if (!['pending', 'confirmed', 'rescheduled'].includes(current.status)) throw new Error(`Booking cannot be rescheduled from status ${current.status}.`);
+    if (current.booking_date === input.booking_date && normalizeBookingTime(current.start_time) === normalizedStartTime) {
+      throw new Error('Choose a different date or time to reschedule.');
+    }
+
     const availabilityInput: CreateBookingInput = {
       service_id: current.service_id,
       provider_id: current.provider.provider_id,
@@ -182,7 +196,7 @@ export const productionBookingRepository: ProductionBookingRepository = {
       target_booking_id: bookingId,
       new_booking_date: input.booking_date,
       new_start_time: normalizedStartTime,
-      reschedule_reason: input.reason ?? null,
+      reschedule_reason: reason,
     }).maybeSingle();
     if (error || !data) throw new Error(error?.message ?? 'Booking could not be rescheduled.');
     const refreshed = await this.getBookingById(session, bookingId);
