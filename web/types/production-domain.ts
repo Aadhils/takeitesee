@@ -3,6 +3,8 @@ import type { PlatformRole, ProviderReference } from './ownership';
 
 export type ProductionBookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'rescheduled';
 export type ProductionPaymentStatus = 'unpaid' | 'pending' | 'paid' | 'failed' | 'refunded';
+export type ProductionAttendanceOutcome = 'pending' | 'service_completed' | 'customer_no_show' | 'provider_no_show';
+export type ProductionCloseoutState = 'open' | 'awaiting_customer' | 'support_open' | 'eligible_to_close' | 'closed';
 
 export interface CustomerProfileRecord {
   id: EntityId;
@@ -67,6 +69,9 @@ export interface ProductionBooking {
   currency: Currency;
   status: ProductionBookingStatus;
   payment_status: ProductionPaymentStatus;
+  attendance_outcome?: ProductionAttendanceOutcome;
+  closeout_state?: ProductionCloseoutState;
+  closed_at?: Date;
   created_at: Date;
   updated_at: Date;
 }
