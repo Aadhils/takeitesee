@@ -102,16 +102,22 @@ async function loadLatestRefund(bookingId: string, supabase: Awaited<ReturnType<
   return (data ?? null) as RefundRow | null;
 }
 
+function errorStatus(message: string) {
+  return /permission|authentication|required/i.test(message) ? 403 : 400;
+}
+
 export async function GET(request: Request, context: RouteContext) {
   try {
     await productionAuthProvider.requireAdmin(request);
     const { bookingId } = await context.params;
     const supabase = await createSupabaseServerClient();
+    await requireFinanceManage(supabase);
     const refund = await loadLatestRefund(bookingId, supabase);
     const config = getCashfreeConfig();
-    return NextResponse.json({ refund: safeRefund(refund), gateway: { enabled: config.enabled, mode: config.mode, provider: 'cashfree' } });
+    return NextResponse.json({ authorized: true, refund: safeRefund(refund), gateway: { enabled: config.enabled, mode: config.mode, provider: 'cashfree' } });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to load refund state.' }, { status: 400 });
+    const message = error instanceof Error ? error.message : 'Unable to load refund state.';
+    return NextResponse.json({ authorized: false, error: message }, { status: errorStatus(message) });
   }
 }
 
@@ -124,6 +130,7 @@ export async function POST(request: Request, context: RouteContext) {
     if (reason.length < 3 || reason.length > 100) return NextResponse.json({ error: 'Refund reason must be 3 to 100 characters.' }, { status: 400 });
 
     const supabase = await createSupabaseServerClient();
+    await requireFinanceManage(supabase);
     const { data, error } = await supabase.rpc('admin_create_booking_refund_request', {
       target_booking_id: bookingId,
       refund_reason: reason,
@@ -173,8 +180,7 @@ export async function POST(request: Request, context: RouteContext) {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Refund request could not be completed.';
-    const status = /permission|authentication/i.test(message) ? 403 : 400;
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error: message }, { status: errorStatus(message) });
   }
 }
 
@@ -196,7 +202,6 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ refund: safeRefund(saved) });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Refund status could not be refreshed.';
-    const status = /permission|authentication/i.test(message) ? 403 : 400;
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error: message }, { status: errorStatus(message) });
   }
 }
