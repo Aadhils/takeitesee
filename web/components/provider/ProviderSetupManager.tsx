@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Card, EmptyState, Select } from '../ui/primitives';
+import { Alert, Badge, Button, Card, EmptyState, Select } from '../ui/primitives';
 import { ProviderHeading } from './ProviderPresentation';
 import { LiveProviderShell } from './LiveProviderShell';
 
+type TrustStatus = 'normal' | 'reverification_required' | 'suspended';
 type ReadinessService = { id: string; name: string; status: string; scope_enabled: boolean; application_id?: string | null; application_name?: string | null; category_id?: string | null; category_name?: string | null; location_id?: string | null; location_name?: string | null; launch_ready: boolean };
-type Readiness = { profile_complete: boolean; verified: boolean; services_total: number; services_scoped: number; services_active: number; pending_launch_requests: number; first_service_created: boolean; first_service_scoped: boolean; marketplace_live: boolean; progress_percent: number; services: ReadinessService[] };
+type Readiness = { profile_complete: boolean; verified: boolean; trust_status: TrustStatus; trust_reason?: string | null; services_total: number; services_scoped: number; services_active: number; pending_launch_requests: number; first_service_created: boolean; first_service_scoped: boolean; marketplace_live: boolean; progress_percent: number; services: ReadinessService[] };
 type LaunchOptions = { applications: { id: string; code: string; name: string }[]; categories: { id: string; application_id: string; code: string; name: string }[]; locations: { id: string; type: string; code: string; name: string; country_code?: string | null; timezone?: string | null }[] };
 type LaunchRequest = { id: string; service_id: string; requested_application_id: string; requested_category_id: string; requested_location_id: string; status: 'pending' | 'approved' | 'changes_requested' | 'rejected' | 'withdrawn'; review_note?: string | null; reviewed_at?: string | null; created_at: string };
 
@@ -94,21 +95,25 @@ export default function ProviderSetupManager() {
 
   const steps = readiness ? [
     { label: 'Complete provider profile', done: readiness.profile_complete, href: '/provider/profile', detail: 'Name, description, and service area' },
-    { label: 'Complete provider verification', done: readiness.verified, href: '/provider/verification', detail: 'Platform trust review' },
+    { label: 'Complete provider verification', done: readiness.verified, href: '/provider/verification', detail: 'Identity / KYC review' },
+    { label: 'Clear provider trust state', done: readiness.trust_status === 'normal', href: '/provider/verification', detail: readiness.trust_status === 'normal' ? 'No active trust restriction' : readiness.trust_status.replaceAll('_',' ') },
     { label: 'Create your first service', done: readiness.first_service_created, href: '/provider/services', detail: `${readiness.services_total} service${readiness.services_total === 1 ? '' : 's'} created` },
     { label: 'Approve category & location', done: readiness.first_service_scoped, href: '#service-launch', detail: `${readiness.services_scoped} service${readiness.services_scoped === 1 ? '' : 's'} scoped` },
     { label: 'Launch to marketplace', done: readiness.marketplace_live, href: '/provider/services', detail: `${readiness.services_active} active service${readiness.services_active === 1 ? '' : 's'}` },
   ] : [];
+  const effectiveProgress = steps.length ? Math.round((steps.filter((step) => step.done).length / steps.length) * 100) : 0;
 
   return <LiveProviderShell active="/provider/setup">
-    <ProviderHeading eyebrow="Launch readiness" title="Provider setup" description="Finish the production checklist, request platform category/location approval, and launch only when every gate is ready." />
+    <ProviderHeading eyebrow="Launch readiness" title="Provider setup" description="Finish profile, verification, trust, and service-scope gates before public marketplace launch." />
     {loading ? <Card><p>Loading setup readiness…</p></Card> : null}
     {error ? <Card><p className="field-error" role="alert">{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>Reload</Button></Card> : null}
 
     {readiness ? <>
+      {readiness.trust_status === 'suspended' ? <Alert title="Marketplace access suspended" tone="danger">Service launch is locked until the platform restores trust state. Existing booking operations remain available. {readiness.trust_reason || ''}</Alert> : null}
+      {readiness.trust_status === 'reverification_required' ? <Alert title="Fresh verification required" tone="warning">Complete a new verification request with current evidence before marketplace launch can resume. <Link href="/provider/verification">Open Verification →</Link></Alert> : null}
       <Card>
-        <div className="section-heading"><div><span className="eyebrow">Onboarding progress</span><h2>{readiness.progress_percent}% ready</h2></div><Badge tone={readiness.marketplace_live ? 'success' : 'warning'}>{readiness.marketplace_live ? 'Marketplace live' : 'Setup in progress'}</Badge></div>
-        <div style={{ height: 10, borderRadius: 999, background: '#e7eaf0', overflow: 'hidden', marginTop: 16 }}><div style={{ width: `${readiness.progress_percent}%`, height: '100%', background: 'currentColor' }} /></div>
+        <div className="section-heading"><div><span className="eyebrow">Onboarding progress</span><h2>{effectiveProgress}% ready</h2></div><Badge tone={readiness.marketplace_live ? 'success' : 'warning'}>{readiness.marketplace_live ? 'Marketplace live' : 'Setup in progress'}</Badge></div>
+        <div style={{ height: 10, borderRadius: 999, background: '#e7eaf0', overflow: 'hidden', marginTop: 16 }}><div style={{ width: `${effectiveProgress}%`, height: '100%', background: 'currentColor' }} /></div>
       </Card>
 
       <div className="provider-profile-grid">
@@ -119,7 +124,7 @@ export default function ProviderSetupManager() {
       </div>
 
       <section id="service-launch" className="section-stack">
-        <div><span className="eyebrow">Controlled launch</span><h2>Service category & location approval</h2><p>Platform approval creates the canonical ecosystem scope. Verification is not required to request scope, but your provider profile must be complete.</p></div>
+        <div><span className="eyebrow">Controlled launch</span><h2>Service category & location approval</h2><p>Platform approval creates the canonical ecosystem scope. Scope can be prepared while verification is pending, but activation also requires normal trust state.</p></div>
         {!readiness.services.length ? <Card><EmptyState title="Create a service first">Add a draft service before requesting its platform category and launch location.</EmptyState><Link href="/provider/services" className="text-link">Create a service →</Link></Card> : null}
         {readiness.services.map((service) => {
           const latest = latestByService.get(service.id);
@@ -132,6 +137,7 @@ export default function ProviderSetupManager() {
             {!service.scope_enabled && !pending ? <LaunchRequestForm service={service} options={options} disabled={!readiness.profile_complete} onSubmitted={load} /> : null}
             {!readiness.profile_complete && !service.scope_enabled ? <p className="summary-note">Complete the provider profile before requesting launch approval.</p> : null}
             {service.scope_enabled && !readiness.verified ? <p className="summary-note">Scope is approved. Complete verification before activation.</p> : null}
+            {service.scope_enabled && readiness.trust_status !== 'normal' ? <p className="summary-note">Scope is approved, but the current trust restriction blocks activation.</p> : null}
             {service.launch_ready && service.status !== 'active' ? <p><Link href="/provider/services" className="text-link">All launch gates ready — activate this service →</Link></p> : null}
           </Card>;
         })}

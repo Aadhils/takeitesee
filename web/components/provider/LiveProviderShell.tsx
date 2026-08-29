@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { Alert } from '../ui/primitives';
 
 const providerLinks = [
   { href: '/provider', label: 'Dashboard' },
@@ -15,6 +16,7 @@ const providerLinks = [
   { href: '/provider/profile', label: 'Profile' },
 ];
 
+type TrustStatus = 'normal' | 'reverification_required' | 'suspended';
 type ProviderContext = {
   id: string;
   provider_type: 'business' | 'professional';
@@ -23,7 +25,16 @@ type ProviderContext = {
   verified: boolean;
   location?: string | null;
   pending_booking_count: number;
+  trust_status: TrustStatus;
+  trust_reason?: string | null;
 };
+
+function workspaceState(provider: ProviderContext | null) {
+  if (!provider) return 'Provider workspace';
+  if (provider.trust_status === 'suspended') return 'Provider account suspended';
+  if (provider.trust_status === 'reverification_required') return 'Re-verification required';
+  return provider.verified ? 'Verified provider workspace' : 'Verification required to publish';
+}
 
 export function LiveProviderShell({ children, active }: { children: React.ReactNode; active: string }) {
   const [provider, setProvider] = useState<ProviderContext | null>(null);
@@ -53,7 +64,7 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
     <aside className="provider-sidebar">
       <div className="provider-sidebar-heading">
         <div className="provider-avatar provider-avatar-large" aria-hidden="true">{avatar}</div>
-        <div><strong>{displayName}</strong><span>{provider?.verified ? 'Verified provider workspace' : 'Verification required to publish'}</span></div>
+        <div><strong>{displayName}</strong><span>{workspaceState(provider)}</span></div>
       </div>
       <nav aria-label="Provider workspace navigation">
         {providerLinks.map((link) => <Link href={link.href} className={active === link.href ? 'provider-nav-active' : ''} aria-current={active === link.href ? 'page' : undefined} key={link.href}>
@@ -62,6 +73,10 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
       </nav>
       <Link href="/" className="provider-exit-link">View marketplace</Link>
     </aside>
-    <main className="provider-content">{children}</main>
+    <main className="provider-content">
+      {provider?.trust_status === 'suspended' ? <Alert title="Provider account suspended" tone="danger">Public service publishing is blocked. Existing bookings, support and closeout remain available. {provider.trust_reason || 'Contact platform support for review.'}</Alert> : null}
+      {provider?.trust_status === 'reverification_required' ? <Alert title="Re-verification required" tone="warning">Your active services were paused and publishing is locked until fresh verification is approved. {provider.trust_reason || ''} <Link href="/provider/verification">Open Verification →</Link></Alert> : null}
+      {children}
+    </main>
   </div>;
 }

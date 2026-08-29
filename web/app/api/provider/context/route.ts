@@ -4,6 +4,8 @@ import { createSupabaseServerClient } from '../../../../lib/supabase/server';
 
 export const runtime = 'nodejs';
 
+type TrustStatus = 'normal' | 'reverification_required' | 'suspended';
+
 function initials(value: string) {
   const letters = value.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase() ?? '').join('');
   return letters || 'P';
@@ -23,12 +25,12 @@ export async function GET(request: Request) {
     if (businessError) throw new Error(businessError.message);
 
     if (business) {
-      const { count, error: countError } = await supabase
-        .from('bookings')
-        .select('id', { count: 'exact', head: true })
-        .eq('business_id', business.id)
-        .eq('status', 'pending');
+      const [{ count, error: countError }, { data: trust, error: trustError }] = await Promise.all([
+        supabase.from('bookings').select('id', { count: 'exact', head: true }).eq('business_id', business.id).eq('status', 'pending'),
+        supabase.from('provider_trust_states').select('status,reason').eq('business_id', business.id).maybeSingle(),
+      ]);
       if (countError) throw new Error(countError.message);
+      if (trustError) throw new Error(trustError.message);
 
       return NextResponse.json({
         provider: {
@@ -39,6 +41,8 @@ export async function GET(request: Request) {
           verified: business.verified,
           location: business.location,
           pending_booking_count: count ?? 0,
+          trust_status: (trust?.status ?? 'normal') as TrustStatus,
+          trust_reason: trust?.reason ?? null,
         },
       });
     }
@@ -53,21 +57,16 @@ export async function GET(request: Request) {
 
     if (!professional) throw new Error('Provider profile not found.');
 
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('name')
-      .eq('id', session.user_id)
-      .maybeSingle();
+    const [{ data: user, error: userError }, { count, error: countError }, { data: trust, error: trustError }] = await Promise.all([
+      supabase.from('users').select('name').eq('id', session.user_id).maybeSingle(),
+      supabase.from('bookings').select('id', { count: 'exact', head: true }).eq('professional_id', professional.id).eq('status', 'pending'),
+      supabase.from('provider_trust_states').select('status,reason').eq('professional_id', professional.id).maybeSingle(),
+    ]);
     if (userError) throw new Error(userError.message);
+    if (countError) throw new Error(countError.message);
+    if (trustError) throw new Error(trustError.message);
 
     const displayName = professional.headline?.trim() || user?.name?.trim() || 'Professional';
-    const { count, error: countError } = await supabase
-      .from('bookings')
-      .select('id', { count: 'exact', head: true })
-      .eq('professional_id', professional.id)
-      .eq('status', 'pending');
-    if (countError) throw new Error(countError.message);
-
     return NextResponse.json({
       provider: {
         id: professional.id,
@@ -77,6 +76,8 @@ export async function GET(request: Request) {
         verified: professional.verified,
         location: professional.service_area,
         pending_booking_count: count ?? 0,
+        trust_status: (trust?.status ?? 'normal') as TrustStatus,
+        trust_reason: trust?.reason ?? null,
       },
     });
   } catch (error) {
