@@ -3,6 +3,13 @@ import type { ProductionBookingStatus, ProductionPaymentStatus, ServerCustomerSe
 import { createSupabaseServerClient } from '../../lib/supabase/server';
 import { assertProductionBackendConfigured } from '../config';
 
+export interface ProviderBookingHistoryEntry {
+  from_status: ProductionBookingStatus | null;
+  to_status: ProductionBookingStatus;
+  reason?: string;
+  created_at: string;
+}
+
 export interface ProviderBookingRecord {
   id: EntityId;
   booking_reference: string;
@@ -24,6 +31,7 @@ export interface ProviderBookingRecord {
   provider_name: string;
   created_at: string;
   updated_at: string;
+  history: ProviderBookingHistoryEntry[];
 }
 
 type ProviderOwner =
@@ -72,7 +80,16 @@ async function resolveOwner(session: ServerCustomerSession): Promise<ProviderOwn
   throw new Error('Provider role is required.');
 }
 
-function mapBooking(row: Record<string, unknown>, owner: ProviderOwner): ProviderBookingRecord {
+function mapHistory(row: Record<string, unknown>): ProviderBookingHistoryEntry {
+  return {
+    from_status: (row.from_status as ProductionBookingStatus | null) ?? null,
+    to_status: row.to_status as ProductionBookingStatus,
+    reason: (row.reason as string | null) || undefined,
+    created_at: row.created_at as string,
+  };
+}
+
+function mapBooking(row: Record<string, unknown>, owner: ProviderOwner, history: ProviderBookingHistoryEntry[] = []): ProviderBookingRecord {
   return {
     id: row.id as EntityId,
     booking_reference: row.booking_reference as string,
@@ -94,6 +111,7 @@ function mapBooking(row: Record<string, unknown>, owner: ProviderOwner): Provide
     provider_name: owner.provider_name,
     created_at: row.created_at as string,
     updated_at: row.updated_at as string,
+    history,
   };
 }
 
@@ -119,9 +137,20 @@ export const productionProviderBookingRepository = {
   async getById(session: ServerCustomerSession, bookingId: EntityId): Promise<ProviderBookingRecord | null> {
     assertProductionBackendConfigured();
     const owner = await resolveOwner(session);
-    const { data, error } = await ownedBookingQuery(owner, bookingId);
+    const supabase = await createSupabaseServerClient();
+    const [{ data, error }, { data: historyRows, error: historyError }] = await Promise.all([
+      ownedBookingQuery(owner, bookingId),
+      supabase
+        .from('booking_status_history')
+        .select('from_status,to_status,reason,created_at')
+        .eq('booking_id', bookingId)
+        .order('created_at', { ascending: true }),
+    ]);
     if (error) throw new Error(error.message);
-    return data ? mapBooking(data as Record<string, unknown>, owner) : null;
+    if (!data) return null;
+    if (historyError) throw new Error(historyError.message);
+    const history = (historyRows ?? []).map((row) => mapHistory(row as Record<string, unknown>));
+    return mapBooking(data as Record<string, unknown>, owner, history);
   },
 
   async updateStatus(session: ServerCustomerSession, bookingId: EntityId, action: 'accept' | 'decline' | 'complete'): Promise<ProviderBookingRecord> {
