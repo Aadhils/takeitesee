@@ -11,6 +11,12 @@ type EarningsSummary = {
   available_count: number;
   pending_earnings: number;
   pending_count: number;
+  failed_amount: number;
+  failed_count: number;
+  refunded_amount: number;
+  refunded_count: number;
+  gross_completed_value: number;
+  gross_completed_count: number;
   this_month: number;
   this_month_count: number;
   total_earnings: number;
@@ -37,10 +43,11 @@ function formatCurrency(amount: number, currency: string) {
   }
 }
 
-function paymentTone(status: string): 'success' | 'warning' | 'danger' | 'neutral' {
+function paymentTone(status: string): 'success' | 'warning' | 'danger' | 'neutral' | 'info' {
   if (status === 'paid') return 'success';
   if (status === 'pending' || status === 'unpaid') return 'warning';
   if (status === 'failed') return 'danger';
+  if (status === 'refunded') return 'info';
   return 'neutral';
 }
 
@@ -70,30 +77,40 @@ export default function ProviderEarningsManager() {
   const currency = summary?.currency ?? 'INR';
 
   return <LiveProviderShell active="/provider/earnings">
-    <ProviderHeading eyebrow="Operations" title="Earnings overview" description="Live service-value and payment status from your bookings. Available balance only includes completed bookings marked paid." />
+    <ProviderHeading eyebrow="Operations" title="Earnings overview" description="Recognized earnings include only completed bookings whose payment is marked paid. Refunded, failed, and unpaid amounts are excluded from earned totals." />
 
     {loading ? <Card><p>Loading real earnings data…</p></Card> : null}
     {error ? <Card><p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p></Card> : null}
 
     {summary ? <>
       <div className="provider-summary-grid">
-        <ProviderDashboardSummary label="Available balance" value={formatCurrency(summary.available_balance, currency)} detail={`${summary.available_count} completed paid job${summary.available_count === 1 ? '' : 's'}`} tone="success" />
-        <ProviderDashboardSummary label="Pending earnings" value={formatCurrency(summary.pending_earnings, currency)} detail={`${summary.pending_count} completed awaiting payment`} tone="warning" />
-        <ProviderDashboardSummary label="This month" value={formatCurrency(summary.this_month, currency)} detail={`${summary.this_month_count} completed job${summary.this_month_count === 1 ? '' : 's'}`} tone="info" />
-        <ProviderDashboardSummary label="Total earnings" value={formatCurrency(summary.total_earnings, currency)} detail={`${summary.total_completed_count} completed job${summary.total_completed_count === 1 ? '' : 's'} total`} />
+        <ProviderDashboardSummary label="Recognized earnings" value={formatCurrency(summary.available_balance, currency)} detail={`${summary.available_count} completed paid job${summary.available_count === 1 ? '' : 's'}`} tone="success" />
+        <ProviderDashboardSummary label="Awaiting payment" value={formatCurrency(summary.pending_earnings, currency)} detail={`${summary.pending_count} completed unpaid or processing`} tone="warning" />
+        <ProviderDashboardSummary label="Paid this month" value={formatCurrency(summary.this_month, currency)} detail={`${summary.this_month_count} completed paid job${summary.this_month_count === 1 ? '' : 's'}`} tone="info" />
+        <ProviderDashboardSummary label="Lifetime earned" value={formatCurrency(summary.total_earnings, currency)} detail={`${summary.total_completed_count} completed paid job${summary.total_completed_count === 1 ? '' : 's'} total`} />
       </div>
+
+      <Card className="provider-profile-card">
+        <div className="section-heading"><div><span className="eyebrow">Payment coordination</span><h2>Completed service value</h2></div><Badge tone="info">Ledger aware</Badge></div>
+        <dl className="provider-profile-details">
+          <div><dt>Gross completed value</dt><dd>{formatCurrency(summary.gross_completed_value, currency)} · {summary.gross_completed_count} jobs</dd></div>
+          <div><dt>Refunded</dt><dd>{formatCurrency(summary.refunded_amount, currency)} · {summary.refunded_count} bookings</dd></div>
+          <div><dt>Failed after completion</dt><dd>{formatCurrency(summary.failed_amount, currency)} · {summary.failed_count} bookings</dd></div>
+          <div><dt>Recognized rule</dt><dd>Completed + paid only</dd></div>
+        </dl>
+      </Card>
 
       <Card className="provider-transactions">
         <div className="section-heading"><div><span className="eyebrow">Recent activity</span><h2>Bookings and payment states</h2></div><Badge tone="success">Live booking data</Badge></div>
         {activity.length ? <div className="provider-transaction-list">{activity.map((item) => {
           const date = item.booking_date ? new Date(`${item.booking_date}T00:00:00`) : new Date(item.created_at);
           return <div key={item.id}>
-            <div><strong>{item.service_name}</strong><span>{date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} · {item.booking_reference}</span></div>
+            <div><strong>{item.service_name}</strong><span>{date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} · {item.booking_reference} · {item.booking_status}</span></div>
             <strong>{formatCurrency(item.amount, item.currency)}</strong>
             <Badge tone={paymentTone(item.payment_status)}>Payment {item.payment_status}</Badge>
           </div>;
         })}</div> : <EmptyState title="No booking activity yet">New provider bookings will appear here.</EmptyState>}
-        <p className="provider-fixture-note">Amounts come from booking quoted prices. This page does not create payouts or transfer funds.</p>
+        <p className="provider-fixture-note">Payment states are coordinated and audited, but this module does not yet charge a card, initiate a gateway transaction, or transfer provider payouts.</p>
       </Card>
     </> : null}
   </LiveProviderShell>;
