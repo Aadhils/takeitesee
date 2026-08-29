@@ -21,6 +21,11 @@ type CashfreeWebhook = {
   };
 };
 
+type WebhookEventRow = {
+  id: string;
+  processing_status: string;
+};
+
 function resultFor(payload: CashfreeWebhook): 'succeeded' | 'failed' | 'cancelled' | null {
   const status = payload.data?.payment?.payment_status?.toUpperCase();
   const type = payload.type?.toUpperCase() ?? '';
@@ -78,8 +83,9 @@ export async function POST(request: Request) {
       target_payload_sha256: sha256Hex(rawBody),
     }).maybeSingle();
     if (eventError || !webhookEvent) throw new Error(eventError?.message ?? 'Webhook event could not be recorded.');
-    webhookEventId = webhookEvent.id as string;
-    if (webhookEvent.processing_status === 'processed' || webhookEvent.processing_status === 'ignored') {
+    const eventRow = webhookEvent as WebhookEventRow;
+    webhookEventId = eventRow.id;
+    if (eventRow.processing_status === 'processed' || eventRow.processing_status === 'ignored') {
       return NextResponse.json({ received: true, duplicate: true });
     }
 
