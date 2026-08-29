@@ -21,6 +21,10 @@ function amountOf(value: BookingRow['quoted_price']) {
   return Number.isFinite(amount) ? amount : 0;
 }
 
+function sourceDateOf(booking: BookingRow) {
+  return booking.booking_date ? new Date(`${booking.booking_date}T00:00:00Z`) : new Date(booking.created_at);
+}
+
 export async function GET(request: Request) {
   try {
     const session = await productionAuthProvider.requireProvider(request);
@@ -59,16 +63,18 @@ export async function GET(request: Request) {
 
     const completed = bookings.filter((booking) => booking.status === 'completed');
     const paidCompleted = completed.filter((booking) => booking.payment_status === 'paid');
-    const pendingCompleted = completed.filter((booking) => booking.payment_status === 'unpaid' || booking.payment_status === 'pending');
-    const completedThisMonth = completed.filter((booking) => {
-      const sourceDate = booking.booking_date ? new Date(`${booking.booking_date}T00:00:00Z`) : new Date(booking.created_at);
+    const awaitingPayment = completed.filter((booking) => booking.payment_status === 'unpaid' || booking.payment_status === 'pending');
+    const failedCompleted = completed.filter((booking) => booking.payment_status === 'failed');
+    const refunded = bookings.filter((booking) => booking.payment_status === 'refunded');
+    const paidThisMonth = paidCompleted.filter((booking) => {
+      const sourceDate = sourceDateOf(booking);
       return sourceDate.getUTCFullYear() === year && sourceDate.getUTCMonth() === month;
     });
 
     const currency = bookings.find((booking) => booking.currency)?.currency ?? 'INR';
     const sum = (items: BookingRow[]) => Number(items.reduce((total, booking) => total + amountOf(booking.quoted_price), 0).toFixed(2));
 
-    const activity = bookings.slice(0, 20).map((booking) => ({
+    const activity = bookings.slice(0, 30).map((booking) => ({
       id: booking.id,
       booking_reference: booking.booking_reference,
       service_name: booking.service_name_snapshot ?? 'Service booking',
@@ -85,12 +91,18 @@ export async function GET(request: Request) {
         currency,
         available_balance: sum(paidCompleted),
         available_count: paidCompleted.length,
-        pending_earnings: sum(pendingCompleted),
-        pending_count: pendingCompleted.length,
-        this_month: sum(completedThisMonth),
-        this_month_count: completedThisMonth.length,
-        total_earnings: sum(completed),
-        total_completed_count: completed.length,
+        pending_earnings: sum(awaitingPayment),
+        pending_count: awaitingPayment.length,
+        failed_amount: sum(failedCompleted),
+        failed_count: failedCompleted.length,
+        refunded_amount: sum(refunded),
+        refunded_count: refunded.length,
+        gross_completed_value: sum(completed),
+        gross_completed_count: completed.length,
+        this_month: sum(paidThisMonth),
+        this_month_count: paidThisMonth.length,
+        total_earnings: sum(paidCompleted),
+        total_completed_count: paidCompleted.length,
       },
       activity,
     });
