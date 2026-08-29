@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { Badge, Card } from '../ui/primitives';
-import { ProviderDashboardSummary, ProviderHeading, ProviderShell } from './ProviderPresentation';
+import { ProviderDashboardSummary, ProviderHeading } from './ProviderPresentation';
+import { LiveProviderShell } from './LiveProviderShell';
 
 type ProviderProfilePayload = {
   provider_type: 'professional' | 'business';
@@ -38,7 +39,7 @@ export default function ProviderProfileManager() {
     })();
   }, []);
 
-  return <ProviderShell active="/provider/profile">
+  return <LiveProviderShell active="/provider/profile">
     <ProviderHeading eyebrow="Provider profile" title={profile?.display_name ?? 'Profile'} description="Live provider identity, verification, service coverage, and catalog summary from your account." />
 
     {error ? <Card><p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p></Card> : null}
@@ -78,5 +79,5 @@ export default function ProviderProfileManager() {
         <p>This page now reads the signed-in provider profile and service counts from the production database. Fixture profile values are no longer used here.</p>
       </Card>
     </> : null}
-  </ProviderShell>;
+  </LiveProviderShell>;
 }

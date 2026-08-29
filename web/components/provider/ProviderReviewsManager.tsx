@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Card, EmptyState } from '../ui/primitives';
-import { ProviderDashboardSummary, ProviderHeading, ProviderShell } from './ProviderPresentation';
+import { ProviderDashboardSummary, ProviderHeading } from './ProviderPresentation';
+import { LiveProviderShell } from './LiveProviderShell';
 
 type ReviewItem = {
   id: string;
@@ -54,7 +55,7 @@ export default function ProviderReviewsManager() {
     return { rating, count, percentage };
   }), [summary]);
 
-  return <ProviderShell active="/provider/reviews">
+  return <LiveProviderShell active="/provider/reviews">
     <ProviderHeading eyebrow="Customer voice" title="Reviews" description="See real reviews from customers after completed services." />
 
     <div className="provider-review-summary">
@@ -79,5 +80,5 @@ export default function ProviderReviewsManager() {
         <small>Booking {review.booking_id.slice(0, 8).toUpperCase()}</small>
       </Card>)}
     </div> : null}
-  </ProviderShell>;
+  </LiveProviderShell>;
 }
