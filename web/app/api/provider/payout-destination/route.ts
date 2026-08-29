@@ -54,12 +54,13 @@ function safeDestination(row: DestinationRow | null) {
 }
 
 function mapBeneficiaryStatus(status: string): DestinationRow['status'] {
-  const value = status.toUpperCase();
-  if (value === 'VERIFIED') return 'verified';
-  if (value === 'INITIATED') return 'pending';
-  if (value === 'INVALID') return 'invalid';
-  if (value === 'DELETED') return 'deleted';
-  return 'failed';
+  switch (status.toUpperCase()) {
+    case 'VERIFIED': return 'verified';
+    case 'INITIATED': return 'pending';
+    case 'INVALID': return 'invalid';
+    case 'DELETED': return 'deleted';
+    default: return 'failed';
+  }
 }
 
 function normalizePhone(value: string | null | undefined) {
@@ -95,7 +96,10 @@ function maskVpa(vpa: string) {
   return `UPI ${prefix}••••@${handle}`;
 }
 
-async function providerIdentity(session: Awaited<ReturnType<typeof productionAuthProvider.requireProvider>>, supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>) {
+async function providerIdentity(
+  session: Awaited<ReturnType<typeof productionAuthProvider.requireProvider>>,
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+) {
   if (session.roles.includes('professional')) {
     const { data, error } = await supabase.from('professional_profiles').select('id').eq('user_id', session.user_id).maybeSingle();
     if (error) throw new Error(error.message);
@@ -110,13 +114,20 @@ async function providerIdentity(session: Awaited<ReturnType<typeof productionAut
 
 async function activeDestination(service: ReturnType<typeof createSupabaseServiceClient>, ownerUserId: string) {
   const { data, error } = await service.from('provider_payout_destinations')
-    .select('*').eq('owner_user_id', ownerUserId).neq('status', 'deleted').order('created_at', { ascending: false }).limit(1).maybeSingle();
+    .select('*').eq('owner_user_id', ownerUserId).neq('status', 'deleted')
+    .order('created_at', { ascending: false }).limit(1).maybeSingle();
   if (error) throw new Error(error.message);
   return (data ?? null) as DestinationRow | null;
 }
 
-async function persistGatewayStatus(service: ReturnType<typeof createSupabaseServiceClient>, row: DestinationRow, beneficiary: CashfreeBeneficiary) {
-  if (beneficiary.beneficiary_id !== row.gateway_beneficiary_id) throw new Error('Gateway beneficiary reference did not match the registered payout destination.');
+async function persistGatewayStatus(
+  service: ReturnType<typeof createSupabaseServiceClient>,
+  row: DestinationRow,
+  beneficiary: CashfreeBeneficiary,
+) {
+  if (beneficiary.beneficiary_id !== row.gateway_beneficiary_id) {
+    throw new Error('Gateway beneficiary reference did not match the registered payout destination.');
+  }
   const status = mapBeneficiaryStatus(beneficiary.beneficiary_status);
   const { data, error } = await service.from('provider_payout_destinations').update({
     status,
@@ -137,7 +148,10 @@ export async function GET(request: Request) {
     const config = getCashfreePayoutConfig();
     const service = createSupabaseServiceClient();
     const destination = await activeDestination(service, session.user_id);
-    return NextResponse.json({ gateway: { enabled: config.enabled, provider: 'cashfree_payout', mode: config.mode }, destination: safeDestination(destination) });
+    return NextResponse.json({
+      gateway: { enabled: config.enabled, provider: 'cashfree_payout', mode: config.mode },
+      destination: safeDestination(destination),
+    });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to load payout destination.' }, { status: 401 });
   }
@@ -147,10 +161,17 @@ export async function POST(request: Request) {
   try {
     const session = await productionAuthProvider.requireProvider(request);
     const config = getCashfreePayoutConfig();
-    if (!config.enabled) return NextResponse.json({ error: 'Provider payouts are not configured yet.', code: 'PAYOUT_GATEWAY_NOT_CONFIGURED', mode: config.mode }, { status: 503 });
+    if (!config.enabled) {
+      return NextResponse.json({ error: 'Provider payouts are not configured yet.', code: 'PAYOUT_GATEWAY_NOT_CONFIGURED', mode: config.mode }, { status: 503 });
+    }
+
     const input = await request.json() as {
-      action?: 'register' | 'refresh'; destination_type?: 'bank' | 'upi'; beneficiary_name?: string;
-      bank_account_number?: string; bank_ifsc?: string; vpa?: string;
+      action?: 'register' | 'refresh';
+      destination_type?: 'bank' | 'upi';
+      beneficiary_name?: string;
+      bank_account_number?: string;
+      bank_ifsc?: string;
+      vpa?: string;
     };
     const action = input.action ?? 'register';
     const supabase = await createSupabaseServerClient();
@@ -164,17 +185,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ destination: safeDestination(saved) });
     }
 
-    if (existing?.status === 'verified') return NextResponse.json({ error: 'Remove the existing verified payout destination before adding another.' }, { status: 409 });
     if (existing?.status === 'pending') {
       try {
         const beneficiary = await getCashfreeBeneficiary(existing.gateway_beneficiary_id);
         const saved = await persistGatewayStatus(service, existing, beneficiary);
         return NextResponse.json({ destination: safeDestination(saved) });
-      } catch { return NextResponse.json({ error: 'Existing payout destination verification is still pending. Refresh it before replacing.' }, { status: 409 }); }
+      } catch {
+        return NextResponse.json({ error: 'Existing payout destination verification is still pending. Refresh it before replacing.' }, { status: 409 });
+      }
     }
     if (existing) {
-      const { error } = await service.from('provider_payout_destinations').update({ status: 'deleted', deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', existing.id);
-      if (error) throw new Error(error.message);
+      return NextResponse.json({ error: 'Remove the existing payout destination before adding another.' }, { status: 409 });
     }
 
     const identity = await providerIdentity(session, supabase);
@@ -190,18 +211,26 @@ export async function POST(request: Request) {
     let masked: string;
     if (destinationType === 'bank') {
       const bank = validateBank(input.bank_account_number, input.bank_ifsc);
-      bankAccount = bank.account; bankIfsc = bank.ifsc; masked = maskBank(bank.account);
+      bankAccount = bank.account;
+      bankIfsc = bank.ifsc;
+      masked = maskBank(bank.account);
     } else {
-      vpa = validateVpa(input.vpa); masked = maskVpa(vpa);
+      vpa = validateVpa(input.vpa);
+      masked = maskVpa(vpa);
     }
 
     const beneficiaryId = `tis_bene_${randomUUID().replaceAll('-', '')}`;
-    const pendingInsert = {
-      owner_user_id: session.user_id, ...identity, gateway: 'cashfree_payout', gateway_beneficiary_id: beneficiaryId,
-      destination_type: destinationType, masked_destination: masked, beneficiary_name: beneficiaryName,
-      status: 'pending', gateway_status: 'LOCAL_PENDING',
-    };
-    const { data: pending, error: pendingError } = await service.from('provider_payout_destinations').insert(pendingInsert).select('*').single();
+    const { data: pending, error: pendingError } = await service.from('provider_payout_destinations').insert({
+      owner_user_id: session.user_id,
+      ...identity,
+      gateway: 'cashfree_payout',
+      gateway_beneficiary_id: beneficiaryId,
+      destination_type: destinationType,
+      masked_destination: masked,
+      beneficiary_name: beneficiaryName,
+      status: 'pending',
+      gateway_status: 'LOCAL_PENDING',
+    }).select('*').single();
     if (pendingError) throw new Error(pendingError.message);
     const pendingRow = pending as DestinationRow;
 
@@ -209,30 +238,49 @@ export async function POST(request: Request) {
       let beneficiary: CashfreeBeneficiary;
       try {
         beneficiary = await createCashfreeBeneficiary({
-          beneficiaryId, beneficiaryName, bankAccountNumber: bankAccount, bankIfsc, vpa,
-          email: user?.email ?? null, phone: normalizePhone(user?.phone),
+          beneficiaryId,
+          beneficiaryName,
+          bankAccountNumber: bankAccount,
+          bankIfsc,
+          vpa,
+          email: user?.email ?? null,
+          phone: normalizePhone(user?.phone),
         });
       } catch (cause) {
         if (cause instanceof CashfreePayoutError && cause.httpStatus === 409 && cause.code === 'beneficiary_id_already_exists') {
           beneficiary = await getCashfreeBeneficiary(beneficiaryId);
         } else if (cause instanceof CashfreePayoutError && cause.httpStatus === 409 && cause.code === 'beneficiary_already_exists') {
           throw new Error('This payout instrument is already registered in the merchant payout account and cannot be automatically linked to this provider. Contact platform support for a secure review.');
-        } else throw cause;
+        } else {
+          throw cause;
+        }
       }
+
       const saved = await persistGatewayStatus(service, pendingRow, beneficiary);
-      await service.from('notifications').insert({ recipient_user_id: session.user_id, event_type: 'provider_payout_destination_updated', title: 'Payout destination updated', body: `Your ${destinationType === 'bank' ? 'bank' : 'UPI'} payout destination is ${saved.status}.` });
+      await service.from('notifications').insert({
+        recipient_user_id: session.user_id,
+        event_type: 'provider_payout_destination_updated',
+        title: 'Payout destination updated',
+        body: `Your ${destinationType === 'bank' ? 'bank' : 'UPI'} payout destination is ${saved.status}.`,
+      });
       return NextResponse.json({ destination: safeDestination(saved) }, { status: 201 });
     } catch (cause) {
       const code = cause instanceof CashfreePayoutError ? cause.code : null;
       await service.from('provider_payout_destinations').update({
-        status: 'failed', gateway_status: 'FAILED', last_error_code: code,
-        last_error_message: 'Gateway beneficiary registration failed. Review the destination and try again.', updated_at: new Date().toISOString(),
+        status: 'failed',
+        gateway_status: 'FAILED',
+        last_error_code: code,
+        last_error_message: 'Gateway beneficiary registration failed. Review or remove the destination before trying again.',
+        updated_at: new Date().toISOString(),
       }).eq('id', pendingRow.id);
       throw cause;
     }
   } catch (error) {
     const code = error instanceof CashfreePayoutError ? error.code : null;
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Payout destination could not be registered.', ...(code ? { code } : {}) }, { status: 400 });
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Payout destination could not be registered.',
+      ...(code ? { code } : {}),
+    }, { status: 400 });
   }
 }
 
@@ -240,22 +288,39 @@ export async function DELETE(request: Request) {
   try {
     const session = await productionAuthProvider.requireProvider(request);
     const config = getCashfreePayoutConfig();
-    if (!config.enabled) return NextResponse.json({ error: 'Provider payouts are not configured yet.', code: 'PAYOUT_GATEWAY_NOT_CONFIGURED' }, { status: 503 });
+    if (!config.enabled) {
+      return NextResponse.json({ error: 'Provider payouts are not configured yet.', code: 'PAYOUT_GATEWAY_NOT_CONFIGURED' }, { status: 503 });
+    }
     const service = createSupabaseServiceClient();
     const destination = await activeDestination(service, session.user_id);
     if (!destination) return NextResponse.json({ removed: true });
+
     const { count, error: batchError } = await service.from('provider_payout_batches').select('id', { count: 'exact', head: true })
       .eq('owner_user_id', session.user_id).eq('status', 'processing');
     if (batchError) throw new Error(batchError.message);
-    if ((count ?? 0) > 0) return NextResponse.json({ error: 'A payout is currently processing. The destination cannot be removed yet.' }, { status: 409 });
+    if ((count ?? 0) > 0) {
+      return NextResponse.json({ error: 'A payout is currently processing. The destination cannot be removed yet.' }, { status: 409 });
+    }
 
-    try { await removeCashfreeBeneficiary(destination.gateway_beneficiary_id); }
-    catch (cause) { if (!(cause instanceof CashfreePayoutError && cause.httpStatus === 404)) throw cause; }
+    try {
+      await removeCashfreeBeneficiary(destination.gateway_beneficiary_id);
+    } catch (cause) {
+      if (!(cause instanceof CashfreePayoutError && cause.httpStatus === 404)) throw cause;
+    }
+
     const { error } = await service.from('provider_payout_destinations').update({
-      status: 'deleted', gateway_status: 'DELETED', deleted_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+      status: 'deleted',
+      gateway_status: 'DELETED',
+      deleted_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     }).eq('id', destination.id);
     if (error) throw new Error(error.message);
-    await service.from('notifications').insert({ recipient_user_id: session.user_id, event_type: 'provider_payout_destination_updated', title: 'Payout destination removed', body: 'Your payout destination was removed. Add a verified destination before the next transfer.' });
+    await service.from('notifications').insert({
+      recipient_user_id: session.user_id,
+      event_type: 'provider_payout_destination_updated',
+      title: 'Payout destination removed',
+      body: 'Your payout destination was removed. Add a verified destination before the next transfer.',
+    });
     return NextResponse.json({ removed: true });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Payout destination could not be removed.' }, { status: 400 });
