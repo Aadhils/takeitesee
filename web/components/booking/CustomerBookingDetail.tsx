@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Badge, Card, EmptyState } from '../ui/primitives';
+import BookingAuditTimeline from './BookingAuditTimeline';
 import BookingReasonDialog from './BookingReasonDialog';
 import { cancelBookingThroughConfiguredRepository, getBookingThroughConfiguredRepository } from '../../services/booking-repository';
 import type { CustomerBooking } from '../../types/booking-domain';
@@ -123,6 +124,8 @@ export default function CustomerBookingDetail({ bookingId }: { bookingId: string
               <div><dt>Price</dt><dd>{formatMoney({ amount: booking.basePrice, currency: booking.currency })}</dd></div>
             </dl>
           </Card>
+
+          <BookingAuditTimeline bookingId={booking.bookingId} />
 
           {booking.status === 'completed' ? (
             <Card className="policy-card">
