@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { AdminHeading, AdminShell } from './AdminPresentation';
+import AdminRefundPanel from './AdminRefundPanel';
 import { Badge, Card, EmptyState } from '../ui/primitives';
 import { BookingAuditList, type BookingAuditPayload } from '../booking/BookingAuditTimeline';
 
@@ -32,9 +33,20 @@ function money(amount: number, currency: string) {
 export default function AdminLiveBookingDetail({ bookingId }: { bookingId: string }) {
   const [payload, setPayload] = useState<BookingAuditPayload | null>(null);
   const [error, setError] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    const refresh = (event: Event) => {
+      const detail = (event as CustomEvent<{ bookingId?: string }>).detail;
+      if (!detail?.bookingId || detail.bookingId === bookingId) setRefreshKey((value) => value + 1);
+    };
+    window.addEventListener('booking:audit-refresh', refresh);
+    return () => window.removeEventListener('booking:audit-refresh', refresh);
+  }, [bookingId]);
 
   useEffect(() => {
     let active = true;
+    setError('');
     void (async () => {
       try {
         const response = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}/audit`, { cache: 'no-store' });
@@ -46,7 +58,7 @@ export default function AdminLiveBookingDetail({ bookingId }: { bookingId: strin
       }
     })();
     return () => { active = false; };
-  }, [bookingId]);
+  }, [bookingId, refreshKey]);
 
   const booking = payload?.booking;
 
@@ -55,7 +67,7 @@ export default function AdminLiveBookingDetail({ bookingId }: { bookingId: strin
       <AdminHeading
         eyebrow="Scoped booking operations"
         title={booking?.booking_reference ?? 'Booking audit'}
-        description="Live booking and payment history from Supabase, restricted by the administrator’s assigned marketplace scope."
+        description="Live booking, payment, refund, review, support, and closeout history from Supabase, restricted by the administrator’s assigned marketplace scope."
         action={<Link href="/admin/bookings" className="button button-secondary">Back to bookings</Link>}
       />
 
@@ -84,7 +96,7 @@ export default function AdminLiveBookingDetail({ bookingId }: { bookingId: strin
               <span className="eyebrow">Current financial state</span>
               <h2>Payment coordination</h2>
               <Badge tone={paymentTone(booking.payment_status)}>Payment {booking.payment_status}</Badge>
-              <p className="admin-fixture-note">This page is a read-only operational audit. Payment changes remain restricted to the high-trust platform payment management path.</p>
+              <p className="admin-fixture-note">Gateway-paid refunds must use the verified refund workflow. Directly marking a Cashfree-paid booking refunded is blocked at the database boundary.</p>
               <dl className="admin-detail-list">
                 <div><dt>Booking status</dt><dd>{booking.status.replaceAll('_', ' ')}</dd></div>
                 <div><dt>Payment status</dt><dd>{booking.payment_status.replaceAll('_', ' ')}</dd></div>
@@ -93,10 +105,18 @@ export default function AdminLiveBookingDetail({ bookingId }: { bookingId: strin
             </Card>
           </div>
 
+          <AdminRefundPanel
+            bookingId={booking.id}
+            bookingStatus={booking.status}
+            paymentStatus={booking.payment_status}
+            amount={booking.quoted_price}
+            currency={booking.currency}
+          />
+
           <Card className="admin-detail-card">
             <span className="eyebrow">Unified audit trail</span>
-            <h2>Booking + payment chronology</h2>
-            <p className="admin-fixture-note">Lifecycle decisions and payment-state events are shown in one chronological read model. Internal gateway references and administrative payment notes are intentionally not exposed in this shared timeline.</p>
+            <h2>Booking + payment + refund chronology</h2>
+            <p className="admin-fixture-note">Lifecycle decisions, payment states, and refund states are shown in one chronological read model. Internal gateway references and administrative notes remain outside this shared timeline.</p>
             <BookingAuditList events={payload.events} timezone={booking.timezone} />
           </Card>
         </>

@@ -40,6 +40,41 @@ export type CashfreePayment = {
   } | null;
 };
 
+export type CashfreeRefund = {
+  cf_payment_id?: string | number | null;
+  cf_refund_id?: string | number | null;
+  refund_id: string;
+  order_id: string;
+  refund_amount: number;
+  refund_currency: string;
+  refund_note?: string | null;
+  refund_status: 'SUCCESS' | 'PENDING' | 'CANCELLED' | 'ONHOLD' | 'FAILED' | string;
+  status_description?: string | null;
+  refund_arn?: string | null;
+  created_at?: string | null;
+  processed_at?: string | null;
+  refund_mode?: string | null;
+  refund_speed?: {
+    requested?: string | null;
+    accepted?: string | null;
+    processed?: string | null;
+    message?: string | null;
+  } | null;
+  requested_speed?: string | null;
+  processed_speed?: string | null;
+};
+
+export class CashfreeApiError extends Error {
+  readonly httpStatus: number;
+  readonly payload: unknown;
+  constructor(message: string, httpStatus: number, payload: unknown) {
+    super(message);
+    this.name = 'CashfreeApiError';
+    this.httpStatus = httpStatus;
+    this.payload = payload;
+  }
+}
+
 export function getCashfreeConfig(): CashfreeConfig {
   const selected = (process.env.PAYMENT_GATEWAY_PROVIDER ?? '').trim().toLowerCase();
   const mode: CashfreeMode = process.env.CASHFREE_ENVIRONMENT === 'production' ? 'production' : 'sandbox';
@@ -87,7 +122,7 @@ async function cashfreeRequest<T>(path: string, init: RequestInit & { idempotenc
     try { payload = text ? JSON.parse(text) : null; } catch { payload = text; }
     if (!response.ok) {
       const message = payload && typeof payload === 'object' && 'message' in payload ? String((payload as { message?: unknown }).message || '') : '';
-      throw new Error(message || `Cashfree request failed with status ${response.status}.`);
+      throw new CashfreeApiError(message || `Cashfree request failed with status ${response.status}.`, response.status, payload);
     }
     return payload as T;
   } finally {
@@ -101,6 +136,32 @@ export function fetchCashfreeOrder(orderId: string): Promise<CashfreeOrder> {
 
 export function fetchCashfreePayments(orderId: string): Promise<CashfreePayment[]> {
   return cashfreeRequest<CashfreePayment[]>(`/orders/${encodeURIComponent(orderId)}/payments`, { method: 'GET' });
+}
+
+export function fetchCashfreeRefund(orderId: string, refundId: string): Promise<CashfreeRefund> {
+  return cashfreeRequest<CashfreeRefund>(`/orders/${encodeURIComponent(orderId)}/refunds/${encodeURIComponent(refundId)}`, { method: 'GET' });
+}
+
+export async function createCashfreeRefund(input: {
+  orderId: string;
+  refundId: string;
+  amountMinor: number;
+  note: string;
+  speed?: 'STANDARD' | 'INSTANT';
+}): Promise<CashfreeRefund> {
+  const result = await cashfreeRequest<CashfreeRefund | CashfreeRefund[]>(`/orders/${encodeURIComponent(input.orderId)}/refunds`, {
+    method: 'POST',
+    idempotencyKey: input.refundId,
+    body: JSON.stringify({
+      refund_amount: input.amountMinor / 100,
+      refund_id: input.refundId,
+      refund_note: input.note,
+      refund_speed: input.speed ?? 'STANDARD',
+    }),
+  });
+  const refund = Array.isArray(result) ? result[0] : result;
+  if (!refund) throw new Error('Cashfree refund response did not contain a refund entity.');
+  return refund;
 }
 
 export async function createCashfreeOrder(input: {
