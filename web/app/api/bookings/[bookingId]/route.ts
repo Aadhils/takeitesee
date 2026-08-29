@@ -20,7 +20,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ bo
     const session = await productionAuthProvider.requireCustomer(request);
     const body = await request.json() as { status?: 'cancelled' | 'rescheduled'; reason?: string; booking_date?: string; start_time?: string };
     if (body.status === 'cancelled') {
-      const booking = await productionBookingRepository.updateBookingStatus(session, bookingId as EntityId, body.status, body.reason);
+      const reason = body.reason?.trim() ?? '';
+      if (reason.length < 3) return NextResponse.json({ error: 'A cancellation reason is required.' }, { status: 400 });
+      if (reason.length > 500) return NextResponse.json({ error: 'Cancellation reason must be 500 characters or fewer.' }, { status: 400 });
+      const booking = await productionBookingRepository.updateBookingStatus(session, bookingId as EntityId, body.status, reason);
       return NextResponse.json({ booking });
     }
     if (body.status === 'rescheduled') {
