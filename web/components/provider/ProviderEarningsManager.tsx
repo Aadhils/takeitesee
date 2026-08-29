@@ -21,10 +21,13 @@ type FinanceSummary = {
   platform_fee_minor: number;
   provider_net_minor: number;
   held_minor: number;
+  risk_held_minor: number;
   available_minor: number;
   assigned_minor: number;
   paid_minor: number;
   reversed_minor: number;
+  recovery_open_minor: number;
+  finance_hold_count: number;
   settlement_count: number;
   available_count: number;
 };
@@ -38,7 +41,7 @@ type Settlement = {
   platform_fee_minor: number;
   provider_net_minor: number;
   policy_version: number;
-  status: 'held' | 'available' | 'assigned' | 'paid' | 'reversed';
+  status: 'held' | 'available' | 'assigned' | 'paid' | 'reversed' | 'risk_hold';
   eligible_at: string;
   reversal_reason?: string | null;
   created_at: string;
@@ -59,6 +62,30 @@ type Payout = {
   transfer_utr?: string | null;
   created_at: string;
   paid_at?: string | null;
+};
+
+type FinanceHold = {
+  id: string;
+  booking_id: string;
+  source_type: 'dispute' | 'auto_refund' | 'exception';
+  amount_minor: number;
+  currency: string;
+  status: 'open' | 'recovery_required';
+  summary: string;
+  opened_at: string;
+  updated_at: string;
+};
+
+type Recovery = {
+  id: string;
+  booking_id: string;
+  amount_minor: number;
+  currency: string;
+  status: 'open' | 'recovered' | 'waived';
+  reason: string;
+  created_at: string;
+  resolved_at?: string | null;
+  resolution_note?: string | null;
 };
 
 type BookingSummary = {
@@ -89,6 +116,8 @@ type EarningsPayload = {
     summary?: Partial<FinanceSummary>;
     settlements?: Settlement[];
     payouts?: Payout[];
+    finance_holds?: FinanceHold[];
+    recoveries?: Recovery[];
   };
   booking_summary?: BookingSummary;
   activity?: EarningsActivity[];
@@ -96,9 +125,9 @@ type EarningsPayload = {
 };
 
 const emptyFinance: FinanceSummary = {
-  gross_minor: 0, platform_fee_minor: 0, provider_net_minor: 0, held_minor: 0,
-  available_minor: 0, assigned_minor: 0, paid_minor: 0, reversed_minor: 0,
-  settlement_count: 0, available_count: 0,
+  gross_minor: 0, platform_fee_minor: 0, provider_net_minor: 0, held_minor: 0, risk_held_minor: 0,
+  available_minor: 0, assigned_minor: 0, paid_minor: 0, reversed_minor: 0, recovery_open_minor: 0,
+  finance_hold_count: 0, settlement_count: 0, available_count: 0,
 };
 
 function formatCurrency(amount: number, currency: string) {
@@ -114,10 +143,10 @@ function paymentTone(status: string): 'success' | 'warning' | 'danger' | 'neutra
   return 'neutral';
 }
 function financeTone(status: string): 'success' | 'warning' | 'danger' | 'neutral' | 'info' {
-  if (status === 'paid' || status === 'available') return 'success';
-  if (status === 'held' || status === 'ready' || status === 'processing' || status === 'assigned') return 'warning';
+  if (status === 'paid' || status === 'available' || status === 'recovered') return 'success';
+  if (status === 'held' || status === 'risk_hold' || status === 'ready' || status === 'processing' || status === 'assigned' || status === 'open') return 'warning';
   if (status === 'failed' || status === 'reversed') return 'danger';
-  if (status === 'cancelled') return 'neutral';
+  if (status === 'cancelled' || status === 'waived') return 'neutral';
   return 'info';
 }
 
@@ -145,22 +174,29 @@ export default function ProviderEarningsManager() {
   const policy = payload?.finance?.policies?.find((item) => item.currency === currency);
   const settlements = payload?.finance?.settlements ?? [];
   const payouts = payload?.finance?.payouts ?? [];
+  const holds = payload?.finance?.finance_holds ?? [];
+  const recoveries = payload?.finance?.recoveries ?? [];
+  const openRecoveries = recoveries.filter((item) => item.status === 'open');
   const activity = payload?.activity ?? [];
   const bookingReferenceById = useMemo(() => new Map(activity.map((item) => [item.id, item.booking_reference])), [activity]);
 
   return <LiveProviderShell active="/provider/earnings">
-    <ProviderHeading eyebrow="Finance" title="Earnings & payouts" description="Track paid service value, platform commission, provider net earnings, settlement holds, available balance, payout destination, and real payout transfer status." />
+    <ProviderHeading eyebrow="Finance" title="Earnings & payouts" description="Track paid service value, platform commission, provider net earnings, settlement holds, payment-risk holds, recovery balances, and real payout transfer status." />
 
     {loading ? <Card><p>Loading finance ledger…</p></Card> : null}
     {error ? <Card><p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p></Card> : null}
 
     {payload && bookingSummary ? <>
       {!policy?.active ? <Alert tone="warning" title="Platform finance policy not active">Paid bookings are still safely recorded in the booking payment ledger, but provider commission and payout snapshots will start only after the platform activates a finance policy.</Alert> : null}
+      {holds.length ? <Alert tone="warning" title="Some payout balance is under finance review">A payment dispute, chargeback, or gateway reversal is being reviewed. Affected booking balance is excluded from available payout until the risk clears.</Alert> : null}
+      {openRecoveries.length ? <Alert tone="danger" title="Outstanding provider recovery balance">A payment reversal affected funds that had already been paid out. New payout preparation is blocked until platform finance resolves the recovery balance.</Alert> : null}
 
       <ProviderPayoutDestinationPanel />
 
       <div className="provider-summary-grid">
         <ProviderDashboardSummary label="Available for payout" value={formatMinor(summary.available_minor, currency)} detail={`${summary.available_count} eligible settlement${summary.available_count === 1 ? '' : 's'}`} tone="success" />
+        <ProviderDashboardSummary label="Payment-risk hold" value={formatMinor(summary.risk_held_minor, currency)} detail={`${summary.finance_hold_count} finance hold${summary.finance_hold_count === 1 ? '' : 's'}`} tone="warning" />
+        <ProviderDashboardSummary label="Recovery balance" value={formatMinor(summary.recovery_open_minor, currency)} detail={openRecoveries.length ? 'Must clear before a new payout' : 'No outstanding recovery'} tone={openRecoveries.length ? 'warning' : 'info'} />
         <ProviderDashboardSummary label="On settlement hold" value={formatMinor(summary.held_minor, currency)} detail={policy?.active ? `${policy.settlement_hold_days} day hold policy` : 'Policy not active'} tone="warning" />
         <ProviderDashboardSummary label="Provider net" value={formatMinor(summary.provider_net_minor, currency)} detail={`${summary.settlement_count} settled paid job${summary.settlement_count === 1 ? '' : 's'}`} tone="info" />
         <ProviderDashboardSummary label="Paid out" value={formatMinor(summary.paid_minor, currency)} detail="Completed provider transfers" />
@@ -180,12 +216,18 @@ export default function ProviderEarningsManager() {
         </dl>
       </Card>
 
+      {holds.length || recoveries.length ? <Card className="provider-transactions">
+        <div className="section-heading"><div><span className="eyebrow">Finance protection</span><h2>Risk holds & recovery</h2></div><Badge tone={openRecoveries.length ? 'danger' : 'warning'}>{openRecoveries.length ? 'Recovery required' : 'Finance review'}</Badge></div>
+        {holds.length ? <div className="provider-transaction-list">{holds.map((item) => <div key={item.id}><div><strong>{bookingReferenceById.get(item.booking_id) ?? `Booking ${item.booking_id.slice(0, 8)}…`}</strong><span>{item.summary}</span></div><strong>{formatMinor(item.amount_minor, item.currency)}</strong><Badge tone={financeTone(item.status)}>{item.status.replaceAll('_', ' ')}</Badge></div>)}</div> : null}
+        {recoveries.length ? <div className="provider-transaction-list" style={{ marginTop: '1rem' }}>{recoveries.map((item) => <div key={item.id}><div><strong>{bookingReferenceById.get(item.booking_id) ?? `Booking ${item.booking_id.slice(0, 8)}…`}</strong><span>{item.reason}{item.resolution_note ? ` · ${item.resolution_note}` : ''}</span></div><strong>{formatMinor(item.amount_minor, item.currency)}</strong><Badge tone={financeTone(item.status)}>{item.status}</Badge></div>)}</div> : null}
+      </Card> : null}
+
       <Card className="provider-transactions">
         <div className="section-heading"><div><span className="eyebrow">Settlement ledger</span><h2>Booking commission snapshots</h2></div><Badge tone="info">Immutable per booking</Badge></div>
         {settlements.length ? <div className="provider-transaction-list">{settlements.map((item) => <div key={item.id}>
           <div><strong>{bookingReferenceById.get(item.booking_id) ?? `Booking ${item.booking_id.slice(0, 8)}…`}</strong><span>Gross {formatMinor(item.gross_minor, item.currency)} · Fee {(item.commission_bps / 100).toFixed(2)}% · Net {formatMinor(item.provider_net_minor, item.currency)}</span></div>
           <strong>{formatMinor(item.provider_net_minor, item.currency)}</strong>
-          <Badge tone={financeTone(item.status)}>{item.status}</Badge>
+          <Badge tone={financeTone(item.status)}>{item.status.replaceAll('_', ' ')}</Badge>
         </div>)}</div> : <EmptyState title="No finance settlements yet">Completed paid bookings will create commission snapshots after the platform finance policy is activated.</EmptyState>}
       </Card>
 
@@ -204,7 +246,7 @@ export default function ProviderEarningsManager() {
           const date = item.booking_date ? new Date(`${item.booking_date}T00:00:00`) : new Date(item.created_at);
           return <div key={item.id}><div><strong>{item.service_name}</strong><span>{date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} · {item.booking_reference} · {item.booking_status}</span></div><strong>{formatCurrency(item.amount, item.currency)}</strong><Badge tone={paymentTone(item.payment_status)}>Payment {item.payment_status}</Badge></div>;
         })}</div> : <EmptyState title="No booking activity yet">New provider bookings will appear here.</EmptyState>}
-        <p className="provider-fixture-note">A payout is marked paid only after the payout gateway confirms a completed transfer. Failed or reversed transfers release the affected settlement balance for finance review and retry.</p>
+        <p className="provider-fixture-note">A payout is marked paid only after the payout gateway confirms a completed transfer. Payment disputes and auto-refunds can temporarily hold affected balance; post-payout losses create an auditable recovery entry instead of silently changing earnings.</p>
       </Card>
     </> : null}
   </LiveProviderShell>;
