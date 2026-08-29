@@ -91,7 +91,7 @@ export default function CustomerBookingDetail({ bookingId }: { bookingId: string
           <h1>{service ? displayText(service.service_name) : booking.serviceName}</h1>
           <p>{booking.bookingDate} · {booking.startTime} {booking.timezone}</p>
         </div>
-        <Badge tone={booking.status === 'cancelled' ? 'danger' : booking.status === 'completed' ? 'success' : 'info'}>{booking.status}</Badge>
+        <Badge tone={booking.status === 'cancelled' ? 'danger' : booking.status === 'completed' ? 'success' : 'info'}>{booking.status === 'rescheduled' ? 'reschedule requested' : booking.status}</Badge>
       </section>
 
       <div className="booking-detail-layout">
@@ -100,11 +100,14 @@ export default function CustomerBookingDetail({ bookingId }: { bookingId: string
             <div className="section-heading">
               <div>
                 <span className="eyebrow">Current booking status</span>
-                <h2>{booking.status}</h2>
+                <h2>{booking.status === 'rescheduled' ? 'Awaiting provider confirmation' : booking.status}</h2>
               </div>
               <Badge tone="neutral">Payment {booking.paymentStatus}</Badge>
             </div>
             <p className="detail-copy">This booking is managed by the configured takeitesee backend.</p>
+            {booking.status === 'rescheduled' ? (
+              <p className="detail-copy">Your requested new time is reserved and has been sent to the provider for confirmation. The previous slot was released when the reschedule request was saved.</p>
+            ) : null}
             {booking.status === 'cancelled' ? (
               <p className="detail-copy">This booking has been cancelled. Its reserved time is no longer treated as occupied by availability checks.</p>
             ) : null}
@@ -165,7 +168,7 @@ export default function CustomerBookingDetail({ bookingId }: { bookingId: string
             {cancelError ? <p role="alert" style={{ color: '#b42318' }}>{cancelError}</p> : null}
             <Link href="/explore" className="button button-secondary">Find another service</Link>
           </Card>
-          <p className="support-note">Rescheduling uses live provider availability and updates the shared booking record. Cancellation releases the reserved slot and records your reason.</p>
+          <p className="support-note">Rescheduling uses live provider availability, records your reason, releases the old slot, reserves the new slot, and requires provider confirmation. Cancellation releases the reserved slot and records your reason.</p>
         </aside>
       </div>
 
