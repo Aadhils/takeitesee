@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createSupabaseServiceClient } from '../../../lib/supabase/service';
+import { createClient } from '@supabase/supabase-js';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -9,9 +9,15 @@ export async function GET() {
   const release = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12) ?? 'local';
 
   try {
-    const supabase = createSupabaseServiceClient();
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !anonKey) throw new Error('Public Supabase configuration is missing.');
+
+    const supabase = createClient(url, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    });
     const { error } = await supabase
-      .from('users')
+      .from('services')
       .select('id', { head: true, count: 'exact' })
       .limit(1);
 
