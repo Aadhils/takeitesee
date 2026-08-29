@@ -6,10 +6,13 @@ import { Badge, Button, Card } from '../ui/primitives';
 import { ProviderHeading } from './ProviderPresentation';
 import { LiveProviderShell } from './LiveProviderShell';
 
+type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'rescheduled';
+type BookingHistoryEntry = { from_status: BookingStatus | null; to_status: BookingStatus; reason?: string; created_at: string };
 type Booking = {
   id: string; booking_reference: string; service_name: string; booking_date: string; start_time: string; timezone: string;
   duration_minutes: number; location: string; customer_notes?: string; quoted_price: number; currency: 'INR' | 'USD';
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'rescheduled'; payment_status: 'unpaid' | 'pending' | 'paid' | 'failed' | 'refunded'; provider_name: string;
+  status: BookingStatus; payment_status: 'unpaid' | 'pending' | 'paid' | 'failed' | 'refunded'; provider_name: string;
+  created_at: string; updated_at: string; history: BookingHistoryEntry[];
 };
 
 function tone(status: Booking['status']) {
@@ -31,6 +34,24 @@ function zonedDateTimeToEpoch(date: string, time: string, timeZone: string) {
     guess += targetUtc - representedUtc;
   }
   return guess;
+}
+
+function timelineTime(value: string, timeZone: string) {
+  return new Intl.DateTimeFormat('en-IN', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: timeZone || 'Asia/Kolkata',
+  }).format(new Date(value));
+}
+
+function timelineCopy(entry: BookingHistoryEntry) {
+  const reason = entry.reason || '';
+  if (entry.to_status === 'confirmed') return { title: 'Booking confirmed', detail: 'Provider accepted the customer request.' };
+  if (entry.to_status === 'completed') return { title: 'Service completed', detail: 'Provider marked the scheduled service as completed.' };
+  if (entry.to_status === 'rescheduled') return { title: 'Booking rescheduled', detail: 'The booking date or time was changed and availability was revalidated.' };
+  if (entry.to_status === 'cancelled' && reason.startsWith('provider:')) return { title: 'Booking declined', detail: 'Provider declined the booking request.' };
+  if (entry.to_status === 'cancelled') return { title: 'Booking cancelled', detail: 'The booking was cancelled and its reserved time was released.' };
+  return { title: `Status changed to ${entry.to_status}`, detail: entry.from_status ? `Previous status: ${entry.from_status}.` : 'Booking status updated.' };
 }
 
 export default function ProviderBookingDetail({ bookingId }: { bookingId: string }) {
@@ -98,6 +119,28 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
         {booking.status === 'cancelled' ? <p>This booking is cancelled. No further provider action is available.</p> : null}
         {booking.status === 'rescheduled' ? <p>This booking has been rescheduled. Review the updated schedule before continuing.</p> : null}
       </Card>
+      <div style={{ gridColumn: '1 / -1' }}>
+        <Card className="provider-detail-card">
+          <span className="eyebrow">Lifecycle</span>
+          <h2>Booking timeline</h2>
+          <p className="summary-note">A shared operational history of the booking from request through completion or cancellation.</p>
+          <ol aria-label="Booking lifecycle" style={{ listStyle: 'none', padding: 0, margin: '1rem 0 0', display: 'grid', gap: '0.9rem' }}>
+            <li style={{ borderLeft: '3px solid var(--border, #d9dce5)', paddingLeft: '1rem' }}>
+              <strong>Booking requested</strong>
+              <p style={{ margin: '0.25rem 0' }}>Customer created the booking request.</p>
+              <small>{timelineTime(booking.created_at, booking.timezone)}</small>
+            </li>
+            {(booking.history ?? []).map((entry, index) => {
+              const copy = timelineCopy(entry);
+              return <li key={`${entry.created_at}-${entry.to_status}-${index}`} style={{ borderLeft: '3px solid var(--border, #d9dce5)', paddingLeft: '1rem' }}>
+                <strong>{copy.title}</strong>
+                <p style={{ margin: '0.25rem 0' }}>{copy.detail}</p>
+                <small>{timelineTime(entry.created_at, booking.timezone)}</small>
+              </li>;
+            })}
+          </ol>
+        </Card>
+      </div>
     </div>}
   </LiveProviderShell>;
 }
