@@ -24,9 +24,10 @@ type RefundItem = {
   updated_at: string;
 };
 
+type RefundGateway = { enabled: boolean; provider: string; mode: 'sandbox' | 'production' };
 type QueuePayload = {
   refunds?: RefundItem[];
-  gateway?: { enabled: boolean; provider: string; mode: 'sandbox' | 'production' };
+  gateway?: RefundGateway;
   refund?: RefundItem;
   error?: string;
   code?: string;
@@ -46,7 +47,7 @@ function tone(status: RefundItem['status']): 'neutral' | 'success' | 'warning' |
 
 export default function FinanceRefundQueue() {
   const [refunds, setRefunds] = useState<RefundItem[]>([]);
-  const [gateway, setGateway] = useState<QueuePayload['gateway']>(null);
+  const [gateway, setGateway] = useState<RefundGateway | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
