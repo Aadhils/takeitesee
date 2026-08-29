@@ -5,7 +5,7 @@ import { Badge, Card } from '../ui/primitives';
 
 export type BookingAuditEvent = {
   id: string;
-  category: 'booking' | 'payment' | 'review' | 'support' | 'closeout';
+  category: 'booking' | 'payment' | 'refund' | 'review' | 'support' | 'closeout';
   actor: 'customer' | 'provider' | 'admin' | 'gateway' | 'system' | 'migration';
   status: string;
   title: string;
@@ -26,6 +26,12 @@ function eventTone(event: BookingAuditEvent): 'neutral' | 'success' | 'warning' 
     if (event.status === 'refunded') return 'info';
     if (event.status === 'pending' || event.status === 'unpaid') return 'warning';
     return 'neutral';
+  }
+  if (event.category === 'refund') {
+    if (event.status === 'succeeded') return 'success';
+    if (event.status === 'failed' || event.status === 'cancelled') return 'danger';
+    if (event.status === 'created' || event.status === 'pending' || event.status === 'onhold' || event.status === 'requires_review') return 'warning';
+    return 'info';
   }
   if (event.category === 'review') return event.status === 'published' || event.status === 'responded' ? 'success' : 'info';
   if (event.category === 'support') {
@@ -59,7 +65,7 @@ export function BookingAuditList({ events, timezone }: { events: BookingAuditEve
   </ol>;
 }
 
-export default function BookingAuditTimeline({ bookingId, refreshKey, title = 'Lifecycle timeline', description = 'A chronological audit trail combining booking, payment, attendance, review, support, and final closeout events.' }: { bookingId: string; refreshKey?: string | number; title?: string; description?: string }) {
+export default function BookingAuditTimeline({ bookingId, refreshKey, title = 'Lifecycle timeline', description = 'A chronological audit trail combining booking, payment, refund, attendance, review, support, and final closeout events.' }: { bookingId: string; refreshKey?: string | number; title?: string; description?: string }) {
   const [payload, setPayload] = useState<BookingAuditPayload | null>(null);
   const [error, setError] = useState('');
   const [eventRefresh, setEventRefresh] = useState(0);
