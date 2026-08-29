@@ -142,14 +142,14 @@ export function fetchCashfreeRefund(orderId: string, refundId: string): Promise<
   return cashfreeRequest<CashfreeRefund>(`/orders/${encodeURIComponent(orderId)}/refunds/${encodeURIComponent(refundId)}`, { method: 'GET' });
 }
 
-export function createCashfreeRefund(input: {
+export async function createCashfreeRefund(input: {
   orderId: string;
   refundId: string;
   amountMinor: number;
   note: string;
   speed?: 'STANDARD' | 'INSTANT';
 }): Promise<CashfreeRefund> {
-  return cashfreeRequest<CashfreeRefund>(`/orders/${encodeURIComponent(input.orderId)}/refunds`, {
+  const result = await cashfreeRequest<CashfreeRefund | CashfreeRefund[]>(`/orders/${encodeURIComponent(input.orderId)}/refunds`, {
     method: 'POST',
     idempotencyKey: input.refundId,
     body: JSON.stringify({
@@ -159,6 +159,9 @@ export function createCashfreeRefund(input: {
       refund_speed: input.speed ?? 'STANDARD',
     }),
   });
+  const refund = Array.isArray(result) ? result[0] : result;
+  if (!refund) throw new Error('Cashfree refund response did not contain a refund entity.');
+  return refund;
 }
 
 export async function createCashfreeOrder(input: {
