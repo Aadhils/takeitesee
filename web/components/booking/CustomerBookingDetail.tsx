@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Badge, Card, EmptyState } from '../ui/primitives';
 import BookingAuditTimeline from './BookingAuditTimeline';
+import BookingCloseoutPanel from './BookingCloseoutPanel';
 import BookingReasonDialog from './BookingReasonDialog';
 import { cancelBookingThroughConfiguredRepository, getBookingThroughConfiguredRepository } from '../../services/booking-repository';
 import type { CustomerBooking } from '../../types/booking-domain';
@@ -45,6 +46,11 @@ export default function CustomerBookingDetail({ bookingId }: { bookingId: string
   const canManage = ['pending', 'confirmed', 'rescheduled'].includes(booking.status);
   const providerLabel = booking.providerName || (booking.providerType === 'business' ? 'Business provider' : 'Professional provider');
 
+  const refreshCloseout = () => {
+    window.dispatchEvent(new CustomEvent('booking:audit-refresh', { detail: { bookingId: booking.bookingId } }));
+    window.dispatchEvent(new CustomEvent('booking:closeout-refresh', { detail: { bookingId: booking.bookingId } }));
+  };
+
   const handleCancel = async (reason: string) => {
     if (!canManage || cancelBusy) return;
     setCancelBusy(true);
@@ -54,6 +60,7 @@ export default function CustomerBookingDetail({ bookingId }: { bookingId: string
       if (!updated) throw new Error('Booking could not be cancelled.');
       setBooking((current) => updated.providerName ? updated : { ...updated, providerName: current?.providerName });
       setCancelConfirmOpen(false);
+      refreshCloseout();
     } catch (error) {
       setCancelError(error instanceof Error ? error.message : 'Booking could not be cancelled.');
     } finally {
@@ -77,6 +84,7 @@ export default function CustomerBookingDetail({ bookingId }: { bookingId: string
       const payload = await response.json() as { review?: SavedReview; error?: string };
       if (!response.ok || !payload.review) throw new Error(payload.error ?? 'Review could not be submitted.');
       setReview(payload.review);
+      refreshCloseout();
     } catch (error) {
       setReviewError(error instanceof Error ? error.message : 'Review could not be submitted.');
     } finally {
@@ -106,12 +114,8 @@ export default function CustomerBookingDetail({ bookingId }: { bookingId: string
               <Badge tone="neutral">Payment {booking.paymentStatus}</Badge>
             </div>
             <p className="detail-copy">This booking is managed by the configured takeitesee backend.</p>
-            {booking.status === 'rescheduled' ? (
-              <p className="detail-copy">Your requested new time is reserved and has been sent to the provider for confirmation. The previous slot was released when the reschedule request was saved.</p>
-            ) : null}
-            {booking.status === 'cancelled' ? (
-              <p className="detail-copy">This booking has been cancelled. Its reserved time is no longer treated as occupied by availability checks.</p>
-            ) : null}
+            {booking.status === 'rescheduled' ? <p className="detail-copy">Your requested new time is reserved and has been sent to the provider for confirmation. The previous slot was released when the reschedule request was saved.</p> : null}
+            {booking.status === 'cancelled' ? <p className="detail-copy">This booking has been cancelled. Its reserved time is no longer treated as occupied by availability checks.</p> : null}
           </Card>
 
           <Card className="policy-card">
@@ -125,6 +129,7 @@ export default function CustomerBookingDetail({ bookingId }: { bookingId: string
             </dl>
           </Card>
 
+          <BookingCloseoutPanel bookingId={booking.bookingId} allowSupport />
           <BookingAuditTimeline bookingId={booking.bookingId} refreshKey={booking.updatedAt} />
 
           {booking.status === 'completed' ? (
@@ -163,15 +168,11 @@ export default function CustomerBookingDetail({ bookingId }: { bookingId: string
           <Card>
             <span className="eyebrow">Actions</span>
             {canManage ? <Link href={`/bookings/${encodeURIComponent(booking.bookingId)}/reschedule`} className="button button-secondary">Reschedule booking</Link> : null}
-            {canManage ? (
-              <button type="button" className="button button-secondary" disabled={cancelBusy} onClick={() => setCancelConfirmOpen(true)}>
-                {cancelBusy ? 'Cancelling…' : 'Cancel booking'}
-              </button>
-            ) : null}
+            {canManage ? <button type="button" className="button button-secondary" disabled={cancelBusy} onClick={() => setCancelConfirmOpen(true)}>{cancelBusy ? 'Cancelling…' : 'Cancel booking'}</button> : null}
             {cancelError ? <p role="alert" style={{ color: '#b42318' }}>{cancelError}</p> : null}
             <Link href="/explore" className="button button-secondary">Find another service</Link>
           </Card>
-          <p className="support-note">Rescheduling uses live provider availability, records your reason, releases the old slot, reserves the new slot, and requires provider confirmation. Cancellation releases the reserved slot and records your reason.</p>
+          <p className="support-note">After completion, review and support actions stay linked to this booking so customer feedback, provider responses, payment state, and operations follow-up remain auditable in one place.</p>
         </aside>
       </div>
 
