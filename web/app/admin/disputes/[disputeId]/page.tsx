@@ -1,9 +1,10 @@
-import { notFound } from 'next/navigation';
-import { AdminDisputeDetail } from '../../../../components/admin/AdminPresentation';
-import { adminIssues } from '../../../../data/admin-fixtures';
+import AdminLiveIssueDetail from '../../../../components/admin/AdminLiveIssueDetail';
+import { productionAuthProvider } from '../../../../server/auth/session';
+
+export const dynamic = 'force-dynamic';
 
 export default async function AdminDisputeDetailRoute({ params }: { params: Promise<{ disputeId: string }> }) {
+  await productionAuthProvider.requireAdmin();
   const { disputeId } = await params;
-  if (!adminIssues.some((issue) => issue.id === disputeId)) notFound();
-  return <AdminDisputeDetail disputeId={disputeId} />;
+  return <AdminLiveIssueDetail issueId={disputeId} />;
 }
