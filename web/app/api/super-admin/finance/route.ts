@@ -25,6 +25,8 @@ type PayoutBatch = {
   currency: string;
   status: string;
   provider_net_minor: number;
+  recovery_offset_minor: number;
+  transfer_amount_minor: number;
   payout_destination_id: string | null;
   transfer_id: string | null;
   gateway: string | null;
@@ -159,18 +161,28 @@ export async function POST(request: Request) {
       const batchId = input.batch_id?.trim() ?? '';
       if (!batchId) throw new Error('Payout batch is required.');
       await requireFinanceManage(supabase);
-      const config = getCashfreePayoutConfig();
-      if (!config.enabled) {
-        return NextResponse.json({ error: 'Cashfree provider payouts are not configured yet.', code: 'PAYOUT_GATEWAY_NOT_CONFIGURED', mode: config.mode }, { status: 503 });
-      }
 
       const service = createSupabaseServiceClient();
       const { data: batchData, error: batchError } = await service.from('provider_payout_batches')
-        .select('id,owner_user_id,currency,status,provider_net_minor,payout_destination_id,transfer_id,gateway')
+        .select('id,owner_user_id,currency,status,provider_net_minor,recovery_offset_minor,transfer_amount_minor,payout_destination_id,transfer_id,gateway')
         .eq('id', batchId).maybeSingle();
       if (batchError) throw new Error(batchError.message);
       const batch = batchData as PayoutBatch | null;
       if (!batch || batch.status !== 'ready') throw new Error('Only a ready payout batch can be sent.');
+
+      if (Number(batch.transfer_amount_minor) === 0) {
+        const { data: completed, error: completeError } = await service.rpc('gateway_complete_recovery_only_payout', {
+          target_batch_id: batch.id,
+          target_actor_user_id: session.user_id,
+        }).maybeSingle();
+        if (completeError || !completed) throw new Error(completeError?.message ?? 'Recovery-only payout could not be completed.');
+        return NextResponse.json({ payout: completed, gateway: { provider: 'internal_recovery', mode: 'internal' } });
+      }
+
+      const config = getCashfreePayoutConfig();
+      if (!config.enabled) {
+        return NextResponse.json({ error: 'Cashfree provider payouts are not configured yet.', code: 'PAYOUT_GATEWAY_NOT_CONFIGURED', mode: config.mode }, { status: 503 });
+      }
 
       const { data: destinationData, error: destinationError } = await service.from('provider_payout_destinations')
         .select('id,owner_user_id,destination_type,masked_destination,beneficiary_name,status,gateway_beneficiary_id')
@@ -194,14 +206,14 @@ export async function POST(request: Request) {
       try {
         const transfer = await createCashfreePayoutTransfer({
           transferId,
-          amountMinor: Number(batch.provider_net_minor),
+          amountMinor: Number(batch.transfer_amount_minor),
           beneficiaryId: destination.gateway_beneficiary_id,
           transferMode,
           remarks: `Takeitesee provider payout ${batch.id.slice(0, 8)}`,
         });
         if (transfer.transfer_id !== transferId) throw new Error('Cashfree payout transfer id did not match the reserved transfer.');
-        if (Math.round(Number(transfer.transfer_amount) * 100) !== Number(batch.provider_net_minor)) {
-          throw new Error('Cashfree payout amount did not match the provider payout batch.');
+        if (Math.round(Number(transfer.transfer_amount) * 100) !== Number(batch.transfer_amount_minor)) {
+          throw new Error('Cashfree payout amount did not match the provider payout batch transfer amount.');
         }
         const payout = await applyGatewayStatus(service, batch.id, transfer);
         return NextResponse.json({ payout, gateway: { provider: 'cashfree_payout', mode: config.mode } });
@@ -233,7 +245,7 @@ export async function POST(request: Request) {
 
       const service = createSupabaseServiceClient();
       const { data: batchData, error: batchError } = await service.from('provider_payout_batches')
-        .select('id,owner_user_id,currency,status,provider_net_minor,payout_destination_id,transfer_id,gateway')
+        .select('id,owner_user_id,currency,status,provider_net_minor,recovery_offset_minor,transfer_amount_minor,payout_destination_id,transfer_id,gateway')
         .eq('id', batchId).maybeSingle();
       if (batchError) throw new Error(batchError.message);
       const batch = batchData as PayoutBatch | null;
@@ -243,8 +255,8 @@ export async function POST(request: Request) {
 
       const transfer = await getCashfreePayoutTransfer(batch.transfer_id);
       if (transfer.transfer_id !== batch.transfer_id) throw new Error('Cashfree returned a different payout transfer id.');
-      if (Math.round(Number(transfer.transfer_amount) * 100) !== Number(batch.provider_net_minor)) {
-        throw new Error('Cashfree payout amount does not match the provider payout batch.');
+      if (Math.round(Number(transfer.transfer_amount) * 100) !== Number(batch.transfer_amount_minor)) {
+        throw new Error('Cashfree payout amount does not match the provider payout batch transfer amount.');
       }
       const payout = await applyGatewayStatus(service, batch.id, transfer);
       return NextResponse.json({ payout, gateway: { provider: 'cashfree_payout', mode: config.mode } });
