@@ -1,18 +1,58 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Badge, Card, EmptyState } from '../ui/primitives';
 import { ProviderDashboardSummary, ProviderHeading } from './ProviderPresentation';
 import { LiveProviderShell } from './LiveProviderShell';
 
 type Profile = { display_name: string; provider_type: string; verified: boolean; services_active: number; services_total: number; location: string };
 type Earnings = { currency: string; available_balance: number; pending_earnings: number; total_earnings: number; total_completed_count: number };
-type Booking = { id: string; booking_reference: string; service_name?: string; status: string; payment_status?: string; booking_date?: string | null; start_time?: string | null; booking_time?: string | null; quoted_price?: number | null; currency?: string | null };
+type Booking = {
+  id: string;
+  booking_reference: string;
+  service_name?: string;
+  status: string;
+  payment_status?: string;
+  booking_date?: string | null;
+  start_time?: string | null;
+  timezone?: string | null;
+  duration_minutes?: number | null;
+  quoted_price?: number | null;
+  currency?: string | null;
+};
 
 function money(amount: number, currency = 'INR') {
   try { return new Intl.NumberFormat('en-IN', { style: 'currency', currency, minimumFractionDigits: 2 }).format(amount); }
   catch { return `${currency} ${amount.toFixed(2)}`; }
+}
+
+function zonedDateTimeToEpoch(date: string, time: string, timeZone: string) {
+  try {
+    const [year, month, day] = date.split('-').map(Number);
+    const [hour, minute, second = 0] = time.slice(0, 8).split(':').map(Number);
+    const targetUtc = Date.UTC(year, month - 1, day, hour, minute, second);
+    let guess = targetUtc;
+    for (let index = 0; index < 3; index += 1) {
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone,
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+      }).formatToParts(new Date(guess));
+      const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+      const representedUtc = Date.UTC(Number(values.year), Number(values.month) - 1, Number(values.day), Number(values.hour), Number(values.minute), Number(values.second));
+      guess += targetUtc - representedUtc;
+    }
+    return guess;
+  } catch {
+    return new Date(`${date}T${time.slice(0, 8)}Z`).getTime();
+  }
+}
+
+function bookingEndEpoch(booking: Booking) {
+  if (!booking.booking_date || !booking.start_time) return Number.POSITIVE_INFINITY;
+  const start = zonedDateTimeToEpoch(booking.booking_date, booking.start_time, booking.timezone || 'Asia/Kolkata');
+  return start + Number(booking.duration_minutes || 0) * 60_000;
 }
 
 export default function ProviderDashboardManager() {
@@ -21,6 +61,7 @@ export default function ProviderDashboardManager() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => { void (async () => {
     try {
@@ -43,9 +84,24 @@ export default function ProviderDashboardManager() {
     finally { setLoading(false); }
   })(); }, []);
 
-  const pending = bookings.filter((b) => ['pending', 'rescheduled'].includes(b.status));
-  const upcoming = bookings.filter((b) => b.status === 'confirmed').slice(0, 4);
-  const completed = bookings.filter((b) => b.status === 'completed');
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const operations = useMemo(() => {
+    const needsAction = bookings.filter((booking) =>
+      booking.status === 'pending'
+      || booking.status === 'rescheduled'
+      || (booking.status === 'confirmed' && bookingEndEpoch(booking) <= now));
+    const upcoming = bookings
+      .filter((booking) => booking.status === 'confirmed' && bookingEndEpoch(booking) > now)
+      .sort((left, right) => bookingEndEpoch(left) - bookingEndEpoch(right))
+      .slice(0, 4);
+    const completed = bookings.filter((booking) => booking.status === 'completed');
+    return { needsAction, upcoming, completed };
+  }, [bookings, now]);
+
   const currency = earnings?.currency ?? 'INR';
 
   return <LiveProviderShell active="/provider">
@@ -54,9 +110,9 @@ export default function ProviderDashboardManager() {
     {error ? <Card><p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p></Card> : null}
     {profile && earnings ? <>
       <div className="provider-summary-grid">
-        <ProviderDashboardSummary label="Requests needing action" value={String(pending.length)} detail="New bookings and reschedule requests" tone={pending.length ? 'warning' : 'success'} />
-        <ProviderDashboardSummary label="Upcoming work" value={String(upcoming.length)} detail="Confirmed bookings" tone="info" />
-        <ProviderDashboardSummary label="Completed jobs" value={String(completed.length)} detail={`${earnings.total_completed_count} reflected in earnings`} tone="success" />
+        <ProviderDashboardSummary label="Needs action" value={String(operations.needsAction.length)} detail="Requests, reschedules, or completion tasks" tone={operations.needsAction.length ? 'warning' : 'success'} />
+        <ProviderDashboardSummary label="Upcoming work" value={String(operations.upcoming.length)} detail="Future confirmed bookings" tone="info" />
+        <ProviderDashboardSummary label="Completed jobs" value={String(operations.completed.length)} detail={`${earnings.total_completed_count} reflected in earnings`} tone="success" />
         <ProviderDashboardSummary label="Available balance" value={money(earnings.available_balance, currency)} detail={`${money(earnings.pending_earnings, currency)} awaiting payment`} tone="success" />
       </div>
       <div className="provider-profile-grid">
@@ -68,7 +124,7 @@ export default function ProviderDashboardManager() {
         </Card>
         <Card className="provider-profile-card">
           <div className="section-heading"><div><span className="eyebrow">Upcoming</span><h2>Next jobs</h2></div><Badge tone="success">Live bookings</Badge></div>
-          {upcoming.length ? <div className="provider-profile-services">{upcoming.map((booking) => <div key={booking.id}><strong>{booking.service_name || booking.booking_reference}</strong><span>{booking.booking_date || 'Date pending'}{(booking.start_time || booking.booking_time) ? ` · ${booking.start_time || booking.booking_time}` : ''} · {booking.status}</span><Link href={`/provider/bookings/${booking.id}`} className="text-link">View</Link></div>)}</div> : <EmptyState title="No upcoming jobs">Confirmed work will appear here.</EmptyState>}
+          {operations.upcoming.length ? <div className="provider-profile-services">{operations.upcoming.map((booking) => <div key={booking.id}><strong>{booking.service_name || booking.booking_reference}</strong><span>{booking.booking_date || 'Date pending'}{booking.start_time ? ` · ${booking.start_time}` : ''} · confirmed</span><Link href={`/provider/bookings/${booking.id}`} className="text-link">View</Link></div>)}</div> : <EmptyState title="No upcoming jobs">Future confirmed work will appear here.</EmptyState>}
         </Card>
       </div>
       <Card className="provider-profile-card"><div className="section-heading"><div><span className="eyebrow">Provider status</span><h2>Production connection</h2></div><Badge tone="success">Supabase connected</Badge></div><p>Dashboard values are read from the signed-in provider's live profile, booking, service, and earnings APIs. Fixture dashboard totals are no longer used.</p></Card>
