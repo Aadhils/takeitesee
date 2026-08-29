@@ -117,7 +117,6 @@ function bookingCopy(row: Record<string, unknown>) {
 function paymentActor(source: string): BookingAuditActor {
   if (source === 'admin') return 'admin';
   if (source === 'gateway') return 'gateway';
-  if (source === 'migration') return 'migration';
   return 'system';
 }
 
@@ -194,12 +193,12 @@ export async function getBookingAuditReadModel(bookingId: string): Promise<Booki
       detail: 'The customer created the booking request.',
       occurred_at: String(bookingRow.created_at),
     },
-    ...(statusRows ?? []).map((row) => {
+    ...(statusRows ?? []).map((row): BookingAuditEvent => {
       const copy = bookingCopy(row as Record<string, unknown>);
       const reason = String(row.reason ?? '');
       return {
         id: String(row.id),
-        category: 'booking' as const,
+        category: 'booking',
         actor: bookingActor(reason),
         status: String(row.to_status),
         title: copy.title,
@@ -207,11 +206,11 @@ export async function getBookingAuditReadModel(bookingId: string): Promise<Booki
         occurred_at: String(row.created_at),
       };
     }),
-    ...(paymentRows ?? []).map((row) => {
+    ...(paymentRows ?? []).map((row): BookingAuditEvent => {
       const copy = paymentCopy(row as Record<string, unknown>);
       return {
         id: String(row.id),
-        category: 'payment' as const,
+        category: 'payment',
         actor: paymentActor(String(row.source ?? 'system')),
         status: String(row.to_status),
         title: copy.title,
@@ -219,7 +218,9 @@ export async function getBookingAuditReadModel(bookingId: string): Promise<Booki
         occurred_at: String(row.created_at),
       };
     }),
-  ].sort((left, right) => {
+  ];
+
+  events.sort((left, right) => {
     const time = new Date(left.occurred_at).getTime() - new Date(right.occurred_at).getTime();
     if (time !== 0) return time;
     if (left.id.startsWith('booking-created:')) return -1;
