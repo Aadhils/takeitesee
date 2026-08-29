@@ -3,16 +3,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card, EmptyState } from '../ui/primitives';
 
+type VerificationStatus = 'pending' | 'approved' | 'changes_requested' | 'rejected' | 'withdrawn' | 'revoked';
+type ReviewDecision = 'approve' | 'changes_requested' | 'reject' | 'revoke';
 type RequestRecord = {
   id: string; applicant_user_id: string; provider_type: 'professional' | 'business'; professional_id?: string | null; business_id?: string | null;
   legal_name: string; contact_phone: string; address: string; evidence_type: string; evidence_reference: string; evidence_note?: string | null;
-  status: 'pending' | 'approved' | 'changes_requested' | 'rejected' | 'withdrawn'; review_note?: string | null; reviewed_at?: string | null; created_at: string;
+  status: VerificationStatus; review_note?: string | null; reviewed_at?: string | null; created_at: string;
 };
 
-function tone(status: RequestRecord['status']) {
+function tone(status: VerificationStatus) {
   if (status === 'approved') return 'success' as const;
   if (status === 'pending' || status === 'changes_requested') return 'warning' as const;
-  if (status === 'rejected') return 'danger' as const;
+  if (status === 'rejected' || status === 'revoked') return 'danger' as const;
   return 'neutral' as const;
 }
 
@@ -36,10 +38,10 @@ export default function ProviderVerificationReviewManager() {
   }, []);
   useEffect(() => { void load(); }, [load]);
 
-  const review = async (item: RequestRecord, decision: 'approve' | 'changes_requested' | 'reject') => {
+  const review = async (item: RequestRecord, decision: ReviewDecision) => {
     if (busyId) return;
     const note = (notes[item.id] ?? '').trim();
-    if (decision !== 'approve' && note.length < 3) { setError('A clear review reason is required for changes or rejection.'); return; }
+    if (decision !== 'approve' && note.length < 3) { setError('A clear review reason is required for changes, rejection, or revocation.'); return; }
     setBusyId(item.id); setError('');
     try {
       const response = await fetch('/api/super-admin/provider-verifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ request_id: item.id, decision, note }) });
@@ -65,10 +67,10 @@ export default function ProviderVerificationReviewManager() {
       <dl className="review-details"><div><dt>Contact</dt><dd>{item.contact_phone}</dd></div><div><dt>Address</dt><dd>{item.address}</dd></div><div><dt>Evidence type</dt><dd>{item.evidence_type.replaceAll('_',' ')}</dd></div><div><dt>Evidence reference</dt><dd>{item.evidence_reference}</dd></div></dl>
       {item.evidence_note ? <div style={{ marginTop: '1rem' }}><strong>Provider evidence note</strong><p>{item.evidence_note}</p></div> : null}
       {item.review_note ? <div style={{ marginTop: '1rem' }}><strong>Review note</strong><p>{item.review_note}</p></div> : null}
-      {item.status === 'pending' ? <div style={{ display: 'grid', gap: '.75rem', marginTop: '1rem' }}>
-        <label className="field"><span className="field-label">Reviewer note</span><textarea className="field-control" rows={3} maxLength={1200} value={notes[item.id] ?? ''} onChange={(event) => setNotes((current) => ({ ...current, [item.id]: event.target.value }))} placeholder="Optional for approval; required for changes/rejection" /></label>
-        <div className="button-row"><Button type="button" disabled={busyId === item.id} onClick={() => void review(item,'approve')}>Approve verification</Button><Button type="button" variant="secondary" disabled={busyId === item.id} onClick={() => void review(item,'changes_requested')}>Request changes</Button><Button type="button" variant="quiet" disabled={busyId === item.id} onClick={() => void review(item,'reject')}>Reject</Button></div>
-        <p className="summary-note">Approval enables service publishing. It does not automatically activate any draft service.</p>
+      {item.status === 'pending' || item.status === 'approved' ? <div style={{ display: 'grid', gap: '.75rem', marginTop: '1rem' }}>
+        <label className="field"><span className="field-label">Reviewer note</span><textarea className="field-control" rows={3} maxLength={1200} value={notes[item.id] ?? ''} onChange={(event) => setNotes((current) => ({ ...current, [item.id]: event.target.value }))} placeholder={item.status === 'approved' ? 'Reason required to revoke verification' : 'Optional for approval; required for changes/rejection'} /></label>
+        {item.status === 'pending' ? <div className="button-row"><Button type="button" disabled={busyId === item.id} onClick={() => void review(item,'approve')}>Approve verification</Button><Button type="button" variant="secondary" disabled={busyId === item.id} onClick={() => void review(item,'changes_requested')}>Request changes</Button><Button type="button" variant="quiet" disabled={busyId === item.id} onClick={() => void review(item,'reject')}>Reject</Button></div> : <Button type="button" variant="danger" disabled={busyId === item.id} onClick={() => void review(item,'revoke')}>Revoke verification & pause services</Button>}
+        <p className="summary-note">{item.status === 'approved' ? 'Revocation removes verified publishing eligibility and pauses this provider’s active services.' : 'Approval enables service publishing. It does not automatically activate any draft service.'}</p>
       </div> : null}
     </Card>)}
   </div>;
