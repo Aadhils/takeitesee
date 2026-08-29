@@ -105,21 +105,21 @@ export default function ProviderDashboardManager() {
   const currency = earnings?.currency ?? 'INR';
 
   return <LiveProviderShell active="/provider">
-    <ProviderHeading eyebrow="Provider workspace" title={profile ? `${profile.display_name} dashboard` : 'Provider dashboard'} description="Live operational summary from your provider profile, bookings, services, and earnings." />
+    <ProviderHeading eyebrow="Provider workspace" title={profile ? `${profile.display_name} dashboard` : 'Provider dashboard'} description="Live operational summary from your provider profile, bookings, services, and recognized earnings." />
     {loading ? <Card><p>Loading live provider dashboard…</p></Card> : null}
     {error ? <Card><p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p></Card> : null}
     {profile && earnings ? <>
       <div className="provider-summary-grid">
         <ProviderDashboardSummary label="Needs action" value={String(operations.needsAction.length)} detail="Requests, reschedules, or completion tasks" tone={operations.needsAction.length ? 'warning' : 'success'} />
         <ProviderDashboardSummary label="Upcoming work" value={String(operations.upcoming.length)} detail="Future confirmed bookings" tone="info" />
-        <ProviderDashboardSummary label="Completed jobs" value={String(operations.completed.length)} detail={`${earnings.total_completed_count} reflected in earnings`} tone="success" />
-        <ProviderDashboardSummary label="Available balance" value={money(earnings.available_balance, currency)} detail={`${money(earnings.pending_earnings, currency)} awaiting payment`} tone="success" />
+        <ProviderDashboardSummary label="Completed jobs" value={String(operations.completed.length)} detail={`${earnings.total_completed_count} completed paid jobs recognized`} tone="success" />
+        <ProviderDashboardSummary label="Recognized earnings" value={money(earnings.available_balance, currency)} detail={`${money(earnings.pending_earnings, currency)} completed but awaiting payment`} tone="success" />
       </div>
       <div className="provider-profile-grid">
         <Card className="provider-profile-card">
           <div className="section-heading"><div><span className="eyebrow">Live provider</span><h2>{profile.display_name}</h2></div><Badge tone={profile.verified ? 'success' : 'warning'}>{profile.verified ? 'Verified' : 'Unverified'}</Badge></div>
           <p>{profile.provider_type === 'business' ? 'Business provider' : 'Professional provider'} · {profile.location || 'Service area not set'}</p>
-          <div className="provider-profile-services"><div><strong>Active services</strong><span>{profile.services_active} of {profile.services_total}</span></div><div><strong>Total earnings</strong><span>{money(earnings.total_earnings, currency)}</span></div></div>
+          <div className="provider-profile-services"><div><strong>Active services</strong><span>{profile.services_active} of {profile.services_total}</span></div><div><strong>Lifetime earned</strong><span>{money(earnings.total_earnings, currency)}</span></div></div>
           <Link href="/provider/profile" className="text-link">View live profile</Link>
         </Card>
         <Card className="provider-profile-card">
@@ -127,7 +127,7 @@ export default function ProviderDashboardManager() {
           {operations.upcoming.length ? <div className="provider-profile-services">{operations.upcoming.map((booking) => <div key={booking.id}><strong>{booking.service_name || booking.booking_reference}</strong><span>{booking.booking_date || 'Date pending'}{booking.start_time ? ` · ${booking.start_time}` : ''} · confirmed</span><Link href={`/provider/bookings/${booking.id}`} className="text-link">View</Link></div>)}</div> : <EmptyState title="No upcoming jobs">Future confirmed work will appear here.</EmptyState>}
         </Card>
       </div>
-      <Card className="provider-profile-card"><div className="section-heading"><div><span className="eyebrow">Provider status</span><h2>Production connection</h2></div><Badge tone="success">Supabase connected</Badge></div><p>Dashboard values are read from the signed-in provider's live profile, booking, service, and earnings APIs. Fixture dashboard totals are no longer used.</p></Card>
+      <Card className="provider-profile-card"><div className="section-heading"><div><span className="eyebrow">Provider status</span><h2>Production connection</h2></div><Badge tone="success">Supabase connected</Badge></div><p>Dashboard values are read from live provider, booking, service, and payment-aware earnings APIs. Recognized earnings require both service completion and paid status.</p></Card>
     </> : null}
   </LiveProviderShell>;
 }
