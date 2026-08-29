@@ -2,6 +2,14 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function proxy(request: NextRequest) {
+  if (request.nextUrl.hostname.toLowerCase() === 'testing.takeitesee.com') {
+    const productionUrl = request.nextUrl.clone();
+    productionUrl.protocol = 'https:';
+    productionUrl.hostname = 'takeitesee.com';
+    productionUrl.port = '';
+    return NextResponse.redirect(productionUrl, 308);
+  }
+
   let response = NextResponse.next({ request });
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
