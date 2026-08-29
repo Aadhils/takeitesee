@@ -6,6 +6,7 @@ import { Badge, Card, EmptyState } from '../ui/primitives';
 import BookingAuditTimeline from './BookingAuditTimeline';
 import BookingCloseoutPanel from './BookingCloseoutPanel';
 import BookingReasonDialog from './BookingReasonDialog';
+import CustomerPaymentPanel from './CustomerPaymentPanel';
 import { cancelBookingThroughConfiguredRepository, getBookingThroughConfiguredRepository } from '../../services/booking-repository';
 import type { CustomerBooking } from '../../types/booking-domain';
 import { discoveryServices, displayText } from '../../data/discovery-fixtures';
@@ -33,9 +34,14 @@ export default function CustomerBookingDetail({ bookingId }: { bookingId: string
   const [cancelError, setCancelError] = useState('');
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
 
-  useEffect(() => {
-    void getBookingThroughConfiguredRepository(bookingId as CustomerBooking['bookingId']).then(setBooking).catch(() => setBooking(undefined));
+  const refreshBooking = useCallback(async () => {
+    const next = await getBookingThroughConfiguredRepository(bookingId as CustomerBooking['bookingId']);
+    setBooking(next);
   }, [bookingId]);
+
+  useEffect(() => {
+    void refreshBooking().catch(() => setBooking(undefined));
+  }, [refreshBooking]);
 
   useEffect(() => {
     void fetch(`/api/reviews?bookingId=${encodeURIComponent(bookingId)}`)
@@ -115,6 +121,7 @@ export default function CustomerBookingDetail({ bookingId }: { bookingId: string
 
         <Card className="policy-card"><span className="eyebrow">Booking information</span><dl className="review-details"><div><dt>Provider</dt><dd>{providerLabel}</dd></div><div><dt>Date and time</dt><dd>{booking.bookingDate}, {booking.startTime} {booking.timezone}</dd></div><div><dt>Duration</dt><dd>{booking.durationMinutes} minutes</dd></div><div><dt>Location</dt><dd>{booking.location}</dd></div><div><dt>Price</dt><dd>{formatMoney({ amount: booking.basePrice, currency: booking.currency })}</dd></div></dl></Card>
 
+        <CustomerPaymentPanel bookingId={booking.bookingId} bookingStatus={booking.status} paymentStatus={booking.paymentStatus} onPaymentUpdated={refreshBooking} />
         <BookingCloseoutPanel bookingId={booking.bookingId} allowSupport viewer="customer" />
         <BookingAuditTimeline bookingId={booking.bookingId} refreshKey={booking.updatedAt} />
 
