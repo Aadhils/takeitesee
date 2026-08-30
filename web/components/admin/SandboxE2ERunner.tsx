@@ -205,7 +205,7 @@ export default function SandboxE2ERunner() {
         </dl>
         {run.last_error_code ? <p className="admin-fixture-note">Evidence warning: {run.last_error_code.replaceAll('_', ' ')}</p> : null}
         <Button type="button" variant="secondary" disabled={!gatewayReady || Boolean(busy)} loading={busy === `verify:${run.id}`} onClick={() => void verifyProbe(run.id)}>Verify Cashfree</Button>
-      </Card>) : <EmptyState title="No sandbox checkout probes yet" description="Once sandbox credentials are configured, create a controlled ₹1 checkout probe here. Production finance remains locked." />}
+      </Card>) : <EmptyState title="No sandbox checkout probes yet">Once sandbox credentials are configured, create a controlled ₹1 checkout probe here. Production finance remains locked.</EmptyState>}
     </> : null}
   </section>;
 }
