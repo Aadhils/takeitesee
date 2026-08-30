@@ -41,6 +41,11 @@ export function AdminLiveStatusText({ status }: { status: string }) {
   return <>{locale === 'ta-IN' ? mapped.ta : mapped.en}</>;
 }
 
+export function AdminLiveEmptyState({ titleEn, titleTa, children, action }: { titleEn: string; titleTa: string; children: ReactNode; action?: ReactNode }) {
+  const { locale } = useLanguage();
+  return <div className="state-panel" role="status" aria-live="polite"><span className="state-mark" aria-hidden="true">--</span><h3>{locale === 'ta-IN' ? titleTa : titleEn}</h3><p>{children}</p>{action ? <div className="state-action">{action}</div> : null}</div>;
+}
+
 export function AdminLiveShell({ children, active }: { children: ReactNode; active: string }) {
   const { locale } = useLanguage();
   const access = useAdminAccess();
