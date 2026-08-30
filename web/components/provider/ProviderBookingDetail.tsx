@@ -8,6 +8,7 @@ import BookingCloseoutPanel from '../booking/BookingCloseoutPanel';
 import BookingReasonDialog from '../booking/BookingReasonDialog';
 import { ProviderHeading } from './ProviderPresentation';
 import { LiveProviderShell } from './LiveProviderShell';
+import ProviderCashCollectionPanel from './ProviderCashCollectionPanel';
 
 type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'rescheduled';
 type AttendanceOutcome = 'pending' | 'service_completed' | 'customer_no_show' | 'provider_no_show';
@@ -128,6 +129,7 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
         {booking.status === 'completed' ? <p>This service has been completed. Review, SLA and support closeout remain linked to the booking.</p> : null}
         {booking.status === 'cancelled' ? <p>This booking is cancelled. Any support follow-up remains visible in the closeout and audit views.</p> : null}
       </Card>
+      <ProviderCashCollectionPanel bookingId={booking.id} bookingStatus={booking.status} paymentStatus={booking.payment_status} amount={booking.quoted_price} currency={booking.currency} onUpdated={loadBooking} />
       <div style={{ gridColumn: '1 / -1' }}><BookingCloseoutPanel bookingId={booking.id} viewer="provider" /></div>
       <div style={{ gridColumn: '1 / -1' }}>
         <BookingAuditTimeline bookingId={booking.id} refreshKey={booking.updated_at} title="Operational lifecycle timeline" description="Booking, payment, attendance, review, support, and final closeout events are merged into one chronological audit trail." />
