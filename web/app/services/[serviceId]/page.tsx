@@ -57,14 +57,15 @@ export async function generateMetadata({ params }: { params: Promise<{ serviceId
 
   if (!record) {
     return {
-      title: 'Service unavailable | TakeItEsee',
+      title: 'Service unavailable',
       robots: { index: false, follow: false },
     };
   }
 
   const { row, providerLocation } = record;
   const location = row.location || providerLocation || '';
-  const title = `${row.name}${location ? ` in ${location}` : ''} | TakeItEsee`;
+  const pageTitle = `${row.name}${location ? ` in ${location}` : ''}`;
+  const socialTitle = `${pageTitle} | TakeItEsee`;
   const description = seoText(
     row.description,
     `Book ${row.name}${location ? ` in ${location}` : ''} from a verified provider on TakeItEsee.`,
@@ -72,12 +73,12 @@ export async function generateMetadata({ params }: { params: Promise<{ serviceId
   const canonical = `${siteUrl}/services/${encodeURIComponent(serviceId)}`;
 
   return {
-    title,
+    title: pageTitle,
     description,
     alternates: { canonical },
     robots: { index: true, follow: true },
-    openGraph: { title, description, url: canonical, type: 'website' },
-    twitter: { card: 'summary', title, description },
+    openGraph: { title: socialTitle, description, url: canonical, type: 'website' },
+    twitter: { card: 'summary', title: socialTitle, description },
   };
 }
 
