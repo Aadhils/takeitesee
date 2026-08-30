@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { AdminAccessProvider, type AdminAccessSummary } from '../../components/admin/AdminAccessContext';
@@ -57,6 +58,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         data-admin-scope-count={String(access.scopeCount)}
         data-admin-can-manage={access.canManage ? 'true' : 'false'}
       >
+        <Link href="/admin/moderation" className="admin-live-moderation-shortcut">
+          Moderation queue
+        </Link>
         {children}
       </div>
     </AdminAccessProvider>
