@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRemainingWorkspaceTranslations } from '../i18n/RemainingWorkspaceTranslations';
 
 type BookingReasonDialogProps = {
   open: boolean;
@@ -14,6 +15,24 @@ type BookingReasonDialogProps = {
   onConfirm: (reason: string) => void | Promise<void>;
 };
 
+const tamilReasonLabels: Record<string, string> = {
+  'Timing no longer works': 'இந்த நேரம் இனி பொருந்தவில்லை',
+  'Work or personal commitment': 'வேலை அல்லது தனிப்பட்ட பொறுப்பு',
+  'Travel or delay': 'பயணம் அல்லது தாமதம்',
+  'Need a different day': 'வேறு நாள் தேவை',
+  'Schedule conflict': 'அட்டவணை மோதல்',
+  'Service unavailable': 'சேவை கிடைக்கவில்லை',
+  'Outside service area': 'சேவை பகுதிக்கு வெளியே',
+  'Unable to fulfil request': 'கோரிக்கையை நிறைவேற்ற முடியவில்லை',
+  'New time unavailable': 'புதிய நேரம் கிடைக்கவில்லை',
+  'Unable to fulfil at requested time': 'கோரிய நேரத்தில் சேவை வழங்க முடியவில்லை',
+  'Change of plans': 'திட்ட மாற்றம்',
+  'Found another provider': 'வேறு வழங்குநரை தேர்வு செய்தேன்',
+  'Service no longer needed': 'சேவை இனி தேவையில்லை',
+  'Incorrect booking details': 'புக்கிங் விவரங்கள் தவறாக உள்ளன',
+  'Other': 'மற்றவை',
+};
+
 export default function BookingReasonDialog({
   open,
   eyebrow,
@@ -25,6 +44,7 @@ export default function BookingReasonDialog({
   onClose,
   onConfirm,
 }: BookingReasonDialogProps) {
+  const { t, locale } = useRemainingWorkspaceTranslations();
   const [category, setCategory] = useState('');
   const [detail, setDetail] = useState('');
 
@@ -44,6 +64,8 @@ export default function BookingReasonDialog({
   const valid = Boolean(category) && (category !== 'Other' || detail.trim().length >= 3) && reason.length <= 500;
   if (!open) return null;
 
+  const optionLabel = (option: string) => locale === 'ta-IN' ? tamilReasonLabels[option] ?? option : option;
+
   return (
     <div
       role="presentation"
@@ -62,35 +84,35 @@ export default function BookingReasonDialog({
         <p className="detail-copy">{description}</p>
 
         <label style={{ display: 'grid', gap: '.45rem', marginTop: '1rem' }}>
-          <strong>Reason</strong>
+          <strong>{t('reason.reason')}</strong>
           <select
             value={category}
             disabled={busy}
             onChange={(event) => setCategory(event.target.value)}
             style={{ width: '100%', padding: '.8rem', border: '1px solid #d9d9e3', borderRadius: '.7rem', background: '#fff', font: 'inherit' }}
           >
-            <option value="">Choose a reason</option>
-            {options.map((option) => <option key={option} value={option}>{option}</option>)}
+            <option value="">{t('reason.choose')}</option>
+            {options.map((option) => <option key={option} value={option}>{optionLabel(option)}</option>)}
           </select>
         </label>
 
         <label style={{ display: 'grid', gap: '.45rem', marginTop: '1rem' }}>
-          <strong>{category === 'Other' ? 'Details' : 'Additional details (optional)'}</strong>
+          <strong>{category === 'Other' ? t('reason.details') : t('reason.additional')}</strong>
           <textarea
             value={detail}
             disabled={busy}
             maxLength={400}
             rows={4}
             onChange={(event) => setDetail(event.target.value)}
-            placeholder={category === 'Other' ? 'Please explain the reason' : 'Add useful context'}
+            placeholder={category === 'Other' ? t('reason.explain') : t('reason.context')}
             style={{ width: '100%', padding: '.8rem', border: '1px solid #d9d9e3', borderRadius: '.7rem', font: 'inherit', resize: 'vertical' }}
           />
         </label>
-        <p className="summary-note" style={{ marginTop: '.5rem' }}>This reason is saved in the booking lifecycle for support and audit history.</p>
+        <p className="summary-note" style={{ marginTop: '.5rem' }}>{t('reason.auditNote')}</p>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.75rem', marginTop: '1rem' }}>
-          <button type="button" className="button button-secondary" disabled={busy} onClick={onClose}>Go back</button>
-          <button type="button" className="button" disabled={busy || !valid} onClick={() => void onConfirm(reason)}>{busy ? 'Updating…' : confirmLabel}</button>
+          <button type="button" className="button button-secondary" disabled={busy} onClick={onClose}>{t('reason.goBack')}</button>
+          <button type="button" className="button" disabled={busy || !valid} onClick={() => void onConfirm(reason)}>{busy ? t('reason.updating') : confirmLabel}</button>
         </div>
       </div>
     </div>

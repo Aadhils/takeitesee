@@ -6,6 +6,7 @@ import { Badge, Button, Card, EmptyState } from '../ui/primitives';
 import BookingReasonDialog from './BookingReasonDialog';
 import { getBookingThroughConfiguredRepository, rescheduleBookingThroughConfiguredRepository } from '../../services/booking-repository';
 import type { CustomerBooking } from '../../types/booking-domain';
+import { useRemainingWorkspaceTranslations } from '../i18n/RemainingWorkspaceTranslations';
 
 type Slot = { time: string; available: boolean; reason?: string };
 type Day = { date: string; label: string; slots: Slot[] };
@@ -29,6 +30,7 @@ function isCurrentSlot(booking: CustomerBooking, date: string, timeLabel: string
 }
 
 export default function CustomerBookingReschedule({ bookingId }: { bookingId: string }) {
+  const { t, locale } = useRemainingWorkspaceTranslations();
   const [booking, setBooking] = useState<CustomerBooking>();
   const [days, setDays] = useState<Day[]>([]);
   const [selectedDate, setSelectedDate] = useState('');
@@ -76,31 +78,46 @@ export default function CustomerBookingReschedule({ bookingId }: { bookingId: st
     }
   };
 
-  if (loading) return <div className="booking-detail-page"><Card><p>Loading live availability…</p></Card></div>;
-  if (!booking) return <EmptyState title="Rescheduling unavailable">{error || 'Booking not found.'}</EmptyState>;
+  const formatDay = (value: string) => {
+    try {
+      const date = new Date(`${value}T00:00:00`);
+      return {
+        weekday: new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(date),
+        date: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(date),
+      };
+    } catch { return { weekday: value, date: '' }; }
+  };
+
+  const statusLabel = (status: string) => locale === 'ta-IN'
+    ? ({ pending: 'நிலுவையில்', confirmed: 'உறுதிப்படுத்தப்பட்டது', rescheduled: 'நேர மாற்ற கோரிக்கை' }[status] ?? status)
+    : status;
+
+  if (loading) return <div className="booking-detail-page"><Card><p>{t('reschedule.loading')}</p></Card></div>;
+  if (!booking) return <EmptyState title={t('reschedule.unavailable')}>{error || 'Booking not found.'}</EmptyState>;
 
   return <div className="booking-detail-page">
     <section className="booking-detail-heading">
       <div>
-        <span className="eyebrow">Reschedule booking</span>
+        <span className="eyebrow">{t('reschedule.eyebrow')}</span>
         <h1>{booking.serviceName}</h1>
-        <p>Current time: {booking.bookingDate} · {booking.startTime} {booking.timezone}</p>
+        <p>{t('reschedule.currentTime')}: {booking.bookingDate} · {booking.startTime} {booking.timezone}</p>
       </div>
-      <Badge tone="info">{booking.status}</Badge>
+      <Badge tone="info">{statusLabel(booking.status)}</Badge>
     </section>
     <div className="booking-detail-layout">
       <main>
         <Card className="policy-card">
-          <span className="eyebrow">Live provider availability</span>
-          <h2>Choose a new date and time</h2>
-          <p className="detail-copy">Your current booking is excluded from conflict checks, but the same time cannot be selected again. Blackouts and every other active booking remain blocked.</p>
+          <span className="eyebrow">{t('reschedule.liveAvailability')}</span>
+          <h2>{t('reschedule.chooseNew')}</h2>
+          <p className="detail-copy">{t('reschedule.help')}</p>
           <div className="date-options">
             {days.map((item) => {
               const count = item.slots.filter((slot) => slot.available && !isCurrentSlot(booking, item.date, slot.time)).length;
+              const formatted = formatDay(item.date);
               return <button key={item.date} type="button" className={`date-option ${selectedDate === item.date ? 'date-selected' : ''}`} disabled={!count} onClick={() => { setSelectedDate(item.date); setSelectedTime(''); }}>
-                <strong>{item.label.split(',')[0]}</strong>
-                <span>{item.label.split(',').slice(1).join(',').trim()}</span>
-                <small>{count ? `${count} alternative times` : 'No alternative times'}</small>
+                <strong>{formatted.weekday}</strong>
+                <span>{formatted.date}</span>
+                <small>{count ? `${count} ${t('reschedule.alternativeTimes')}` : t('reschedule.noAlternative')}</small>
               </button>;
             })}
           </div>
@@ -113,9 +130,9 @@ export default function CustomerBookingReschedule({ bookingId }: { bookingId: st
                 className="time-option"
                 disabled={!slot.available || current}
                 aria-pressed={selectedTime === slot.time}
-                title={current ? 'Current booking time' : slot.reason}
+                title={current ? t('reschedule.currentBookingTime') : slot.reason}
                 onClick={() => setSelectedTime(slot.time)}
-              >{slot.time}{current ? ' · Current' : ''}</button>;
+              >{slot.time}{current ? ` · ${t('reschedule.current')}` : ''}</button>;
             })}
           </div> : null}
           {error ? <p role="alert" className="field-error">{error}</p> : null}
@@ -123,21 +140,21 @@ export default function CustomerBookingReschedule({ bookingId }: { bookingId: st
       </main>
       <aside className="booking-detail-aside">
         <Card>
-          <span className="eyebrow">New selection</span>
-          <p>{selectedDate || 'Choose a date'}{selectedTime ? ` · ${selectedTime}` : ''}</p>
-          <Button type="button" disabled={!selectedDate || !selectedTime || busy} onClick={() => setReasonOpen(true)}>{busy ? 'Rescheduling…' : 'Continue reschedule'}</Button>
-          <Link href={`/bookings/${encodeURIComponent(booking.bookingId)}`} className="button button-secondary">Keep current booking</Link>
+          <span className="eyebrow">{t('reschedule.newSelection')}</span>
+          <p>{selectedDate || t('reschedule.chooseDate')}{selectedTime ? ` · ${selectedTime}` : ''}</p>
+          <Button type="button" disabled={!selectedDate || !selectedTime || busy} onClick={() => setReasonOpen(true)}>{busy ? t('reschedule.working') : t('reschedule.continue')}</Button>
+          <Link href={`/bookings/${encodeURIComponent(booking.bookingId)}`} className="button button-secondary">{t('reschedule.keep')}</Link>
         </Card>
-        <p className="support-note">The new slot is revalidated before saving. After a successful request, the old slot is released, the new slot is reserved, and the provider must confirm the new time.</p>
+        <p className="support-note">{t('reschedule.revalidate')}</p>
       </aside>
     </div>
     <BookingReasonDialog
       open={reasonOpen}
-      eyebrow="Reschedule request"
-      title="Why do you need a new time?"
-      description={`${selectedDate}${selectedTime ? ` · ${selectedTime}` : ''} will become your requested time. The provider must confirm it before the booking returns to confirmed status.`}
+      eyebrow={t('reschedule.request')}
+      title={t('reschedule.why')}
+      description={`${selectedDate}${selectedTime ? ` · ${selectedTime}` : ''} ${t('reschedule.providerConfirm')}`}
       options={rescheduleReasons}
-      confirmLabel="Request new time"
+      confirmLabel={t('reschedule.requestNew')}
       busy={busy}
       onClose={() => setReasonOpen(false)}
       onConfirm={submit}
