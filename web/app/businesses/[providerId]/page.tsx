@@ -59,7 +59,7 @@ export async function generateMetadata({ params }: { params: Promise<{ providerI
 
   if (!record) {
     return {
-      title: 'Business unavailable',
+      title: { absolute: 'Business unavailable | TakeItEsee' },
       robots: { index: false, follow: false },
     };
   }
@@ -76,7 +76,7 @@ export async function generateMetadata({ params }: { params: Promise<{ providerI
   const indexable = services.length > 0;
 
   return {
-    title: pageTitle,
+    title: { absolute: socialTitle },
     description,
     alternates: indexable ? { canonical } : undefined,
     robots: { index: indexable, follow: indexable },
