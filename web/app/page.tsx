@@ -1,7 +1,19 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import HomepageSearchForm from '../components/discovery/HomepageSearchForm';
 
 const siteUrl = 'https://www.takeitesee.com';
+const homepageDescription = 'Find trusted local services, verified professionals, and service businesses. Compare live marketplace listings and book with confidence on TakeItEsee.';
+
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+  openGraph: {
+    url: '/',
+    title: 'TakeItEsee | Find Trusted Local Services',
+    description: homepageDescription,
+  },
+};
+
 const websiteStructuredData = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
