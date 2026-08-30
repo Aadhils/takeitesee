@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Badge, Card } from '../ui/primitives';
+import { useRemainingWorkspaceTranslations } from '../i18n/RemainingWorkspaceTranslations';
 
 export type BookingAuditEvent = {
   id: string;
@@ -51,21 +52,29 @@ function eventTone(event: BookingAuditEvent): 'neutral' | 'success' | 'warning' 
   return 'info';
 }
 
-function formatMoment(value: string, timeZone: string) {
-  try { return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: timeZone || 'Asia/Kolkata' }).format(new Date(value)); }
-  catch { return new Date(value).toLocaleString('en-IN'); }
-}
-
 export function BookingAuditList({ events, timezone }: { events: BookingAuditEvent[]; timezone: string }) {
-  return <ol aria-label="Booking lifecycle audit timeline" style={{ listStyle: 'none', padding: 0, margin: '1rem 0 0', display: 'grid', gap: '0.9rem' }}>
+  const { t, locale } = useRemainingWorkspaceTranslations();
+  const categoryLabel = (value: BookingAuditEvent['category']) => ({
+    booking: t('audit.booking'), payment: t('audit.payment'), refund: t('audit.refund'), review: t('audit.review'), support: t('audit.support'), closeout: t('audit.closeout'),
+  }[value]);
+  const actorLabel = (value: BookingAuditEvent['actor']) => ({
+    customer: t('audit.customer'), provider: t('audit.provider'), admin: t('audit.admin'), gateway: t('audit.gateway'), system: t('audit.system'), migration: t('audit.migration'),
+  }[value]);
+  const formatMoment = (value: string) => {
+    try { return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', timeZone: timezone || 'Asia/Kolkata' }).format(new Date(value)); }
+    catch { return new Date(value).toLocaleString(locale); }
+  };
+
+  return <ol aria-label={t('audit.aria')} style={{ listStyle: 'none', padding: 0, margin: '1rem 0 0', display: 'grid', gap: '0.9rem' }}>
     {events.map((event) => <li key={event.id} style={{ borderLeft: '3px solid var(--border, #d9dce5)', paddingLeft: '1rem' }}>
-      <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center', flexWrap: 'wrap' }}><strong>{event.title}</strong><Badge tone={eventTone(event)}>{event.category}</Badge><Badge tone="neutral">{event.actor}</Badge></div>
-      <p style={{ margin: '0.3rem 0' }}>{event.detail}</p><small>{formatMoment(event.occurred_at, timezone)}</small>
+      <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center', flexWrap: 'wrap' }}><strong>{event.title}</strong><Badge tone={eventTone(event)}>{categoryLabel(event.category)}</Badge><Badge tone="neutral">{actorLabel(event.actor)}</Badge></div>
+      <p style={{ margin: '0.3rem 0' }}>{event.detail}</p><small>{formatMoment(event.occurred_at)}</small>
     </li>)}
   </ol>;
 }
 
-export default function BookingAuditTimeline({ bookingId, refreshKey, title = 'Lifecycle timeline', description = 'A chronological audit trail combining booking, payment, refund, payment-risk, attendance, review, support, and final closeout events.' }: { bookingId: string; refreshKey?: string | number; title?: string; description?: string }) {
+export default function BookingAuditTimeline({ bookingId, refreshKey, title, description }: { bookingId: string; refreshKey?: string | number; title?: string; description?: string }) {
+  const { t } = useRemainingWorkspaceTranslations();
   const [payload, setPayload] = useState<BookingAuditPayload | null>(null);
   const [error, setError] = useState('');
   const [eventRefresh, setEventRefresh] = useState(0);
@@ -92,5 +101,5 @@ export default function BookingAuditTimeline({ bookingId, refreshKey, title = 'L
     return () => { active = false; };
   }, [bookingId, refreshKey, eventRefresh]);
 
-  return <Card className="policy-card"><span className="eyebrow">Audit trail</span><h2>{title}</h2><p className="summary-note">{description}</p>{error ? <p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p> : null}{!payload && !error ? <p>Loading timeline…</p> : null}{payload ? <BookingAuditList events={payload.events} timezone={payload.booking.timezone} /> : null}</Card>;
+  return <Card className="policy-card"><span className="eyebrow">{t('audit.trail')}</span><h2>{title ?? t('audit.title')}</h2><p className="summary-note">{description ?? t('audit.description')}</p>{error ? <p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p> : null}{!payload && !error ? <p>{t('audit.loading')}</p> : null}{payload ? <BookingAuditList events={payload.events} timezone={payload.booking.timezone} /> : null}</Card>;
 }
