@@ -1,22 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert } from '../ui/primitives';
-
-const providerLinks = [
-  { href: '/provider', label: 'Dashboard' },
-  { href: '/provider/setup', label: 'Setup' },
-  { href: '/provider/leads', label: 'Leads' },
-  { href: '/provider/messages', label: 'Messages' },
-  { href: '/provider/bookings', label: 'Bookings' },
-  { href: '/provider/schedule', label: 'Schedule' },
-  { href: '/provider/services', label: 'Services' },
-  { href: '/provider/verification', label: 'Verification' },
-  { href: '/provider/earnings', label: 'Earnings' },
-  { href: '/provider/reviews', label: 'Reviews' },
-  { href: '/provider/profile', label: 'Profile' },
-];
+import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 
 type TrustStatus = 'normal' | 'reverification_required' | 'suspended';
 type ProviderContext = {
@@ -31,15 +18,22 @@ type ProviderContext = {
   trust_reason?: string | null;
 };
 
-function workspaceState(provider: ProviderContext | null) {
-  if (!provider) return 'Provider workspace';
-  if (provider.trust_status === 'suspended') return 'Provider account suspended';
-  if (provider.trust_status === 'reverification_required') return 'Re-verification required';
-  return provider.verified ? 'Verified provider workspace' : 'Verification required to publish';
-}
-
 export function LiveProviderShell({ children, active }: { children: React.ReactNode; active: string }) {
+  const { t } = useIdentityWorkspaceTranslations();
   const [provider, setProvider] = useState<ProviderContext | null>(null);
+  const providerLinks = useMemo(() => [
+    { href: '/provider', label: t('provider.dashboard') },
+    { href: '/provider/setup', label: t('provider.setup') },
+    { href: '/provider/leads', label: t('provider.leads') },
+    { href: '/provider/messages', label: t('provider.messages') },
+    { href: '/provider/bookings', label: t('provider.bookings') },
+    { href: '/provider/schedule', label: t('provider.schedule') },
+    { href: '/provider/services', label: t('provider.services') },
+    { href: '/provider/verification', label: t('provider.verification') },
+    { href: '/provider/earnings', label: t('provider.earnings') },
+    { href: '/provider/reviews', label: t('provider.reviews') },
+    { href: '/provider/profile', label: t('provider.profile') },
+  ], [t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,7 +52,14 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
     return () => { cancelled = true; };
   }, [active]);
 
-  const displayName = provider?.display_name ?? 'Provider workspace';
+  const workspaceState = (value: ProviderContext | null) => {
+    if (!value) return t('provider.workspace');
+    if (value.trust_status === 'suspended') return t('provider.suspended');
+    if (value.trust_status === 'reverification_required') return t('provider.reverify');
+    return value.verified ? t('provider.verifiedWorkspace') : t('provider.verificationRequired');
+  };
+
+  const displayName = provider?.display_name ?? t('provider.workspace');
   const avatar = provider?.initials ?? 'P';
   const pending = provider?.pending_booking_count ?? 0;
 
@@ -68,16 +69,16 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
         <div className="provider-avatar provider-avatar-large" aria-hidden="true">{avatar}</div>
         <div><strong>{displayName}</strong><span>{workspaceState(provider)}</span></div>
       </div>
-      <nav aria-label="Provider workspace navigation">
+      <nav aria-label={t('provider.nav')}>
         {providerLinks.map((link) => <Link href={link.href} className={active === link.href ? 'provider-nav-active' : ''} aria-current={active === link.href ? 'page' : undefined} key={link.href}>
           {link.label}{link.href === '/provider/bookings' && pending > 0 ? <span className="provider-nav-count">{pending}</span> : null}
         </Link>)}
       </nav>
-      <Link href="/" className="provider-exit-link">View marketplace</Link>
+      <Link href="/" className="provider-exit-link">{t('provider.viewMarketplace')}</Link>
     </aside>
     <main className="provider-content">
-      {provider?.trust_status === 'suspended' ? <Alert title="Provider account suspended" tone="danger">Public service publishing is blocked. Existing bookings, support and closeout remain available. {provider.trust_reason || 'Contact platform support for review.'}</Alert> : null}
-      {provider?.trust_status === 'reverification_required' ? <Alert title="Re-verification required" tone="warning">Your active services were paused and publishing is locked until fresh verification is approved. {provider.trust_reason || ''} <Link href="/provider/verification">Open Verification →</Link></Alert> : null}
+      {provider?.trust_status === 'suspended' ? <Alert title={t('provider.suspended')} tone="danger">{t('provider.suspendedBody')} {provider.trust_reason || t('provider.contactSupport')}</Alert> : null}
+      {provider?.trust_status === 'reverification_required' ? <Alert title={t('provider.reverify')} tone="warning">{t('provider.reverifyBody')} {provider.trust_reason || ''} <Link href="/provider/verification">{t('provider.openVerification')}</Link></Alert> : null}
       {children}
     </main>
   </div>;

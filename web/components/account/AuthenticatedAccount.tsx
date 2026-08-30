@@ -3,12 +3,14 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card } from '../ui/primitives';
+import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 import { getSupabaseBrowserUser, isSupabaseConfigured, localDevelopmentAuthAdapter, signOutWithSupabase } from '../../services/auth-adapter';
 import { getBookingsForCustomer, getBookingsThroughConfiguredRepository } from '../../services/booking-repository';
 import type { User } from '../../types/auth-domain';
 import type { CustomerBooking } from '../../types/booking-domain';
 
 export default function AuthenticatedAccount() {
+  const { t } = useIdentityWorkspaceTranslations();
   const [user, setUser] = useState<User>();
   const [bookings, setBookings] = useState<CustomerBooking[]>([]);
   const [bookingError, setBookingError] = useState('');
@@ -42,12 +44,12 @@ export default function AuthenticatedAccount() {
           : getBookingsForCustomer(currentUser.id);
         if (!cancelled) setBookings(liveBookings);
       } catch (error) {
-        if (!cancelled) setBookingError(error instanceof Error ? error.message : 'Unable to load booking activity.');
+        if (!cancelled) setBookingError(error instanceof Error ? error.message : t('account.loadBookingFallback'));
       }
     };
     void load();
     return () => { cancelled = true; };
-  }, []);
+  }, [t]);
 
   const summary = useMemo(() => ({
     upcoming: bookings.filter((booking) => ['pending', 'confirmed', 'accepted', 'in_progress', 'rescheduled'].includes(booking.status)).length,
@@ -59,12 +61,12 @@ export default function AuthenticatedAccount() {
   if (!user) {
     return (
       <div className="account-page-heading">
-        <span className="eyebrow">takeitesee account</span>
-        <h1>Your account</h1>
-        <p>Sign in to view your account and bookings.</p>
+        <span className="eyebrow">{t('auth.account')}</span>
+        <h1>{t('account.yourAccount')}</h1>
+        <p>{t('account.signInIntro')}</p>
         <div className="account-actions">
-          <Link href="/login" className="button button-primary">Sign in</Link>
-          <Link href="/signup" className="button button-secondary">Create account</Link>
+          <Link href="/login" className="button button-primary">{t('auth.signIn')}</Link>
+          <Link href="/signup" className="button button-secondary">{t('auth.createAccount')}</Link>
         </div>
       </div>
     );
@@ -78,39 +80,39 @@ export default function AuthenticatedAccount() {
 
   return (
     <div className="account-page-heading">
-      <span className="eyebrow">takeitesee account</span>
-      <h1>Welcome, {user.name.split(' ')[0]}.</h1>
-      <p>{isSupabaseConfigured() ? 'Your production account session is active.' : 'Your local development session is active.'}</p>
+      <span className="eyebrow">{t('auth.account')}</span>
+      <h1>{t('account.welcome')}, {user.name.split(' ')[0]}.</h1>
+      <p>{isSupabaseConfigured() ? t('account.productionSession') : t('account.localSession')}</p>
 
       <Card className="profile-summary">
         <div className="provider-avatar provider-avatar-large" aria-hidden="true">{user.name.split(' ').map((part) => part[0]).join('')}</div>
-        <div><span className="eyebrow">Signed-in customer</span><h2>{user.name}</h2><p>{user.email}</p>{user.phone ? <span className="card-location">{user.phone}</span> : null}</div>
-        <Badge tone="info">{user.role}</Badge>
+        <div><span className="eyebrow">{t('account.signedInCustomer')}</span><h2>{user.name}</h2><p>{user.email}</p>{user.phone ? <span className="card-location">{user.phone}</span> : null}</div>
+        <Badge tone="info">{t('account.customer')}</Badge>
       </Card>
 
       <div className="dashboard-stat-grid">
-        <Card><span className="eyebrow">Upcoming</span><h2>{summary.upcoming}</h2><p>Active booking requests and scheduled services.</p></Card>
-        <Card><span className="eyebrow">Completed</span><h2>{summary.completed}</h2><p>Services completed on your account.</p></Card>
-        <Card><span className="eyebrow">Cancelled</span><h2>{summary.cancelled}</h2><p>Bookings cancelled from the shared lifecycle.</p></Card>
-        <Card><span className="eyebrow">Total bookings</span><h2>{summary.total}</h2><p>Live bookings associated with your customer account.</p></Card>
+        <Card><span className="eyebrow">{t('account.upcoming')}</span><h2>{summary.upcoming}</h2><p>{t('account.upcomingDetail')}</p></Card>
+        <Card><span className="eyebrow">{t('account.completed')}</span><h2>{summary.completed}</h2><p>{t('account.completedDetail')}</p></Card>
+        <Card><span className="eyebrow">{t('account.cancelled')}</span><h2>{summary.cancelled}</h2><p>{t('account.cancelledDetail')}</p></Card>
+        <Card><span className="eyebrow">{t('account.total')}</span><h2>{summary.total}</h2><p>{t('account.totalDetail')}</p></Card>
       </div>
-      {bookingError ? <p role="alert" style={{ color: '#b42318' }}>Booking activity unavailable: {bookingError}</p> : null}
+      {bookingError ? <p role="alert" style={{ color: '#b42318' }}>{t('account.bookingUnavailable')}: {bookingError}</p> : null}
 
       <div className="account-actions">
-        <Link href="/bookings" className="button button-primary">My bookings</Link>
-        <Link href="/notifications" className="button button-secondary">Notifications</Link>
-        <Link href="/account/profile" className="button button-secondary">Profile</Link>
-        <Link href="/account/settings" className="button button-secondary">Settings</Link>
-        <Button type="button" variant="quiet" onClick={signOut}>Sign out</Button>
+        <Link href="/bookings" className="button button-primary">{t('account.myBookings')}</Link>
+        <Link href="/notifications" className="button button-secondary">{t('account.notifications')}</Link>
+        <Link href="/account/profile" className="button button-secondary">{t('account.profile')}</Link>
+        <Link href="/account/settings" className="button button-secondary">{t('account.settings')}</Link>
+        <Button type="button" variant="quiet" onClick={signOut}>{t('account.signOut')}</Button>
       </div>
 
       <Card className="account-provider-entry">
-        <span className="eyebrow">Provider workspace</span>
-        <h2>Already provide services on takeitesee?</h2>
-        <p>Open your provider workspace to manage live bookings, services, schedule, earnings, reviews, and profile details.</p>
+        <span className="eyebrow">{t('account.providerWorkspace')}</span>
+        <h2>{t('account.alreadyProvider')}</h2>
+        <p>{t('account.providerIntro')}</p>
         <div className="account-actions">
-          <Link href="/provider" className="button button-primary">Open provider workspace</Link>
-          <span className="card-location">New provider registration will appear here when production onboarding is enabled.</span>
+          <Link href="/provider" className="button button-primary">{t('account.openProvider')}</Link>
+          <span className="card-location">{t('account.providerRegistrationNote')}</span>
         </div>
       </Card>
     </div>
