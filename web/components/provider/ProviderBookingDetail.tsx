@@ -9,6 +9,7 @@ import BookingReasonDialog from '../booking/BookingReasonDialog';
 import { ProviderHeading } from './ProviderPresentation';
 import { LiveProviderShell } from './LiveProviderShell';
 import ProviderCashCollectionPanel from './ProviderCashCollectionPanel';
+import { useRemainingWorkspaceTranslations } from '../i18n/RemainingWorkspaceTranslations';
 
 type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'rescheduled';
 type AttendanceOutcome = 'pending' | 'service_completed' | 'customer_no_show' | 'provider_no_show';
@@ -44,6 +45,7 @@ function zonedDateTimeToEpoch(date: string, time: string, timeZone: string) {
 }
 
 export default function ProviderBookingDetail({ bookingId }: { bookingId: string }) {
+  const { t, locale } = useRemainingWorkspaceTranslations();
   const [booking, setBooking] = useState<Booking | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -80,9 +82,9 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
     return {
       eligibleAt,
       allowed: now >= eligibleAt,
-      label: new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: booking.timezone || 'Asia/Kolkata' }).format(new Date(eligibleAt)),
+      label: new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', timeZone: booking.timezone || 'Asia/Kolkata' }).format(new Date(eligibleAt)),
     };
-  }, [booking, now]);
+  }, [booking, now, locale]);
 
   const refreshLifecycle = () => {
     window.dispatchEvent(new CustomEvent('booking:audit-refresh', { detail: { bookingId } }));
@@ -104,44 +106,51 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
     } finally { setBusy(false); }
   };
 
+  const statusLabel = (status: BookingStatus) => locale === 'ta-IN'
+    ? ({ pending: 'நிலுவையில்', confirmed: 'உறுதிப்படுத்தப்பட்டது', completed: 'முடிந்தது', cancelled: 'ரத்து செய்யப்பட்டது', rescheduled: 'நேர மாற்ற கோரிக்கை' }[status])
+    : status;
+  const attendanceLabel = (status: AttendanceOutcome) => locale === 'ta-IN'
+    ? ({ pending: 'வருகை நிலுவையில்', service_completed: 'சேவை முடிந்தது', customer_no_show: 'வாடிக்கையாளர் வரவில்லை', provider_no_show: 'வழங்குநர் வரவில்லை' }[status])
+    : status.replaceAll('_', ' ');
+
   const rescheduleRequest = booking?.status === 'rescheduled';
   const attendanceTerminal = booking?.attendance_outcome === 'customer_no_show' || booking?.attendance_outcome === 'provider_no_show';
 
   return <LiveProviderShell active="/provider/bookings">
-    <Link href="/provider/bookings">← Back to bookings</Link>
-    <ProviderHeading eyebrow={booking?.booking_reference ?? 'Booking'} title={booking?.service_name ?? 'Booking details'} description="Review the customer request and manage the service lifecycle." />
+    <Link href="/provider/bookings">← {t('providerBooking.back')}</Link>
+    <ProviderHeading eyebrow={booking?.booking_reference ?? t('providerBooking.fallbackEyebrow')} title={booking?.service_name ?? t('providerBooking.fallbackTitle')} description={t('providerBooking.intro')} />
     {error ? <Card><p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p></Card> : null}
-    {!booking ? <Card><p>{error ? 'Booking could not be loaded.' : 'Loading booking…'}</p></Card> : <div className="provider-detail-grid">
+    {!booking ? <Card><p>{error ? t('providerBooking.loadFailed') : t('providerBooking.loading')}</p></Card> : <div className="provider-detail-grid">
       <Card className="provider-detail-card">
-        <div className="section-heading"><div><span className="eyebrow">Service details</span><h2>{booking.service_name}</h2></div><Badge tone={attendanceTerminal ? 'warning' : tone(booking.status)}>{attendanceTerminal ? booking.attendance_outcome.replaceAll('_', ' ') : rescheduleRequest ? 'reschedule request' : booking.status}</Badge></div>
+        <div className="section-heading"><div><span className="eyebrow">{t('providerBooking.serviceDetails')}</span><h2>{booking.service_name}</h2></div><Badge tone={attendanceTerminal ? 'warning' : tone(booking.status)}>{attendanceTerminal ? attendanceLabel(booking.attendance_outcome) : rescheduleRequest ? statusLabel('rescheduled') : statusLabel(booking.status)}</Badge></div>
         <dl className="provider-profile-details">
-          <div><dt>Provider</dt><dd>{booking.provider_name}</dd></div><div><dt>Date and time</dt><dd>{booking.booking_date}, {booking.start_time} {booking.timezone}</dd></div>
-          <div><dt>Duration</dt><dd>{booking.duration_minutes} minutes</dd></div><div><dt>Location</dt><dd>{booking.location}</dd></div>
-          <div><dt>Price</dt><dd>{new Intl.NumberFormat('en-IN', { style: 'currency', currency: booking.currency }).format(booking.quoted_price)}</dd></div>
-          <div><dt>Customer note</dt><dd>{booking.customer_notes || 'No note provided'}</dd></div>
-        </dl><Badge tone="neutral">Payment {booking.payment_status}</Badge>
+          <div><dt>{t('providerBooking.provider')}</dt><dd>{booking.provider_name}</dd></div><div><dt>{t('providerBooking.dateTime')}</dt><dd>{booking.booking_date}, {booking.start_time} {booking.timezone}</dd></div>
+          <div><dt>{t('providerBooking.duration')}</dt><dd>{booking.duration_minutes} {t('providerBooking.minutes')}</dd></div><div><dt>{t('providerBooking.location')}</dt><dd>{booking.location}</dd></div>
+          <div><dt>{t('providerBooking.price')}</dt><dd>{new Intl.NumberFormat(locale, { style: 'currency', currency: booking.currency }).format(booking.quoted_price)}</dd></div>
+          <div><dt>{t('providerBooking.customerNote')}</dt><dd>{booking.customer_notes || t('providerBooking.noNote')}</dd></div>
+        </dl><Badge tone="neutral">{t('providerBooking.payment')} {booking.payment_status}</Badge>
       </Card>
-      <Card className="provider-detail-card"><span className="eyebrow">Next action</span><h2>Provider controls</h2>
-        {booking.status === 'pending' ? <><p>Accept this request to confirm the booking, or decline it with a reason.</p><div className="provider-actions"><Button type="button" disabled={busy} onClick={() => void act('accept')}>Accept booking</Button><Button type="button" variant="quiet" disabled={busy} onClick={() => setDeclineOpen(true)}>Decline</Button></div></> : null}
-        {booking.status === 'rescheduled' ? <><p>The customer requested this new time. Confirm it to return the booking to confirmed status, or decline the new time with a reason.</p><div className="provider-actions"><Button type="button" disabled={busy} onClick={() => void act('accept')}>Accept new time</Button><Button type="button" variant="quiet" disabled={busy} onClick={() => setDeclineOpen(true)}>Decline new time</Button></div></> : null}
-        {booking.status === 'confirmed' && attendanceTerminal ? <p>An attendance outcome is already recorded. Completion is locked; any disagreement must use the support workflow.</p> : null}
-        {booking.status === 'confirmed' && !attendanceTerminal ? <>{completion?.allowed ? <><p>The scheduled service time has ended. You can mark the service completed, or use the closeout panel below if the customer did not attend.</p><Button type="button" disabled={busy} onClick={() => void act('complete')}>{busy ? 'Updating…' : 'Mark service completed'}</Button></> : <><p>This service can be marked completed only after the scheduled service time.</p><p className="summary-note">Completion available after {completion?.label}.</p><Button type="button" disabled>Mark service completed</Button></>}</> : null}
-        {booking.status === 'completed' ? <p>This service has been completed. Review, SLA and support closeout remain linked to the booking.</p> : null}
-        {booking.status === 'cancelled' ? <p>This booking is cancelled. Any support follow-up remains visible in the closeout and audit views.</p> : null}
+      <Card className="provider-detail-card"><span className="eyebrow">{t('providerBooking.nextAction')}</span><h2>{t('providerBooking.controls')}</h2>
+        {booking.status === 'pending' ? <><p>{t('providerBooking.pendingHelp')}</p><div className="provider-actions"><Button type="button" disabled={busy} onClick={() => void act('accept')}>{t('providerBooking.accept')}</Button><Button type="button" variant="quiet" disabled={busy} onClick={() => setDeclineOpen(true)}>{t('providerBooking.decline')}</Button></div></> : null}
+        {booking.status === 'rescheduled' ? <><p>{t('providerBooking.rescheduleHelp')}</p><div className="provider-actions"><Button type="button" disabled={busy} onClick={() => void act('accept')}>{t('providerBooking.acceptNew')}</Button><Button type="button" variant="quiet" disabled={busy} onClick={() => setDeclineOpen(true)}>{t('providerBooking.declineNew')}</Button></div></> : null}
+        {booking.status === 'confirmed' && attendanceTerminal ? <p>{t('providerBooking.attendanceTerminal')}</p> : null}
+        {booking.status === 'confirmed' && !attendanceTerminal ? <>{completion?.allowed ? <><p>{t('providerBooking.canComplete')}</p><Button type="button" disabled={busy} onClick={() => void act('complete')}>{busy ? t('reason.updating') : t('providerBooking.markComplete')}</Button></> : <><p>{t('providerBooking.completeOnlyAfter')}</p><p className="summary-note">{t('providerBooking.completionAfter')} {completion?.label}.</p><Button type="button" disabled>{t('providerBooking.markComplete')}</Button></>}</> : null}
+        {booking.status === 'completed' ? <p>{t('providerBooking.completedHelp')}</p> : null}
+        {booking.status === 'cancelled' ? <p>{t('providerBooking.cancelledHelp')}</p> : null}
       </Card>
       <ProviderCashCollectionPanel bookingId={booking.id} bookingStatus={booking.status} paymentStatus={booking.payment_status} amount={booking.quoted_price} currency={booking.currency} onUpdated={loadBooking} />
       <div style={{ gridColumn: '1 / -1' }}><BookingCloseoutPanel bookingId={booking.id} viewer="provider" /></div>
       <div style={{ gridColumn: '1 / -1' }}>
-        <BookingAuditTimeline bookingId={booking.id} refreshKey={booking.updated_at} title="Operational lifecycle timeline" description="Booking, payment, attendance, review, support, and final closeout events are merged into one chronological audit trail." />
+        <BookingAuditTimeline bookingId={booking.id} refreshKey={booking.updated_at} title={t('providerBooking.timelineTitle')} description={t('providerBooking.timelineHelp')} />
       </div>
     </div>}
     <BookingReasonDialog
       open={declineOpen}
-      eyebrow={rescheduleRequest ? 'Decline new time' : 'Decline booking'}
-      title={rescheduleRequest ? 'Why can’t you accept the new time?' : 'Why can’t you accept this request?'}
-      description={rescheduleRequest ? 'Choose why the customer’s requested time cannot be accepted. Declining it cancels the booking because the previous slot has already been released.' : 'Choose the clearest reason. It will be saved in the booking lifecycle for support and audit history.'}
+      eyebrow={rescheduleRequest ? t('providerBooking.declineNew') : t('providerBooking.decline')}
+      title={rescheduleRequest ? t('providerBooking.declineWhyNew') : t('providerBooking.declineWhy')}
+      description={rescheduleRequest ? t('providerBooking.declineNewHelp') : t('providerBooking.declineHelp')}
       options={rescheduleRequest ? rescheduleDeclineReasons : declineReasons}
-      confirmLabel={rescheduleRequest ? 'Decline new time' : 'Decline booking'}
+      confirmLabel={rescheduleRequest ? t('providerBooking.declineNew') : t('providerBooking.decline')}
       busy={busy}
       onClose={() => setDeclineOpen(false)}
       onConfirm={async (reason) => { if (await act('decline', reason)) setDeclineOpen(false); }}
