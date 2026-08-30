@@ -7,6 +7,12 @@ import type { EntityId } from '../../../../../../types/entities';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+type CashCollectionRow = {
+  payment_status: string;
+  payment_method: 'unselected' | 'online_gateway' | 'cash_on_service';
+  cash_collected_at: string | null;
+};
+
 export async function GET(request: Request, context: { params: Promise<{ bookingId: string }> }) {
   try {
     const session = await productionAuthProvider.requireProvider(request);
@@ -48,11 +54,12 @@ export async function POST(request: Request, context: { params: Promise<{ bookin
       collection_note: body.note?.trim() || null,
     }).maybeSingle();
     if (error || !data) throw new Error(error?.message ?? 'Cash collection could not be confirmed.');
+    const updated = data as unknown as CashCollectionRow;
 
     return NextResponse.json({
-      payment_status: data.payment_status,
-      payment_method: data.payment_method,
-      cash_collected_at: data.cash_collected_at,
+      payment_status: updated.payment_status,
+      payment_method: updated.payment_method,
+      cash_collected_at: updated.cash_collected_at,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Cash collection could not be confirmed.';
