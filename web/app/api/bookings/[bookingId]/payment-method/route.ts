@@ -6,6 +6,12 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 type PaymentMethod = 'unselected' | 'online_gateway' | 'cash_on_service';
+type PaymentMethodRow = {
+  payment_method: PaymentMethod;
+  payment_status: string;
+  status: string;
+  cash_collected_at: string | null;
+};
 
 export async function GET(request: Request, context: { params: Promise<{ bookingId: string }> }) {
   try {
@@ -47,12 +53,13 @@ export async function POST(request: Request, context: { params: Promise<{ bookin
       target_method: method,
     }).maybeSingle();
     if (error || !data) throw new Error(error?.message ?? 'Payment method could not be updated.');
+    const updated = data as unknown as PaymentMethodRow;
 
     return NextResponse.json({
-      payment_method: data.payment_method as PaymentMethod,
-      payment_status: data.payment_status,
-      booking_status: data.status,
-      cash_collected_at: data.cash_collected_at,
+      payment_method: updated.payment_method,
+      payment_status: updated.payment_status,
+      booking_status: updated.status,
+      cash_collected_at: updated.cash_collected_at,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Payment method could not be updated.';
