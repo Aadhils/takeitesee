@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import LiveServiceDetail from '../../../components/detail/LiveServiceDetail';
 
 const siteUrl = 'https://www.takeitesee.com';
+const exploreContextKeys = ['q', 'location', 'category', 'price', 'rating', 'provider', 'sort'] as const;
 
 function publicSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -21,6 +22,19 @@ function seoText(value: string | null | undefined, fallback: string, max = 160) 
   const text = (value || fallback).replace(/\s+/g, ' ').trim();
   if (text.length <= max) return text;
   return `${text.slice(0, max - 1).trimEnd()}…`;
+}
+
+function firstParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function buildExploreHref(searchParams: Record<string, string | string[] | undefined>) {
+  const params = new URLSearchParams();
+  for (const key of exploreContextKeys) {
+    const value = firstParam(searchParams[key])?.trim();
+    if (value) params.set(key, value);
+  }
+  return params.toString() ? `/explore?${params.toString()}` : '/explore';
 }
 
 const loadPublicService = cache(async (serviceId: string) => {
@@ -82,8 +96,14 @@ export async function generateMetadata({ params }: { params: Promise<{ serviceId
   };
 }
 
-export default async function ServiceDetailPage({ params }: { params: Promise<{ serviceId: string }> }) {
-  const { serviceId } = await params;
+export default async function ServiceDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ serviceId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const [{ serviceId }, resolvedSearchParams] = await Promise.all([params, searchParams]);
   const record = await loadPublicService(serviceId);
   if (!record) notFound();
 
@@ -164,6 +184,6 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, '\\u003c') }}
     />
-    <LiveServiceDetail service={service} reviews={reviews} />
+    <LiveServiceDetail service={service} reviews={reviews} exploreHref={buildExploreHref(resolvedSearchParams)} />
   </>;
 }
