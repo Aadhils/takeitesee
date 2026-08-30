@@ -12,6 +12,12 @@ export type PublicDirectoryEntry = {
   currency: string;
 };
 
+export type PublicCategoryEntry = {
+  name: string;
+  slug: string;
+  service_count: number;
+};
+
 function publicSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -23,10 +29,46 @@ function relation(value: any) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+function categorySlug(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
 function finalize(entries: Map<string, PublicDirectoryEntry & { category_set: Set<string> }>) {
   return Array.from(entries.values())
     .map(({ category_set, ...entry }) => ({ ...entry, categories: Array.from(category_set).sort() }))
     .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function loadPublicCategories(): Promise<PublicCategoryEntry[] | null> {
+  const supabase = publicSupabase();
+  if (!supabase) return null;
+
+  const { data: rows, error } = await supabase
+    .from('services')
+    .select('category,provider_type,professional_profiles(verified),businesses(verified)')
+    .eq('status', 'active')
+    .eq('active', true)
+    .order('category');
+
+  if (error) return null;
+
+  const categories = new Map<string, PublicCategoryEntry>();
+  for (const row of rows ?? []) {
+    const typedRow = row as any;
+    const provider = typedRow.provider_type === 'business'
+      ? relation(typedRow.businesses)
+      : relation(typedRow.professional_profiles);
+    const name = String(typedRow.category || '').trim();
+    if (!provider?.verified || !name) continue;
+
+    const slug = categorySlug(name);
+    if (!slug) continue;
+    const current = categories.get(slug) ?? { name, slug, service_count: 0 };
+    current.service_count += 1;
+    categories.set(slug, current);
+  }
+
+  return Array.from(categories.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function loadPublicBusinesses(): Promise<PublicDirectoryEntry[] | null> {
