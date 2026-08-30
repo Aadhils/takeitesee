@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server';
-import { productionAuthProvider } from '../../../../../server/auth/session';
-import { createSupabaseServiceClient } from '../../../../../lib/supabase/service';
+import { productionAuthProvider } from '../../../../server/auth/session';
+import { createSupabaseServiceClient } from '../../../../lib/supabase/service';
 import {
   CashfreeApiError,
   fetchCashfreeOrder,
   getCashfreeConfig,
-} from '../../../../../server/payments/cashfree';
+} from '../../../../server/payments/cashfree';
 import {
   CashfreePayoutError,
   getCashfreePayoutConfig,
   getCashfreePayoutTransfer,
-} from '../../../../../server/payments/cashfree-payouts';
-import { runCashfreeWebhookContractSelfTest } from '../../../../../server/payments/webhook-contract';
+} from '../../../../server/payments/cashfree-payouts';
+import { runCashfreeWebhookContractSelfTest } from '../../../../server/payments/webhook-contract';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
