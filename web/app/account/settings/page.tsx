@@ -1,5 +1,5 @@
-import { SettingsPage } from '../../../components/account/AccountPresentation';
+import { LocalizedSettingsPage } from '../../../components/account/LocalizedAccountProfileSettings';
 
 export default function AccountSettingsPage() {
-  return <SettingsPage />;
+  return <LocalizedSettingsPage />;
 }
