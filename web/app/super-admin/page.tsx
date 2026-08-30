@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { createSupabaseServerClient } from '../../lib/supabase/server';
 import { productionAuthProvider } from '../../server/auth/session';
+import { LocaleText } from '../../components/i18n/LocaleText';
 
 export default async function SuperAdminPage() {
   const session = await productionAuthProvider.requireAdmin();
@@ -20,33 +21,33 @@ export default async function SuperAdminPage() {
   ]);
 
   const metrics = [
-    ['Applications', applications.count ?? 0],
-    ['Provider reviews', providerApplications.count ?? 0],
-    ['Verification reviews', providerVerifications.count ?? 0],
-    ['Launch reviews', serviceLaunches.count ?? 0],
-    ['Trust attention', providerTrust.count ?? 0],
-    ['Payout batches', payoutBatches.count ?? 0],
-    ['Locations', locations.count ?? 0],
-    ['Categories', categories.count ?? 0],
-    ['Active admins', admins.count ?? 0],
-    ['Audit events', auditEvents.count ?? 0],
+    ['Applications', 'Applications', applications.count ?? 0],
+    ['Provider reviews', 'Provider reviews', providerApplications.count ?? 0],
+    ['Verification reviews', 'Verification reviews', providerVerifications.count ?? 0],
+    ['Launch reviews', 'Launch reviews', serviceLaunches.count ?? 0],
+    ['Trust attention', 'Trust கவனம்', providerTrust.count ?? 0],
+    ['Payout batches', 'Payout batches', payoutBatches.count ?? 0],
+    ['Locations', 'இடங்கள்', locations.count ?? 0],
+    ['Categories', 'வகைகள்', categories.count ?? 0],
+    ['Active admins', 'செயலில் உள்ள admins', admins.count ?? 0],
+    ['Audit events', 'Audit நிகழ்வுகள்', auditEvents.count ?? 0],
   ] as const;
 
   return <main className="container section-stack">
-    <section className="page-intro"><span className="eyebrow">SaaS control plane</span><h1>Super Admin</h1><p>Manage the takeitesee ecosystem across provider access, verification, trust state, controlled service launch, platform finance, applications, markets, categories, and delegated administrators.</p></section>
-    <section className="dashboard-grid" aria-label="Platform overview">{metrics.map(([label, value]) => <article className="card" key={label}><span className="eyebrow">{label}</span><h2>{value}</h2></article>)}</section>
-    <section className="card"><h2>Control plane</h2><p>Provider onboarding, identity verification, trust state, service launch scope, and finance settlement are separate guarded decisions. Public service activation and provider payout readiness remain independently controlled.</p>
-      <p><Link href="/super-admin/provider-applications">Review provider applications →</Link></p>
-      <p><Link href="/super-admin/provider-verifications">Review provider verification →</Link></p>
-      <p><Link href="/super-admin/provider-trust">Manage provider trust state →</Link></p>
-      <p><Link href="/super-admin/service-launches">Review service launches →</Link></p>
-      <p><Link href="/super-admin/finance">Manage commission & payouts →</Link></p>
-      <p><Link href="/super-admin/applications">Manage applications →</Link></p>
-      <p><Link href="/super-admin/locations">Manage locations & markets →</Link></p>
-      <p><Link href="/super-admin/categories">Manage categories →</Link></p>
-      <p><Link href="/super-admin/admins">Manage delegated admins →</Link></p>
-      <p><Link href="/super-admin/audit">Review admin audit log →</Link></p>
-      <p className="muted">Signed in as platform user {session.user_id.slice(0, 8)}…</p>
+    <section className="page-intro"><span className="eyebrow"><LocaleText en="SaaS control plane" ta="SaaS கட்டுப்பாட்டு மையம்" /></span><h1>Super Admin</h1><p><LocaleText en="Manage the takeitesee ecosystem across provider access, verification, trust state, controlled service launch, platform finance, applications, markets, categories, and delegated administrators." ta="Provider access, verification, trust state, controlled service launch, platform finance, applications, markets, categories மற்றும் delegated administrators உட்பட takeitesee ecosystem-ஐ நிர்வகிக்கவும்." /></p></section>
+    <section className="dashboard-grid" aria-label="Platform overview">{metrics.map(([en, ta, value]) => <article className="card" key={en}><span className="eyebrow"><LocaleText en={en} ta={ta} /></span><h2>{value}</h2></article>)}</section>
+    <section className="card"><h2><LocaleText en="Control plane" ta="கட்டுப்பாட்டு மையம்" /></h2><p><LocaleText en="Provider onboarding, identity verification, trust state, service launch scope, and finance settlement are separate guarded decisions. Public service activation and provider payout readiness remain independently controlled." ta="Provider onboarding, identity verification, trust state, service launch scope மற்றும் finance settlement தனித்தனி பாதுகாக்கப்பட்ட முடிவுகள். Public service activation மற்றும் provider payout readiness தனித்தனியாக கட்டுப்படுத்தப்படுகின்றன." /></p>
+      <p><Link href="/super-admin/provider-applications"><LocaleText en="Review provider applications →" ta="Provider applications review செய் →" /></Link></p>
+      <p><Link href="/super-admin/provider-verifications"><LocaleText en="Review provider verification →" ta="Provider verification review செய் →" /></Link></p>
+      <p><Link href="/super-admin/provider-trust"><LocaleText en="Manage provider trust state →" ta="Provider trust state நிர்வகி →" /></Link></p>
+      <p><Link href="/super-admin/service-launches"><LocaleText en="Review service launches →" ta="Service launches review செய் →" /></Link></p>
+      <p><Link href="/super-admin/finance"><LocaleText en="Manage commission & payouts →" ta="Commission & payouts நிர்வகி →" /></Link></p>
+      <p><Link href="/super-admin/applications"><LocaleText en="Manage applications →" ta="Applications நிர்வகி →" /></Link></p>
+      <p><Link href="/super-admin/locations"><LocaleText en="Manage locations & markets →" ta="Locations & markets நிர்வகி →" /></Link></p>
+      <p><Link href="/super-admin/categories"><LocaleText en="Manage categories →" ta="Categories நிர்வகி →" /></Link></p>
+      <p><Link href="/super-admin/admins"><LocaleText en="Manage delegated admins →" ta="Delegated admins நிர்வகி →" /></Link></p>
+      <p><Link href="/super-admin/audit"><LocaleText en="Review admin audit log →" ta="Admin audit log review செய் →" /></Link></p>
+      <p className="muted"><LocaleText en="Signed in as platform user" ta="Platform user ஆக signed in" /> {session.user_id.slice(0, 8)}…</p>
     </section>
   </main>;
 }
