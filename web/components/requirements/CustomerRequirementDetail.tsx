@@ -120,7 +120,7 @@ export default function CustomerRequirementDetail({ requirementId }: { requireme
       });
       const payload = await response.json() as { error?: string };
       if (!response.ok) throw new Error(payload.error || 'Proposal decision could not be saved.');
-      setNotice(decision === 'accept' ? 'Provider selected. This requirement is now awarded.' : 'Proposal declined.');
+      setNotice(decision === 'accept' ? 'Provider selected. Your private chat is now ready.' : 'Proposal declined.');
       await load();
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Proposal decision could not be saved.'); }
     finally { setProposalBusyId(''); }
@@ -153,6 +153,7 @@ export default function CustomerRequirementDetail({ requirementId }: { requireme
         <Button type="button" variant="secondary" loading={busy} onClick={() => void updateStatus('fulfilled')}>Mark fulfilled</Button>
         <Button type="button" variant="danger" loading={busy} onClick={() => void updateStatus('cancelled')}>Cancel</Button>
       </div> : requirement.status === 'awarded' ? <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+        <Link className="button button-primary" href="/messages">Open private chat</Link>
         <Button type="button" variant="secondary" loading={busy} onClick={() => void updateStatus('fulfilled')}>Mark fulfilled after service</Button>
         <Button type="button" variant="danger" loading={busy} onClick={() => void updateStatus('cancelled')}>Cancel requirement</Button>
       </div> : <p className="summary-note" style={{ marginTop: '1rem' }}>This requirement is closed and cannot be reopened.</p>}
@@ -166,7 +167,7 @@ export default function CustomerRequirementDetail({ requirementId }: { requireme
           <dl className="review-details"><div><dt>Quote</dt><dd>{formatMoney(proposal.amount_minor, proposal.currency)}</dd></div><div><dt>Estimated start</dt><dd>{proposal.estimated_start_date || 'Flexible'}</dd></div><div><dt>Submitted</dt><dd>{new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(new Date(proposal.submitted_at))}</dd></div></dl>
           <p className="detail-copy">{proposal.message}</p>
           {proposal.status === 'submitted' && canReviewProposals ? <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}><Button type="button" loading={proposalBusyId === proposal.id} onClick={() => void decideProposal(proposal.id, 'accept')}>Accept proposal</Button><Button type="button" variant="quiet" loading={proposalBusyId === proposal.id} onClick={() => void decideProposal(proposal.id, 'decline')}>Decline</Button></div> : null}
-          {proposal.status === 'accepted' ? <p className="summary-note">Selected provider. Messaging will open in the next marketplace module.</p> : null}
+          {proposal.status === 'accepted' ? <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center', flexWrap: 'wrap' }}><Link className="button button-secondary" href="/messages">Open private chat</Link><p className="summary-note">Only you and the selected provider can access this conversation.</p></div> : null}
         </div>)}
       </div>}
     </Card>
