@@ -7,6 +7,28 @@ const securityHeaders = [
   { key: 'X-Permitted-Cross-Domain-Policies', value: 'none' },
 ];
 
+const privateWorkspaceHeaders = [
+  { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+];
+
+const privateWorkspaceSources = [
+  '/account/:path*',
+  '/admin/:path*',
+  '/super-admin/:path*',
+  '/provider/:path*',
+  '/bookings/:path*',
+  '/confirmation/:path*',
+  '/messages/:path*',
+  '/notifications/:path*',
+  '/requirements/:path*',
+  '/reviews/:path*',
+  '/login/:path*',
+  '/signup/:path*',
+  '/register/:path*',
+  '/services/:serviceId/booking/:path*',
+  '/services/:serviceId/review/:path*',
+];
+
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
@@ -16,6 +38,10 @@ const nextConfig = {
         source: '/:path*',
         headers: securityHeaders,
       },
+      ...privateWorkspaceSources.map((source) => ({
+        source,
+        headers: privateWorkspaceHeaders,
+      })),
     ];
   },
 };
