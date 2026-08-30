@@ -1,5 +1,5 @@
-import { ProfilePage } from '../../../components/account/AccountPresentation';
+import { LocalizedProfilePage } from '../../../components/account/LocalizedAccountProfileSettings';
 
 export default function AccountProfilePage() {
-  return <ProfilePage />;
+  return <LocalizedProfilePage />;
 }
