@@ -30,6 +30,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isHomepage = pathname === '/';
   const { locale, setLocale, t } = useLanguage();
+  const isTamil = locale === 'ta-IN';
 
   useEffect(() => {
     const syncUser = async () => {
@@ -83,10 +84,16 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
             <p>{t('footer.tagline')}</p>
           </div>
           <div className="footer-link-column"><strong>{t('footer.forCustomers')}</strong><Link href="/help">{t('footer.howItWorks')}</Link><Link href="/help">{t('footer.safety')}</Link><Link href="/help">{t('footer.helpSupport')}</Link></div>
-          <div className="footer-link-column"><strong>{t('footer.forProfessionals')}</strong><Link href="/register">{t('footer.joinProfessional')}</Link><Link href="/professionals">{t('footer.professionalResources')}</Link><Link href="/professionals">{t('footer.successStories')}</Link></div>
-          <div className="footer-link-column"><strong>{t('footer.forBusinesses')}</strong><Link href="/businesses">{t('footer.listBusiness')}</Link><Link href="/businesses">{t('footer.businessResources')}</Link><Link href="/businesses">{t('footer.partnerships')}</Link></div>
-          <div className="footer-link-column footer-connect"><strong>{t('footer.connect')}</strong><Link href="/help">Instagram</Link><Link href="/help">LinkedIn</Link><Link href="/help">{t('footer.contact')}</Link></div>
-          <div className="footer-legal"><span>© 2026 takeitesee</span><Link href="/help">{t('footer.privacy')}</Link><Link href="/help">{t('footer.terms')}</Link><Link href="/help">{t('footer.cookies')}</Link></div>
+          <div className="footer-link-column"><strong>{t('footer.forProfessionals')}</strong><Link href="/register">{t('footer.joinProfessional')}</Link><Link href="/professionals">{t('footer.professionalResources')}</Link></div>
+          <div className="footer-link-column"><strong>{t('footer.forBusinesses')}</strong><Link href="/register">{t('footer.listBusiness')}</Link><Link href="/businesses">{t('footer.businessResources')}</Link></div>
+          <div className="footer-link-column footer-connect"><strong>{t('footer.connect')}</strong><Link href="/help">{t('footer.contact')}</Link></div>
+          <div className="footer-legal">
+            <span>© 2026 takeitesee</span>
+            <span>{t('footer.privacy')}</span>
+            <span>{t('footer.terms')}</span>
+            <span>{t('footer.cookies')}</span>
+            <span className="footer-policy-note">{isTamil ? 'சட்டக் கொள்கை ஆவணங்கள் வெளியீட்டு தயார்நிலையின் ஒரு பகுதியாக இறுதி செய்யப்படுகின்றன.' : 'Legal policy documents are being finalized as part of launch readiness.'}</span>
+          </div>
         </div>
       </footer>
 
@@ -115,6 +122,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         .provider-draft-banner > .card > p { max-width: 72ch; line-height: 1.6; }
         .provider-draft-banner .account-actions { gap: 12px; align-items: stretch; }
         .provider-draft-banner h2 { margin-top: 8px; overflow-wrap: anywhere; }
+        .footer-policy-note { flex-basis: 100%; max-width: 72ch; opacity: .72; line-height: 1.5; }
 
         @media (max-width: 1100px) {
           .shell-bar { gap: 16px; }
