@@ -1,5 +1,5 @@
-import { HelpPage } from '../../components/account/AccountPresentation';
+import LiveHelpCenter from '../../components/support/LiveHelpCenter';
 
 export default function HelpRoute() {
-  return <HelpPage />;
+  return <LiveHelpCenter />;
 }
