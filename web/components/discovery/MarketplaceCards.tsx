@@ -28,7 +28,9 @@ export function CategoryCard({ category }: { category: DiscoveryCategory }) {
 
 export function ServiceCard({ service, contextQuery = '' }: { service: DiscoveryService; contextQuery?: string }) {
   const serviceHref = `/services/${service.id}${contextQuery ? `?${contextQuery}` : ''}`;
-  const providerBaseHref = service.provider_type === 'professional' ? `/professionals/${service.provider_id}` : '/businesses';
+  const providerBaseHref = service.provider_type === 'professional'
+    ? `/professionals/${service.provider_id}`
+    : `/businesses/${service.provider_id}`;
   const providerHref = contextQuery ? `${providerBaseHref}?${contextQuery}` : providerBaseHref;
   return (
     <Card className="discovery-card service-discovery-card">
@@ -57,6 +59,6 @@ export function ProviderCard({ provider }: { provider: DiscoveryProfessional }) 
 
 export function BusinessCard({ business }: { business: DiscoveryBusiness }) {
   return (
-    <Card className="discovery-card business-card"><div className="business-banner" aria-hidden="true"><span>{business.business_name.slice(0, 1)}</span></div><div className="discovery-card-content"><div className="card-meta"><Badge tone={business.verified ? 'success' : 'neutral'}>{business.verified ? 'Verified business' : 'Business profile'}</Badge><span className="availability-dot"><span aria-hidden="true">●</span> Open for enquiries</span></div><h3>{business.business_name}</h3><p className="card-specialty">{business.category}</p><p className="card-description">{business.service_summary}</p><p className="card-location"><span aria-hidden="true">⌖</span> {business.location}</p><div className="card-footer"><Rating value={business.rating} count={business.review_count} /><Link href="/businesses" className="button button-secondary">View business</Link></div></div></Card>
+    <Card className="discovery-card business-card"><div className="business-banner" aria-hidden="true"><span>{business.business_name.slice(0, 1)}</span></div><div className="discovery-card-content"><div className="card-meta"><Badge tone={business.verified ? 'success' : 'neutral'}>{business.verified ? 'Verified business' : 'Business profile'}</Badge><span className="availability-dot"><span aria-hidden="true">●</span> Open for enquiries</span></div><h3>{business.business_name}</h3><p className="card-specialty">{business.category}</p><p className="card-description">{business.service_summary}</p><p className="card-location"><span aria-hidden="true">⌖</span> {business.location}</p><div className="card-footer"><Rating value={business.rating} count={business.review_count} /><Link href={`/businesses/${business.id}`} className="button button-secondary">View business</Link></div></div></Card>
   );
 }
