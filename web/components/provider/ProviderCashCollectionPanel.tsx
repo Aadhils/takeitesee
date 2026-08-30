@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Badge, Button, Card } from '../ui/primitives';
+import { useOperationalTranslations } from '../i18n/OperationalTranslations';
 
 type CashStatusPayload = {
   booking_status?: string;
@@ -26,6 +27,7 @@ export default function ProviderCashCollectionPanel({
   currency: 'INR' | 'USD';
   onUpdated: () => Promise<void>;
 }) {
+  const { locale, t } = useOperationalTranslations();
   const [method, setMethod] = useState<CashStatusPayload['payment_method']>('unselected');
   const [cashCollectedAt, setCashCollectedAt] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -50,7 +52,7 @@ export default function ProviderCashCollectionPanel({
   if (method !== 'cash_on_service') return null;
 
   let formatted = `${currency} ${amount.toFixed(2)}`;
-  try { formatted = new Intl.NumberFormat('en-IN', { style: 'currency', currency }).format(amount); } catch {}
+  try { formatted = new Intl.NumberFormat(locale, { style: 'currency', currency }).format(amount); } catch {}
 
   const confirmCash = async () => {
     if (busy || bookingStatus !== 'completed' || paymentStatus !== 'unpaid') return;
@@ -64,7 +66,7 @@ export default function ProviderCashCollectionPanel({
       const payload = await response.json() as CashStatusPayload;
       if (!response.ok || payload.payment_status !== 'paid') throw new Error(payload.error || 'Cash collection could not be confirmed.');
       setCashCollectedAt(payload.cash_collected_at ?? null);
-      setNotice('Cash receipt confirmed. The booking payment is now recorded as paid.');
+      setNotice(t('cash.notice'));
       await onUpdated();
       window.dispatchEvent(new CustomEvent('booking:audit-refresh', { detail: { bookingId } }));
     } catch (cause) {
@@ -74,13 +76,13 @@ export default function ProviderCashCollectionPanel({
 
   return <Card className="provider-detail-card">
     <div className="section-heading">
-      <div><span className="eyebrow">Cash on Service</span><h2>Cash collection</h2></div>
-      <Badge tone={paymentStatus === 'paid' ? 'success' : 'warning'}>{paymentStatus === 'paid' ? 'Cash received' : 'Cash due'}</Badge>
+      <div><span className="eyebrow">{t('cash.eyebrow')}</span><h2>{t('cash.title')}</h2></div>
+      <Badge tone={paymentStatus === 'paid' ? 'success' : 'warning'}>{paymentStatus === 'paid' ? t('cash.received') : t('cash.due')}</Badge>
     </div>
-    <p className="detail-copy">Customer selected cash payment for {formatted}. This amount is collected directly by you and is not treated as a Takeitesee gateway payout.</p>
-    {bookingStatus !== 'completed' && paymentStatus !== 'paid' ? <p className="summary-note">Confirm cash only after the scheduled service is completed and the full amount has actually been received.</p> : null}
-    {bookingStatus === 'completed' && paymentStatus === 'unpaid' ? <Button type="button" loading={busy} disabled={busy} onClick={() => void confirmCash()}>Confirm full cash received</Button> : null}
-    {paymentStatus === 'paid' ? <p className="summary-note">Recorded{cashCollectedAt ? ` on ${new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(cashCollectedAt))}` : ''}.</p> : null}
+    <p className="detail-copy">{t('cash.directPrefix')} {formatted}. {t('cash.directSuffix')}</p>
+    {bookingStatus !== 'completed' && paymentStatus !== 'paid' ? <p className="summary-note">{t('cash.confirmHelp')}</p> : null}
+    {bookingStatus === 'completed' && paymentStatus === 'unpaid' ? <Button type="button" loading={busy} disabled={busy} onClick={() => void confirmCash()}>{t('cash.confirm')}</Button> : null}
+    {paymentStatus === 'paid' ? <p className="summary-note">{t('cash.recorded')}{cashCollectedAt ? ` · ${new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(cashCollectedAt))}` : ''}.</p> : null}
     {notice ? <p role="status">{notice}</p> : null}
     {error ? <p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p> : null}
   </Card>;
