@@ -1,14 +1,32 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import LiveServiceDetail from '../../../components/detail/LiveServiceDetail';
 
-export default async function ServiceDetailPage({ params }: { params: Promise<{ serviceId: string }> }) {
-  const { serviceId } = await params;
+const siteUrl = 'https://www.takeitesee.com';
+
+function publicSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) notFound();
+  if (!url || !key) return null;
+  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+}
 
-  const supabase = createClient(url, key, { auth: { persistSession: false } });
+function relation(value: any) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function seoText(value: string | null | undefined, fallback: string, max = 160) {
+  const text = (value || fallback).replace(/\s+/g, ' ').trim();
+  if (text.length <= max) return text;
+  return `${text.slice(0, max - 1).trimEnd()}…`;
+}
+
+const loadPublicService = cache(async (serviceId: string) => {
+  const supabase = publicSupabase();
+  if (!supabase) return null;
+
   const { data: row, error } = await supabase
     .from('services')
     .select('id,provider_type,professional_id,business_id,name,description,location,duration_minutes,base_price,currency,category,status,active,professional_profiles(headline,description,service_area,verified),businesses(name,description,location,verified)')
@@ -17,10 +35,60 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
     .eq('active', true)
     .maybeSingle();
 
-  if (error || !row) notFound();
+  if (error || !row) return null;
 
-  const provider: any = row.provider_type === 'business' ? row.businesses : row.professional_profiles;
-  if (!provider?.verified) notFound();
+  const provider: any = row.provider_type === 'business' ? relation(row.businesses) : relation(row.professional_profiles);
+  if (!provider?.verified) return null;
+
+  const providerName = row.provider_type === 'business' ? provider.name : provider.headline;
+  const providerLocation = row.provider_type === 'business' ? provider.location : provider.service_area;
+
+  return {
+    row: row as any,
+    provider,
+    providerName: providerName || 'Verified provider',
+    providerLocation: providerLocation || row.location || '',
+  };
+});
+
+export async function generateMetadata({ params }: { params: Promise<{ serviceId: string }> }): Promise<Metadata> {
+  const { serviceId } = await params;
+  const record = await loadPublicService(serviceId);
+
+  if (!record) {
+    return {
+      title: 'Service unavailable | TakeItEsee',
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const { row, providerLocation } = record;
+  const location = row.location || providerLocation || '';
+  const title = `${row.name}${location ? ` in ${location}` : ''} | TakeItEsee`;
+  const description = seoText(
+    row.description,
+    `Book ${row.name}${location ? ` in ${location}` : ''} from a verified provider on TakeItEsee.`,
+  );
+  const canonical = `${siteUrl}/services/${encodeURIComponent(serviceId)}`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    robots: { index: true, follow: true },
+    openGraph: { title, description, url: canonical, type: 'website' },
+    twitter: { card: 'summary', title, description },
+  };
+}
+
+export default async function ServiceDetailPage({ params }: { params: Promise<{ serviceId: string }> }) {
+  const { serviceId } = await params;
+  const record = await loadPublicService(serviceId);
+  if (!record) notFound();
+
+  const { row, provider, providerName, providerLocation } = record;
+  const supabase = publicSupabase();
+  if (!supabase) notFound();
 
   const { data: reviewRows } = await supabase
     .from('reviews')
@@ -31,23 +99,21 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
 
   const reviews = (reviewRows ?? []).map((review: any) => ({
     id: review.id,
-    reviewer_name: review.users?.name || 'Customer',
+    reviewer_name: relation(review.users)?.name || 'Customer',
     rating: Number(review.rating),
     comment: review.comment || '',
     date: new Date(review.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
     verified_booking: true,
   }));
   const rating = reviews.length ? reviews.reduce((sum: number, review: any) => sum + review.rating, 0) / reviews.length : 0;
-  const providerName = row.provider_type === 'business' ? provider.name : provider.headline;
   const providerDescription = provider.description || '';
-  const providerLocation = row.provider_type === 'business' ? provider.location : provider.service_area;
 
   const service = {
     id: row.id,
     name: row.name,
     description: row.description || '',
     category: row.category || 'Service',
-    provider_name: providerName || 'Provider',
+    provider_name: providerName,
     provider_type: row.provider_type as 'professional' | 'business',
     provider_id: row.business_id || row.professional_id || row.id,
     provider_description: providerDescription,
@@ -61,5 +127,42 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
     review_count: reviews.length,
   };
 
-  return <LiveServiceDetail service={service} reviews={reviews} />;
+  const canonical = `${siteUrl}/services/${encodeURIComponent(serviceId)}`;
+  const providerUrl = service.provider_type === 'business'
+    ? `${siteUrl}/businesses/${encodeURIComponent(service.provider_id)}`
+    : `${siteUrl}/professionals/${encodeURIComponent(service.provider_id)}`;
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: service.name,
+    description: service.description || undefined,
+    url: canonical,
+    category: service.category,
+    areaServed: service.service_area || undefined,
+    provider: {
+      '@type': service.provider_type === 'business' ? 'LocalBusiness' : 'ProfessionalService',
+      name: service.provider_name,
+      url: providerUrl,
+    },
+    offers: service.base_price > 0 ? {
+      '@type': 'Offer',
+      price: service.base_price,
+      priceCurrency: service.currency,
+      url: canonical,
+      availability: 'https://schema.org/InStock',
+    } : undefined,
+    aggregateRating: service.review_count > 0 ? {
+      '@type': 'AggregateRating',
+      ratingValue: Number(service.rating.toFixed(2)),
+      reviewCount: service.review_count,
+    } : undefined,
+  };
+
+  return <>
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, '\\u003c') }}
+    />
+    <LiveServiceDetail service={service} reviews={reviews} />
+  </>;
 }
