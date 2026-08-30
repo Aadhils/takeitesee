@@ -4,30 +4,32 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import BackToTop from './BackToTop';
+import { LanguageProvider, useLanguage, type TranslationKey } from '../i18n/LanguageProvider';
 import { getSupabaseBrowserUser, isSupabaseConfigured, localDevelopmentAuthAdapter } from '../../services/auth-adapter';
 import type { User } from '../../types/auth-domain';
 
-const primaryLinks = [
-  { href: '/explore', label: 'Explore' },
-  { href: '/bookings', label: 'Bookings' },
-  { href: '/notifications', label: 'Notifications' },
-  { href: '/categories', label: 'Categories' },
-  { href: '/professionals', label: 'Professionals' },
-  { href: '/businesses', label: 'Businesses' },
+const primaryLinks: { href: string; labelKey: TranslationKey }[] = [
+  { href: '/explore', labelKey: 'nav.explore' },
+  { href: '/bookings', labelKey: 'nav.bookings' },
+  { href: '/notifications', labelKey: 'nav.notifications' },
+  { href: '/categories', labelKey: 'nav.categories' },
+  { href: '/professionals', labelKey: 'nav.professionals' },
+  { href: '/businesses', labelKey: 'nav.businesses' },
 ];
 
-const mobileLinks = [
-  { href: '/', label: 'Home', icon: '⌂' },
-  { href: '/explore', label: 'Explore', icon: '⌕' },
-  { href: '/bookings', label: 'Bookings', icon: '▣' },
-  { href: '/account', label: 'Account', icon: '◯' },
+const mobileLinks: { href: string; labelKey: TranslationKey; icon: string }[] = [
+  { href: '/', labelKey: 'nav.home', icon: '⌂' },
+  { href: '/explore', labelKey: 'nav.explore', icon: '⌕' },
+  { href: '/bookings', labelKey: 'nav.bookings', icon: '▣' },
+  { href: '/account', labelKey: 'nav.account', icon: '◯' },
 ];
 
-export default function AppShell({ children }: { children: React.ReactNode }) {
+function AppShellContent({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<ReturnType<typeof localDevelopmentAuthAdapter.getCurrentUser>>();
   const pathname = usePathname();
   const isHomepage = pathname === '/';
+  const { locale, setLocale, t } = useLanguage();
 
   useEffect(() => {
     const syncUser = async () => {
@@ -45,22 +47,29 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     <div className="app-shell">
       <header className="site-header">
         <div className="shell-bar">
-          {!isHomepage ? <Link href="/" className="inner-page-brand" aria-label="Go to takeitesee home"><img src="/official-takeitesee-logo.png" alt="" /></Link> : null}
-          <nav className="desktop-nav" aria-label="Main navigation">
-            {primaryLinks.map((link) => <Link key={link.href} href={link.href} className={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'nav-active' : ''} aria-current={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'page' : undefined}>{link.label}</Link>)}
+          {!isHomepage ? <Link href="/" className="inner-page-brand" aria-label={t('nav.goHome')}><img src="/official-takeitesee-logo.png" alt="" /></Link> : null}
+          <nav className="desktop-nav" aria-label={t('nav.main')}>
+            {primaryLinks.map((link) => <Link key={link.href} href={link.href} className={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'nav-active' : ''} aria-current={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'page' : undefined}>{t(link.labelKey)}</Link>)}
           </nav>
           <div className="header-actions">
-            <Link href="/requirements" className="header-requirement">Post a requirement</Link>
-            <Link href="/account" className="header-login"><span aria-hidden="true">◯</span> {currentUser ? currentUser.name : 'Account'}</Link>
-            <button className="menu-trigger" type="button" aria-expanded={menuOpen} aria-controls="mobile-menu" aria-label="Toggle navigation menu" onClick={() => setMenuOpen((value) => !value)}>
+            <label className="language-switcher">
+              <span className="sr-only">{t('language.label')}</span>
+              <select aria-label={t('language.label')} value={locale} onChange={(event) => setLocale(event.target.value as 'en-IN' | 'ta-IN')}>
+                <option value="en-IN">{t('language.english')}</option>
+                <option value="ta-IN">{t('language.tamil')}</option>
+              </select>
+            </label>
+            <Link href="/requirements" className="header-requirement">{t('nav.postRequirement')}</Link>
+            <Link href="/account" className="header-login"><span aria-hidden="true">◯</span> {currentUser ? currentUser.name : t('nav.account')}</Link>
+            <button className="menu-trigger" type="button" aria-expanded={menuOpen} aria-controls="mobile-menu" aria-label={t('nav.toggleMenu')} onClick={() => setMenuOpen((value) => !value)}>
               <span /><span /><span />
             </button>
           </div>
         </div>
         {menuOpen ? (
-          <nav id="mobile-menu" className="mobile-menu" aria-label="Mobile navigation">
-            {primaryLinks.map((link) => <Link key={link.href} href={link.href} className={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'nav-active' : ''} aria-current={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'page' : undefined} onClick={() => setMenuOpen(false)}>{link.label}</Link>)}
-            <Link href="/register" className="mobile-menu-join" onClick={() => setMenuOpen(false)}>Create an account</Link>
+          <nav id="mobile-menu" className="mobile-menu" aria-label={t('nav.mobile')}>
+            {primaryLinks.map((link) => <Link key={link.href} href={link.href} className={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'nav-active' : ''} aria-current={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'page' : undefined} onClick={() => setMenuOpen(false)}>{t(link.labelKey)}</Link>)}
+            <Link href="/register" className="mobile-menu-join" onClick={() => setMenuOpen(false)}>{t('nav.createAccount')}</Link>
           </nav>
         ) : null}
       </header>
@@ -71,18 +80,18 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <div className="footer-inner">
           <div className="footer-brand-column">
             <Link href="/" className="brand brand-footer"><img className="brand-logo" src="/official-takeitesee-logo.png" alt="takeitesee" /></Link>
-            <p>takeitesee connects people,<br />professionals and businesses —<br />simply, safely and quickly.</p>
+            <p>{t('footer.tagline')}</p>
           </div>
-          <div className="footer-link-column"><strong>For customers</strong><Link href="/help">How it works</Link><Link href="/help">Safety</Link><Link href="/help">Help &amp; Support</Link></div>
-          <div className="footer-link-column"><strong>For professionals</strong><Link href="/register">Join as a professional</Link><Link href="/professionals">Professional resources</Link><Link href="/professionals">Success stories</Link></div>
-          <div className="footer-link-column"><strong>For businesses</strong><Link href="/businesses">List your business</Link><Link href="/businesses">Business resources</Link><Link href="/businesses">Partnerships</Link></div>
-          <div className="footer-link-column footer-connect"><strong>Connect with us</strong><Link href="/help">Instagram</Link><Link href="/help">LinkedIn</Link><Link href="/help">Contact us</Link></div>
-          <div className="footer-legal"><span>© 2026 takeitesee</span><Link href="/help">Privacy Policy</Link><Link href="/help">Terms of Service</Link><Link href="/help">Cookie Policy</Link></div>
+          <div className="footer-link-column"><strong>{t('footer.forCustomers')}</strong><Link href="/help">{t('footer.howItWorks')}</Link><Link href="/help">{t('footer.safety')}</Link><Link href="/help">{t('footer.helpSupport')}</Link></div>
+          <div className="footer-link-column"><strong>{t('footer.forProfessionals')}</strong><Link href="/register">{t('footer.joinProfessional')}</Link><Link href="/professionals">{t('footer.professionalResources')}</Link><Link href="/professionals">{t('footer.successStories')}</Link></div>
+          <div className="footer-link-column"><strong>{t('footer.forBusinesses')}</strong><Link href="/businesses">{t('footer.listBusiness')}</Link><Link href="/businesses">{t('footer.businessResources')}</Link><Link href="/businesses">{t('footer.partnerships')}</Link></div>
+          <div className="footer-link-column footer-connect"><strong>{t('footer.connect')}</strong><Link href="/help">Instagram</Link><Link href="/help">LinkedIn</Link><Link href="/help">{t('footer.contact')}</Link></div>
+          <div className="footer-legal"><span>© 2026 takeitesee</span><Link href="/help">{t('footer.privacy')}</Link><Link href="/help">{t('footer.terms')}</Link><Link href="/help">{t('footer.cookies')}</Link></div>
         </div>
       </footer>
 
-      <nav className="mobile-bottom-nav" aria-label="Mobile primary navigation">
-        {mobileLinks.map((link) => <Link key={link.href} href={link.href} className={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'nav-active' : ''} aria-current={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'page' : undefined}><span aria-hidden="true">{link.icon}</span><span>{link.label}</span></Link>)}
+      <nav className="mobile-bottom-nav" aria-label={t('nav.mobilePrimary')}>
+        {mobileLinks.map((link) => <Link key={link.href} href={link.href} className={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'nav-active' : ''} aria-current={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'page' : undefined}><span aria-hidden="true">{link.icon}</span><span>{t(link.labelKey)}</span></Link>)}
       </nav>
       <BackToTop />
 
@@ -93,6 +102,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         .page-intro h1, .account-page-heading h1, .provider-workspace h1 { overflow-wrap: anywhere; }
         .auth-page, .auth-card, .card, .field, .form-grid, .choice-row { min-width: 0; }
         .field-control, .button { max-width: 100%; }
+        .language-switcher select { min-height: 38px; max-width: 105px; border: 1px solid var(--color-border); border-radius: 9px; background: #fff; color: var(--color-ink); padding: 0 28px 0 10px; font: inherit; font-size: .82rem; }
         .provider-onboarding-page { width: min(100%, 760px); }
         .provider-onboarding-form { padding: 0; }
         .provider-onboarding-form > .card { padding: 24px; }
@@ -133,7 +143,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           .shell-bar, .page-frame, .footer-inner { width: min(100% - 24px, var(--content-width)); }
           .shell-bar { min-height: 64px; }
           .inner-page-brand, .inner-page-brand img { width: 70px; }
-          .header-login { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+          .language-switcher select { max-width: 84px; min-height: 36px; padding-left: 8px; font-size: .76rem; }
+          .header-login { max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
           .page-frame { padding: 28px 0 88px; }
           .page-intro h1, .account-page-heading h1, .provider-workspace h1 { font-size: clamp(2.1rem, 11vw, 3.2rem) !important; line-height: .98 !important; }
           .page-intro p { font-size: .95rem; line-height: 1.55; }
@@ -163,7 +174,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
         @media (max-width: 390px) {
           .shell-bar, .page-frame, .footer-inner { width: min(100% - 18px, var(--content-width)); }
-          .header-login { max-width: 92px; font-size: .8rem; }
+          .language-switcher select { max-width: 74px; }
+          .header-login { max-width: 78px; font-size: .8rem; }
           .provider-onboarding-form > .card { padding: 15px; }
           .account-provider-entry { padding: 16px; }
           .provider-draft-banner > .card { padding: 16px; }
@@ -173,4 +185,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       `}</style>
     </div>
   );
+}
+
+export default function AppShell({ children }: { children: React.ReactNode }) {
+  return <LanguageProvider><AppShellContent>{children}</AppShellContent></LanguageProvider>;
 }
