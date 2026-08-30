@@ -3,101 +3,35 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import BookingAuditTimeline from '../booking/BookingAuditTimeline';
-import { Badge, Button, Card, Select } from '../ui/primitives';
-import { AdminHeading, AdminShell } from './AdminPresentation';
+import { useLanguage } from '../i18n/LanguageProvider';
+import { Badge, Button, Card } from '../ui/primitives';
+import { AdminLiveHeading, AdminLiveShell, AdminLiveStatusText, AdminLiveText } from './AdminLiveChrome';
 
-type Issue = {
-  id: string; booking_id: string; service_id: string; reported_by: string; category: string; summary: string; details?: string | null;
-  priority: string; status: string; resolution_note?: string | null; handled_by?: string | null; created_at: string; updated_at: string; resolved_at?: string | null;
-};
-type Booking = {
-  id: string; booking_reference: string; service_name_snapshot: string; booking_date: string; start_time: string; timezone: string;
-  status: string; payment_status: string; quoted_price: number | string; currency: string;
-};
+type Issue = { id: string; booking_id: string; service_id: string; reported_by: string; category: string; summary: string; details?: string | null; priority: string; status: string; resolution_note?: string | null; handled_by?: string | null; created_at: string; updated_at: string; resolved_at?: string | null; };
+type Booking = { id: string; booking_reference: string; service_name_snapshot: string; booking_date: string; start_time: string; timezone: string; status: string; payment_status: string; quoted_price: number | string; currency: string; };
 type Reporter = { id: string; name?: string | null; email?: string | null };
 type IssueEvent = { id: string; actor_type: string; event_type: string; from_status?: string | null; to_status?: string | null; note?: string | null; created_at: string };
 type Payload = { issue: Issue; booking?: Booking | null; reporter?: Reporter | null; events: IssueEvent[] };
-
-function statusTone(status: string): 'neutral' | 'success' | 'warning' | 'danger' | 'info' {
-  if (status === 'resolved' || status === 'closed') return 'success';
-  if (status === 'investigating' || status === 'awaiting_information') return 'warning';
-  if (status === 'open') return 'info';
-  return 'neutral';
-}
+function statusTone(status: string): 'neutral' | 'success' | 'warning' | 'danger' | 'info' { if (status === 'resolved' || status === 'closed') return 'success'; if (status === 'investigating' || status === 'awaiting_information') return 'warning'; if (status === 'open') return 'info'; return 'neutral'; }
 
 export default function AdminLiveIssueDetail({ issueId }: { issueId: string }) {
-  const [payload, setPayload] = useState<Payload | null>(null);
-  const [status, setStatus] = useState('investigating');
-  const [note, setNote] = useState('');
-  const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
-
-  const load = async () => {
-    try {
-      setError('');
-      const response = await fetch(`/api/admin/issues/${encodeURIComponent(issueId)}`, { cache: 'no-store' });
-      const body = await response.json() as Payload & { error?: string };
-      if (!response.ok || !body.issue) throw new Error(body.error ?? 'Unable to load support case.');
-      setPayload(body);
-      setStatus(body.issue.status);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to load support case.');
-    }
-  };
-
+  const { locale } = useLanguage();
+  const [payload, setPayload] = useState<Payload | null>(null); const [status, setStatus] = useState('investigating'); const [note, setNote] = useState(''); const [error, setError] = useState(''); const [busy, setBusy] = useState(false);
+  const text = (en: string, ta: string) => locale === 'ta-IN' ? ta : en;
+  const load = async () => { try { setError(''); const response = await fetch(`/api/admin/issues/${encodeURIComponent(issueId)}`, { cache: 'no-store' }); const body = await response.json() as Payload & { error?: string }; if (!response.ok || !body.issue) throw new Error(body.error ?? 'Unable to load support case.'); setPayload(body); setStatus(body.issue.status); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to load support case.'); } };
   useEffect(() => { void load(); }, [issueId]);
+  const update = async () => { if (busy) return; setBusy(true); setError(''); try { const response = await fetch(`/api/admin/issues/${encodeURIComponent(issueId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status, note }) }); const body = await response.json() as Payload & { error?: string }; if (!response.ok || !body.issue) throw new Error(body.error ?? 'Unable to update support case.'); setPayload(body); setNote(''); window.dispatchEvent(new CustomEvent('booking:audit-refresh', { detail: { bookingId: body.issue.booking_id } })); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to update support case.'); } finally { setBusy(false); } };
 
-  const update = async () => {
-    if (busy) return;
-    setBusy(true); setError('');
-    try {
-      const response = await fetch(`/api/admin/issues/${encodeURIComponent(issueId)}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status, note }),
-      });
-      const body = await response.json() as Payload & { error?: string };
-      if (!response.ok || !body.issue) throw new Error(body.error ?? 'Unable to update support case.');
-      setPayload(body);
-      setNote('');
-      window.dispatchEvent(new CustomEvent('booking:audit-refresh', { detail: { bookingId: body.issue.booking_id } }));
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to update support case.');
-    } finally { setBusy(false); }
-  };
-
-  return <AdminShell active="/admin/disputes">
-    <AdminHeading eyebrow="Support operations" title={payload?.issue.category ?? 'Support case'} description="Review the customer concern, linked booking lifecycle, and scoped resolution history." action={<Link href="/admin/disputes" className="button button-secondary">Back to issues</Link>} />
+  return <AdminLiveShell active="/admin/disputes">
+    <AdminLiveHeading eyebrow={<AdminLiveText en="Support operations" ta="Support செயல்பாடுகள்" />} title={payload?.issue.category ?? <AdminLiveText en="Support case" ta="Support case" />} description={<AdminLiveText en="Review the customer concern, linked booking lifecycle, and scoped resolution history." ta="Customer concern, linked booking lifecycle மற்றும் scoped resolution history-ஐ review செய்யவும்." />} action={<Link href="/admin/disputes" className="button button-secondary"><AdminLiveText en="Back to issues" ta="Issues-க்கு திரும்பு" /></Link>} />
     {error ? <Card><p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p></Card> : null}
-    {!payload ? <Card><p>{error ? 'Support case could not be loaded.' : 'Loading support case…'}</p></Card> : <>
+    {!payload ? <Card><p>{error ? <AdminLiveText en="Support case could not be loaded." ta="Support case load செய்ய முடியவில்லை." /> : <AdminLiveText en="Loading support case…" ta="Support case ஏற்றப்படுகிறது…" />}</p></Card> : <>
       <div className="admin-detail-grid">
-        <Card className="admin-detail-card">
-          <div className="admin-record-top"><div><span className="eyebrow">{payload.booking?.booking_reference ?? payload.issue.id}</span><h2>{payload.issue.summary}</h2></div><Badge tone={statusTone(payload.issue.status)}>{payload.issue.status.replaceAll('_', ' ')}</Badge></div>
-          <p>{payload.issue.details || 'No additional customer details were provided.'}</p>
-          <dl className="admin-detail-list">
-            <div><dt>Customer</dt><dd>{payload.reporter?.name || payload.reporter?.email || 'Customer'}</dd></div>
-            <div><dt>Service</dt><dd>{payload.booking?.service_name_snapshot || 'Scoped service'}</dd></div>
-            <div><dt>Booking state</dt><dd>{payload.booking?.status || '—'}</dd></div>
-            <div><dt>Payment</dt><dd>{payload.booking?.payment_status || '—'}</dd></div>
-            <div><dt>Priority</dt><dd>{payload.issue.priority}</dd></div>
-          </dl>
-          {payload.issue.resolution_note ? <><strong>Latest resolution note</strong><p>{payload.issue.resolution_note}</p></> : null}
-        </Card>
-
-        <Card className="admin-detail-card">
-          <span className="eyebrow">Operations decision</span><h2>Update support case</h2>
-          <Select label="Status" value={status} onChange={(event) => setStatus(event.target.value)}>
-            <option value="open">Open</option><option value="investigating">Investigating</option><option value="awaiting_information">Awaiting information</option><option value="resolved">Resolved</option><option value="closed">Closed</option>
-          </Select>
-          <label style={{ display: 'grid', gap: '.45rem', marginTop: '.8rem' }}><strong>{['resolved','closed'].includes(status) ? 'Resolution note' : 'Operations note (optional)'}</strong><textarea rows={5} maxLength={2000} value={note} onChange={(event) => setNote(event.target.value)} placeholder="Explain the action or resolution clearly" style={{ width: '100%', padding: '.8rem', border: '1px solid #d9d9e3', borderRadius: '.7rem', font: 'inherit' }} /></label>
-          <Button type="button" disabled={busy || (['resolved','closed'].includes(status) && note.trim().length < 3)} onClick={() => void update()}>{busy ? 'Saving…' : 'Save support update'}</Button>
-        </Card>
+        <Card className="admin-detail-card"><div className="admin-record-top"><div><span className="eyebrow">{payload.booking?.booking_reference ?? payload.issue.id}</span><h2>{payload.issue.summary}</h2></div><Badge tone={statusTone(payload.issue.status)}><AdminLiveStatusText status={payload.issue.status} /></Badge></div><p>{payload.issue.details || <AdminLiveText en="No additional customer details were provided." ta="கூடுதல் customer விவரங்கள் வழங்கப்படவில்லை." />}</p><dl className="admin-detail-list"><div><dt><AdminLiveText en="Customer" ta="வாடிக்கையாளர்" /></dt><dd>{payload.reporter?.name || payload.reporter?.email || text('Customer','வாடிக்கையாளர்')}</dd></div><div><dt><AdminLiveText en="Service" ta="சேவை" /></dt><dd>{payload.booking?.service_name_snapshot || text('Scoped service','Scoped service')}</dd></div><div><dt><AdminLiveText en="Booking state" ta="Booking நிலை" /></dt><dd>{payload.booking?.status ? <AdminLiveStatusText status={payload.booking.status} /> : '—'}</dd></div><div><dt><AdminLiveText en="Payment" ta="பணம்" /></dt><dd>{payload.booking?.payment_status ? <AdminLiveStatusText status={payload.booking.payment_status} /> : '—'}</dd></div><div><dt><AdminLiveText en="Priority" ta="முன்னுரிமை" /></dt><dd><AdminLiveStatusText status={payload.issue.priority} /></dd></div></dl>{payload.issue.resolution_note ? <><strong><AdminLiveText en="Latest resolution note" ta="சமீபத்திய resolution குறிப்பு" /></strong><p>{payload.issue.resolution_note}</p></> : null}</Card>
+        <Card className="admin-detail-card"><span className="eyebrow"><AdminLiveText en="Operations decision" ta="Operations முடிவு" /></span><h2><AdminLiveText en="Update support case" ta="Support case புதுப்பி" /></h2><label className="field"><span className="field-label">{text('Status','நிலை')}</span><select className="field-control" value={status} onChange={(event) => setStatus(event.target.value)}><option value="open">{text('Open','திறந்துள்ளது')}</option><option value="investigating">{text('Investigating','விசாரணையில்')}</option><option value="awaiting_information">{text('Awaiting information','தகவல் காத்திருக்கிறது')}</option><option value="resolved">{text('Resolved','தீர்க்கப்பட்டது')}</option><option value="closed">{text('Closed','மூடப்பட்டது')}</option></select></label><label style={{ display: 'grid', gap: '.45rem', marginTop: '.8rem' }}><strong>{['resolved','closed'].includes(status) ? text('Resolution note','Resolution குறிப்பு') : text('Operations note (optional)','Operations குறிப்பு (விருப்பம்)')}</strong><textarea rows={5} maxLength={2000} value={note} onChange={(event) => setNote(event.target.value)} placeholder={text('Explain the action or resolution clearly','Action அல்லது resolution-ஐ தெளிவாக விளக்கவும்')} style={{ width: '100%', padding: '.8rem', border: '1px solid #d9d9e3', borderRadius: '.7rem', font: 'inherit' }} /></label><Button type="button" disabled={busy || (['resolved','closed'].includes(status) && note.trim().length < 3)} onClick={() => void update()}>{busy ? text('Saving…','சேமிக்கப்படுகிறது…') : text('Save support update','Support update சேமி')}</Button></Card>
       </div>
-
-      <Card className="admin-detail-card">
-        <span className="eyebrow">Support history</span><h2>Case activity</h2>
-        {payload.events.length ? <ol style={{ listStyle: 'none', padding: 0, display: 'grid', gap: '.8rem' }}>{payload.events.map((event) => <li key={event.id} style={{ borderLeft: '3px solid var(--border, #d9dce5)', paddingLeft: '1rem' }}><strong>{event.event_type.replaceAll('_', ' ')}</strong><p style={{ margin: '.25rem 0' }}>{event.note || `${event.from_status || 'new'} → ${event.to_status || payload.issue.status}`}</p><small>{new Date(event.created_at).toLocaleString('en-IN')}</small></li>)}</ol> : <p>No support history has been recorded yet.</p>}
-      </Card>
-
-      {payload.booking ? <BookingAuditTimeline bookingId={payload.booking.id} refreshKey={payload.issue.updated_at} title="Linked booking closeout timeline" description="Booking, payment, review, and support events are shown together for operations context." /> : null}
+      <Card className="admin-detail-card"><span className="eyebrow"><AdminLiveText en="Support history" ta="Support history" /></span><h2><AdminLiveText en="Case activity" ta="Case activity" /></h2>{payload.events.length ? <ol style={{ listStyle: 'none', padding: 0, display: 'grid', gap: '.8rem' }}>{payload.events.map((event) => <li key={event.id} style={{ borderLeft: '3px solid var(--border, #d9dce5)', paddingLeft: '1rem' }}><strong>{event.event_type.replaceAll('_', ' ')}</strong><p style={{ margin: '.25rem 0' }}>{event.note || `${event.from_status || 'new'} → ${event.to_status || payload.issue.status}`}</p><small>{new Date(event.created_at).toLocaleString(locale)}</small></li>)}</ol> : <p><AdminLiveText en="No support history has been recorded yet." ta="Support history இன்னும் பதிவு செய்யப்படவில்லை." /></p>}</Card>
+      {payload.booking ? <BookingAuditTimeline bookingId={payload.booking.id} refreshKey={payload.issue.updated_at} title={text('Linked booking closeout timeline','Linked booking closeout timeline')} description={text('Booking, payment, review, and support events are shown together for operations context.','Operations context-க்கு booking, payment, review மற்றும் support events ஒன்றாக காட்டப்படுகின்றன.')} /> : null}
     </>}
-  </AdminShell>;
+  </AdminLiveShell>;
 }
