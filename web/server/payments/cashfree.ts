@@ -246,6 +246,42 @@ export async function createCashfreeOrder(input: {
   });
 }
 
+export async function createCashfreeSandboxProbeOrder(input: {
+  probeRunId: string;
+  orderId: string;
+  amountMinor: number;
+  returnBaseUrl: string;
+}): Promise<CashfreeOrder> {
+  const config = getCashfreeConfig();
+  if (!config.enabled) throw new Error('Cashfree payment gateway is not configured.');
+  if (config.mode !== 'sandbox') throw new Error('Sandbox probe orders are blocked outside Cashfree sandbox mode.');
+  if (!/^tis_probe_[A-Za-z0-9]+$/.test(input.orderId)) throw new Error('Sandbox probe order id is invalid.');
+  if (!Number.isInteger(input.amountMinor) || input.amountMinor < 100 || input.amountMinor > 10000) {
+    throw new Error('Sandbox probe amount must be between INR 1 and INR 100.');
+  }
+
+  const returnUrl = `${input.returnBaseUrl}/super-admin/finance?sandbox_probe_return=1&probe_order_id={order_id}`;
+  const notifyUrl = `${input.returnBaseUrl}/api/payments/cashfree/sandbox-probe-webhook`;
+  return cashfreeRequest<CashfreeOrder>('/orders', {
+    method: 'POST',
+    idempotencyKey: input.probeRunId,
+    body: JSON.stringify({
+      order_id: input.orderId,
+      order_amount: input.amountMinor / 100,
+      order_currency: 'INR',
+      customer_details: {
+        customer_id: `probe_${input.probeRunId.replaceAll('-', '').slice(0, 24)}`,
+        customer_name: 'Takeitesee Sandbox Probe',
+        customer_email: 'sandbox-probe@takeitesee.com',
+        customer_phone: '9999999999',
+      },
+      order_meta: { return_url: returnUrl, notify_url: notifyUrl },
+      order_note: 'Takeitesee controlled sandbox E2E probe',
+      order_tags: { sandbox_probe: 'true', probe_run_id: input.probeRunId },
+    }),
+  });
+}
+
 export function verifyCashfreeWebhook(rawBody: string, timestamp: string, signature: string) {
   const config = getCashfreeConfig();
   if (!config.clientSecret) return false;
