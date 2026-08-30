@@ -20,58 +20,24 @@ const links = [
 ] as const;
 
 const statusLabels: Record<string, { en: string; ta: string }> = {
-  active: { en: 'Active', ta: 'செயலில்' }, restricted: { en: 'Restricted', ta: 'கட்டுப்படுத்தப்பட்டது' },
+  active: { en: 'Active', ta: 'செயலில்' }, restricted: { en: 'Restricted', ta: 'கட்டுப்படுத்தப்பட்டது' }, draft: { en: 'Draft', ta: 'வரைவு' }, paused: { en: 'Paused', ta: 'இடைநிறுத்தப்பட்டது' },
   pending: { en: 'Pending', ta: 'நிலுவையில்' }, confirmed: { en: 'Confirmed', ta: 'உறுதிசெய்யப்பட்டது' }, completed: { en: 'Completed', ta: 'முடிந்தது' },
-  cancelled: { en: 'Cancelled', ta: 'ரத்து செய்யப்பட்டது' }, rescheduled: { en: 'Rescheduled', ta: 'மறுஅட்டவணை செய்யப்பட்டது' }, rejected: { en: 'Rejected', ta: 'நிராகரிக்கப்பட்டது' },
+  cancelled: { en: 'Cancelled', ta: 'ரத்து செய்யப்பட்டது' }, rescheduled: { en: 'Rescheduled', ta: 'மறுஅட்டவணை செய்யப்பட்டது' }, rejected: { en: 'Rejected', ta: 'நிராகரிக்கப்பட்டது' }, no_show: { en: 'No-show', ta: 'வரவில்லை' },
   unpaid: { en: 'Unpaid', ta: 'செலுத்தப்படவில்லை' }, paid: { en: 'Paid', ta: 'செலுத்தப்பட்டது' }, failed: { en: 'Failed', ta: 'தோல்வி' }, refunded: { en: 'Refunded', ta: 'திருப்பிச் செலுத்தப்பட்டது' },
   open: { en: 'Open', ta: 'திறந்துள்ளது' }, investigating: { en: 'Investigating', ta: 'விசாரணையில்' }, awaiting_information: { en: 'Awaiting information', ta: 'தகவல் காத்திருக்கிறது' }, resolved: { en: 'Resolved', ta: 'தீர்க்கப்பட்டது' }, closed: { en: 'Closed', ta: 'மூடப்பட்டது' },
+  published: { en: 'Published', ta: 'வெளியிடப்பட்டது' }, flagged: { en: 'Flagged', ta: 'குறியிடப்பட்டது' }, hidden: { en: 'Hidden', ta: 'மறைக்கப்பட்டது' },
   urgent: { en: 'Urgent', ta: 'அவசரம்' }, high: { en: 'High', ta: 'உயர்' }, normal: { en: 'Normal', ta: 'சாதாரணம்' }, low: { en: 'Low', ta: 'குறைந்தது' },
 };
 
-export function AdminLiveText({ en, ta }: { en: string; ta: string }) {
-  const { locale } = useLanguage();
-  return <>{locale === 'ta-IN' ? ta : en}</>;
-}
-
-export function AdminLiveStatusText({ status }: { status: string }) {
-  const { locale } = useLanguage();
-  const normalized = status.toLowerCase();
-  const mapped = statusLabels[normalized];
-  if (!mapped) return <>{status.replaceAll('_', ' ')}</>;
-  return <>{locale === 'ta-IN' ? mapped.ta : mapped.en}</>;
-}
-
-export function AdminLiveEmptyState({ titleEn, titleTa, children, action }: { titleEn: string; titleTa: string; children: ReactNode; action?: ReactNode }) {
-  const { locale } = useLanguage();
-  return <div className="state-panel" role="status" aria-live="polite"><span className="state-mark" aria-hidden="true">--</span><h3>{locale === 'ta-IN' ? titleTa : titleEn}</h3><p>{children}</p>{action ? <div className="state-action">{action}</div> : null}</div>;
-}
+export function AdminLiveText({ en, ta }: { en: string; ta: string }) { const { locale } = useLanguage(); return <>{locale === 'ta-IN' ? ta : en}</>; }
+export function AdminLiveStatusText({ status }: { status: string }) { const { locale } = useLanguage(); const mapped = statusLabels[status.toLowerCase()]; if (!mapped) return <>{status.replaceAll('_', ' ')}</>; return <>{locale === 'ta-IN' ? mapped.ta : mapped.en}</>; }
+export function AdminLiveEmptyState({ titleEn, titleTa, children, action }: { titleEn: string; titleTa: string; children: ReactNode; action?: ReactNode }) { const { locale } = useLanguage(); return <div className="state-panel" role="status" aria-live="polite"><span className="state-mark" aria-hidden="true">--</span><h3>{locale === 'ta-IN' ? titleTa : titleEn}</h3><p>{children}</p>{action ? <div className="state-action">{action}</div> : null}</div>; }
 
 export function AdminLiveShell({ children, active }: { children: ReactNode; active: string }) {
-  const { locale } = useLanguage();
-  const access = useAdminAccess();
-  const text = (en: string, ta: string) => locale === 'ta-IN' ? ta : en;
-  const scope = access.isSuperAdmin
-    ? text('Super Admin access', 'Super Admin அணுகல்')
-    : access.scopeCount
-      ? text(`${access.scopeCount} delegated scope${access.scopeCount === 1 ? '' : 's'}`, `${access.scopeCount} delegated scope`)
-      : text('Delegated admin access', 'Delegated admin அணுகல்');
-
-  return <div className="admin-layout">
-    <aside className="admin-sidebar">
-      <div className="admin-sidebar-heading"><div className="admin-mark" aria-hidden="true">A</div><div><strong>TakeItEsee Ops</strong><span>{text('Marketplace operations', 'Marketplace செயல்பாடுகள்')}</span></div></div>
-      <nav aria-label={text('Admin navigation', 'Admin வழிசெலுத்தல்')}>{links.map((link) => <Link href={link.href} className={active === link.href ? 'admin-nav-active' : ''} aria-current={active === link.href ? 'page' : undefined} key={link.href}>{text(link.en, link.ta)}</Link>)}</nav>
-      <div className="admin-scope-note"><Badge tone={access.canManage || access.isSuperAdmin ? 'success' : 'info'}>{scope}</Badge><p>{access.canManage || access.isSuperAdmin ? text('Live scoped management is enabled.', 'Live scoped management இயக்கப்பட்டுள்ளது.') : text('Live scoped read access is enabled.', 'Live scoped read access இயக்கப்பட்டுள்ளது.')}</p></div>
-      {access.isSuperAdmin ? <Link href="/super-admin" className="admin-exit-link">{text('Open Super Admin', 'Super Admin திற')}</Link> : null}
-      <Link href="/" className="admin-exit-link">{text('Return to marketplace', 'Marketplace-க்கு திரும்பு')}</Link>
-    </aside>
-    <main className="admin-content">{children}</main>
-  </div>;
+  const { locale } = useLanguage(); const access = useAdminAccess(); const text = (en: string, ta: string) => locale === 'ta-IN' ? ta : en;
+  const scope = access.isSuperAdmin ? text('Super Admin access', 'Super Admin அணுகல்') : access.scopeCount ? text(`${access.scopeCount} delegated scope${access.scopeCount === 1 ? '' : 's'}`, `${access.scopeCount} delegated scope`) : text('Delegated admin access', 'Delegated admin அணுகல்');
+  return <div className="admin-layout"><aside className="admin-sidebar"><div className="admin-sidebar-heading"><div className="admin-mark" aria-hidden="true">A</div><div><strong>TakeItEsee Ops</strong><span>{text('Marketplace operations', 'Marketplace செயல்பாடுகள்')}</span></div></div><nav aria-label={text('Admin navigation', 'Admin வழிசெலுத்தல்')}>{links.map((link) => <Link href={link.href} className={active === link.href ? 'admin-nav-active' : ''} aria-current={active === link.href ? 'page' : undefined} key={link.href}>{text(link.en, link.ta)}</Link>)}</nav><div className="admin-scope-note"><Badge tone={access.canManage || access.isSuperAdmin ? 'success' : 'info'}>{scope}</Badge><p>{access.canManage || access.isSuperAdmin ? text('Live scoped management is enabled.', 'Live scoped management இயக்கப்பட்டுள்ளது.') : text('Live scoped read access is enabled.', 'Live scoped read access இயக்கப்பட்டுள்ளது.')}</p></div>{access.isSuperAdmin ? <Link href="/super-admin" className="admin-exit-link">{text('Open Super Admin', 'Super Admin திற')}</Link> : null}<Link href="/" className="admin-exit-link">{text('Return to marketplace', 'Marketplace-க்கு திரும்பு')}</Link></aside><main className="admin-content">{children}</main></div>;
 }
 
-export function AdminLiveHeading({ eyebrow, title, description, action }: { eyebrow: ReactNode; title: ReactNode; description: ReactNode; action?: ReactNode }) {
-  return <section className="admin-page-heading"><div><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>{action ? <div className="admin-heading-action">{action}</div> : null}</section>;
-}
-
-export function AdminLiveMetricCard({ label, value, detail, tone = 'neutral' }: { label: ReactNode; value: string; detail: ReactNode; tone?: 'neutral' | 'success' | 'warning' | 'info' }) {
-  return <Card className="admin-metric-card"><span className="eyebrow">{label}</span><strong>{value}</strong><span className={`admin-metric-detail admin-metric-${tone}`}>{detail}</span></Card>;
-}
+export function AdminLiveHeading({ eyebrow, title, description, action }: { eyebrow: ReactNode; title: ReactNode; description: ReactNode; action?: ReactNode }) { return <section className="admin-page-heading"><div><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>{action ? <div className="admin-heading-action">{action}</div> : null}</section>; }
+export function AdminLiveMetricCard({ label, value, detail, tone = 'neutral' }: { label: ReactNode; value: string; detail: ReactNode; tone?: 'neutral' | 'success' | 'warning' | 'info' }) { return <Card className="admin-metric-card"><span className="eyebrow">{label}</span><strong>{value}</strong><span className={`admin-metric-detail admin-metric-${tone}`}>{detail}</span></Card>; }
