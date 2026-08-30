@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Badge, Button, Card } from '../ui/primitives';
+import { MarketplaceReportForm } from '../safety/MarketplaceReportForm';
 
 type ConversationSummary = {
   id: string;
@@ -23,52 +24,29 @@ type ConversationSummary = {
   unread_count: number;
 };
 
-type MessageRow = {
-  id: string;
-  body: string;
-  created_at: string;
-  is_mine: boolean;
-  sender_name: string;
-};
-
+type MessageRow = { id: string; body: string; created_at: string; is_mine: boolean; sender_name: string };
 type ConversationDetail = {
-  id: string;
-  requirement_id: string;
-  requirement_reference: string;
-  requirement_title: string;
-  requirement_status: string;
-  conversation_status: 'open' | 'closed';
-  closed_reason: 'fulfilled' | 'cancelled' | null;
-  participant_role: 'customer' | 'provider';
-  counterpart_name: string;
-  proposal_reference: string;
-  amount_minor: number;
-  currency: 'INR' | 'USD';
-  service_name: string;
-  opened_at: string;
-  last_message_at: string | null;
+  id: string; requirement_id: string; requirement_reference: string; requirement_title: string; requirement_status: string;
+  conversation_status: 'open' | 'closed'; closed_reason: 'fulfilled' | 'cancelled' | null; participant_role: 'customer' | 'provider';
+  counterpart_name: string; proposal_reference: string; amount_minor: number; currency: 'INR' | 'USD'; service_name: string; opened_at: string; last_message_at: string | null;
 };
-
 type ConversationPayload = { conversation?: ConversationDetail; messages?: MessageRow[]; error?: string };
+type SafetyState = { blocked_by_me: boolean; messaging_blocked: boolean };
 
-function money(minor: number, currency: 'INR' | 'USD') {
-  return new Intl.NumberFormat('en-IN', { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(minor) / 100);
-}
-
-function activityLabel(value: string | null, fallback: string) {
-  const date = new Date(value || fallback);
-  return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
-}
+function money(minor: number, currency: 'INR' | 'USD') { return new Intl.NumberFormat('en-IN', { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(minor) / 100); }
+function activityLabel(value: string | null, fallback: string) { return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value || fallback)); }
 
 export function MarketplaceMessagingWorkspace({ initialConversationId = '' }: { initialConversationId?: string }) {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [selectedId, setSelectedId] = useState(initialConversationId);
   const [detail, setDetail] = useState<ConversationDetail | null>(null);
   const [messages, setMessages] = useState<MessageRow[]>([]);
+  const [safety, setSafety] = useState<SafetyState>({ blocked_by_me: false, messaging_blocked: false });
   const [draft, setDraft] = useState('');
   const [loadingInbox, setLoadingInbox] = useState(true);
   const [loadingThread, setLoadingThread] = useState(false);
   const [sending, setSending] = useState(false);
+  const [safetyBusy, setSafetyBusy] = useState(false);
   const [error, setError] = useState('');
 
   const loadInbox = useCallback(async (silent = false) => {
@@ -78,14 +56,17 @@ export function MarketplaceMessagingWorkspace({ initialConversationId = '' }: { 
       const payload = await response.json() as { conversations?: ConversationSummary[]; error?: string };
       if (!response.ok) throw new Error(payload.error || 'Message inbox could not be loaded.');
       const rows = payload.conversations ?? [];
-      setConversations(rows);
-      setSelectedId((current) => current || rows[0]?.id || '');
-      setError('');
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Message inbox could not be loaded.');
-    } finally {
-      if (!silent) setLoadingInbox(false);
-    }
+      setConversations(rows); setSelectedId((current) => current || rows[0]?.id || ''); setError('');
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Message inbox could not be loaded.'); }
+    finally { if (!silent) setLoadingInbox(false); }
+  }, []);
+
+  const loadSafety = useCallback(async (conversationId: string) => {
+    if (!conversationId) { setSafety({ blocked_by_me: false, messaging_blocked: false }); return; }
+    const response = await fetch(`/api/messages/${encodeURIComponent(conversationId)}/safety`, { cache: 'no-store' });
+    const payload = await response.json() as { safety?: SafetyState; error?: string };
+    if (!response.ok) throw new Error(payload.error || 'Conversation safety state could not be loaded.');
+    setSafety(payload.safety ?? { blocked_by_me: false, messaging_blocked: false });
   }, []);
 
   const loadThread = useCallback(async (conversationId: string, silent = false) => {
@@ -95,66 +76,49 @@ export function MarketplaceMessagingWorkspace({ initialConversationId = '' }: { 
       const response = await fetch(`/api/messages/${encodeURIComponent(conversationId)}`, { cache: 'no-store' });
       const payload = await response.json() as ConversationPayload;
       if (!response.ok || !payload.conversation) throw new Error(payload.error || 'Conversation could not be loaded.');
-      setDetail(payload.conversation);
-      setMessages(payload.messages ?? []);
+      setDetail(payload.conversation); setMessages(payload.messages ?? []);
       setConversations((current) => current.map((row) => row.id === conversationId ? { ...row, unread_count: 0 } : row));
-      setError('');
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Conversation could not be loaded.');
-    } finally {
-      if (!silent) setLoadingThread(false);
-    }
-  }, []);
+      await loadSafety(conversationId); setError('');
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Conversation could not be loaded.'); }
+    finally { if (!silent) setLoadingThread(false); }
+  }, [loadSafety]);
 
   useEffect(() => { void loadInbox(); }, [loadInbox]);
   useEffect(() => { if (selectedId) void loadThread(selectedId); }, [loadThread, selectedId]);
-  useEffect(() => {
-    const id = window.setInterval(() => void loadInbox(true), 10000);
-    return () => window.clearInterval(id);
-  }, [loadInbox]);
-  useEffect(() => {
-    if (!selectedId) return;
-    const id = window.setInterval(() => void loadThread(selectedId, true), 5000);
-    return () => window.clearInterval(id);
-  }, [loadThread, selectedId]);
+  useEffect(() => { const id = window.setInterval(() => void loadInbox(true), 10000); return () => window.clearInterval(id); }, [loadInbox]);
+  useEffect(() => { if (!selectedId) return; const id = window.setInterval(() => void loadThread(selectedId, true), 5000); return () => window.clearInterval(id); }, [loadThread, selectedId]);
 
   const unreadTotal = useMemo(() => conversations.reduce((sum, row) => sum + Number(row.unread_count || 0), 0), [conversations]);
-
-  const selectConversation = (conversationId: string) => {
-    setSelectedId(conversationId);
-    if (typeof window !== 'undefined') {
-      const url = new URL(window.location.href);
-      url.searchParams.set('conversation', conversationId);
-      window.history.replaceState({}, '', `${url.pathname}${url.search}`);
-    }
-  };
+  const selectConversation = (conversationId: string) => { setSelectedId(conversationId); if (typeof window !== 'undefined') { const url = new URL(window.location.href); url.searchParams.set('conversation', conversationId); window.history.replaceState({}, '', `${url.pathname}${url.search}`); } };
 
   const send = async () => {
     const body = draft.trim();
-    if (!selectedId || !body || sending || detail?.conversation_status !== 'open') return;
+    if (!selectedId || !body || sending || safety.messaging_blocked || detail?.conversation_status !== 'open') return;
     setSending(true); setError('');
     try {
-      const response = await fetch(`/api/messages/${encodeURIComponent(selectedId)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idempotency_key: crypto.randomUUID(), message: body }),
-      });
+      const response = await fetch(`/api/messages/${encodeURIComponent(selectedId)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idempotency_key: crypto.randomUUID(), message: body }) });
       const payload = await response.json() as { error?: string };
       if (!response.ok) throw new Error(payload.error || 'Message could not be sent.');
-      setDraft('');
-      await Promise.all([loadThread(selectedId, true), loadInbox(true)]);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Message could not be sent.');
-    } finally { setSending(false); }
+      setDraft(''); await Promise.all([loadThread(selectedId, true), loadInbox(true)]);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Message could not be sent.'); }
+    finally { setSending(false); }
+  };
+
+  const toggleBlock = async () => {
+    if (!selectedId || safetyBusy) return;
+    setSafetyBusy(true); setError('');
+    try {
+      const response = await fetch(`/api/messages/${encodeURIComponent(selectedId)}/safety`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ blocked: !safety.blocked_by_me, reason: safety.blocked_by_me ? '' : 'User blocked further marketplace messaging in this conversation.' }) });
+      const payload = await response.json() as { safety?: SafetyState; error?: string };
+      if (!response.ok || !payload.safety) throw new Error(payload.error || 'Block setting could not be updated.');
+      setSafety(payload.safety);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Block setting could not be updated.'); }
+    finally { setSafetyBusy(false); }
   };
 
   return <div style={{ display: 'grid', gap: '1rem' }}>
-    <div className="section-heading">
-      <div><span className="eyebrow">Private marketplace inbox</span><h1>Messages</h1><p className="detail-copy">Chat is available only after a customer accepts a provider proposal. Contact details stay private inside the platform.</p></div>
-      <Badge tone={unreadTotal ? 'info' : 'neutral'}>{unreadTotal} unread</Badge>
-    </div>
+    <div className="section-heading"><div><span className="eyebrow">Private marketplace inbox</span><h1>Messages</h1><p className="detail-copy">Chat is available only after a customer accepts a provider proposal. Contact details stay private inside the platform.</p></div><Badge tone={unreadTotal ? 'info' : 'neutral'}>{unreadTotal} unread</Badge></div>
     {error ? <Alert title="Messaging unavailable" tone="danger">{error}</Alert> : null}
-
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(290px,1fr))', gap: '1rem', alignItems: 'start' }}>
       <Card className="policy-card">
         <div className="section-heading"><div><span className="eyebrow">Inbox</span><h2>Conversations</h2></div><Badge tone="neutral">{conversations.length}</Badge></div>
@@ -163,31 +127,21 @@ export function MarketplaceMessagingWorkspace({ initialConversationId = '' }: { 
           {!loadingInbox && conversations.length === 0 ? <p className="detail-copy">No private conversations yet. A chat opens automatically when a proposal is accepted.</p> : null}
           {conversations.map((row) => <button key={row.id} type="button" onClick={() => selectConversation(row.id)} style={{ textAlign: 'left', border: selectedId === row.id ? '2px solid currentColor' : '1px solid #e7eaf0', borderRadius: '14px', padding: '.9rem', background: 'transparent', cursor: 'pointer' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '.75rem', alignItems: 'start' }}><strong>{row.counterpart_name}</strong>{row.unread_count ? <Badge tone="info">{row.unread_count}</Badge> : <Badge tone={row.conversation_status === 'open' ? 'success' : 'neutral'}>{row.conversation_status}</Badge>}</div>
-            <p style={{ margin: '.35rem 0 0' }}>{row.requirement_title}</p>
-            <p className="summary-note" style={{ margin: '.35rem 0 0' }}>{row.last_message_body || `${row.service_name} · ${row.proposal_reference}`}</p>
-            <small>{activityLabel(row.last_message_at, row.opened_at)}</small>
+            <p style={{ margin: '.35rem 0 0' }}>{row.requirement_title}</p><p className="summary-note" style={{ margin: '.35rem 0 0' }}>{row.last_message_body || `${row.service_name} · ${row.proposal_reference}`}</p><small>{activityLabel(row.last_message_at, row.opened_at)}</small>
           </button>)}
         </div>
       </Card>
-
       <Card className="policy-card">
         {!selectedId ? <div><span className="eyebrow">Conversation</span><h2>Select a conversation</h2><p className="detail-copy">Choose a private awarded-provider conversation from your inbox.</p></div> : loadingThread && !detail ? <p>Loading conversation…</p> : detail ? <>
           <div className="section-heading"><div><span className="eyebrow">{detail.requirement_reference}</span><h2>{detail.counterpart_name}</h2><p className="summary-note">{detail.service_name} · {money(detail.amount_minor, detail.currency)}</p></div><Badge tone={detail.conversation_status === 'open' ? 'success' : 'neutral'}>{detail.conversation_status}</Badge></div>
           <p className="detail-copy">{detail.requirement_title}</p>
+          <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap', alignItems: 'start', marginBottom: '.65rem' }}><Button type="button" variant={safety.blocked_by_me ? 'secondary' : 'danger'} loading={safetyBusy} onClick={() => void toggleBlock()}>{safety.blocked_by_me ? `Unblock ${detail.counterpart_name}` : `Block ${detail.counterpart_name}`}</Button><MarketplaceReportForm targetType="conversation" targetId={detail.id} label="Report conversation" /></div>
+          {safety.messaging_blocked ? <Alert title="Messaging blocked" tone="warning">New messages are disabled for this conversation. History remains available for safety and audit purposes.</Alert> : null}
           <div style={{ display: 'grid', gap: '.65rem', maxHeight: '55vh', overflowY: 'auto', padding: '.5rem 0', marginTop: '.5rem' }}>
             {messages.length === 0 ? <p className="summary-note">No messages yet. Start with the service details, schedule, or any clarification needed.</p> : null}
-            {messages.map((message) => <div key={message.id} style={{ display: 'flex', justifyContent: message.is_mine ? 'flex-end' : 'flex-start' }}>
-              <div style={{ maxWidth: '82%', border: '1px solid #e7eaf0', borderRadius: '14px', padding: '.7rem .85rem' }}>
-                <strong style={{ display: 'block', fontSize: '.82rem' }}>{message.is_mine ? 'You' : message.sender_name}</strong>
-                <p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', margin: '.25rem 0' }}>{message.body}</p>
-                <small>{new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(message.created_at))}</small>
-              </div>
-            </div>)}
+            {messages.map((message) => <div key={message.id} style={{ display: 'flex', justifyContent: message.is_mine ? 'flex-end' : 'flex-start' }}><div style={{ maxWidth: '82%', border: '1px solid #e7eaf0', borderRadius: '14px', padding: '.7rem .85rem' }}><strong style={{ display: 'block', fontSize: '.82rem' }}>{message.is_mine ? 'You' : message.sender_name}</strong><p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', margin: '.25rem 0' }}>{message.body}</p><small>{new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(message.created_at))}</small>{!message.is_mine ? <div style={{ marginTop: '.35rem' }}><MarketplaceReportForm targetType="message" targetId={message.id} label="Report message" /></div> : null}</div></div>)}
           </div>
-          {detail.conversation_status === 'open' && detail.requirement_status === 'awarded' ? <div style={{ display: 'grid', gap: '.65rem', marginTop: '1rem' }}>
-            <label className="field"><span className="field-label">Message</span><textarea className="field-control field-textarea" rows={3} maxLength={2000} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={`Message ${detail.counterpart_name}`} /></label>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '.75rem', alignItems: 'center' }}><span className="summary-note">{draft.length}/2000</span><Button type="button" loading={sending} disabled={!draft.trim()} onClick={() => void send()}>Send message</Button></div>
-          </div> : <Alert title="Conversation is read-only" tone="info">This requirement is {detail.closed_reason || detail.requirement_status}. Message history remains available, but new messages are disabled.</Alert>}
+          {detail.conversation_status === 'open' && detail.requirement_status === 'awarded' && !safety.messaging_blocked ? <div style={{ display: 'grid', gap: '.65rem', marginTop: '1rem' }}><label className="field"><span className="field-label">Message</span><textarea className="field-control field-textarea" rows={3} maxLength={2000} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={`Message ${detail.counterpart_name}`} /></label><div style={{ display: 'flex', justifyContent: 'space-between', gap: '.75rem', alignItems: 'center' }}><span className="summary-note">{draft.length}/2000</span><Button type="button" loading={sending} disabled={!draft.trim()} onClick={() => void send()}>Send message</Button></div></div> : detail.conversation_status !== 'open' || detail.requirement_status !== 'awarded' ? <Alert title="Conversation is read-only" tone="info">This requirement is {detail.closed_reason || detail.requirement_status}. Message history remains available, but new messages are disabled.</Alert> : null}
         </> : <p>Conversation unavailable.</p>}
       </Card>
     </div>
