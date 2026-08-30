@@ -11,8 +11,9 @@ import './admin-live.css';
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-  let session;
-  try { session = await productionAuthProvider.requireAdmin(); } catch { redirect('/account'); }
+  const session = await productionAuthProvider.getSession();
+  if (!session || (!session.roles.includes('admin') && !session.roles.includes('super_admin'))) redirect('/account');
+
   const access: AdminAccessSummary = { isSuperAdmin: session.roles.includes('super_admin'), scopeTypes: [], scopeCount: 0, canManage: false };
   try {
     const supabase = await createSupabaseServerClient();

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 export default async function SuperAdminLayout({ children }: { children: ReactNode }) {
-  const session = await productionAuthProvider.requireAdmin().catch(() => null);
+  const session = await productionAuthProvider.getSession();
 
   if (!session) redirect('/account');
   if (!session.roles.includes('super_admin')) redirect('/admin');
