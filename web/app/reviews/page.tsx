@@ -1,5 +1,5 @@
-import { ReviewsPage } from '../../components/account/AccountPresentation';
+import LiveReviewsCenter from '../../components/account/LiveReviewsCenter';
 
 export default function ReviewsRoute() {
-  return <ReviewsPage />;
+  return <LiveReviewsCenter />;
 }
