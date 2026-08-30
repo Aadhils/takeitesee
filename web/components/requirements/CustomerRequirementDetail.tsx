@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Badge, Button, Card } from '../ui/primitives';
+import { RequirementJobPanel } from './RequirementJobPanel';
 
 type RequirementStatus = 'open' | 'paused' | 'awarded' | 'fulfilled' | 'cancelled';
 type RequirementRow = {
@@ -120,7 +121,7 @@ export default function CustomerRequirementDetail({ requirementId }: { requireme
       });
       const payload = await response.json() as { error?: string };
       if (!response.ok) throw new Error(payload.error || 'Proposal decision could not be saved.');
-      setNotice(decision === 'accept' ? 'Provider selected. Your private chat is now ready.' : 'Proposal declined.');
+      setNotice(decision === 'accept' ? 'Provider selected. Your private chat and service-job scheduling are now ready.' : 'Proposal declined.');
       await load();
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Proposal decision could not be saved.'); }
     finally { setProposalBusyId(''); }
@@ -152,10 +153,9 @@ export default function CustomerRequirementDetail({ requirementId }: { requireme
         {requirement.status === 'paused' ? <Button type="button" variant="secondary" loading={busy} onClick={() => void updateStatus('open')}>Reopen proposals</Button> : null}
         <Button type="button" variant="secondary" loading={busy} onClick={() => void updateStatus('fulfilled')}>Mark fulfilled</Button>
         <Button type="button" variant="danger" loading={busy} onClick={() => void updateStatus('cancelled')}>Cancel</Button>
-      </div> : requirement.status === 'awarded' ? <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', marginTop: '1rem' }}>
-        <Link className="button button-primary" href="/messages">Open private chat</Link>
-        <Button type="button" variant="secondary" loading={busy} onClick={() => void updateStatus('fulfilled')}>Mark fulfilled after service</Button>
-        <Button type="button" variant="danger" loading={busy} onClick={() => void updateStatus('cancelled')}>Cancel requirement</Button>
+      </div> : requirement.status === 'awarded' ? <div style={{ display: 'grid', gap: '.65rem', marginTop: '1rem' }}>
+        <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}><Link className="button button-primary" href="/messages">Open private chat</Link><Button type="button" variant="danger" loading={busy} onClick={() => void updateStatus('cancelled')}>Cancel requirement</Button></div>
+        <p className="summary-note">Schedule the linked service job below. Fulfillment is automatic after service completion, customer confirmation and payment settlement.</p>
       </div> : <p className="summary-note" style={{ marginTop: '1rem' }}>This requirement is closed and cannot be reopened.</p>}
     </Card>
 
@@ -171,6 +171,8 @@ export default function CustomerRequirementDetail({ requirementId }: { requireme
         </div>)}
       </div>}
     </Card>
+
+    {requirement.status === 'awarded' || requirement.status === 'fulfilled' ? <RequirementJobPanel requirementId={requirementId} requirementStatus={requirement.status} /> : null}
 
     <Card className="policy-card">
       <span className="eyebrow">Audit history</span><h2>Requirement lifecycle</h2>
