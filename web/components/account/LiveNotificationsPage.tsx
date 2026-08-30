@@ -6,6 +6,7 @@ import { AccountShell } from './AccountPresentation';
 import { Badge, Button, Card, EmptyState } from '../ui/primitives';
 import { getSupabaseBrowserUser } from '../../services/auth-adapter';
 import { getCustomerProfile } from '../../services/customer-profile';
+import { useOperationalTranslations } from '../i18n/OperationalTranslations';
 
 type NotificationItem = {
   id: string;
@@ -18,16 +19,6 @@ type NotificationItem = {
   read_at: string | null;
 };
 
-function labelFor(type: string) {
-  if (type === 'message_received' || type === 'requirement_chat_opened') return 'Message';
-  if (type.startsWith('booking_') || type.startsWith('reschedule_')) return 'Booking';
-  if (type.startsWith('payment_') || type.startsWith('refund_')) return 'Payment';
-  if (type.startsWith('review_')) return 'Review';
-  if (type.startsWith('provider_') || type.startsWith('service_launch_')) return 'Provider';
-  if (type.startsWith('support_') || type.includes('dispute')) return 'Support';
-  return 'Update';
-}
-
 function hrefFor(item: NotificationItem) {
   if (item.conversation_id) return `/messages?conversation=${encodeURIComponent(item.conversation_id)}`;
   if (item.booking_id) return `/bookings/${encodeURIComponent(item.booking_id)}`;
@@ -35,11 +26,22 @@ function hrefFor(item: NotificationItem) {
 }
 
 export default function LiveNotificationsPage() {
+  const { locale, t } = useOperationalTranslations();
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [customerName, setCustomerName] = useState('Your account');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  const labelFor = (type: string) => {
+    if (type === 'message_received' || type === 'requirement_chat_opened') return t('notif.message');
+    if (type.startsWith('booking_') || type.startsWith('reschedule_')) return t('notif.booking');
+    if (type.startsWith('payment_') || type.startsWith('refund_')) return t('notif.payment');
+    if (type.startsWith('review_')) return t('notif.review');
+    if (type.startsWith('provider_') || type.startsWith('service_launch_')) return t('notif.provider');
+    if (type.startsWith('support_') || type.includes('dispute')) return t('notif.support');
+    return t('notif.update');
+  };
 
   const load = async () => {
     try {
@@ -70,7 +72,7 @@ export default function LiveNotificationsPage() {
     if (!badge) return;
     badge.textContent = String(unread);
     badge.style.display = unread ? '' : 'none';
-    badge.setAttribute('aria-label', `${unread} unread notification${unread === 1 ? '' : 's'}`);
+    badge.setAttribute('aria-label', `${unread} ${t('notif.unread')}`);
   });
 
   const markRead = async (id: string) => {
@@ -91,12 +93,12 @@ export default function LiveNotificationsPage() {
   };
 
   return <AccountShell active="/notifications" customerName={customerName}>
-    <section className="account-page-heading"><span className="eyebrow">Live account activity</span><h1>Notifications</h1><p>Booking, proposal, messaging and service lifecycle updates from your account.</p></section>
-    <div className="notification-toolbar"><Badge tone={unread ? 'info' : 'neutral'}>{unread} unread</Badge>{unread ? <Button type="button" variant="quiet" loading={busy} onClick={() => void markAllRead()}>Mark all as read</Button> : <span className="results-note">You are all caught up</span>}</div>
-    {loading ? <Card><p>Loading notifications…</p></Card> : error ? <Card><p className="field-error" role="alert">{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>Try again</Button></Card> : items.length ? <div className="notification-list">{items.map((item) => {
+    <section className="account-page-heading"><span className="eyebrow">{t('notif.eyebrow')}</span><h1>{t('notif.title')}</h1><p>{t('notif.intro')}</p></section>
+    <div className="notification-toolbar"><Badge tone={unread ? 'info' : 'neutral'}>{unread} {t('notif.unread')}</Badge>{unread ? <Button type="button" variant="quiet" loading={busy} onClick={() => void markAllRead()}>{t('notif.markAll')}</Button> : <span className="results-note">{t('notif.caughtUp')}</span>}</div>
+    {loading ? <Card><p>{t('notif.loading')}</p></Card> : error ? <Card><p className="field-error" role="alert">{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>{t('common.tryAgain')}</Button></Card> : items.length ? <div className="notification-list">{items.map((item) => {
       const label = labelFor(item.event_type);
       const href = hrefFor(item);
-      return <Card className={`notification-card ${!item.read_at ? 'notification-unread' : ''}`} key={item.id}><div className="notification-card-mark" aria-hidden="true">{label.slice(0,1)}</div><div className="notification-card-body"><div className="notification-card-top"><Badge tone={!item.read_at ? 'info' : 'neutral'}>{label}</Badge><time>{new Date(item.created_at).toLocaleString('en-IN')}</time></div><h2>{item.title}</h2><p>{item.body}</p><div className="notification-card-actions">{href ? <Link href={href} className="text-link">{item.conversation_id ? 'Open conversation' : 'View booking'}</Link> : null}{!item.read_at ? <Button type="button" variant="quiet" onClick={() => void markRead(item.id)}>Mark as read</Button> : null}</div></div></Card>;
-    })}</div> : <Card><EmptyState title="No notifications yet">New booking, proposal and messaging updates will appear here automatically.</EmptyState></Card>}
+      return <Card className={`notification-card ${!item.read_at ? 'notification-unread' : ''}`} key={item.id}><div className="notification-card-mark" aria-hidden="true">{label.slice(0,1)}</div><div className="notification-card-body"><div className="notification-card-top"><Badge tone={!item.read_at ? 'info' : 'neutral'}>{label}</Badge><time>{new Date(item.created_at).toLocaleString(locale)}</time></div><h2>{item.title}</h2><p>{item.body}</p><div className="notification-card-actions">{href ? <Link href={href} className="text-link">{item.conversation_id ? t('notif.openConversation') : t('notif.viewBooking')}</Link> : null}{!item.read_at ? <Button type="button" variant="quiet" onClick={() => void markRead(item.id)}>{t('notif.markRead')}</Button> : null}</div></div></Card>;
+    })}</div> : <Card><EmptyState title={t('notif.none')}>{t('notif.noneHelp')}</EmptyState></Card>}
   </AccountShell>;
 }
