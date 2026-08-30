@@ -13,6 +13,8 @@ type Payload = {
     rpc_anon_mutations_closed: boolean;
     trigger_rpc_surface_closed: boolean;
     public_marketplace_helpers_available: boolean;
+    sandbox_payment_api_verified: boolean;
+    sandbox_payment_webhook_verified: boolean;
     inr_finance_policy_active: boolean;
   };
   payment_gateway: { provider: string; enabled: boolean; mode: string; missing: string[] };
@@ -27,11 +29,13 @@ const blockerLabels: Record<string, string> = {
   anonymous_rpc_mutation_surface_open: 'Anonymous mutation RPC execution is not fully closed.',
   trigger_rpc_surface_open: 'Trigger-only RPCs are still directly callable.',
   public_marketplace_helper_unavailable: 'A required public marketplace helper is unavailable.',
-  inr_finance_policy_already_active: 'INR finance policy is already active before the activation gate is complete.',
   cashfree_payment_configuration_incomplete: 'Cashfree payment configuration is incomplete.',
   cashfree_payment_not_in_sandbox: 'Cashfree payments are not in sandbox mode for pre-launch testing.',
+  sandbox_payment_api_e2e_unverified: 'A recent successful ₹1 Cashfree sandbox checkout has not been independently verified through the gateway API.',
+  sandbox_payment_webhook_e2e_unverified: 'A recent successful ₹1 Cashfree sandbox checkout does not yet have matching signed webhook evidence.',
   cashfree_payout_configuration_incomplete: 'Cashfree payout configuration is incomplete.',
   cashfree_payout_not_in_sandbox: 'Cashfree payouts are not in sandbox mode for pre-launch testing.',
+  inr_finance_policy_already_active: 'INR finance policy is already active before the activation gate is complete.',
 };
 
 function check(value: boolean) {
@@ -60,12 +64,14 @@ export default function LaunchReadinessPanel() {
 
   useEffect(() => { void load(); }, [load]);
 
+  const paymentEvidenceReady = Boolean(payload?.database.sandbox_payment_api_verified && payload?.database.sandbox_payment_webhook_verified);
+
   return <section className="section-stack">
     <div className="section-heading">
       <div>
         <span className="eyebrow">Launch activation gate</span>
         <h2>Production readiness</h2>
-        <p>Security, privileged database access, gateway configuration, and finance activation stay separated until every pre-launch gate is reviewed.</p>
+        <p>Security, privileged database access, sandbox evidence, gateway configuration, and finance activation stay separated until every pre-launch gate is reviewed.</p>
       </div>
       <Button type="button" variant="secondary" disabled={loading} onClick={() => void load()}>Refresh readiness</Button>
     </div>
@@ -75,7 +81,7 @@ export default function LaunchReadinessPanel() {
 
     {!loading && payload ? <>
       {payload.status === 'sandbox_ready'
-        ? <Alert tone="success" title="Sandbox integration gate is ready">The database security gate and sandbox payment/payout configuration are ready for controlled end-to-end testing. Production activation is still a separate decision.</Alert>
+        ? <Alert tone="success" title="Sandbox integration evidence is ready">Database security, sandbox gateway configuration, and the required payment E2E evidence are green. Production activation is still a separate explicit decision.</Alert>
         : <Alert tone="warning" title="Launch activation remains locked">{payload.blockers.length} readiness blocker{payload.blockers.length === 1 ? '' : 's'} remain. Real payment and finance activation should stay disabled.</Alert>}
 
       <div className="provider-summary-grid">
@@ -93,6 +99,12 @@ export default function LaunchReadinessPanel() {
           <p>{payload.payment_gateway.missing.length ? `Missing: ${payload.payment_gateway.missing.join(', ')}` : 'Required server configuration present.'}</p>
         </Card>
         <Card>
+          <div className="section-heading"><span className="eyebrow">Payment E2E evidence</span><Badge tone={paymentEvidenceReady ? 'success' : 'warning'}>{paymentEvidenceReady ? 'Verified' : 'Pending'}</Badge></div>
+          <p>{check(payload.database.sandbox_payment_api_verified)} Recent ₹1 sandbox payment verified by Cashfree API</p>
+          <p>{check(payload.database.sandbox_payment_webhook_verified)} Matching signed Cashfree webhook received</p>
+          <p>Evidence expires from readiness after 30 days so launch validation cannot rely on stale tests.</p>
+        </Card>
+        <Card>
           <div className="section-heading"><span className="eyebrow">Provider payouts</span><Badge tone={payload.payout_gateway.enabled && payload.payout_gateway.mode === 'sandbox' ? 'success' : 'warning'}>{payload.payout_gateway.enabled ? payload.payout_gateway.mode : 'Disabled'}</Badge></div>
           <p>Provider: {payload.payout_gateway.provider}</p>
           <p>{payload.payout_gateway.missing.length ? `Missing: ${payload.payout_gateway.missing.join(', ')}` : 'Required server configuration present.'}</p>
@@ -108,7 +120,7 @@ export default function LaunchReadinessPanel() {
 
       {payload.blockers.length ? <Card>
         <span className="eyebrow">Open gates</span>
-        <h3>Resolve before sandbox E2E</h3>
+        <h3>Resolve before production activation</h3>
         <ul>
           {payload.blockers.map((blocker) => <li key={blocker}>{blockerLabels[blocker] ?? blocker.replaceAll('_', ' ')}</li>)}
         </ul>
