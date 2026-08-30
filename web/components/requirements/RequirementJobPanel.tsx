@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Badge, Button, Card } from '../ui/primitives';
+import { useOperationalTranslations } from '../i18n/OperationalTranslations';
 
 type RequirementStatus = 'open' | 'paused' | 'awarded' | 'fulfilled' | 'cancelled';
 type JobState = 'active' | 'declined' | 'cancelled' | 'service_completed' | 'fulfilled';
@@ -41,19 +42,8 @@ function stateTone(state: JobState) {
   return 'neutral' as const;
 }
 
-function money(value: number, currency: 'INR' | 'USD') {
-  return new Intl.NumberFormat('en-IN', { style: 'currency', currency, maximumFractionDigits: 0 }).format(value);
-}
-
-function paymentLabel(job: RequirementJob) {
-  if (job.payment_method === 'cash_on_service') {
-    return job.payment_status === 'paid' ? 'Cash received' : 'Cash on Service';
-  }
-  if (job.payment_method === 'online_gateway') return `Online · ${job.payment_status}`;
-  return 'Payment method not selected';
-}
-
 export function RequirementJobPanel({ requirementId, requirementStatus }: { requirementId: string; requirementStatus: RequirementStatus }) {
+  const { locale, t, status } = useOperationalTranslations();
   const [jobs, setJobs] = useState<RequirementJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -66,6 +56,12 @@ export function RequirementJobPanel({ requirementId, requirementStatus }: { requ
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const liveJob = jobs.find((job) => ['active', 'service_completed', 'fulfilled'].includes(job.state));
   const canCreate = requirementStatus === 'awarded' && !liveJob;
+  const money = (value: number, currency: 'INR' | 'USD') => new Intl.NumberFormat(locale, { style: 'currency', currency, maximumFractionDigits: 0 }).format(value);
+  const paymentLabel = (job: RequirementJob) => {
+    if (job.payment_method === 'cash_on_service') return job.payment_status === 'paid' ? t('job.cashReceived') : t('job.cashOnService');
+    if (job.payment_method === 'online_gateway') return `${t('job.online')} · ${status(job.payment_status)}`;
+    return t('job.paymentUnselected');
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -96,7 +92,7 @@ export function RequirementJobPanel({ requirementId, requirementStatus }: { requ
       });
       const payload = await response.json() as CreateResponse;
       if (!response.ok || !payload.booking) throw new Error(payload.error || 'Service job could not be created.');
-      setNotice(`Service job ${payload.booking.booking_reference} created. The provider can now confirm the scheduled booking.`);
+      setNotice(`${t('job.created')}: ${payload.booking.booking_reference}.`);
       setBookingDate(''); setStartTime(''); setNotes('');
       await load();
     } catch (cause) {
@@ -108,45 +104,45 @@ export function RequirementJobPanel({ requirementId, requirementStatus }: { requ
 
   return <Card className="policy-card">
     <div className="section-heading">
-      <div><span className="eyebrow">Service job</span><h2>Turn the awarded requirement into a booking</h2></div>
-      <Badge tone={liveJob ? stateTone(liveJob.state) : 'neutral'}>{liveJob ? liveJob.state.replace('_', ' ') : 'Not scheduled'}</Badge>
+      <div><span className="eyebrow">{t('job.eyebrow')}</span><h2>{t('job.title')}</h2></div>
+      <Badge tone={liveJob ? stateTone(liveJob.state) : 'neutral'}>{liveJob ? status(liveJob.state) : t('job.notScheduled')}</Badge>
     </div>
-    <p className="detail-copy">The accepted proposal becomes a normal Takeitesee booking. Provider confirmation, rescheduling, Cash on Service, completion, closeout and review all use the existing booking lifecycle.</p>
+    <p className="detail-copy">{t('job.intro')}</p>
 
-    {error ? <Alert title="Service job unavailable" tone="danger">{error}</Alert> : null}
-    {notice ? <Alert title="Service job created" tone="success">{notice}</Alert> : null}
+    {error ? <Alert title={t('job.unavailable')} tone="danger">{error}</Alert> : null}
+    {notice ? <Alert title={t('job.created')} tone="success">{notice}</Alert> : null}
 
-    {loading ? <p>Loading service job history…</p> : null}
+    {loading ? <p>{t('job.loading')}</p> : null}
 
     {!loading && canCreate ? <form onSubmit={createJob} style={{ display: 'grid', gap: '.85rem', marginTop: '1rem' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '.75rem' }}>
-        <label className="field"><span className="field-label">Service date</span><input className="field-control" type="date" min={today} required value={bookingDate} onChange={(event) => setBookingDate(event.target.value)} /></label>
-        <label className="field"><span className="field-label">Start time</span><input className="field-control" type="time" required value={startTime} onChange={(event) => setStartTime(event.target.value)} /></label>
+        <label className="field"><span className="field-label">{t('job.serviceDate')}</span><input className="field-control" type="date" min={today} required value={bookingDate} onChange={(event) => setBookingDate(event.target.value)} /></label>
+        <label className="field"><span className="field-label">{t('job.startTime')}</span><input className="field-control" type="time" required value={startTime} onChange={(event) => setStartTime(event.target.value)} /></label>
       </div>
-      <label className="field"><span className="field-label">Job notes (optional)</span><textarea className="field-control field-textarea" rows={3} maxLength={1000} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Add access details or anything agreed in chat." /></label>
-      <p className="summary-note">Only provider availability is accepted. Blocked hours, blackouts and overlapping bookings are rejected automatically.</p>
-      <Button type="submit" loading={submitting} disabled={!bookingDate || !startTime}>Create service job</Button>
+      <label className="field"><span className="field-label">{t('job.notes')}</span><textarea className="field-control field-textarea" rows={3} maxLength={1000} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder={t('job.notesPlaceholder')} /></label>
+      <p className="summary-note">{t('job.availabilityNote')}</p>
+      <Button type="submit" loading={submitting} disabled={!bookingDate || !startTime}>{t('job.create')}</Button>
     </form> : null}
 
-    {!loading && requirementStatus === 'awarded' && liveJob?.state === 'service_completed' ? <p className="summary-note" style={{ marginTop: '1rem' }}>Service is marked completed. The requirement will close automatically after customer completion confirmation and payment settlement.</p> : null}
-    {!loading && requirementStatus === 'fulfilled' ? <p className="summary-note" style={{ marginTop: '1rem' }}>This requirement was fulfilled through the linked service job lifecycle.</p> : null}
+    {!loading && requirementStatus === 'awarded' && liveJob?.state === 'service_completed' ? <p className="summary-note" style={{ marginTop: '1rem' }}>{t('job.completedNote')}</p> : null}
+    {!loading && requirementStatus === 'fulfilled' ? <p className="summary-note" style={{ marginTop: '1rem' }}>{t('job.fulfilledNote')}</p> : null}
 
     {jobs.length ? <div style={{ display: 'grid', gap: '.75rem', marginTop: '1rem' }}>
       {jobs.map((job) => <div key={job.id} style={{ border: '1px solid #e7eaf0', borderRadius: '14px', padding: '.9rem' }}>
-        <div className="section-heading"><div><span className="eyebrow">Job #{job.sequence_no}</span><h3>{job.booking_reference}</h3></div><Badge tone={stateTone(job.state)}>{job.state.replace('_', ' ')}</Badge></div>
+        <div className="section-heading"><div><span className="eyebrow">{t('job.job')} #{job.sequence_no}</span><h3>{job.booking_reference}</h3></div><Badge tone={stateTone(job.state)}>{status(job.state)}</Badge></div>
         <dl className="review-details">
-          <div><dt>Service</dt><dd>{job.service_name}</dd></div>
-          <div><dt>Schedule</dt><dd>{job.booking_date} · {String(job.start_time).slice(0,5)}</dd></div>
-          <div><dt>Duration</dt><dd>{job.duration_minutes} min</dd></div>
-          <div><dt>Quote</dt><dd>{money(Number(job.quoted_price), job.currency)}</dd></div>
-          <div><dt>Booking</dt><dd>{job.booking_status}</dd></div>
-          <div><dt>Payment</dt><dd>{paymentLabel(job)}</dd></div>
+          <div><dt>{t('common.service')}</dt><dd>{job.service_name}</dd></div>
+          <div><dt>{t('common.schedule')}</dt><dd>{job.booking_date} · {String(job.start_time).slice(0,5)}</dd></div>
+          <div><dt>{t('common.duration')}</dt><dd>{job.duration_minutes} {t('common.minutes')}</dd></div>
+          <div><dt>{t('common.quote')}</dt><dd>{money(Number(job.quoted_price), job.currency)}</dd></div>
+          <div><dt>{t('common.booking')}</dt><dd>{status(job.booking_status)}</dd></div>
+          <div><dt>{t('common.payment')}</dt><dd>{paymentLabel(job)}</dd></div>
         </dl>
         <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', marginTop: '.75rem' }}>
-          <Link className="button button-secondary" href={`/bookings/${encodeURIComponent(job.booking_id)}`}>Open service job</Link>
-          <Link className="button button-quiet" href="/messages">Open private chat</Link>
+          <Link className="button button-secondary" href={`/bookings/${encodeURIComponent(job.booking_id)}`}>{t('job.open')}</Link>
+          <Link className="button button-quiet" href="/messages">{t('req.openChat')}</Link>
         </div>
       </div>)}
-    </div> : !loading && !canCreate ? <p className="summary-note" style={{ marginTop: '1rem' }}>A service job becomes available after a provider proposal is accepted.</p> : null}
+    </div> : !loading && !canCreate ? <p className="summary-note" style={{ marginTop: '1rem' }}>{t('job.afterProposal')}</p> : null}
   </Card>;
 }
