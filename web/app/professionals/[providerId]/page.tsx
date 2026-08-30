@@ -59,7 +59,7 @@ export async function generateMetadata({ params }: { params: Promise<{ providerI
 
   if (!record) {
     return {
-      title: 'Professional unavailable | TakeItEsee',
+      title: 'Professional unavailable',
       robots: { index: false, follow: false },
     };
   }
@@ -67,7 +67,8 @@ export async function generateMetadata({ params }: { params: Promise<{ providerI
   const { provider, services } = record;
   const displayName = provider.headline || 'Verified professional';
   const location = provider.service_area || '';
-  const title = `${displayName}${location ? ` in ${location}` : ''} | TakeItEsee`;
+  const pageTitle = `${displayName}${location ? ` in ${location}` : ''}`;
+  const socialTitle = `${pageTitle} | TakeItEsee`;
   const description = seoText(
     provider.description,
     `Explore services from ${displayName}${location ? ` in ${location}` : ''} on TakeItEsee.`,
@@ -76,12 +77,12 @@ export async function generateMetadata({ params }: { params: Promise<{ providerI
   const indexable = services.length > 0;
 
   return {
-    title,
+    title: pageTitle,
     description,
     alternates: indexable ? { canonical } : undefined,
     robots: { index: indexable, follow: indexable },
-    openGraph: indexable ? { title, description, url: canonical, type: 'website' } : undefined,
-    twitter: indexable ? { card: 'summary', title, description } : undefined,
+    openGraph: indexable ? { title: socialTitle, description, url: canonical, type: 'website' } : undefined,
+    twitter: indexable ? { card: 'summary', title: socialTitle, description } : undefined,
   };
 }
 
