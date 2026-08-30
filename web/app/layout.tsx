@@ -15,12 +15,8 @@ export const metadata: Metadata = {
   },
   description: siteDescription,
   applicationName: 'TakeItEsee',
-  alternates: {
-    canonical: '/',
-  },
   openGraph: {
     type: 'website',
-    url: '/',
     siteName: 'TakeItEsee',
     title: 'TakeItEsee | Find Trusted Local Services',
     description: siteDescription,
