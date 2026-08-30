@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Badge, Button, Card, EmptyState, Input, Select } from '../ui/primitives';
 import { Price, Rating, Availability } from './MarketplaceCards';
+import { useLanguage } from '../i18n/LanguageProvider';
 import { categoryName, displayText, discoveryCategories, discoveryPriceBands, discoveryRatingFilters, type DiscoveryAvailabilityFilter, type DiscoveryPriceBand, type DiscoveryProviderFilter, type DiscoveryRatingFilter, type DiscoveryService } from '../../data/discovery-fixtures';
 
 export type DiscoveryFilters = {
@@ -48,6 +49,14 @@ export function DiscoverySection({ title, eyebrow, services }: { title: string; 
   return <section className="discovery-section" aria-labelledby={`${title.replace(/\s/g, '-').toLowerCase()}-heading`}><div className="section-heading"><div><span className="eyebrow">{eyebrow}</span><h2 id={`${title.replace(/\s/g, '-').toLowerCase()}-heading`}>{title}</h2></div></div><div className="service-mini-grid">{services.map((service) => <DiscoveryServiceMiniCard service={service} key={service.id} />)}</div></section>;
 }
 
-export function DiscoveryEmptyState({ query, onClear, suggestions }: { query: string; onClear: () => void; suggestions: DiscoveryService[] }) {
-  return <div className="discovery-empty-wrap"><Card><EmptyState title={query ? `No services found for “${query}”` : 'No services match these filters'}>Try clearing one filter or browse a popular category to broaden your search.</EmptyState><div className="empty-actions"><Button type="button" variant="secondary" onClick={onClear}>Clear filters</Button><Link href="/categories" className="button button-quiet">Browse categories</Link></div></Card>{suggestions.length ? <DiscoverySection eyebrow="You may like" title="Suggested services" services={suggestions} /> : null}</div>;
+export function DiscoveryEmptyState({ query, onClear, suggestions, errorState = false }: { query: string; onClear: () => void; suggestions: DiscoveryService[]; errorState?: boolean }) {
+  const { t } = useLanguage();
+  const title = errorState
+    ? query || 'Marketplace catalog unavailable'
+    : query
+      ? `${t('empty.noServicesFor')} “${query}”`
+      : t('empty.noFilters');
+  const help = errorState ? 'Please try loading the marketplace again.' : t('empty.help');
+
+  return <div className="discovery-empty-wrap"><Card><EmptyState title={title}>{help}</EmptyState><div className="empty-actions"><Button type="button" variant="secondary" onClick={onClear}>{errorState ? 'Try again' : t('explore.clearFilters')}</Button>{errorState ? null : <Link href="/categories" className="button button-quiet">{t('empty.browseCategories')}</Link>}</div></Card>{suggestions.length ? <DiscoverySection eyebrow="You may like" title="Suggested services" services={suggestions} /> : null}</div>;
 }
