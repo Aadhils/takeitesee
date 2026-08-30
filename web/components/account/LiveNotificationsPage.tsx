@@ -10,21 +10,29 @@ import { getCustomerProfile } from '../../services/customer-profile';
 type NotificationItem = {
   id: string;
   booking_id: string | null;
-  event_type: 'booking_created' | 'booking_accepted' | 'booking_declined' | 'booking_rescheduled' | 'booking_cancelled' | 'service_completed';
+  conversation_id: string | null;
+  event_type: string;
   title: string;
   body: string;
   created_at: string;
   read_at: string | null;
 };
 
-const labels: Record<NotificationItem['event_type'], string> = {
-  booking_created: 'Booking',
-  booking_accepted: 'Booking',
-  booking_declined: 'Booking',
-  booking_rescheduled: 'Booking',
-  booking_cancelled: 'Booking',
-  service_completed: 'Service',
-};
+function labelFor(type: string) {
+  if (type === 'message_received' || type === 'requirement_chat_opened') return 'Message';
+  if (type.startsWith('booking_') || type.startsWith('reschedule_')) return 'Booking';
+  if (type.startsWith('payment_') || type.startsWith('refund_')) return 'Payment';
+  if (type.startsWith('review_')) return 'Review';
+  if (type.startsWith('provider_') || type.startsWith('service_launch_')) return 'Provider';
+  if (type.startsWith('support_') || type.includes('dispute')) return 'Support';
+  return 'Update';
+}
+
+function hrefFor(item: NotificationItem) {
+  if (item.conversation_id) return `/messages?conversation=${encodeURIComponent(item.conversation_id)}`;
+  if (item.booking_id) return `/bookings/${encodeURIComponent(item.booking_id)}`;
+  return '';
+}
 
 export default function LiveNotificationsPage() {
   const [items, setItems] = useState<NotificationItem[]>([]);
@@ -57,9 +65,6 @@ export default function LiveNotificationsPage() {
   useEffect(() => { void load(); }, []);
   const unread = useMemo(() => items.filter((item) => !item.read_at).length, [items]);
 
-  // AccountShell still renders the legacy presentation badge. Keep that badge in
-  // sync with the live inbox while this production notifications page is active.
-  // Running after every render also keeps it correct during mark-read mutations.
   useEffect(() => {
     const badge = document.querySelector<HTMLElement>('.account-nav-count');
     if (!badge) return;
@@ -86,8 +91,12 @@ export default function LiveNotificationsPage() {
   };
 
   return <AccountShell active="/notifications" customerName={customerName}>
-    <section className="account-page-heading"><span className="eyebrow">Live account activity</span><h1>Notifications</h1><p>Booking lifecycle updates from your shared production account.</p></section>
+    <section className="account-page-heading"><span className="eyebrow">Live account activity</span><h1>Notifications</h1><p>Booking, proposal, messaging and service lifecycle updates from your account.</p></section>
     <div className="notification-toolbar"><Badge tone={unread ? 'info' : 'neutral'}>{unread} unread</Badge>{unread ? <Button type="button" variant="quiet" loading={busy} onClick={() => void markAllRead()}>Mark all as read</Button> : <span className="results-note">You are all caught up</span>}</div>
-    {loading ? <Card><p>Loading notifications…</p></Card> : error ? <Card><p className="field-error" role="alert">{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>Try again</Button></Card> : items.length ? <div className="notification-list">{items.map((item) => <Card className={`notification-card ${!item.read_at ? 'notification-unread' : ''}`} key={item.id}><div className="notification-card-mark" aria-hidden="true">{labels[item.event_type].slice(0,1)}</div><div className="notification-card-body"><div className="notification-card-top"><Badge tone={!item.read_at ? 'info' : 'neutral'}>{labels[item.event_type]}</Badge><time>{new Date(item.created_at).toLocaleString('en-IN')}</time></div><h2>{item.title}</h2><p>{item.body}</p><div className="notification-card-actions">{item.booking_id ? <Link href={`/bookings/${item.booking_id}`} className="text-link">View booking</Link> : null}{!item.read_at ? <Button type="button" variant="quiet" onClick={() => void markRead(item.id)}>Mark as read</Button> : null}</div></div></Card>)}</div> : <Card><EmptyState title="No notifications yet">New booking updates will appear here automatically.</EmptyState></Card>}
+    {loading ? <Card><p>Loading notifications…</p></Card> : error ? <Card><p className="field-error" role="alert">{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>Try again</Button></Card> : items.length ? <div className="notification-list">{items.map((item) => {
+      const label = labelFor(item.event_type);
+      const href = hrefFor(item);
+      return <Card className={`notification-card ${!item.read_at ? 'notification-unread' : ''}`} key={item.id}><div className="notification-card-mark" aria-hidden="true">{label.slice(0,1)}</div><div className="notification-card-body"><div className="notification-card-top"><Badge tone={!item.read_at ? 'info' : 'neutral'}>{label}</Badge><time>{new Date(item.created_at).toLocaleString('en-IN')}</time></div><h2>{item.title}</h2><p>{item.body}</p><div className="notification-card-actions">{href ? <Link href={href} className="text-link">{item.conversation_id ? 'Open conversation' : 'View booking'}</Link> : null}{!item.read_at ? <Button type="button" variant="quiet" onClick={() => void markRead(item.id)}>Mark as read</Button> : null}</div></div></Card>;
+    })}</div> : <Card><EmptyState title="No notifications yet">New booking, proposal and messaging updates will appear here automatically.</EmptyState></Card>}
   </AccountShell>;
 }
