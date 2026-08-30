@@ -108,7 +108,7 @@ function normalizeService(service: MarketplaceService) {
   const categorySlug = service.category_slug || service.category_id || 'other';
   return {
     ...service,
-    provider_id: service.provider_id || service.business_id || service.professional_id || service.id,
+    provider_id: service.provider_id || service.business_id || service.professional_id || '',
     service_name: { default_locale: 'en', values: { en: localized(service.service_name) } },
     description: { default_locale: 'en', values: { en: localized(service.description) } },
     category_id: categorySlug,
