@@ -50,7 +50,7 @@ export async function POST(request: Request, context: { params: Promise<{ bookin
     const [{ data: booking, error: bookingError }, { data: customer, error: customerError }] = await Promise.all([
       supabase
         .from('bookings')
-        .select('id,booking_reference,customer_id,status,payment_status,quoted_price,currency')
+        .select('id,booking_reference,customer_id,status,payment_status,payment_method,quoted_price,currency')
         .eq('id', bookingId)
         .eq('customer_id', session.user_id)
         .maybeSingle(),
@@ -60,6 +60,9 @@ export async function POST(request: Request, context: { params: Promise<{ bookin
     if (customerError) throw new Error(customerError.message);
     if (!booking) return NextResponse.json({ error: 'Booking was not found.' }, { status: 404 });
     if (!customer) throw new Error('Customer profile was not found.');
+    if (booking.payment_method === 'cash_on_service') {
+      return NextResponse.json({ error: 'Cash on Service is selected. Switch to online payment before starting Cashfree checkout.', code: 'CASH_ON_SERVICE_SELECTED' }, { status: 409 });
+    }
 
     const phone = normalizeIndianPhone(input.customer_phone?.trim() || customer.phone || '');
     if (phone !== customer.phone) {
