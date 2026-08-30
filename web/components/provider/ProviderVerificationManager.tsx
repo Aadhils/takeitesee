@@ -5,6 +5,7 @@ import { Alert, Badge, Button, Card, Input, Select } from '../ui/primitives';
 import { ProviderHeading } from './ProviderPresentation';
 import { LiveProviderShell } from './LiveProviderShell';
 import { createSupabaseBrowserClient } from '../../lib/supabase/browser';
+import { useRemainingWorkspaceTranslations } from '../i18n/RemainingWorkspaceTranslations';
 
 type Provider = { id: string; provider_type: 'professional' | 'business'; display_name: string; verified: boolean };
 type RequestRecord = {
@@ -36,6 +37,7 @@ function extensionFor(file: File) {
 }
 
 export default function ProviderVerificationManager() {
+  const { t, locale } = useRemainingWorkspaceTranslations();
   const [payload, setPayload] = useState<Payload | null>(null);
   const [form, setForm] = useState({ legal_name: '', contact_phone: '', address: '', evidence_type: 'government_id', evidence_reference: '', evidence_note: '' });
   const [loading, setLoading] = useState(true);
@@ -125,47 +127,50 @@ export default function ProviderVerificationManager() {
     finally { setBusy(false); }
   };
 
+  const statusLabel = (status: RequestRecord['status']) => locale === 'ta-IN' ? ({ pending: 'நிலுவையில்', approved: 'அங்கீகரிக்கப்பட்டது', changes_requested: 'மாற்றங்கள் கோரப்பட்டன', rejected: 'நிராகரிக்கப்பட்டது', withdrawn: 'திரும்பப் பெறப்பட்டது', revoked: 'ரத்து செய்யப்பட்டது' }[status]) : status.replaceAll('_', ' ');
+  const evidenceLabel = (value: string) => locale === 'ta-IN' ? ({ government_id: 'அரசு வழங்கிய அடையாள ஆதாரம்', business_registration: 'வணிக பதிவு', professional_license: 'தொழில்முறை உரிமம்', other: 'மற்ற சரிபார்க்கக்கூடிய ஆதாரம்' }[value] ?? value.replaceAll('_', ' ')) : value.replaceAll('_', ' ');
+
   return <LiveProviderShell active="/provider/verification">
-    <ProviderHeading eyebrow="Trust & publishing" title="Provider verification" description="Submit private verification evidence. Documents are stored in a non-public bucket and can be opened only by your account or authorized platform reviewers." />
-    {loading ? <Card><p>Loading verification status…</p></Card> : null}
-    {error ? <Alert title="Verification needs attention" tone="warning">{error}</Alert> : null}
+    <ProviderHeading eyebrow={t('verification.eyebrow')} title={t('verification.title')} description={t('verification.intro')} />
+    {loading ? <Card><p>{t('verification.loading')}</p></Card> : null}
+    {error ? <Alert title={t('verification.attention')} tone="warning">{error}</Alert> : null}
 
     {payload?.provider ? <Card>
-      <div className="section-heading"><div><span className="eyebrow">Provider identity</span><h2>{payload.provider.display_name}</h2></div><Badge tone={payload.provider.verified ? 'success' : 'warning'}>{payload.provider.verified ? 'Verified' : 'Not verified'}</Badge></div>
-      <p>{payload.provider.provider_type === 'business' ? 'Business provider' : 'Professional provider'}</p>
-      <p className="summary-note">{payload.provider.verified ? 'Verification is approved. Launch-ready services can be activated.' : 'Service activation remains locked until verification and the other launch-readiness gates are complete.'}</p>
+      <div className="section-heading"><div><span className="eyebrow">{t('verification.providerIdentity')}</span><h2>{payload.provider.display_name}</h2></div><Badge tone={payload.provider.verified ? 'success' : 'warning'}>{payload.provider.verified ? t('common.verified') : t('verification.notVerified')}</Badge></div>
+      <p>{payload.provider.provider_type === 'business' ? t('common.business') : t('common.professional')}</p>
+      <p className="summary-note">{payload.provider.verified ? t('verification.approvedHelp') : t('verification.lockedHelp')}</p>
     </Card> : null}
 
-    {payload?.provider.verified ? <Alert title="Verification approved" tone="success">Your provider identity is verified. Private evidence remains protected from public access.</Alert> : pending ? <Card>
-      <div className="section-heading"><div><span className="eyebrow">Current request</span><h2>{pending.legal_name}</h2></div><Badge tone="warning">Pending review</Badge></div>
-      <dl className="review-details"><div><dt>Evidence type</dt><dd>{pending.evidence_type.replaceAll('_',' ')}</dd></div><div><dt>Reference</dt><dd>{pending.evidence_reference}</dd></div><div><dt>Contact</dt><dd>{pending.contact_phone}</dd></div><div><dt>Address</dt><dd>{pending.address}</dd></div></dl>
+    {payload?.provider.verified ? <Alert title={t('verification.approved')} tone="success">{t('verification.privateProtected')}</Alert> : pending ? <Card>
+      <div className="section-heading"><div><span className="eyebrow">{t('verification.currentRequest')}</span><h2>{pending.legal_name}</h2></div><Badge tone="warning">{t('verification.pendingReview')}</Badge></div>
+      <dl className="review-details"><div><dt>{t('verification.evidenceType')}</dt><dd>{evidenceLabel(pending.evidence_type)}</dd></div><div><dt>{t('verification.reference')}</dt><dd>{pending.evidence_reference}</dd></div><div><dt>{t('verification.contact')}</dt><dd>{pending.contact_phone}</dd></div><div><dt>{t('verification.address')}</dt><dd>{pending.address}</dd></div></dl>
 
       <div className="section-stack" style={{ marginTop: '1rem' }}>
-        <div><strong>Private verification documents</strong><p className="summary-note">At least one document is required before approval. PDF, JPEG, PNG, or WebP; maximum 8 MB each. Never upload passwords, PINs, OTPs, payment card details, or unrelated records.</p></div>
+        <div><strong>{t('verification.privateDocs')}</strong><p className="summary-note">{t('verification.docsHelp')}</p></div>
         <input ref={fileRef} type="file" accept="application/pdf,image/jpeg,image/png,image/webp" disabled={uploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadDocument(file); }} />
-        {uploading ? <p>Encrypting and uploading private evidence…</p> : null}
-        {pendingDocuments.length ? <div className="section-stack">{pendingDocuments.map((doc) => <div className="card" key={doc.id} style={{ padding: '1rem' }}><div className="section-heading"><div><strong>{doc.original_filename}</strong><p className="summary-note">{doc.mime_type} · {sizeLabel(Number(doc.size_bytes))}</p></div><Badge tone="success">Private</Badge></div><Button type="button" variant="quiet" loading={removingId === doc.id} onClick={() => void removeDocument(doc.id)}>Remove document</Button></div>)}</div> : <Alert title="Document required" tone="warning">Upload at least one private evidence file so the platform reviewer can approve this request.</Alert>}
+        {uploading ? <p>{t('verification.uploading')}</p> : null}
+        {pendingDocuments.length ? <div className="section-stack">{pendingDocuments.map((doc) => <div className="card" key={doc.id} style={{ padding: '1rem' }}><div className="section-heading"><div><strong>{doc.original_filename}</strong><p className="summary-note">{doc.mime_type} · {sizeLabel(Number(doc.size_bytes))}</p></div><Badge tone="success">{t('verification.private')}</Badge></div><Button type="button" variant="quiet" loading={removingId === doc.id} onClick={() => void removeDocument(doc.id)}>{t('verification.removeDocument')}</Button></div>)}</div> : <Alert title={t('verification.documentRequired')} tone="warning">{t('verification.documentRequiredHelp')}</Alert>}
       </div>
 
-      <p className="summary-note">Verification details and documents are not public. Reviewer access uses short-lived secure links and is audit logged.</p>
-      <Button type="button" variant="quiet" disabled={busy} onClick={() => void withdraw(pending.id)}>{busy ? 'Updating…' : 'Withdraw verification request'}</Button>
+      <p className="summary-note">{t('verification.auditHelp')}</p>
+      <Button type="button" variant="quiet" disabled={busy} onClick={() => void withdraw(pending.id)}>{busy ? t('reason.updating') : t('verification.withdraw')}</Button>
     </Card> : <>
       {latest ? <Card>
-        <div className="section-heading"><div><span className="eyebrow">Previous review</span><h2>Verification {latest.status.replaceAll('_',' ')}</h2></div><Badge tone={tone(latest.status)}>{latest.status.replaceAll('_',' ')}</Badge></div>
-        {latest.review_note ? <p><strong>Platform note:</strong> {latest.review_note}</p> : null}
-        <p className="summary-note">{latest.status === 'changes_requested' ? 'Submit a fresh request, then upload the corrected private evidence.' : 'You may submit a new request with current evidence.'}</p>
+        <div className="section-heading"><div><span className="eyebrow">{t('verification.previous')}</span><h2>{t('verification.title')} · {statusLabel(latest.status)}</h2></div><Badge tone={tone(latest.status)}>{statusLabel(latest.status)}</Badge></div>
+        {latest.review_note ? <p><strong>{t('verification.platformNote')}</strong> {latest.review_note}</p> : null}
+        <p className="summary-note">{latest.status === 'changes_requested' ? t('verification.changesHelp') : t('verification.newHelp')}</p>
       </Card> : null}
       <Card>
-        <h2>Start verification</h2>
-        <p className="summary-note">First submit the verification details. The next step will securely upload one or more private supporting documents.</p>
+        <h2>{t('verification.start')}</h2>
+        <p className="summary-note">{t('verification.startHelp')}</p>
         <form onSubmit={submit} style={{ display: 'grid', gap: '.9rem' }}>
-          <Input label="Legal name" required maxLength={160} value={form.legal_name} onChange={(event) => setForm({ ...form, legal_name: event.target.value })} />
-          <Input label="Contact phone" required maxLength={40} value={form.contact_phone} onChange={(event) => setForm({ ...form, contact_phone: event.target.value })} />
-          <Input label="Registered / service address" required maxLength={500} value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} />
-          <Select label="Evidence type" value={form.evidence_type} onChange={(event) => setForm({ ...form, evidence_type: event.target.value })}><option value="government_id">Government-issued identity evidence</option><option value="business_registration">Business registration</option><option value="professional_license">Professional license</option><option value="other">Other reviewable evidence</option></Select>
-          <Input label="Evidence reference" required maxLength={120} hint="Use a registration reference or limited identifier such as last 4 digits where appropriate. Do not enter passwords, PINs, or OTPs." value={form.evidence_reference} onChange={(event) => setForm({ ...form, evidence_reference: event.target.value })} />
-          <label className="field"><span className="field-label">Evidence note (optional)</span><textarea className="field-control" rows={4} maxLength={1200} value={form.evidence_note} onChange={(event) => setForm({ ...form, evidence_note: event.target.value })} placeholder="Explain what the reviewer should validate" /></label>
-          <Button type="submit" loading={busy}>Create verification request</Button>
+          <Input label={t('verification.legalName')} required maxLength={160} value={form.legal_name} onChange={(event) => setForm({ ...form, legal_name: event.target.value })} />
+          <Input label={t('verification.contactPhone')} required maxLength={40} value={form.contact_phone} onChange={(event) => setForm({ ...form, contact_phone: event.target.value })} />
+          <Input label={t('verification.registeredAddress')} required maxLength={500} value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} />
+          <Select label={t('verification.evidenceType')} value={form.evidence_type} onChange={(event) => setForm({ ...form, evidence_type: event.target.value })}><option value="government_id">{evidenceLabel('government_id')}</option><option value="business_registration">{evidenceLabel('business_registration')}</option><option value="professional_license">{evidenceLabel('professional_license')}</option><option value="other">{evidenceLabel('other')}</option></Select>
+          <Input label={t('verification.evidenceReference')} required maxLength={120} hint={t('verification.referenceHint')} value={form.evidence_reference} onChange={(event) => setForm({ ...form, evidence_reference: event.target.value })} />
+          <label className="field"><span className="field-label">{t('verification.evidenceNote')}</span><textarea className="field-control" rows={4} maxLength={1200} value={form.evidence_note} onChange={(event) => setForm({ ...form, evidence_note: event.target.value })} placeholder={t('verification.notePlaceholder')} /></label>
+          <Button type="submit" loading={busy}>{t('verification.create')}</Button>
         </form>
       </Card>
     </>}
