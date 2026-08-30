@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { AdminLiveEmptyState, AdminLiveHeading, AdminLiveMetricCard, AdminLiveShell, AdminLiveStatusText, AdminLiveText } from '../../components/admin/AdminLiveChrome';
 import { Badge, Card } from '../../components/ui/primitives';
 import { createSupabaseServerClient } from '../../lib/supabase/server';
@@ -12,7 +13,9 @@ function formatInr(value: number) { return new Intl.NumberFormat('en-IN', { styl
 function providerKey(service: LiveService) { if (service.provider_type === 'professional' && service.professional_id) return `professional:${service.professional_id}`; if (service.provider_type === 'business' && service.business_id) return `business:${service.business_id}`; return null; }
 
 export default async function AdminDashboardRoute() {
-  await productionAuthProvider.requireAdmin();
+  const session = await productionAuthProvider.getSession();
+  if (!session || (!session.roles.includes('admin') && !session.roles.includes('super_admin'))) redirect('/account');
+
   const supabase = await createSupabaseServerClient();
   const { data: mappedScopes, error: scopeError } = await supabase.from('service_ecosystem_scope').select('service_id').eq('enabled', true);
   if (scopeError) throw new Error(scopeError.message);
