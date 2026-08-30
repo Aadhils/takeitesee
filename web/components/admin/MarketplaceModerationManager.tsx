@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Badge, Button, Card } from '../ui/primitives';
+import { useAdminControlTranslations } from '../i18n/AdminControlTranslations';
 
 type Status = 'open' | 'reviewing' | 'actioned' | 'dismissed';
 type ReportRow = {
@@ -19,6 +20,7 @@ function statusTone(status: Status) {
 }
 
 export function MarketplaceModerationManager() {
+  const { locale, t } = useAdminControlTranslations();
   const [reports, setReports] = useState<ReportRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState('');
@@ -55,17 +57,17 @@ export function MarketplaceModerationManager() {
   };
 
   return <div style={{ display: 'grid', gap: '1rem' }}>
-    <div className="section-heading"><div><span className="eyebrow">Live safety operations</span><h1>Marketplace moderation</h1><p className="detail-copy">Review scoped reports from requirements, proposals and private messaging. Closing a report records an audit decision; it does not automatically suspend an account.</p></div><Badge tone={openCount ? 'danger' : 'success'}>{openCount} open</Badge></div>
-    {error ? <Alert title="Moderation queue unavailable" tone="danger">{error}</Alert> : null}
-    {loading ? <Card><p>Loading moderation reports…</p></Card> : null}
-    {!loading && reports.length === 0 ? <Card><p className="detail-copy">No marketplace safety reports are waiting for review.</p></Card> : null}
+    <div className="section-heading"><div><span className="eyebrow">{t('moderation.eyebrow')}</span><h1>{t('moderation.title')}</h1><p className="detail-copy">{t('moderation.intro')}</p></div><Badge tone={openCount ? 'danger' : 'success'}>{openCount} {t('common.open')}</Badge></div>
+    {error ? <Alert title={t('moderation.unavailable')} tone="danger">{error}</Alert> : null}
+    {loading ? <Card><p>{t('moderation.loading')}</p></Card> : null}
+    {!loading && reports.length === 0 ? <Card><p className="detail-copy">{t('moderation.empty')}</p></Card> : null}
     {!loading ? reports.map((row) => <Card className="policy-card" key={row.id}>
-      <div className="section-heading"><div><span className="eyebrow">{row.report_reference} · {row.target_type}</span><h2>{row.requirement_title}</h2><p className="summary-note">{row.requirement_reference}</p></div><Badge tone={statusTone(row.status)}>{row.status}</Badge></div>
-      <dl className="review-details"><div><dt>Category</dt><dd>{row.category.replace('_',' ')}</dd></div><div><dt>Reporter</dt><dd>{row.reporter_name}</dd></div><div><dt>Reported user</dt><dd>{row.reported_user_name || 'Not applicable'}</dd></div><div><dt>Opened</dt><dd>{new Intl.DateTimeFormat('en-IN',{dateStyle:'medium',timeStyle:'short'}).format(new Date(row.created_at))}</dd></div>{row.proposal_reference ? <div><dt>Proposal</dt><dd>{row.proposal_reference}</dd></div> : null}</dl>
-      {row.details ? <Alert title="Reporter details" tone="info">{row.details}</Alert> : null}
-      {row.message_excerpt ? <div style={{ border: '1px solid #e7eaf0', borderRadius: 12, padding: '.8rem', marginTop: '.7rem' }}><strong>Reported message excerpt</strong><p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{row.message_excerpt}</p></div> : null}
-      {row.admin_note ? <p className="summary-note"><strong>Latest admin note:</strong> {row.admin_note}</p> : null}
-      {row.status === 'open' || row.status === 'reviewing' ? <div style={{ display: 'grid', gap: '.65rem', marginTop: '1rem' }}><label className="field"><span className="field-label">Moderation note</span><textarea className="field-control" rows={3} maxLength={2000} value={notes[row.id] ?? ''} onChange={(event) => setNotes((current) => ({ ...current, [row.id]: event.target.value }))} placeholder="Required when actioning or dismissing a report." /></label><div style={{ display: 'flex', gap: '.55rem', flexWrap: 'wrap' }}>{row.status === 'open' ? <Button type="button" variant="secondary" loading={busyId===row.id} onClick={() => void update(row.id,'reviewing')}>Start review</Button> : null}<Button type="button" loading={busyId===row.id} onClick={() => void update(row.id,'actioned')}>Mark actioned</Button><Button type="button" variant="quiet" loading={busyId===row.id} onClick={() => void update(row.id,'dismissed')}>Dismiss report</Button></div></div> : null}
+      <div className="section-heading"><div><span className="eyebrow">{row.report_reference} · {row.target_type}</span><h2>{row.requirement_title}</h2><p className="summary-note">{row.requirement_reference}</p></div><Badge tone={statusTone(row.status)}>{row.status.replaceAll('_',' ')}</Badge></div>
+      <dl className="review-details"><div><dt>{t('common.category')}</dt><dd>{row.category.replace('_',' ')}</dd></div><div><dt>{t('common.reporter')}</dt><dd>{row.reporter_name}</dd></div><div><dt>{t('common.reportedUser')}</dt><dd>{row.reported_user_name || t('common.notApplicable')}</dd></div><div><dt>{t('common.opened')}</dt><dd>{new Intl.DateTimeFormat(locale,{dateStyle:'medium',timeStyle:'short'}).format(new Date(row.created_at))}</dd></div>{row.proposal_reference ? <div><dt>{t('common.proposal')}</dt><dd>{row.proposal_reference}</dd></div> : null}</dl>
+      {row.details ? <Alert title={t('moderation.reporterDetails')} tone="info">{row.details}</Alert> : null}
+      {row.message_excerpt ? <div style={{ border: '1px solid #e7eaf0', borderRadius: 12, padding: '.8rem', marginTop: '.7rem' }}><strong>{t('moderation.messageExcerpt')}</strong><p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{row.message_excerpt}</p></div> : null}
+      {row.admin_note ? <p className="summary-note"><strong>{t('moderation.latestNote')}</strong> {row.admin_note}</p> : null}
+      {row.status === 'open' || row.status === 'reviewing' ? <div style={{ display: 'grid', gap: '.65rem', marginTop: '1rem' }}><label className="field"><span className="field-label">{t('moderation.note')}</span><textarea className="field-control" rows={3} maxLength={2000} value={notes[row.id] ?? ''} onChange={(event) => setNotes((current) => ({ ...current, [row.id]: event.target.value }))} placeholder={t('moderation.notePlaceholder')} /></label><div style={{ display: 'flex', gap: '.55rem', flexWrap: 'wrap' }}>{row.status === 'open' ? <Button type="button" variant="secondary" loading={busyId===row.id} onClick={() => void update(row.id,'reviewing')}>{t('moderation.startReview')}</Button> : null}<Button type="button" loading={busyId===row.id} onClick={() => void update(row.id,'actioned')}>{t('moderation.actioned')}</Button><Button type="button" variant="quiet" loading={busyId===row.id} onClick={() => void update(row.id,'dismissed')}>{t('moderation.dismiss')}</Button></div></div> : null}
     </Card>) : null}
   </div>;
 }
