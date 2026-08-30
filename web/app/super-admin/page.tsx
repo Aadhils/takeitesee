@@ -1,10 +1,14 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '../../lib/supabase/server';
 import { productionAuthProvider } from '../../server/auth/session';
 import { LocaleText } from '../../components/i18n/LocaleText';
 
 export default async function SuperAdminPage() {
-  const session = await productionAuthProvider.requireAdmin();
+  const session = await productionAuthProvider.getSession();
+  if (!session) redirect('/account');
+  if (!session.roles.includes('super_admin')) redirect('/admin');
+
   const supabase = await createSupabaseServerClient();
 
   const [applications, providerApplications, providerVerifications, serviceLaunches, providerTrust, payoutBatches, locations, categories, admins, auditEvents] = await Promise.all([
