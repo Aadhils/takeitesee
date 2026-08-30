@@ -18,7 +18,7 @@ export async function GET() {
     });
     const { error } = await supabase
       .from('services')
-      .select('id', { head: true, count: 'exact' })
+      .select('id', { head: true })
       .limit(1);
 
     if (error) throw new Error(error.message);
