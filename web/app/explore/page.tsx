@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Button, Input, Select, Skeleton } from '../../components/ui/primitives';
 import { ServiceCard } from '../../components/discovery/MarketplaceCards';
 import { DiscoveryEmptyState } from '../../components/discovery/DiscoveryEnhancements';
+import { useLanguage } from '../../components/i18n/LanguageProvider';
 
 type MarketplaceService = any;
 type PriceFilter = 'any' | 'under-1000' | '1000-5000' | 'over-5000';
@@ -20,17 +21,8 @@ type Filters = {
 };
 
 const validSorts = ['relevance', 'rating', 'price', 'price-desc'];
-const priceBands: { value: PriceFilter; label: string }[] = [
-  { value: 'any', label: 'Any price' },
-  { value: 'under-1000', label: 'Under INR 1,000' },
-  { value: '1000-5000', label: 'INR 1,000-5,000' },
-  { value: 'over-5000', label: 'Over INR 5,000' },
-];
-const ratingBands: { value: RatingFilter; label: string }[] = [
-  { value: 'any', label: 'Any rating' },
-  { value: '4-plus', label: '4.0 and above' },
-  { value: '4.5-plus', label: '4.5 and above' },
-];
+const priceValues: PriceFilter[] = ['any', 'under-1000', '1000-5000', 'over-5000'];
+const ratingValues: RatingFilter[] = ['any', '4-plus', '4.5-plus'];
 
 function defaultFilters(): Filters {
   return { category: 'all', location: 'Anywhere', price: 'any', rating: 'any', provider: 'any' };
@@ -151,12 +143,13 @@ export default function ExplorePage() {
   const [services, setServices] = useState<MarketplaceService[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const { locale, t } = useLanguage();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const defaults = defaultFilters();
-    const price = priceBands.some((item) => item.value === params.get('price')) ? params.get('price') as PriceFilter : defaults.price;
-    const rating = ratingBands.some((item) => item.value === params.get('rating')) ? params.get('rating') as RatingFilter : defaults.rating;
+    const price = priceValues.includes(params.get('price') as PriceFilter) ? params.get('price') as PriceFilter : defaults.price;
+    const rating = ratingValues.includes(params.get('rating') as RatingFilter) ? params.get('rating') as RatingFilter : defaults.rating;
     const provider = ['any', 'professional', 'business'].includes(params.get('provider') ?? '') ? params.get('provider') as ProviderFilter : defaults.provider;
     setQuery(params.get('q')?.trim() ?? '');
     setFilters({
@@ -225,28 +218,30 @@ export default function ExplorePage() {
   const clearAll = () => { setQuery(''); setFilters(defaultFilters()); setSort('relevance'); };
   const update = <K extends keyof Filters>(key: K, value: Filters[K]) => setFilters((current) => ({ ...current, [key]: value }));
   const resultHeading = loading
-    ? 'Loading services…'
+    ? t('explore.loading')
     : query.trim()
-      ? `${filteredServices.length} ${filteredServices.length === 1 ? 'match' : 'matches'} for “${query.trim()}”`
-      : `${filteredServices.length} services to explore`;
+      ? locale === 'ta-IN'
+        ? `“${query.trim()}” ${t('explore.forQuery')} ${filteredServices.length} ${filteredServices.length === 1 ? t('explore.match') : t('explore.matches')}`
+        : `${filteredServices.length} ${filteredServices.length === 1 ? t('explore.match') : t('explore.matches')} ${t('explore.forQuery')} “${query.trim()}”`
+      : `${filteredServices.length} ${t('explore.servicesToExplore')}`;
 
   return <div className="discovery-page discovery-workspace">
-    <section className="page-intro"><span className="eyebrow">Customer discovery</span><h1>Find the right service for what comes next.</h1><p>Search live services published by verified professionals and businesses.</p></section>
+    <section className="page-intro"><span className="eyebrow">{t('explore.eyebrow')}</span><h1>{t('explore.title')}</h1><p>{t('explore.subtitle')}</p></section>
 
     <section className="discovery-search-panel">
-      <div className="discovery-search-row"><Input label="Search services" placeholder="Search services, categories or providers" value={query} onChange={(e) => setQuery(e.target.value)} /></div>
+      <div className="discovery-search-row"><Input label={t('explore.searchLabel')} placeholder={t('explore.searchPlaceholder')} value={query} onChange={(e) => setQuery(e.target.value)} /></div>
       <div className="discovery-filter-fields">
-        <Select label="Category" value={filters.category} onChange={(e) => update('category', e.target.value)}><option value="all">All live categories</option>{categories.map((category) => <option value={category} key={category}>{labelFromSlug(category)}</option>)}</Select>
-        <Input label="Location" placeholder="City or neighbourhood" value={filters.location === 'Anywhere' ? '' : filters.location} onChange={(e) => update('location', e.target.value.trim() ? e.target.value : 'Anywhere')} />
-        <Select label="Price range" value={filters.price} onChange={(e) => update('price', e.target.value as PriceFilter)}>{priceBands.map((band) => <option value={band.value} key={band.value}>{band.label}</option>)}</Select>
-        <Select label="Rating" value={filters.rating} onChange={(e) => update('rating', e.target.value as RatingFilter)}>{ratingBands.map((band) => <option value={band.value} key={band.value}>{band.label}</option>)}</Select>
-        <Select label="Provider type" value={filters.provider} onChange={(e) => update('provider', e.target.value as ProviderFilter)}><option value="any">Any provider</option><option value="professional">Professional</option><option value="business">Business</option></Select>
+        <Select label={t('explore.category')} value={filters.category} onChange={(e) => update('category', e.target.value)}><option value="all">{t('explore.allCategories')}</option>{categories.map((category) => <option value={category} key={category}>{labelFromSlug(category)}</option>)}</Select>
+        <Input label={t('explore.location')} placeholder={t('explore.locationPlaceholder')} value={filters.location === 'Anywhere' ? '' : filters.location} onChange={(e) => update('location', e.target.value.trim() ? e.target.value : 'Anywhere')} />
+        <Select label={t('explore.price')} value={filters.price} onChange={(e) => update('price', e.target.value as PriceFilter)}><option value="any">{t('explore.anyPrice')}</option><option value="under-1000">{t('explore.under1000')}</option><option value="1000-5000">{t('explore.range1000to5000')}</option><option value="over-5000">{t('explore.over5000')}</option></Select>
+        <Select label={t('explore.rating')} value={filters.rating} onChange={(e) => update('rating', e.target.value as RatingFilter)}><option value="any">{t('explore.anyRating')}</option><option value="4-plus">{t('explore.rating4')}</option><option value="4.5-plus">{t('explore.rating45')}</option></Select>
+        <Select label={t('explore.providerType')} value={filters.provider} onChange={(e) => update('provider', e.target.value as ProviderFilter)}><option value="any">{t('explore.anyProvider')}</option><option value="professional">{t('explore.professional')}</option><option value="business">{t('explore.business')}</option></Select>
       </div>
-      <div className="discovery-search-footer"><Button type="button" variant="quiet" onClick={clearAll}>Clear filters</Button><div className="sort-control"><Select label="Sort results" value={sort} onChange={(e) => setSort(e.target.value)}><option value="relevance">Most relevant</option><option value="rating">Highest rated</option><option value="price">Lowest starting price</option><option value="price-desc">Highest starting price</option></Select></div></div>
+      <div className="discovery-search-footer"><Button type="button" variant="quiet" onClick={clearAll}>{t('explore.clearFilters')}</Button><div className="sort-control"><Select label={t('explore.sort')} value={sort} onChange={(e) => setSort(e.target.value)}><option value="relevance">{t('explore.relevance')}</option><option value="rating">{t('explore.highestRated')}</option><option value="price">{t('explore.lowestPrice')}</option><option value="price-desc">{t('explore.highestPrice')}</option></Select></div></div>
     </section>
 
-    <div className="results-heading"><div><span className="eyebrow">Live marketplace</span><h2>{resultHeading}</h2></div></div>
-    {loading ? <div className="service-grid"><div className="loading-card"><Skeleton className="loading-art" /><Skeleton className="loading-line" /><Skeleton className="loading-line short" /></div></div> : loadError ? <DiscoveryEmptyState query={loadError} onClear={() => location.reload()} suggestions={[]} /> : filteredServices.length ? <div className="service-grid">{filteredServices.map((service) => <ServiceCard service={service} contextQuery={contextQuery} key={service.id} />)}</div> : <><DiscoveryEmptyState query={query} onClear={clearAll} suggestions={[]} /><div className="empty-actions"><Link href="/requirements" className="button button-primary">Post a requirement</Link></div></>}
-    <p className="explore-disclaimer">Categories and locations on this page are generated from the live provider catalog. Draft, paused, and unverified listings are excluded.</p>
+    <div className="results-heading"><div><span className="eyebrow">{t('explore.marketplace')}</span><h2>{resultHeading}</h2></div></div>
+    {loading ? <div className="service-grid"><div className="loading-card"><Skeleton className="loading-art" /><Skeleton className="loading-line" /><Skeleton className="loading-line short" /></div></div> : loadError ? <DiscoveryEmptyState query={loadError} onClear={() => location.reload()} suggestions={[]} errorState /> : filteredServices.length ? <div className="service-grid">{filteredServices.map((service) => <ServiceCard service={service} contextQuery={contextQuery} key={service.id} />)}</div> : <><DiscoveryEmptyState query={query} onClear={clearAll} suggestions={[]} /><div className="empty-actions"><Link href="/requirements" className="button button-primary">{t('explore.postRequirement')}</Link></div></>}
+    <p className="explore-disclaimer">{t('explore.disclaimer')}</p>
   </div>;
 }

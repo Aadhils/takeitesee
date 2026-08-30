@@ -2,8 +2,11 @@
 
 import { FormEvent } from 'react';
 import { Button, Input } from '../ui/primitives';
+import { useLanguage } from '../i18n/LanguageProvider';
 
 export default function HomepageSearchForm() {
+  const { t } = useLanguage();
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -18,9 +21,9 @@ export default function HomepageSearchForm() {
 
   return (
     <form className="search-panel hero-search-panel" action="/explore" onSubmit={handleSubmit}>
-      <div className="search-field search-field-service"><span className="search-field-icon" aria-hidden="true">⌕</span><Input label="What do you need help with?" name="q" placeholder="What do you need help with?" aria-label="Search for a service" /></div>
-      <div className="search-field search-field-location"><span className="search-field-icon" aria-hidden="true">⌖</span><Input label="Where?" name="location" placeholder="City or neighbourhood" aria-label="Choose a location" /></div>
-      <Button type="submit" className="hero-search-button">Search</Button>
+      <div className="search-field search-field-service"><span className="search-field-icon" aria-hidden="true">⌕</span><Input label={t('home.searchNeed')} name="q" placeholder={t('home.searchNeed')} aria-label={t('home.searchNeedAria')} /></div>
+      <div className="search-field search-field-location"><span className="search-field-icon" aria-hidden="true">⌖</span><Input label={t('home.where')} name="location" placeholder={t('home.locationPlaceholder')} aria-label={t('home.locationAria')} /></div>
+      <Button type="submit" className="hero-search-button">{t('home.search')}</Button>
     </form>
   );
 }
