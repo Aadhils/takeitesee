@@ -3,6 +3,7 @@ import FinanceRefundQueue from '../../../components/admin/FinanceRefundQueue';
 import FinanceRiskManager from '../../../components/admin/FinanceRiskManager';
 import LaunchReadinessPanel from '../../../components/admin/LaunchReadinessPanel';
 import SandboxReadinessPanel from '../../../components/admin/SandboxReadinessPanel';
+import SandboxE2ERunner from '../../../components/admin/SandboxE2ERunner';
 import { productionAuthProvider } from '../../../server/auth/session';
 
 export const dynamic = 'force-dynamic';
@@ -19,6 +20,7 @@ export default async function SuperAdminFinancePage() {
     </section>
     <LaunchReadinessPanel />
     <SandboxReadinessPanel />
+    <SandboxE2ERunner />
     <FinanceManager />
     <FinanceRefundQueue />
     <FinanceRiskManager />
