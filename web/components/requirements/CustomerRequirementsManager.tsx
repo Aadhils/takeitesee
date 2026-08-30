@@ -72,6 +72,7 @@ export default function CustomerRequirementsManager() {
     if (row.budget_type === 'fixed') return formatter.format((row.budget_min_minor ?? 0) / 100);
     return `${formatter.format((row.budget_min_minor ?? 0) / 100)} – ${formatter.format((row.budget_max_minor ?? 0) / 100)}`;
   };
+  const modeLabel = (value: ServiceMode) => value === 'onsite' ? t('req.onsite') : value === 'remote' ? t('req.remote') : t('req.either');
 
   const load = useCallback(async () => {
     setLoading(true); setError('');
@@ -82,16 +83,16 @@ export default function CustomerRequirementsManager() {
       ]);
       const catalogPayload = await catalogResponse.json() as Catalog & { error?: string };
       const requirementPayload = await requirementResponse.json() as { requirements?: Requirement[]; error?: string };
-      if (!catalogResponse.ok) throw new Error(catalogPayload.error || t('req.postFailed'));
-      if (!requirementResponse.ok) throw new Error(requirementPayload.error || t('req.postFailed'));
+      if (!catalogResponse.ok) throw new Error(catalogPayload.error || 'Requirements could not be loaded.');
+      if (!requirementResponse.ok) throw new Error(requirementPayload.error || 'Requirements could not be loaded.');
       setCatalog({ categories: catalogPayload.categories ?? [], locations: catalogPayload.locations ?? [] });
       setRequirements(requirementPayload.requirements ?? []);
       if (!categoryId && catalogPayload.categories?.[0]) setCategoryId(catalogPayload.categories[0].id);
       if (!locationId && catalogPayload.locations?.[0]) setLocationId(catalogPayload.locations[0].id);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t('req.postFailed'));
+      setError(cause instanceof Error ? cause.message : 'Requirement workspace could not be loaded.');
     } finally { setLoading(false); }
-  }, [categoryId, locationId, t]);
+  }, [categoryId, locationId]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -199,7 +200,7 @@ export default function CustomerRequirementsManager() {
         </div>
         <p className="detail-copy">{row.description}</p>
         <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap', margin: '.75rem 0' }}>
-          <Badge tone="neutral">{row.category_name || t('common.service')}</Badge><Badge tone="neutral">{row.location_name || t('common.location')}</Badge><Badge tone="neutral">{status(row.service_mode)}</Badge><Badge tone="neutral">{budgetLabel(row)}</Badge>
+          <Badge tone="neutral">{row.category_name || t('common.service')}</Badge><Badge tone="neutral">{row.location_name || t('common.location')}</Badge><Badge tone="neutral">{modeLabel(row.service_mode)}</Badge><Badge tone="neutral">{budgetLabel(row)}</Badge>
           {row.needed_by ? <Badge tone="neutral">{t('common.neededBy')} {row.needed_by}</Badge> : null}
         </div>
         <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}>
