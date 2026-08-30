@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
-import { productionAuthProvider } from '../../../../../server/auth/session';
-import { createSupabaseServiceClient } from '../../../../../lib/supabase/service';
+import { productionAuthProvider } from '../../../../server/auth/session';
+import { createSupabaseServiceClient } from '../../../../lib/supabase/service';
 import {
   CashfreeApiError,
   createCashfreeSandboxProbeOrder,
@@ -9,7 +9,7 @@ import {
   fetchCashfreePayments,
   getCashfreeConfig,
   type CashfreePayment,
-} from '../../../../../server/payments/cashfree';
+} from '../../../../server/payments/cashfree';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
