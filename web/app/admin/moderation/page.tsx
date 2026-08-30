@@ -1,8 +1,8 @@
-import { AdminShell } from '../../../components/admin/AdminPresentation';
+import { AdminLiveShell } from '../../../components/admin/AdminLiveChrome';
 import { MarketplaceModerationManager } from '../../../components/admin/MarketplaceModerationManager';
 
 export const dynamic = 'force-dynamic';
 
 export default function AdminModerationPage() {
-  return <AdminShell active="/admin/moderation"><MarketplaceModerationManager /></AdminShell>;
+  return <AdminLiveShell active="/admin/moderation"><MarketplaceModerationManager /></AdminLiveShell>;
 }
