@@ -21,14 +21,14 @@
 }
 
 .admin-live-access-enabled[data-admin-mode='delegated'] .admin-scope-note::after {
-  content: 'Delegated permissions connected · ' attr(data-admin-scope-types) ' scope · Supabase enforced. Dashboard, bookings, providers, customers, services, reviews, issues, reports and settings use live scoped data.';
+  content: 'Delegated permissions connected · ' attr(data-admin-scope-types) ' scope · Supabase enforced. Dashboard, bookings, providers, customers, services, reviews, issues, moderation, reports and settings use live scoped data.';
   color: var(--muted, #667085);
   font-size: 0.78rem;
   line-height: 1.45;
 }
 
 .admin-live-access-enabled[data-admin-mode='super'] .admin-scope-note::after {
-  content: 'Super Admin platform permissions connected · Supabase enforced. Dashboard, bookings, providers, customers, services, reviews, issues, reports and settings use live data.';
+  content: 'Super Admin platform permissions connected · Supabase enforced. Dashboard, bookings, providers, customers, services, reviews, issues, moderation, reports and settings use live data.';
   color: var(--muted, #667085);
   font-size: 0.78rem;
   line-height: 1.45;
@@ -38,6 +38,32 @@
    Hide that fixture badge whenever the real scoped admin layer is active. */
 .admin-live-access-enabled .admin-nav-count {
   display: none;
+}
+
+.admin-live-moderation-shortcut {
+  position: fixed;
+  right: 1rem;
+  top: 5rem;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.4rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 999px;
+  background: var(--surface, #fff);
+  box-shadow: 0 8px 24px rgb(15 23 42 / 10%);
+  color: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.admin-live-moderation-shortcut:hover,
+.admin-live-moderation-shortcut:focus-visible {
+  border-color: currentColor;
+  text-decoration: none;
 }
 
 .admin-live-settings-stack {
@@ -123,6 +149,12 @@
 }
 
 @media (max-width: 720px) {
+  .admin-live-moderation-shortcut {
+    top: auto;
+    right: 0.75rem;
+    bottom: 0.75rem;
+  }
+
   .admin-settings-save-row {
     align-items: stretch;
     flex-direction: column;
