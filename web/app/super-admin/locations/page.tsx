@@ -24,8 +24,8 @@ export default async function LocationsPage() {
     <section className="card"><h2><LocaleText en="Add location" ta="இடம் சேர்க்க" /></h2><form action={createLocation} className="section-stack">
       <label><LocaleText en="Name" ta="பெயர்" /><input name="name" required placeholder="Chennai" /></label>
       <label><LocaleText en="Code" ta="குறியீடு" /><input name="code" required pattern="[a-z0-9][a-z0-9_-]{1,62}" placeholder="chennai" /></label>
-      <label><LocaleText en="Type" ta="வகை" /><select name="type" required><option value="country"><LocaleText en="Country" ta="நாடு" /></option><option value="state"><LocaleText en="State" ta="மாநிலம்" /></option><option value="city"><LocaleText en="City" ta="நகரம்" /></option><option value="zone"><LocaleText en="Zone" ta="மண்டலம்" /></option></select></label>
-      <label><LocaleText en="Parent" ta="மேல் இடம்" /><select name="parent_id"><option value=""><LocaleText en="None / root" ta="இல்லை / root" /></option>{locations.map((location) => <option key={location.id} value={location.id}>{location.name} ({location.type})</option>)}</select></label>
+      <label><LocaleText en="Type" ta="வகை" /><select name="type" required><option value="country">Country</option><option value="state">State</option><option value="city">City</option><option value="zone">Zone</option></select></label>
+      <label><LocaleText en="Parent" ta="மேல் இடம்" /><select name="parent_id"><option value="">None / root</option>{locations.map((location) => <option key={location.id} value={location.id}>{location.name} ({location.type})</option>)}</select></label>
       <label><LocaleText en="Country code" ta="நாட்டு குறியீடு" /><input name="country_code" maxLength={2} placeholder="IN" /></label>
       <label><LocaleText en="Timezone" ta="நேர மண்டலம்" /><input name="timezone" placeholder="Asia/Kolkata" /></label>
       <button type="submit"><LocaleText en="Add location" ta="இடம் சேர்க்க" /></button>
