@@ -2,99 +2,32 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card, EmptyState } from '../ui/primitives';
+import { useAdminControlTranslations } from '../i18n/AdminControlTranslations';
 
 type VerificationStatus = 'pending' | 'approved' | 'changes_requested' | 'rejected' | 'withdrawn' | 'revoked';
 type ReviewDecision = 'approve' | 'changes_requested' | 'reject' | 'revoke';
-type RequestRecord = {
-  id: string; applicant_user_id: string; provider_type: 'professional' | 'business'; professional_id?: string | null; business_id?: string | null;
-  legal_name: string; contact_phone: string; address: string; evidence_type: string; evidence_reference: string; evidence_note?: string | null;
-  status: VerificationStatus; review_note?: string | null; reviewed_at?: string | null; created_at: string;
-};
+type RequestRecord = { id: string; applicant_user_id: string; provider_type: 'professional' | 'business'; professional_id?: string | null; business_id?: string | null; legal_name: string; contact_phone: string; address: string; evidence_type: string; evidence_reference: string; evidence_note?: string | null; status: VerificationStatus; review_note?: string | null; reviewed_at?: string | null; created_at: string; };
 type VerificationDocument = { id: string; verification_request_id: string; original_filename: string; mime_type: string; size_bytes: number; status: 'active' | 'deleted'; created_at: string; deleted_at?: string | null };
 
-function tone(status: VerificationStatus) {
-  if (status === 'approved') return 'success' as const;
-  if (status === 'pending' || status === 'changes_requested') return 'warning' as const;
-  if (status === 'rejected' || status === 'revoked') return 'danger' as const;
-  return 'neutral' as const;
-}
+function tone(status: VerificationStatus) { if (status === 'approved') return 'success' as const; if (status === 'pending' || status === 'changes_requested') return 'warning' as const; if (status === 'rejected' || status === 'revoked') return 'danger' as const; return 'neutral' as const; }
 function sizeLabel(bytes: number) { return bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`; }
 
 export default function ProviderVerificationReviewManager() {
-  const [items, setItems] = useState<RequestRecord[]>([]);
-  const [documents, setDocuments] = useState<VerificationDocument[]>([]);
-  const [filter, setFilter] = useState<'pending' | 'all'>('pending');
-  const [notes, setNotes] = useState<Record<string,string>>({});
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  const load = useCallback(async () => {
-    setLoading(true); setError('');
-    try {
-      const response = await fetch('/api/super-admin/provider-verifications', { cache: 'no-store' });
-      const body = await response.json() as { requests?: RequestRecord[]; documents?: VerificationDocument[]; error?: string };
-      if (!response.ok || !body.requests) throw new Error(body.error ?? 'Unable to load verification queue.');
-      setItems(body.requests);
-      setDocuments(body.documents ?? []);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to load verification queue.'); }
-    finally { setLoading(false); }
-  }, []);
+  const { t } = useAdminControlTranslations();
+  const [items, setItems] = useState<RequestRecord[]>([]); const [documents, setDocuments] = useState<VerificationDocument[]>([]); const [filter, setFilter] = useState<'pending' | 'all'>('pending'); const [notes, setNotes] = useState<Record<string,string>>({}); const [busyId, setBusyId] = useState<string | null>(null); const [loading, setLoading] = useState(true); const [error, setError] = useState('');
+  const load = useCallback(async () => { setLoading(true); setError(''); try { const response = await fetch('/api/super-admin/provider-verifications', { cache: 'no-store' }); const body = await response.json() as { requests?: RequestRecord[]; documents?: VerificationDocument[]; error?: string }; if (!response.ok || !body.requests) throw new Error(body.error ?? 'Unable to load verification queue.'); setItems(body.requests); setDocuments(body.documents ?? []); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to load verification queue.'); } finally { setLoading(false); } }, []);
   useEffect(() => { void load(); }, [load]);
-
-  const documentsByRequest = useMemo(() => {
-    const map = new Map<string, VerificationDocument[]>();
-    for (const document of documents) {
-      if (document.status !== 'active') continue;
-      map.set(document.verification_request_id, [...(map.get(document.verification_request_id) ?? []), document]);
-    }
-    return map;
-  }, [documents]);
-
-  const review = async (item: RequestRecord, decision: ReviewDecision) => {
-    if (busyId) return;
-    const note = (notes[item.id] ?? '').trim();
-    if (decision === 'approve' && !(documentsByRequest.get(item.id)?.length)) { setError('Review at least one uploaded private document before approval.'); return; }
-    if (decision !== 'approve' && note.length < 3) { setError('A clear review reason is required for changes, rejection, or revocation.'); return; }
-    setBusyId(item.id); setError('');
-    try {
-      const response = await fetch('/api/super-admin/provider-verifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ request_id: item.id, decision, note }) });
-      const body = await response.json() as { request?: RequestRecord; error?: string };
-      if (!response.ok || !body.request) throw new Error(body.error ?? 'Verification review failed.');
-      setNotes((current) => ({ ...current, [item.id]: '' }));
-      await load();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Verification review failed.'); }
-    finally { setBusyId(null); }
-  };
-
-  const pendingCount = items.filter((item) => item.status === 'pending').length;
-  const visible = useMemo(() => filter === 'pending' ? items.filter((item) => item.status === 'pending') : items, [items, filter]);
+  const documentsByRequest = useMemo(() => { const map = new Map<string, VerificationDocument[]>(); for (const document of documents) { if (document.status !== 'active') continue; map.set(document.verification_request_id, [...(map.get(document.verification_request_id) ?? []), document]); } return map; }, [documents]);
+  const review = async (item: RequestRecord, decision: ReviewDecision) => { if (busyId) return; const note = (notes[item.id] ?? '').trim(); if (decision === 'approve' && !(documentsByRequest.get(item.id)?.length)) { setError('Review at least one uploaded private document before approval.'); return; } if (decision !== 'approve' && note.length < 3) { setError('A clear review reason is required for changes, rejection, or revocation.'); return; } setBusyId(item.id); setError(''); try { const response = await fetch('/api/super-admin/provider-verifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ request_id: item.id, decision, note }) }); const body = await response.json() as { request?: RequestRecord; error?: string }; if (!response.ok || !body.request) throw new Error(body.error ?? 'Verification review failed.'); setNotes((current) => ({ ...current, [item.id]: '' })); await load(); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Verification review failed.'); } finally { setBusyId(null); } };
+  const pendingCount = items.filter((item) => item.status === 'pending').length; const visible = useMemo(() => filter === 'pending' ? items.filter((item) => item.status === 'pending') : items, [items, filter]);
+  const statusLabel = (status: VerificationStatus) => status === 'pending' ? t('common.pending') : status === 'approved' ? t('common.approved') : status === 'rejected' ? t('common.rejected') : status === 'withdrawn' ? t('common.withdrawn') : status.replaceAll('_',' ');
 
   return <div className="section-stack">
-    <div className="dashboard-grid"><Card><span className="eyebrow">Pending KYC review</span><h2>{pendingCount}</h2></Card><Card><span className="eyebrow">Private documents</span><h2>{documents.filter((document) => document.status === 'active').length}</h2></Card><Card><span className="eyebrow">Verification history</span><h2>{items.length}</h2></Card></div>
-    <div className="button-row"><Button type="button" variant={filter === 'pending' ? 'primary' : 'secondary'} onClick={() => setFilter('pending')}>Pending ({pendingCount})</Button><Button type="button" variant={filter === 'all' ? 'primary' : 'secondary'} onClick={() => setFilter('all')}>All ({items.length})</Button></div>
-    {error ? <Card><p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>Reload</Button></Card> : null}
-    {loading ? <Card><p>Loading provider verification requests…</p></Card> : null}
-    {!loading && !visible.length ? <Card><EmptyState title={filter === 'pending' ? 'No verification reviews waiting' : 'No verification history'}>Provider verification requests will appear here.</EmptyState></Card> : null}
-    {visible.map((item) => {
-      const requestDocuments = documentsByRequest.get(item.id) ?? [];
-      return <Card key={item.id}>
-        <div className="section-heading"><div><span className="eyebrow">{item.provider_type} verification</span><h2>{item.legal_name}</h2></div><Badge tone={tone(item.status)}>{item.status.replaceAll('_',' ')}</Badge></div>
-        <dl className="review-details"><div><dt>Contact</dt><dd>{item.contact_phone}</dd></div><div><dt>Address</dt><dd>{item.address}</dd></div><div><dt>Evidence type</dt><dd>{item.evidence_type.replaceAll('_',' ')}</dd></div><div><dt>Evidence reference</dt><dd>{item.evidence_reference}</dd></div></dl>
-        {item.evidence_note ? <div style={{ marginTop: '1rem' }}><strong>Provider evidence note</strong><p>{item.evidence_note}</p></div> : null}
-
-        <div className="section-stack" style={{ marginTop: '1rem' }}>
-          <div className="section-heading"><div><strong>Private verification documents</strong><p className="summary-note">Reviewer access uses a 5-minute signed URL and every access is audit logged.</p></div><Badge tone={requestDocuments.length ? 'success' : 'warning'}>{requestDocuments.length} document{requestDocuments.length === 1 ? '' : 's'}</Badge></div>
-          {requestDocuments.length ? requestDocuments.map((document) => <div className="card" key={document.id} style={{ padding: '1rem' }}><div className="section-heading"><div><strong>{document.original_filename}</strong><p className="summary-note">{document.mime_type} · {sizeLabel(Number(document.size_bytes))}</p></div><a className="button button-secondary" href={`/api/super-admin/provider-verifications/documents/${document.id}`} target="_blank" rel="noreferrer">View securely</a></div></div>) : item.status === 'pending' ? <p className="field-error">No private document uploaded. Approval is blocked.</p> : <p className="summary-note">No stored document metadata for this historical verification record. Document enforcement applies to new approvals.</p>}
-        </div>
-
-        {item.review_note ? <div style={{ marginTop: '1rem' }}><strong>Review note</strong><p>{item.review_note}</p></div> : null}
-        {item.status === 'pending' || item.status === 'approved' ? <div style={{ display: 'grid', gap: '.75rem', marginTop: '1rem' }}>
-          <label className="field"><span className="field-label">Reviewer note</span><textarea className="field-control" rows={3} maxLength={1200} value={notes[item.id] ?? ''} onChange={(event) => setNotes((current) => ({ ...current, [item.id]: event.target.value }))} placeholder={item.status === 'approved' ? 'Reason required to revoke verification' : 'Optional for approval; required for changes/rejection'} /></label>
-          {item.status === 'pending' ? <div className="button-row"><Button type="button" disabled={busyId === item.id || requestDocuments.length === 0} onClick={() => void review(item,'approve')}>Approve verification</Button><Button type="button" variant="secondary" disabled={busyId === item.id} onClick={() => void review(item,'changes_requested')}>Request changes</Button><Button type="button" variant="quiet" disabled={busyId === item.id} onClick={() => void review(item,'reject')}>Reject</Button></div> : <Button type="button" variant="danger" disabled={busyId === item.id} onClick={() => void review(item,'revoke')}>Revoke verification & pause services</Button>}
-          <p className="summary-note">{item.status === 'approved' ? 'Revocation removes verified publishing eligibility and pauses this provider’s active services.' : 'Approval requires private evidence and enables publishing eligibility; it never auto-activates draft services.'}</p>
-        </div> : null}
-      </Card>;
-    })}
+    <div className="dashboard-grid"><Card><span className="eyebrow">{t('verification.pendingKyc')}</span><h2>{pendingCount}</h2></Card><Card><span className="eyebrow">{t('verification.privateDocuments')}</span><h2>{documents.filter((document) => document.status === 'active').length}</h2></Card><Card><span className="eyebrow">{t('verification.history')}</span><h2>{items.length}</h2></Card></div>
+    <div className="button-row"><Button type="button" variant={filter === 'pending' ? 'primary' : 'secondary'} onClick={() => setFilter('pending')}>{t('common.pending')} ({pendingCount})</Button><Button type="button" variant={filter === 'all' ? 'primary' : 'secondary'} onClick={() => setFilter('all')}>{t('common.all')} ({items.length})</Button></div>
+    {error ? <Card><p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>{t('common.reload')}</Button></Card> : null}
+    {loading ? <Card><p>{t('verification.loading')}</p></Card> : null}
+    {!loading && !visible.length ? <Card><EmptyState title={filter === 'pending' ? t('verification.nonePending') : t('verification.noneHistory')}>{t('verification.noneHelp')}</EmptyState></Card> : null}
+    {visible.map((item) => { const requestDocuments = documentsByRequest.get(item.id) ?? []; return <Card key={item.id}><div className="section-heading"><div><span className="eyebrow">{item.provider_type === 'business' ? t('common.business') : t('common.professional')} verification</span><h2>{item.legal_name}</h2></div><Badge tone={tone(item.status)}>{statusLabel(item.status)}</Badge></div><dl className="review-details"><div><dt>{t('verification.contact')}</dt><dd>{item.contact_phone}</dd></div><div><dt>{t('verification.address')}</dt><dd>{item.address}</dd></div><div><dt>{t('verification.evidenceType')}</dt><dd>{item.evidence_type.replaceAll('_',' ')}</dd></div><div><dt>{t('verification.evidenceReference')}</dt><dd>{item.evidence_reference}</dd></div></dl>{item.evidence_note ? <div style={{ marginTop: '1rem' }}><strong>{t('verification.providerNote')}</strong><p>{item.evidence_note}</p></div> : null}<div className="section-stack" style={{ marginTop: '1rem' }}><div className="section-heading"><div><strong>{t('verification.documents')}</strong><p className="summary-note">{t('verification.documentsHelp')}</p></div><Badge tone={requestDocuments.length ? 'success' : 'warning'}>{requestDocuments.length} {requestDocuments.length === 1 ? t('verification.document') : t('verification.documentsPlural')}</Badge></div>{requestDocuments.length ? requestDocuments.map((document) => <div className="card" key={document.id} style={{ padding: '1rem' }}><div className="section-heading"><div><strong>{document.original_filename}</strong><p className="summary-note">{document.mime_type} · {sizeLabel(Number(document.size_bytes))}</p></div><a className="button button-secondary" href={`/api/super-admin/provider-verifications/documents/${document.id}`} target="_blank" rel="noreferrer">{t('verification.viewSecurely')}</a></div></div>) : item.status === 'pending' ? <p className="field-error">{t('verification.noDocument')}</p> : <p className="summary-note">{t('verification.historicalNoDocument')}</p>}</div>{item.review_note ? <div style={{ marginTop: '1rem' }}><strong>{t('verification.reviewNote')}</strong><p>{item.review_note}</p></div> : null}{item.status === 'pending' || item.status === 'approved' ? <div style={{ display: 'grid', gap: '.75rem', marginTop: '1rem' }}><label className="field"><span className="field-label">{t('verification.reviewerNote')}</span><textarea className="field-control" rows={3} maxLength={1200} value={notes[item.id] ?? ''} onChange={(event) => setNotes((current) => ({ ...current, [item.id]: event.target.value }))} placeholder={item.status === 'approved' ? t('verification.revokePlaceholder') : t('verification.pendingPlaceholder')} /></label>{item.status === 'pending' ? <div className="button-row"><Button type="button" disabled={busyId === item.id || requestDocuments.length === 0} onClick={() => void review(item,'approve')}>{t('verification.approve')}</Button><Button type="button" variant="secondary" disabled={busyId === item.id} onClick={() => void review(item,'changes_requested')}>{t('verification.requestChanges')}</Button><Button type="button" variant="quiet" disabled={busyId === item.id} onClick={() => void review(item,'reject')}>{t('verification.reject')}</Button></div> : <Button type="button" variant="danger" disabled={busyId === item.id} onClick={() => void review(item,'revoke')}>{t('verification.revoke')}</Button>}<p className="summary-note">{item.status === 'approved' ? t('verification.revokeHelp') : t('verification.approveHelp')}</p></div> : null}</Card>; })}
   </div>;
 }
