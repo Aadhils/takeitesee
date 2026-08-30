@@ -7,6 +7,11 @@ const securityHeaders = [
   { key: 'X-Permitted-Cross-Domain-Policies', value: 'none' },
 ];
 
+const apiHeaders = [
+  { key: 'Cache-Control', value: 'no-store, max-age=0' },
+  { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+];
+
 const privateWorkspaceHeaders = [
   { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
 ];
@@ -37,6 +42,10 @@ const nextConfig = {
       {
         source: '/:path*',
         headers: securityHeaders,
+      },
+      {
+        source: '/api/:path*',
+        headers: apiHeaders,
       },
       ...privateWorkspaceSources.map((source) => ({
         source,
