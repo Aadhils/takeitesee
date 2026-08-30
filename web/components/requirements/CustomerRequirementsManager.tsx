@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card, Input, Select, Textarea } from '../ui/primitives';
 
-type RequirementStatus = 'open' | 'paused' | 'fulfilled' | 'cancelled';
+type RequirementStatus = 'open' | 'paused' | 'awarded' | 'fulfilled' | 'cancelled';
+type RequirementAction = Exclude<RequirementStatus, 'awarded'>;
 type BudgetType = 'fixed' | 'range' | 'negotiable';
 type ServiceMode = 'onsite' | 'remote' | 'either';
 type Requirement = {
@@ -36,7 +37,8 @@ type Catalog = {
 function statusTone(status: RequirementStatus) {
   if (status === 'open') return 'success' as const;
   if (status === 'paused') return 'warning' as const;
-  if (status === 'fulfilled') return 'info' as const;
+  if (status === 'awarded') return 'info' as const;
+  if (status === 'fulfilled') return 'success' as const;
   return 'neutral' as const;
 }
 
@@ -131,7 +133,7 @@ export default function CustomerRequirementsManager() {
     } finally { setSubmitting(false); }
   };
 
-  const updateStatus = async (requirementId: string, status: RequirementStatus) => {
+  const updateStatus = async (requirementId: string, status: RequirementAction) => {
     if (actionId) return;
     setActionId(requirementId); setError(''); setNotice('');
     try {
@@ -151,7 +153,7 @@ export default function CustomerRequirementsManager() {
     <section>
       <span className="eyebrow">Requirement marketplace</span>
       <h1>Post what you need</h1>
-      <p className="detail-copy">Describe the service you need. Your post is private to your account and platform operations in this foundation release; verified-provider matching opens in the next module.</p>
+      <p className="detail-copy">Describe the service you need. Matching verified providers in your approved service category and city can send proposals while your requirement is open.</p>
     </section>
 
     {error ? <Card><p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p></Card> : null}
@@ -187,7 +189,7 @@ export default function CustomerRequirementsManager() {
     <section style={{ display: 'grid', gap: '1rem' }}>
       <div className="section-heading"><div><span className="eyebrow">My requirements</span><h2>Manage your service requests</h2></div><Badge tone="neutral">{requirements.length}</Badge></div>
       {loading ? <Card><p>Loading requirements…</p></Card> : null}
-      {!loading && requirements.length === 0 ? <Card><h3>No requirements yet</h3><p className="detail-copy">Post your first requirement above. Provider lead matching will use these structured details in the next marketplace module.</p></Card> : null}
+      {!loading && requirements.length === 0 ? <Card><h3>No requirements yet</h3><p className="detail-copy">Post your first requirement above. Matching verified providers can respond with proposals when the requirement is open.</p></Card> : null}
       {requirements.map((row) => <Card key={row.id} className="policy-card">
         <div className="section-heading">
           <div><span className="eyebrow">{row.reference}</span><h3>{row.title}</h3></div>
@@ -200,10 +202,10 @@ export default function CustomerRequirementsManager() {
         </div>
         <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}>
           <Link className="button button-secondary" href={`/requirements/${encodeURIComponent(row.id)}`}>View details</Link>
-          {row.status === 'open' ? <Button type="button" variant="quiet" disabled={actionId === row.id} onClick={() => void updateStatus(row.id, 'paused')}>Pause</Button> : null}
-          {row.status === 'paused' ? <Button type="button" variant="secondary" disabled={actionId === row.id} onClick={() => void updateStatus(row.id, 'open')}>Reopen</Button> : null}
-          {['open','paused'].includes(row.status) ? <Button type="button" variant="secondary" disabled={actionId === row.id} onClick={() => void updateStatus(row.id, 'fulfilled')}>Mark fulfilled</Button> : null}
-          {['open','paused'].includes(row.status) ? <Button type="button" variant="danger" disabled={actionId === row.id} onClick={() => void updateStatus(row.id, 'cancelled')}>Cancel</Button> : null}
+          {row.status === 'open' ? <Button type="button" variant="quiet" disabled={actionId === row.id} onClick={() => void updateStatus(row.id, 'paused')}>Pause proposals</Button> : null}
+          {row.status === 'paused' ? <Button type="button" variant="secondary" disabled={actionId === row.id} onClick={() => void updateStatus(row.id, 'open')}>Reopen proposals</Button> : null}
+          {['open','paused','awarded'].includes(row.status) ? <Button type="button" variant="secondary" disabled={actionId === row.id} onClick={() => void updateStatus(row.id, 'fulfilled')}>{row.status === 'awarded' ? 'Mark fulfilled after service' : 'Mark fulfilled'}</Button> : null}
+          {['open','paused','awarded'].includes(row.status) ? <Button type="button" variant="danger" disabled={actionId === row.id} onClick={() => void updateStatus(row.id, 'cancelled')}>Cancel</Button> : null}
         </div>
       </Card>)}
     </section>
