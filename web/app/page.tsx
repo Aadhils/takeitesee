@@ -1,6 +1,21 @@
 import Link from 'next/link';
 import HomepageSearchForm from '../components/discovery/HomepageSearchForm';
 
+const siteUrl = 'https://www.takeitesee.com';
+const websiteStructuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'TakeItEsee',
+  alternateName: 'takeitesee',
+  url: siteUrl,
+  description: 'Find trusted local services, verified professionals, and service businesses on the TakeItEsee marketplace.',
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: `${siteUrl}/explore?q={search_term_string}`,
+    'query-input': 'required name=search_term_string',
+  },
+};
+
 const marketplacePaths = [
   { query: 'home', title: 'Home services', description: 'Cleaning, inspection, repair, and practical help for your space.', icon: '⌂' },
   { query: 'business', title: 'Business services', description: 'Find support for business, operations, and professional needs.', icon: '▦' },
@@ -12,6 +27,10 @@ const marketplacePaths = [
 export default function Home() {
   return (
     <div className="home-page">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteStructuredData).replace(/</g, '\\u003c') }}
+      />
       <section className="hero-grid hero-centered">
         <div className="hero-copy hero-centered-copy">
           <div className="hero-logo-wrap">
