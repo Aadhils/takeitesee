@@ -1,8 +1,6 @@
-import { AdminHeading, AdminShell } from '../../../components/admin/AdminPresentation';
-import { Alert, Badge, Card, EmptyState } from '../../../components/ui/primitives';
+import AdminLiveSettings from '../../../components/admin/AdminLiveSettings';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
 import { productionAuthProvider } from '../../../server/auth/session';
-import { saveScopedServiceSettings } from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,14 +71,6 @@ function scopeCanManage(scope: ScopeMapping, adminScopes: AdminScope[], isSuperA
   });
 }
 
-function formatTimestamp(value: string) {
-  return new Intl.DateTimeFormat('en-IN', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone: 'Asia/Kolkata',
-  }).format(new Date(value));
-}
-
 export default async function AdminSettingsRoute({ searchParams }: { searchParams: Promise<{ saved?: string; error?: string }> }) {
   const params = await searchParams;
   const session = await productionAuthProvider.requireAdmin();
@@ -138,135 +128,39 @@ export default async function AdminSettingsRoute({ searchParams }: { searchParam
   const settingsByScope = new Map(settingRows.map((row) => [keyFor(row), row]));
   const audits = (auditResult.data ?? []) as AuditRow[];
 
+  const scopes = mappings.map((scope) => {
+    const stored = settingsByScope.get(keyFor(scope));
+    const current = stored ?? defaults;
+    return {
+      key: keyFor(scope),
+      serviceId: scope.service_id,
+      applicationId: scope.application_id,
+      locationId: scope.location_id,
+      categoryId: scope.category_id,
+      serviceName: services.get(scope.service_id) ?? null,
+      applicationName: applications.get(scope.application_id) ?? null,
+      locationName: scope.location_id ? locations.get(scope.location_id) ?? null : null,
+      categoryName: scope.category_id ? categories.get(scope.category_id) ?? null : null,
+      canManage: scopeCanManage(scope, adminScopes, isSuperAdmin),
+      stored: Boolean(stored),
+      updatedAt: stored?.updated_at ?? null,
+      settings: {
+        showNewServicesAfterReview: current.show_new_services_after_review,
+        displayVerificationBadges: current.display_verification_badges,
+        defaultReviewQueue: current.default_review_queue,
+        requireProviderResponse: current.require_provider_response,
+        flagLowRatings: current.flag_low_ratings,
+        lowRatingThreshold: current.low_rating_threshold,
+      },
+    };
+  });
+
   return (
-    <AdminShell active="/admin/settings">
-      <AdminHeading
-        eyebrow="Scoped operations configuration"
-        title="Live admin settings"
-        description="Operational preferences are stored in Supabase per active service scope. Saves require manage permission and every successful change is written to the admin audit log."
-      />
-
-      {params.saved === '1' ? <Alert tone="success" title="Settings saved">The scoped configuration was persisted and audited.</Alert> : null}
-      {params.error === 'manage_required' ? <Alert tone="danger" title="Manage permission required">This scope is view-only for the signed-in administrator.</Alert> : null}
-      {params.error && params.error !== 'manage_required' ? <Alert tone="danger" title="Settings were not saved">Please review the values and try again.</Alert> : null}
-
-      {mappings.length ? (
-        <div className="admin-live-settings-stack">
-          {mappings.map((scope) => {
-            const stored = settingsByScope.get(keyFor(scope));
-            const current = stored ?? defaults;
-            const canManage = scopeCanManage(scope, adminScopes, isSuperAdmin);
-            const serviceName = services.get(scope.service_id) ?? 'Scoped service';
-            const applicationName = applications.get(scope.application_id) ?? 'Application';
-            const locationName = scope.location_id ? locations.get(scope.location_id) ?? 'Assigned location' : 'All locations';
-            const categoryName = scope.category_id ? categories.get(scope.category_id) ?? 'Assigned category' : 'All categories';
-
-            return (
-              <Card className="admin-live-settings-card" key={keyFor(scope)}>
-                <div className="admin-record-top">
-                  <div>
-                    <span className="eyebrow">{applicationName} · {locationName}</span>
-                    <h2>{serviceName}</h2>
-                    <p>{categoryName}</p>
-                  </div>
-                  <Badge tone={canManage ? 'success' : 'neutral'}>{canManage ? 'Manage enabled' : 'View only'}</Badge>
-                </div>
-
-                <form action={saveScopedServiceSettings}>
-                  <input type="hidden" name="service_id" value={scope.service_id} />
-                  <input type="hidden" name="application_id" value={scope.application_id} />
-                  <input type="hidden" name="location_id" value={scope.location_id ?? ''} />
-                  <input type="hidden" name="category_id" value={scope.category_id ?? ''} />
-
-                  <div className="admin-settings-grid">
-                    <section className="admin-settings-panel">
-                      <span className="eyebrow">Marketplace</span>
-                      <h3>Listing preferences</h3>
-                      <label className="choice-row">
-                        <input className="choice-input" type="checkbox" name="show_new_services_after_review" defaultChecked={current.show_new_services_after_review} disabled={!canManage} />
-                        <span><strong>Show new services after review</strong><span className="choice-description">Reviewed services can appear in the marketplace catalog.</span></span>
-                      </label>
-                      <label className="choice-row">
-                        <input className="choice-input" type="checkbox" name="display_verification_badges" defaultChecked={current.display_verification_badges} disabled={!canManage} />
-                        <span><strong>Display verification badges</strong><span className="choice-description">Show verified-provider trust status on scoped listings.</span></span>
-                      </label>
-                    </section>
-
-                    <section className="admin-settings-panel">
-                      <span className="eyebrow">Booking rules</span>
-                      <h3>Customer journey defaults</h3>
-                      <div className="field">
-                        <label className="field-label" htmlFor={`review-${scope.service_id}`}>Default review queue</label>
-                        <select className="field-control" id={`review-${scope.service_id}`} name="default_review_queue" defaultValue={current.default_review_queue} disabled={!canManage}>
-                          <option value="provider_review">Provider review</option>
-                          <option value="manual_review">Manual review</option>
-                        </select>
-                      </div>
-                      <label className="choice-row">
-                        <input className="choice-input" type="checkbox" name="require_provider_response" defaultChecked={current.require_provider_response} disabled={!canManage} />
-                        <span><strong>Require provider response</strong><span className="choice-description">Keep provider acknowledgement enabled for scoped booking requests.</span></span>
-                      </label>
-                    </section>
-
-                    <section className="admin-settings-panel">
-                      <span className="eyebrow">Trust and reviews</span>
-                      <h3>Moderation preferences</h3>
-                      <label className="choice-row">
-                        <input className="choice-input" type="checkbox" name="flag_low_ratings" defaultChecked={current.flag_low_ratings} disabled={!canManage} />
-                        <span><strong>Flag low ratings for review</strong><span className="choice-description">Enable the persisted low-rating moderation preference.</span></span>
-                      </label>
-                      <div className="field">
-                        <label className="field-label" htmlFor={`threshold-${scope.service_id}`}>Low rating threshold</label>
-                        <select className="field-control" id={`threshold-${scope.service_id}`} name="low_rating_threshold" defaultValue={String(current.low_rating_threshold)} disabled={!canManage}>
-                          <option value="1">1 star</option>
-                          <option value="2">2 stars</option>
-                          <option value="3">3 stars</option>
-                          <option value="4">4 stars</option>
-                          <option value="5">5 stars</option>
-                        </select>
-                      </div>
-                    </section>
-                  </div>
-
-                  <div className="admin-settings-save-row">
-                    <div>
-                      <strong>{stored ? 'Database configuration active' : 'Using safe defaults'}</strong>
-                      <span>{stored ? `Last saved ${formatTimestamp(stored.updated_at)}` : 'The first save creates the scoped settings record.'}</span>
-                    </div>
-                    <button className="button button-primary" type="submit" disabled={!canManage}>Save settings</button>
-                  </div>
-                </form>
-              </Card>
-            );
-          })}
-        </div>
-      ) : (
-        <Card>
-          <EmptyState title="No scoped services">Assign an enabled service scope before configuring operational settings.</EmptyState>
-        </Card>
-      )}
-
-      <Card className="admin-settings-audit-card">
-        <div className="admin-section-heading">
-          <div>
-            <span className="eyebrow">Audit trail</span>
-            <h2>Recent setting changes</h2>
-          </div>
-          <Badge tone="info">Supabase persisted</Badge>
-        </div>
-        {audits.length ? (
-          <ol className="admin-settings-audit-list">
-            {audits.map((audit) => (
-              <li key={audit.id}>
-                <div><strong>Settings updated</strong><span>{formatTimestamp(audit.created_at)}</span></div>
-                <Badge tone="success">audited</Badge>
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <p className="admin-fixture-note">No settings changes have been recorded for this administrator yet.</p>
-        )}
-      </Card>
-    </AdminShell>
+    <AdminLiveSettings
+      saved={params.saved === '1'}
+      error={params.error ?? null}
+      scopes={scopes}
+      audits={audits.map((audit) => ({ id: audit.id, createdAt: audit.created_at }))}
+    />
   );
 }
