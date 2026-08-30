@@ -3,6 +3,7 @@
 import Script from 'next/script';
 import { useEffect, useRef, useState } from 'react';
 import { Badge, Button, Card } from '../ui/primitives';
+import { useOperationalTranslations } from '../i18n/OperationalTranslations';
 
 type GatewayConfig = {
   enabled: boolean;
@@ -62,14 +63,6 @@ function paymentTone(status: string) {
   return 'neutral' as const;
 }
 
-function paymentLabel(status: string) {
-  if (status === 'paid') return 'Paid';
-  if (status === 'pending') return 'Processing';
-  if (status === 'failed') return 'Payment failed';
-  if (status === 'refunded') return 'Refunded';
-  return 'Unpaid';
-}
-
 export default function CustomerPaymentPanel({
   bookingId,
   bookingStatus,
@@ -81,6 +74,7 @@ export default function CustomerPaymentPanel({
   paymentStatus: string;
   onPaymentUpdated: () => Promise<void>;
 }) {
+  const { locale, t } = useOperationalTranslations();
   const [config, setConfig] = useState<GatewayConfig | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('unselected');
   const [cashCollectedAt, setCashCollectedAt] = useState<string | null>(null);
@@ -92,6 +86,8 @@ export default function CustomerPaymentPanel({
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const returnHandled = useRef(false);
+
+  const paymentLabel = (value: string) => value === 'paid' ? t('pay.paid') : value === 'pending' ? t('pay.processing') : value === 'failed' ? t('pay.failed') : value === 'refunded' ? t('pay.refunded') : t('pay.unpaid');
 
   useEffect(() => {
     let cancelled = false;
@@ -120,7 +116,7 @@ export default function CustomerPaymentPanel({
     const orderId = params.get('order_id') || params.get('cf_order_id');
     if (!orderId) return;
     returnHandled.current = true;
-    setVerifying(true); setError(''); setNotice('Verifying payment with Cashfree…');
+    setVerifying(true); setError(''); setNotice(t('pay.verifyStart'));
 
     void fetch(`/api/bookings/${encodeURIComponent(bookingId)}/payment-verify`, {
       method: 'POST',
@@ -129,10 +125,10 @@ export default function CustomerPaymentPanel({
     }).then(async (response) => {
       const payload = await response.json() as VerifyPayload;
       if (!response.ok || !payload.verified) throw new Error(payload.error || 'Payment could not be verified.');
-      if (payload.payment_status === 'paid') setNotice('Payment verified successfully. Your booking is paid.');
-      else if (payload.payment_status === 'failed') setNotice(payload.payment_message || 'The payment attempt failed. You can try again.');
-      else if (payload.payment_status === 'unpaid' && payload.final) setNotice('Checkout ended without payment. You can try again when ready.');
-      else setNotice('Payment is still processing. The booking will update automatically when Cashfree confirms it.');
+      if (payload.payment_status === 'paid') setNotice(t('pay.verifySuccess'));
+      else if (payload.payment_status === 'failed') setNotice(payload.payment_message || t('pay.verifyFailed'));
+      else if (payload.payment_status === 'unpaid' && payload.final) setNotice(t('pay.verifyUnpaid'));
+      else setNotice(t('pay.verifyPending'));
       await onPaymentUpdated();
     }).catch((cause) => {
       setError(cause instanceof Error ? cause.message : 'Payment could not be verified.');
@@ -175,9 +171,7 @@ export default function CustomerPaymentPanel({
       if (!response.ok || !payload.payment_method) throw new Error(payload.error || 'Payment method could not be updated.');
       setPaymentMethod(payload.payment_method);
       setCashCollectedAt(payload.cash_collected_at ?? null);
-      setNotice(method === 'cash_on_service'
-        ? 'Cash on Service selected. Pay the provider only after the service is completed.'
-        : 'Online payment selected. You can continue with secure checkout when the gateway is available.');
+      setNotice(method === 'cash_on_service' ? t('pay.cashSelectedNotice') : t('pay.onlineSelectedNotice'));
       await onPaymentUpdated();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Payment method could not be updated.');
@@ -219,50 +213,50 @@ export default function CustomerPaymentPanel({
     {config?.enabled && paymentMethod !== 'cash_on_service' ? <Script src="https://sdk.cashfree.com/js/v3/cashfree.js" strategy="afterInteractive" onLoad={() => setSdkReady(true)} onError={() => setError('Secure payment checkout could not be loaded.')} /> : null}
     <Card className="policy-card">
       <div className="section-heading">
-        <div><span className="eyebrow">Payment option</span><h2>Pay for this booking</h2></div>
+        <div><span className="eyebrow">{t('pay.option')}</span><h2>{t('pay.title')}</h2></div>
         <Badge tone={paymentTone(paymentStatus)}>{paymentLabel(paymentStatus)}</Badge>
       </div>
 
-      {paymentStatus === 'paid' && paymentMethod === 'cash_on_service' ? <p className="detail-copy">Cash payment has been confirmed by the provider after service completion{cashCollectedAt ? ` on ${new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(cashCollectedAt))}` : ''}.</p> : null}
-      {paymentStatus === 'paid' && paymentMethod !== 'cash_on_service' ? <p className="detail-copy">Payment has been verified and recorded in your booking ledger.</p> : null}
-      {paymentStatus === 'refunded' ? <p className="detail-copy">This payment has been recorded as refunded. A new payment cannot be started for this booking.</p> : null}
-      {paymentStatus === 'pending' ? <p className="detail-copy">Payment confirmation is in progress. Do not start another payment while this attempt is processing.</p> : null}
-      {!['confirmed', 'completed'].includes(bookingStatus) && !['paid', 'refunded'].includes(paymentStatus) ? <p className="detail-copy">Payment options become available after the provider confirms the booking.</p> : null}
+      {paymentStatus === 'paid' && paymentMethod === 'cash_on_service' ? <p className="detail-copy">{t('pay.cashConfirmedPrefix')}{cashCollectedAt ? ` · ${new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(cashCollectedAt))}` : ''}.</p> : null}
+      {paymentStatus === 'paid' && paymentMethod !== 'cash_on_service' ? <p className="detail-copy">{t('pay.onlineRecorded')}</p> : null}
+      {paymentStatus === 'refunded' ? <p className="detail-copy">{t('pay.refundedHelp')}</p> : null}
+      {paymentStatus === 'pending' ? <p className="detail-copy">{t('pay.processingHelp')}</p> : null}
+      {!['confirmed', 'completed'].includes(bookingStatus) && !['paid', 'refunded'].includes(paymentStatus) ? <p className="detail-copy">{t('pay.afterConfirm')}</p> : null}
 
       {canPay && paymentMethod === 'cash_on_service' ? <div style={{ display: 'grid', gap: '.8rem', marginTop: '1rem' }}>
-        <Badge tone="success">Cash on Service selected</Badge>
-        <p className="detail-copy">Pay the full service amount directly to the provider only after the service is delivered. Takeitesee does not treat this cash as platform-collected money.</p>
-        {config?.enabled ? <Button type="button" variant="quiet" loading={methodBusy} disabled={methodBusy} onClick={() => void selectPaymentMethod('online_gateway')}>Switch to online payment</Button> : null}
+        <Badge tone="success">{t('pay.cashSelected')}</Badge>
+        <p className="detail-copy">{t('pay.cashDirect')}</p>
+        {config?.enabled ? <Button type="button" variant="quiet" loading={methodBusy} disabled={methodBusy} onClick={() => void selectPaymentMethod('online_gateway')}>{t('pay.switchOnline')}</Button> : null}
       </div> : null}
 
       {canPay && paymentMethod !== 'cash_on_service' ? <div style={{ display: 'grid', gap: '.85rem', marginTop: '1rem' }}>
         <div>
-          <strong>Cash on Service</strong>
-          <p className="summary-note">No online payment now. Pay the provider after the service is completed; the provider then confirms receipt in Takeitesee.</p>
+          <strong>{t('pay.cashOnService')}</strong>
+          <p className="summary-note">{t('pay.cashHelp')}</p>
         </div>
-        <Button type="button" variant={config?.enabled ? 'quiet' : undefined} loading={methodBusy} disabled={methodBusy || busy || verifying} onClick={() => void selectPaymentMethod('cash_on_service')}>Pay cash after service</Button>
+        <Button type="button" variant={config?.enabled ? 'quiet' : undefined} loading={methodBusy} disabled={methodBusy || busy || verifying} onClick={() => void selectPaymentMethod('cash_on_service')}>{t('pay.cashAction')}</Button>
       </div> : null}
 
-      {canPay && paymentMethod !== 'cash_on_service' && config && !config.enabled ? <p className="detail-copy" style={{ marginTop: '1rem' }}>Online payment is temporarily unavailable while the gateway integration is on hold. Cash on Service is available for this booking.</p> : null}
+      {canPay && paymentMethod !== 'cash_on_service' && config && !config.enabled ? <p className="detail-copy" style={{ marginTop: '1rem' }}>{t('pay.onlineUnavailable')}</p> : null}
 
       {canPay && paymentMethod !== 'cash_on_service' && config?.enabled ? <div style={{ display: 'grid', gap: '.85rem', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #ececf2' }}>
-        <div><strong>Online payment</strong><p className="summary-note">Use Cashfree hosted checkout if you prefer to pay online.</p></div>
+        <div><strong>{t('pay.online')}</strong><p className="summary-note">{t('pay.onlineHelp')}</p></div>
         <label style={{ display: 'grid', gap: '.4rem' }}>
-          <strong>Mobile number for payment</strong>
+          <strong>{t('pay.mobile')}</strong>
           <input
             value={phone}
             onChange={(event) => setPhone(event.target.value.replace(/[^0-9+\s-]/g, '').slice(0, 16))}
             inputMode="tel"
             autoComplete="tel"
-            placeholder="10-digit Indian mobile number"
+            placeholder={t('pay.mobilePlaceholder')}
             style={{ width: '100%', padding: '.8rem', border: '1px solid #d9d9e3', borderRadius: '.7rem', font: 'inherit' }}
           />
-          <span className="summary-note">Leave blank to use the mobile number already saved in your account.</span>
+          <span className="summary-note">{t('pay.mobileHelp')}</span>
         </label>
         <Button type="button" loading={busy || verifying} disabled={!sdkReady || busy || verifying || methodBusy} onClick={() => void startCheckout()}>
-          {verifying ? 'Verifying payment…' : sdkReady ? 'Pay securely with Cashfree' : 'Loading secure checkout…'}
+          {verifying ? t('pay.verifying') : sdkReady ? t('pay.secure') : t('pay.loadingCheckout')}
         </Button>
-        <p className="summary-note">Takeitesee never receives or stores your card, UPI PIN, OTP, or banking credentials. Payment is completed on Cashfree's hosted checkout.</p>
+        <p className="summary-note">{t('pay.safety')}</p>
       </div> : null}
 
       {notice ? <p role="status" style={{ marginTop: '1rem' }}>{notice}</p> : null}
