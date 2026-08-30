@@ -19,6 +19,28 @@ const links = [
   { href: '/admin/settings', en: 'Settings', ta: 'அமைப்புகள்' },
 ] as const;
 
+const statusLabels: Record<string, { en: string; ta: string }> = {
+  active: { en: 'Active', ta: 'செயலில்' }, restricted: { en: 'Restricted', ta: 'கட்டுப்படுத்தப்பட்டது' },
+  pending: { en: 'Pending', ta: 'நிலுவையில்' }, confirmed: { en: 'Confirmed', ta: 'உறுதிசெய்யப்பட்டது' }, completed: { en: 'Completed', ta: 'முடிந்தது' },
+  cancelled: { en: 'Cancelled', ta: 'ரத்து செய்யப்பட்டது' }, rescheduled: { en: 'Rescheduled', ta: 'மறுஅட்டவணை செய்யப்பட்டது' }, rejected: { en: 'Rejected', ta: 'நிராகரிக்கப்பட்டது' },
+  unpaid: { en: 'Unpaid', ta: 'செலுத்தப்படவில்லை' }, paid: { en: 'Paid', ta: 'செலுத்தப்பட்டது' }, failed: { en: 'Failed', ta: 'தோல்வி' }, refunded: { en: 'Refunded', ta: 'திருப்பிச் செலுத்தப்பட்டது' },
+  open: { en: 'Open', ta: 'திறந்துள்ளது' }, investigating: { en: 'Investigating', ta: 'விசாரணையில்' }, awaiting_information: { en: 'Awaiting information', ta: 'தகவல் காத்திருக்கிறது' }, resolved: { en: 'Resolved', ta: 'தீர்க்கப்பட்டது' }, closed: { en: 'Closed', ta: 'மூடப்பட்டது' },
+  urgent: { en: 'Urgent', ta: 'அவசரம்' }, high: { en: 'High', ta: 'உயர்' }, normal: { en: 'Normal', ta: 'சாதாரணம்' }, low: { en: 'Low', ta: 'குறைந்தது' },
+};
+
+export function AdminLiveText({ en, ta }: { en: string; ta: string }) {
+  const { locale } = useLanguage();
+  return <>{locale === 'ta-IN' ? ta : en}</>;
+}
+
+export function AdminLiveStatusText({ status }: { status: string }) {
+  const { locale } = useLanguage();
+  const normalized = status.toLowerCase();
+  const mapped = statusLabels[normalized];
+  if (!mapped) return <>{status.replaceAll('_', ' ')}</>;
+  return <>{locale === 'ta-IN' ? mapped.ta : mapped.en}</>;
+}
+
 export function AdminLiveShell({ children, active }: { children: ReactNode; active: string }) {
   const { locale } = useLanguage();
   const access = useAdminAccess();
