@@ -204,7 +204,8 @@ export default function CustomerRequirementsManager() {
           <Link className="button button-secondary" href={`/requirements/${encodeURIComponent(row.id)}`}>View details</Link>
           {row.status === 'open' ? <Button type="button" variant="quiet" disabled={actionId === row.id} onClick={() => void updateStatus(row.id, 'paused')}>Pause proposals</Button> : null}
           {row.status === 'paused' ? <Button type="button" variant="secondary" disabled={actionId === row.id} onClick={() => void updateStatus(row.id, 'open')}>Reopen proposals</Button> : null}
-          {['open','paused','awarded'].includes(row.status) ? <Button type="button" variant="secondary" disabled={actionId === row.id} onClick={() => void updateStatus(row.id, 'fulfilled')}>{row.status === 'awarded' ? 'Mark fulfilled after service' : 'Mark fulfilled'}</Button> : null}
+          {['open','paused'].includes(row.status) ? <Button type="button" variant="secondary" disabled={actionId === row.id} onClick={() => void updateStatus(row.id, 'fulfilled')}>Mark fulfilled</Button> : null}
+          {row.status === 'awarded' ? <span className="summary-note">Open details to schedule and manage the service job.</span> : null}
           {['open','paused','awarded'].includes(row.status) ? <Button type="button" variant="danger" disabled={actionId === row.id} onClick={() => void updateStatus(row.id, 'cancelled')}>Cancel</Button> : null}
         </div>
       </Card>)}
