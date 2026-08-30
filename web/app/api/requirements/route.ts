@@ -19,9 +19,11 @@ type RequirementRow = {
   budget_max_minor: number | null;
   currency: 'INR' | 'USD';
   needed_by: string | null;
-  status: 'open' | 'paused' | 'fulfilled' | 'cancelled';
+  status: 'open' | 'paused' | 'awarded' | 'fulfilled' | 'cancelled';
   published_at: string;
   closed_at: string | null;
+  awarded_at: string | null;
+  accepted_proposal_id: string | null;
   created_at: string;
   updated_at: string;
   platform_categories?: { name?: string | null; code?: string | null } | Array<{ name?: string | null; code?: string | null }> | null;
@@ -54,12 +56,14 @@ function safeRequirement(row: RequirementRow) {
     status: row.status,
     published_at: row.published_at,
     closed_at: row.closed_at,
+    awarded_at: row.awarded_at,
+    accepted_proposal_id: row.accepted_proposal_id,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
 }
 
-const requirementSelect = 'id,requirement_reference,customer_id,category_id,location_id,title,description,service_mode,budget_type,budget_min_minor,budget_max_minor,currency,needed_by,status,published_at,closed_at,created_at,updated_at,platform_categories(name,code),platform_locations(name,code,timezone)';
+const requirementSelect = 'id,requirement_reference,customer_id,category_id,location_id,title,description,service_mode,budget_type,budget_min_minor,budget_max_minor,currency,needed_by,status,published_at,closed_at,awarded_at,accepted_proposal_id,created_at,updated_at,platform_categories(name,code),platform_locations(name,code,timezone)';
 
 export async function GET(request: Request) {
   try {

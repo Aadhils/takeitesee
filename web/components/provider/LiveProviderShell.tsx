@@ -7,6 +7,7 @@ import { Alert } from '../ui/primitives';
 const providerLinks = [
   { href: '/provider', label: 'Dashboard' },
   { href: '/provider/setup', label: 'Setup' },
+  { href: '/provider/leads', label: 'Leads' },
   { href: '/provider/bookings', label: 'Bookings' },
   { href: '/provider/schedule', label: 'Schedule' },
   { href: '/provider/services', label: 'Services' },
