@@ -25,9 +25,11 @@ export async function GET() {
 
   const services = (rows ?? []).filter((row: any) => {
     const provider = row.provider_type === 'business' ? row.businesses : row.professional_profiles;
-    return provider?.verified === true;
+    const providerId = row.provider_type === 'business' ? row.business_id : row.professional_id;
+    return provider?.verified === true && Boolean(providerId);
   }).map((row: any) => {
     const provider = row.provider_type === 'business' ? row.businesses : row.professional_profiles;
+    const providerId = row.provider_type === 'business' ? row.business_id : row.professional_id;
     const ratings = reviews.get(row.id) ?? [];
     const rating = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
     const category = row.category || 'Other';
@@ -37,6 +39,7 @@ export async function GET() {
       description: { en: row.description || '' },
       provider_name: row.provider_type === 'business' ? (provider?.name || 'Business provider') : (provider?.headline || 'Professional provider'),
       provider_type: row.provider_type,
+      provider_id: providerId,
       location: row.location || provider?.location || provider?.service_area || '',
       service_area: provider?.service_area || provider?.location || row.location || '',
       category_id: category.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
