@@ -9,8 +9,6 @@ import BookingReasonDialog from './BookingReasonDialog';
 import CustomerPaymentPanel from './CustomerPaymentPanel';
 import { cancelBookingThroughConfiguredRepository, getBookingThroughConfiguredRepository } from '../../services/booking-repository';
 import type { CustomerBooking } from '../../types/booking-domain';
-import { discoveryServices, displayText } from '../../data/discovery-fixtures';
-import { formatMoney } from '../../types/money';
 import { useOperationalTranslations } from '../i18n/OperationalTranslations';
 
 type SavedReview = { id: string; rating: number; comment?: string | null };
@@ -72,9 +70,12 @@ export default function CustomerBookingDetail({ bookingId }: { bookingId: string
 
   if (!booking) return <EmptyState title={t('book.notFound')}>{t('book.notFoundHelp')}</EmptyState>;
 
-  const service = discoveryServices.find((item) => item.id === booking.serviceId);
   const canManage = ['pending', 'confirmed', 'rescheduled'].includes(booking.status) && !['customer_no_show', 'provider_no_show'].includes(closeoutWindow?.attendance_outcome || '');
   const providerLabel = booking.providerName || (booking.providerType === 'business' ? t('book.businessProvider') : t('book.professionalProvider'));
+  const money = (amount: number, currency: string) => {
+    try { return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(amount); }
+    catch { return `${currency} ${amount.toFixed(2)}`; }
+  };
 
   const refreshCloseout = () => {
     window.dispatchEvent(new CustomEvent('booking:audit-refresh', { detail: { bookingId: booking.bookingId } }));
@@ -108,7 +109,7 @@ export default function CustomerBookingDetail({ bookingId }: { bookingId: string
 
   return <div className="booking-detail-page">
     <section className="booking-detail-heading">
-      <div><span className="eyebrow">{booking.bookingReference}</span><h1>{service ? displayText(service.service_name) : booking.serviceName}</h1><p>{booking.bookingDate} · {booking.startTime} {booking.timezone}</p></div>
+      <div><span className="eyebrow">{booking.bookingReference}</span><h1>{booking.serviceName}</h1><p>{booking.bookingDate} · {booking.startTime} {booking.timezone}</p></div>
       <Badge tone={booking.status === 'cancelled' ? 'danger' : booking.status === 'completed' ? 'success' : 'info'}>{booking.status === 'rescheduled' ? t('book.rescheduleRequested') : status(booking.status)}</Badge>
     </section>
 
@@ -121,7 +122,7 @@ export default function CustomerBookingDetail({ bookingId }: { bookingId: string
           {booking.status === 'cancelled' ? <p className="detail-copy">{t('book.cancelledHelp')}</p> : null}
         </Card>
 
-        <Card className="policy-card"><span className="eyebrow">{t('book.information')}</span><dl className="review-details"><div><dt>{t('book.provider')}</dt><dd>{providerLabel}</dd></div><div><dt>{t('book.dateTime')}</dt><dd>{booking.bookingDate}, {booking.startTime} {booking.timezone}</dd></div><div><dt>{t('common.duration')}</dt><dd>{booking.durationMinutes} {t('common.minutes')}</dd></div><div><dt>{t('common.location')}</dt><dd>{booking.location}</dd></div><div><dt>{t('book.price')}</dt><dd>{formatMoney({ amount: booking.basePrice, currency: booking.currency })}</dd></div></dl></Card>
+        <Card className="policy-card"><span className="eyebrow">{t('book.information')}</span><dl className="review-details"><div><dt>{t('book.provider')}</dt><dd>{providerLabel}</dd></div><div><dt>{t('book.dateTime')}</dt><dd>{booking.bookingDate}, {booking.startTime} {booking.timezone}</dd></div><div><dt>{t('common.duration')}</dt><dd>{booking.durationMinutes} {t('common.minutes')}</dd></div><div><dt>{t('common.location')}</dt><dd>{booking.location}</dd></div><div><dt>{t('book.price')}</dt><dd>{money(booking.basePrice, booking.currency)}</dd></div></dl></Card>
 
         <CustomerPaymentPanel bookingId={booking.bookingId} bookingStatus={booking.status} paymentStatus={booking.paymentStatus} onPaymentUpdated={refreshBooking} />
         <BookingCloseoutPanel bookingId={booking.bookingId} allowSupport viewer="customer" />
