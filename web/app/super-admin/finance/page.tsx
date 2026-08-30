@@ -2,6 +2,7 @@ import FinanceManager from '../../../components/admin/FinanceManager';
 import FinanceRefundQueue from '../../../components/admin/FinanceRefundQueue';
 import FinanceRiskManager from '../../../components/admin/FinanceRiskManager';
 import LaunchReadinessPanel from '../../../components/admin/LaunchReadinessPanel';
+import SandboxReadinessPanel from '../../../components/admin/SandboxReadinessPanel';
 import { productionAuthProvider } from '../../../server/auth/session';
 
 export const dynamic = 'force-dynamic';
@@ -17,6 +18,7 @@ export default async function SuperAdminFinancePage() {
       <p>Control versioned commission rules, settlement holds, provider payout transfers, verified customer refunds, chargebacks, auto-refunds, and provider recovery from one finance workspace.</p>
     </section>
     <LaunchReadinessPanel />
+    <SandboxReadinessPanel />
     <FinanceManager />
     <FinanceRefundQueue />
     <FinanceRiskManager />
