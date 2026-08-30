@@ -59,14 +59,15 @@ export async function generateMetadata({ params }: { params: Promise<{ providerI
 
   if (!record) {
     return {
-      title: 'Business unavailable | TakeItEsee',
+      title: 'Business unavailable',
       robots: { index: false, follow: false },
     };
   }
 
   const { business, services } = record;
   const location = business.location || '';
-  const title = `${business.name}${location ? ` in ${location}` : ''} | TakeItEsee`;
+  const pageTitle = `${business.name}${location ? ` in ${location}` : ''}`;
+  const socialTitle = `${pageTitle} | TakeItEsee`;
   const description = seoText(
     business.description,
     `Explore services from ${business.name}${location ? ` in ${location}` : ''} on TakeItEsee.`,
@@ -75,12 +76,12 @@ export async function generateMetadata({ params }: { params: Promise<{ providerI
   const indexable = services.length > 0;
 
   return {
-    title,
+    title: pageTitle,
     description,
     alternates: indexable ? { canonical } : undefined,
     robots: { index: indexable, follow: indexable },
-    openGraph: indexable ? { title, description, url: canonical, type: 'website' } : undefined,
-    twitter: indexable ? { card: 'summary', title, description } : undefined,
+    openGraph: indexable ? { title: socialTitle, description, url: canonical, type: 'website' } : undefined,
+    twitter: indexable ? { card: 'summary', title: socialTitle, description } : undefined,
   };
 }
 
