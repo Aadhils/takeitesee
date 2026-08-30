@@ -28,9 +28,8 @@ export function CategoryCard({ category }: { category: DiscoveryCategory }) {
 
 export function ServiceCard({ service, contextQuery = '' }: { service: DiscoveryService; contextQuery?: string }) {
   const serviceHref = `/services/${service.id}${contextQuery ? `?${contextQuery}` : ''}`;
-  const providerBaseHref = service.provider_type === 'professional'
-    ? `/professionals/${service.provider_id}`
-    : `/businesses/${service.provider_id}`;
+  const providerDirectory = service.provider_type === 'professional' ? '/professionals' : '/businesses';
+  const providerBaseHref = service.provider_id ? `${providerDirectory}/${service.provider_id}` : providerDirectory;
   const providerHref = contextQuery ? `${providerBaseHref}?${contextQuery}` : providerBaseHref;
   return (
     <Card className="discovery-card service-discovery-card">
