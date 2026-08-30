@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Input, Select, Skeleton } from '../../components/ui/primitives';
 import { ServiceCard } from '../../components/discovery/MarketplaceCards';
@@ -50,6 +51,18 @@ function labelFromSlug(value: string) {
 
 function normalized(value: unknown) {
   return String(value ?? '').normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+function buildExploreParams(query: string, filters: Filters, sort: string) {
+  const params = new URLSearchParams();
+  if (query.trim()) params.set('q', query.trim());
+  if (filters.location !== 'Anywhere' && filters.location.trim()) params.set('location', filters.location.trim());
+  if (filters.category !== 'all') params.set('category', filters.category);
+  if (filters.price !== 'any') params.set('price', filters.price);
+  if (filters.rating !== 'any') params.set('rating', filters.rating);
+  if (filters.provider !== 'any') params.set('provider', filters.provider);
+  if (sort !== 'relevance') params.set('sort', sort);
+  return params;
 }
 
 function searchText(service: MarketplaceService) {
@@ -182,18 +195,12 @@ export default function ExplorePage() {
     if (!loading && filters.category !== 'all' && !categories.includes(filters.category)) setFilters((current) => ({ ...current, category: 'all' }));
   }, [categories, filters.category, loading]);
 
+  const contextQuery = useMemo(() => buildExploreParams(query, filters, sort).toString(), [filters, query, sort]);
+
   useEffect(() => {
     if (!urlReady) return;
-    const params = new URLSearchParams();
-    if (query.trim()) params.set('q', query.trim());
-    if (filters.location !== 'Anywhere') params.set('location', filters.location.trim());
-    if (filters.category !== 'all') params.set('category', filters.category);
-    if (filters.price !== 'any') params.set('price', filters.price);
-    if (filters.rating !== 'any') params.set('rating', filters.rating);
-    if (filters.provider !== 'any') params.set('provider', filters.provider);
-    if (sort !== 'relevance') params.set('sort', sort);
-    window.history.replaceState(null, '', params.toString() ? `/explore?${params}` : '/explore');
-  }, [filters, query, sort, urlReady]);
+    window.history.replaceState(null, '', contextQuery ? `/explore?${contextQuery}` : '/explore');
+  }, [contextQuery, urlReady]);
 
   const filteredServices = useMemo(() => {
     const locationNeedle = filters.location === 'Anywhere' ? '' : normalized(filters.location);
@@ -239,7 +246,7 @@ export default function ExplorePage() {
     </section>
 
     <div className="results-heading"><div><span className="eyebrow">Live marketplace</span><h2>{resultHeading}</h2></div></div>
-    {loading ? <div className="service-grid"><div className="loading-card"><Skeleton className="loading-art" /><Skeleton className="loading-line" /><Skeleton className="loading-line short" /></div></div> : loadError ? <DiscoveryEmptyState query={loadError} onClear={() => location.reload()} suggestions={[]} /> : filteredServices.length ? <div className="service-grid">{filteredServices.map((service) => <ServiceCard service={service} key={service.id} />)}</div> : <DiscoveryEmptyState query={query} onClear={clearAll} suggestions={[]} />}
+    {loading ? <div className="service-grid"><div className="loading-card"><Skeleton className="loading-art" /><Skeleton className="loading-line" /><Skeleton className="loading-line short" /></div></div> : loadError ? <DiscoveryEmptyState query={loadError} onClear={() => location.reload()} suggestions={[]} /> : filteredServices.length ? <div className="service-grid">{filteredServices.map((service) => <ServiceCard service={service} contextQuery={contextQuery} key={service.id} />)}</div> : <><DiscoveryEmptyState query={query} onClear={clearAll} suggestions={[]} /><div className="empty-actions"><Link href="/requirements" className="button button-primary">Post a requirement</Link></div></>}
     <p className="explore-disclaimer">Categories and locations on this page are generated from the live provider catalog. Draft, paused, and unverified listings are excluded.</p>
   </div>;
 }

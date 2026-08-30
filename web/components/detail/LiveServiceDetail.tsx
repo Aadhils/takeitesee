@@ -33,13 +33,13 @@ function Stars({ rating, count }: { rating: number; count: number }) {
   return <span className="rating" aria-label={`${rating.toFixed(1)} out of 5 from ${count} reviews`}><span aria-hidden="true">★</span> {rating.toFixed(1)} <small>({count})</small></span>;
 }
 
-export default function LiveServiceDetail({ service, reviews }: { service: LiveService; reviews: Review[] }) {
+export default function LiveServiceDetail({ service, reviews, exploreHref = '/explore' }: { service: LiveService; reviews: Review[]; exploreHref?: string }) {
   const providerHref = service.provider_type === 'professional' ? `/professionals/${service.provider_id}` : `/businesses/${service.provider_id}`;
   const bookingHref = `/services/${service.id}/booking`;
   const counts = [5, 4, 3, 2, 1].map((star) => ({ star, count: reviews.filter((review) => Math.round(review.rating) === star).length }));
 
   return <div className="detail-page">
-    <Breadcrumbs items={[{ label: 'Explore', href: '/explore' }, { label: 'Service' }]} />
+    <Breadcrumbs items={[{ label: 'Explore', href: exploreHref }, { label: 'Service' }]} />
     <section className="detail-hero"><div><div className="card-meta"><Badge tone="info">{service.category || 'Service'}</Badge><Badge tone="success">Live listing</Badge></div><h1>{service.name}</h1><p className="detail-lede">{service.description}</p><div className="detail-meta"><span>{service.location || service.service_area}</span><span>{service.duration_minutes} minutes</span><Stars rating={service.rating} count={service.review_count} /></div></div><div className="price-summary"><span className="eyebrow">Starting price</span><strong>{money(service.base_price, service.currency)}</strong><span>per service · {service.duration_minutes} minutes</span></div></section>
 
     <div className="detail-layout"><main>
