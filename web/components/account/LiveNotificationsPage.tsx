@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { AccountShell } from './AccountPresentation';
+import LocalizedAccountShell from './LocalizedAccountShell';
 import { Badge, Button, Card, EmptyState } from '../ui/primitives';
 import { getSupabaseBrowserUser } from '../../services/auth-adapter';
 import { getCustomerProfile } from '../../services/customer-profile';
@@ -28,7 +28,7 @@ function hrefFor(item: NotificationItem) {
 export default function LiveNotificationsPage() {
   const { locale, t } = useOperationalTranslations();
   const [items, setItems] = useState<NotificationItem[]>([]);
-  const [customerName, setCustomerName] = useState('Your account');
+  const [customerName, setCustomerName] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -53,7 +53,7 @@ export default function LiveNotificationsPage() {
       if (user) {
         try {
           const profile = await getCustomerProfile(user.id, user.email ?? undefined);
-          setCustomerName(profile.displayName || 'Your account');
+          setCustomerName(profile.displayName || '');
         } catch { }
       }
       setError('');
@@ -66,14 +66,6 @@ export default function LiveNotificationsPage() {
 
   useEffect(() => { void load(); }, []);
   const unread = useMemo(() => items.filter((item) => !item.read_at).length, [items]);
-
-  useEffect(() => {
-    const badge = document.querySelector<HTMLElement>('.account-nav-count');
-    if (!badge) return;
-    badge.textContent = String(unread);
-    badge.style.display = unread ? '' : 'none';
-    badge.setAttribute('aria-label', `${unread} ${t('notif.unread')}`);
-  });
 
   const markRead = async (id: string) => {
     const response = await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
@@ -92,7 +84,7 @@ export default function LiveNotificationsPage() {
     } finally { setBusy(false); }
   };
 
-  return <AccountShell active="/notifications" customerName={customerName}>
+  return <LocalizedAccountShell active="/notifications" customerName={customerName || undefined} unreadCount={unread}>
     <section className="account-page-heading"><span className="eyebrow">{t('notif.eyebrow')}</span><h1>{t('notif.title')}</h1><p>{t('notif.intro')}</p></section>
     <div className="notification-toolbar"><Badge tone={unread ? 'info' : 'neutral'}>{unread} {t('notif.unread')}</Badge>{unread ? <Button type="button" variant="quiet" loading={busy} onClick={() => void markAllRead()}>{t('notif.markAll')}</Button> : <span className="results-note">{t('notif.caughtUp')}</span>}</div>
     {loading ? <Card><p>{t('notif.loading')}</p></Card> : error ? <Card><p className="field-error" role="alert">{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>{t('common.tryAgain')}</Button></Card> : items.length ? <div className="notification-list">{items.map((item) => {
@@ -100,5 +92,5 @@ export default function LiveNotificationsPage() {
       const href = hrefFor(item);
       return <Card className={`notification-card ${!item.read_at ? 'notification-unread' : ''}`} key={item.id}><div className="notification-card-mark" aria-hidden="true">{label.slice(0,1)}</div><div className="notification-card-body"><div className="notification-card-top"><Badge tone={!item.read_at ? 'info' : 'neutral'}>{label}</Badge><time>{new Date(item.created_at).toLocaleString(locale)}</time></div><h2>{item.title}</h2><p>{item.body}</p><div className="notification-card-actions">{href ? <Link href={href} className="text-link">{item.conversation_id ? t('notif.openConversation') : t('notif.viewBooking')}</Link> : null}{!item.read_at ? <Button type="button" variant="quiet" onClick={() => void markRead(item.id)}>{t('notif.markRead')}</Button> : null}</div></div></Card>;
     })}</div> : <Card><EmptyState title={t('notif.none')}>{t('notif.noneHelp')}</EmptyState></Card>}
-  </AccountShell>;
+  </LocalizedAccountShell>;
 }
