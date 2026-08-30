@@ -60,7 +60,7 @@ const loadPublicService = cache(async (serviceId: string) => {
   return {
     row: row as any,
     provider,
-    providerName: providerName || 'Verified provider',
+    providerName: providerName || '',
     providerLocation: providerLocation || row.location || '',
   };
 });
@@ -120,10 +120,10 @@ export default async function ServiceDetailPage({
 
   const reviews = (reviewRows ?? []).map((review: any) => ({
     id: review.id,
-    reviewer_name: relation(review.users)?.name || 'Customer',
+    reviewer_name: relation(review.users)?.name || '',
     rating: Number(review.rating),
     comment: review.comment || '',
-    date: new Date(review.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+    date: review.created_at,
     verified_booking: true,
   }));
   const rating = reviews.length ? reviews.reduce((sum: number, review: any) => sum + review.rating, 0) / reviews.length : 0;
@@ -133,7 +133,7 @@ export default async function ServiceDetailPage({
     id: row.id,
     name: row.name,
     description: row.description || '',
-    category: row.category || 'Service',
+    category: row.category || '',
     provider_name: providerName,
     provider_type: row.provider_type as 'professional' | 'business',
     provider_id: row.business_id || row.professional_id || row.id,
@@ -158,11 +158,11 @@ export default async function ServiceDetailPage({
     name: service.name,
     description: service.description || undefined,
     url: canonical,
-    category: service.category,
+    category: service.category || undefined,
     areaServed: service.service_area || undefined,
     provider: {
       '@type': service.provider_type === 'business' ? 'LocalBusiness' : 'ProfessionalService',
-      name: service.provider_name,
+      name: service.provider_name || 'Verified provider',
       url: providerUrl,
     },
     offers: service.base_price > 0 ? {
