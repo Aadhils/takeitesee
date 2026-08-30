@@ -83,7 +83,7 @@ export function LiveMarketplaceServiceCard({ service, contextQuery = '' }: { ser
   );
 }
 
-export function LiveDiscoveryEmptyState({ query, onClear, errorState = false }: { query: string; onClear: () => void; errorState?: boolean }) {
+export function LiveDiscoveryEmptyState({ query, onClear, errorState = false }: { query: string; onClear: () => void; suggestions?: unknown[]; errorState?: boolean }) {
   const { locale, t } = useLanguage();
   const tamil = locale === 'ta-IN';
   const title = errorState
