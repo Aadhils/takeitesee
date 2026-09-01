@@ -113,6 +113,19 @@ export async function signUpWithSupabase(input: SignUpInput) {
   return { user: data.user, session: data.session };
 }
 
+export async function requestPasswordResetWithSupabase(email: string, redirectTo: string) {
+  const supabase = createSupabaseBrowserClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(normalizeEmail(email), { redirectTo });
+  if (error) throw new Error(error.message);
+}
+
+export async function updatePasswordWithSupabase(password: string) {
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase.auth.updateUser({ password });
+  if (error || !data.user) throw new Error(error?.message ?? 'Unable to update password.');
+  return data.user;
+}
+
 export async function signOutWithSupabase() {
   const supabase = createSupabaseBrowserClient();
   const { error } = await supabase.auth.signOut();

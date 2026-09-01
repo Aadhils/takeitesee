@@ -16,6 +16,11 @@ const privateWorkspaceHeaders = [
   { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
 ];
 
+const sensitiveAuthHeaders = [
+  { key: 'Cache-Control', value: 'no-store, max-age=0' },
+  { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+];
+
 const privateWorkspaceSources = [
   '/account/:path*',
   '/admin/:path*',
@@ -46,6 +51,14 @@ const nextConfig = {
       {
         source: '/api/:path*',
         headers: apiHeaders,
+      },
+      {
+        source: '/forgot-password',
+        headers: sensitiveAuthHeaders,
+      },
+      {
+        source: '/reset-password',
+        headers: sensitiveAuthHeaders,
       },
       ...privateWorkspaceSources.map((source) => ({
         source,
