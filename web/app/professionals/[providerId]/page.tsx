@@ -74,8 +74,19 @@ export async function generateMetadata({ params }: { params: Promise<{ providerI
     description,
     alternates: indexable ? { canonical } : undefined,
     robots: { index: indexable, follow: indexable },
-    openGraph: indexable ? { title: socialTitle, description, url: canonical, type: 'website' } : undefined,
-    twitter: indexable ? { card: 'summary', title: socialTitle, description } : undefined,
+    openGraph: indexable ? {
+      title: socialTitle,
+      description,
+      url: canonical,
+      type: 'website',
+      images: ['/brand/social'],
+    } : undefined,
+    twitter: indexable ? {
+      card: 'summary_large_image',
+      title: socialTitle,
+      description,
+      images: ['/brand/social'],
+    } : undefined,
   };
 }
 

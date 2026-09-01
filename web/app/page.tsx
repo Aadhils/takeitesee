@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     url: '/',
     title: 'TakeItEsee | Find Trusted Local Services',
     description: homepageDescription,
+    images: ['/brand/social'],
   },
 };
 
