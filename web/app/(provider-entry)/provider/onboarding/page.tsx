@@ -5,10 +5,12 @@ import { useEffect, useState } from 'react';
 import { ProviderOnboarding } from '../../../../components/provider/ProviderOnboarding';
 import { Card, EmptyState } from '../../../../components/ui/primitives';
 import { useIdentityWorkspaceTranslations } from '../../../../components/i18n/IdentityWorkspaceTranslations';
+import { useLanguage } from '../../../../components/i18n/LanguageProvider';
 import { getCurrentCustomerAsync } from '../../../../services/auth-adapter';
 
 export default function ProviderOnboardingRoute() {
   const { t } = useIdentityWorkspaceTranslations();
+  const { locale } = useLanguage();
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -20,7 +22,7 @@ export default function ProviderOnboardingRoute() {
   }, []);
 
   if (authenticated === null) {
-    return <div className="auth-page provider-onboarding-page"><Card><p>{t('onboarding.loading')}</p></Card></div>;
+    return <div className="auth-page provider-onboarding-page"><Card><p>{locale === 'ta-IN' ? 'உங்கள் account-ஐ சரிபார்க்கிறது…' : 'Checking your account…'}</p></Card></div>;
   }
 
   if (!authenticated) {
