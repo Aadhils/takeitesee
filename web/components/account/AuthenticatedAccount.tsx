@@ -108,11 +108,11 @@ export default function AuthenticatedAccount() {
 
       <Card className="account-provider-entry">
         <span className="eyebrow">{t('account.providerWorkspace')}</span>
-        <h2>{t('account.alreadyProvider')}</h2>
-        <p>{t('account.providerIntro')}</p>
+        <h2>{t('onboarding.startProviding')}</h2>
+        <p>{t('onboarding.startIntro')}</p>
         <div className="account-actions">
-          <Link href="/provider" className="button button-primary">{t('account.openProvider')}</Link>
-          <span className="card-location">{t('account.providerRegistrationNote')}</span>
+          <Link href="/provider/onboarding" className="button button-primary">{t('onboarding.startProviding')}</Link>
+          <Link href="/provider" className="button button-secondary">{t('account.openProvider')}</Link>
         </div>
       </Card>
     </div>
