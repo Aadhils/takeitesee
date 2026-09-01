@@ -10,6 +10,11 @@ export const metadata: Metadata = {
     description: 'Get help using TakeItEsee marketplace discovery, bookings, provider services, and account features.',
     url: '/help',
   },
+  twitter: {
+    card: 'summary',
+    title: 'Help & Support | TakeItEsee',
+    description: 'Get help using TakeItEsee marketplace discovery, bookings, provider services, and account features.',
+  },
 };
 
 export default function HelpLayout({ children }: { children: ReactNode }) {
