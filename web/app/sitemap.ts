@@ -16,6 +16,7 @@ const staticEntries: MetadataRoute.Sitemap = [
   { url: `${siteUrl}/help`, changeFrequency: 'monthly', priority: 0.4 },
   { url: `${siteUrl}/privacy`, changeFrequency: 'yearly', priority: 0.3 },
   { url: `${siteUrl}/terms`, changeFrequency: 'yearly', priority: 0.3 },
+  { url: `${siteUrl}/cookies`, changeFrequency: 'yearly', priority: 0.3 },
 ];
 
 function relation(value: any) {
