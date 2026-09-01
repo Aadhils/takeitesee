@@ -84,8 +84,8 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
             <p>{t('footer.tagline')}</p>
           </div>
           <div className="footer-link-column"><strong>{t('footer.forCustomers')}</strong><Link href="/help">{t('footer.howItWorks')}</Link><Link href="/help">{t('footer.safety')}</Link><Link href="/help">{t('footer.helpSupport')}</Link></div>
-          <div className="footer-link-column"><strong>{t('footer.forProfessionals')}</strong><Link href="/register">{t('footer.joinProfessional')}</Link><Link href="/professionals">{t('footer.professionalResources')}</Link></div>
-          <div className="footer-link-column"><strong>{t('footer.forBusinesses')}</strong><Link href="/register">{t('footer.listBusiness')}</Link><Link href="/businesses">{t('footer.businessResources')}</Link></div>
+          <div className="footer-link-column"><strong>{t('footer.forProfessionals')}</strong><Link href="/provider/onboarding">{t('footer.joinProfessional')}</Link><Link href="/professionals">{t('footer.professionalResources')}</Link></div>
+          <div className="footer-link-column"><strong>{t('footer.forBusinesses')}</strong><Link href="/provider/onboarding">{t('footer.listBusiness')}</Link><Link href="/businesses">{t('footer.businessResources')}</Link></div>
           <div className="footer-link-column footer-connect"><strong>{t('footer.connect')}</strong><Link href="/help">{t('footer.contact')}</Link></div>
           <div className="footer-legal">
             <span>© 2026 takeitesee</span>
