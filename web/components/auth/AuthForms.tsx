@@ -21,7 +21,14 @@ const customerAuthCopy = {
 } as const;
 
 function safeReturnTo(value: string | null) {
-  return value && value.startsWith('/') && !value.startsWith('//') ? value : '/account';
+  if (!value || !value.startsWith('/')) return '/account';
+  try {
+    const base = new URL('https://takeitesee.local');
+    const target = new URL(value, base);
+    return target.origin === base.origin ? `${target.pathname}${target.search}${target.hash}` : '/account';
+  } catch {
+    return '/account';
+  }
 }
 
 export function LoginForm({ returnTo }: { returnTo: string | null }) {
