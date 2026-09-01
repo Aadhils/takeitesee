@@ -10,6 +10,11 @@ export const metadata: Metadata = {
     description: 'Browse active TakeItEsee marketplace services from verified professionals and local service businesses.',
     url: '/explore',
   },
+  twitter: {
+    card: 'summary',
+    title: 'Explore Services | TakeItEsee',
+    description: 'Browse active TakeItEsee marketplace services from verified professionals and local service businesses.',
+  },
 };
 
 export default function ExploreLayout({ children }: { children: ReactNode }) {
