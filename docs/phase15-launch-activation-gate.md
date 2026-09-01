@@ -1,6 +1,6 @@
 # Phase 15 launch activation gate
 
-Last audited: 2026-09-01 (Asia/Kolkata)
+Last audited: 2026-09-02 (Asia/Kolkata)
 
 This gate records the current TakeItEsee public-launch readiness state. Real customer payments, Cashfree behavior, refunds, payouts, recovery, settlement, reconciliation, and INR finance activation remain explicitly **HOLD** and must not be changed or activated as a side effect of launch-readiness work.
 
@@ -8,10 +8,10 @@ This gate records the current TakeItEsee public-launch readiness state. Real cus
 
 - Canonical public domain: `https://www.takeitesee.com`.
 - Canonical production Supabase project: `bukrpkymivkhdpueropt`.
-- Current audited production release: `f0f42a6eb92749a64537884b0832671eb738e9f5`.
-- Current audited Vercel deployment: `dpl_5FSsypwb8tSc8GHDrHMVzoPJiyhg`.
-- `GET /api/health` returned `status=ok`, `app=ok`, `database=ok`, release `f0f42a6eb927`.
-- Final deployment-scoped runtime verification after representative auth smoke traffic returned zero `error`/`fatal` entries and zero `5xx` entries.
+- Current audited production release: `2e34c54648596571181dd1393a8c9c85087212ff`.
+- Current audited Vercel deployment: `dpl_3My1tYbCNMnG3SJjrZzqKRE4SBRx`.
+- `GET /api/health` returned `status=ok`, `app=ok`, `database=ok`, release `2e34c5464859`.
+- Fresh deployment-scoped runtime verification returned zero `error`/`fatal` entries and zero `5xx` entries.
 
 ## Verified green gates
 
@@ -34,6 +34,12 @@ This gate records the current TakeItEsee public-launch readiness state. Real cus
 - Production password-recovery UX exists at `/forgot-password` and `/reset-password`, with no-store/noindex protections and generic reset-request copy that avoids account enumeration.
 - Production signup email-confirmation callback support exists at `/auth/confirm` for the documented Supabase token-hash `type=email` flow. Missing, unsupported, invalid, or failed confirmation requests fail closed without leaking token values or raw Supabase errors.
 - Invalid/expired email-confirmation links land on the private login surface with visible English/Tamil guidance.
+- Hosted Supabase Auth production configuration is now manually verified: canonical Site URL is `https://www.takeitesee.com`, production redirect URLs cover the canonical origins and reset-password destinations, and the confirmation template uses `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`.
+- Production auth email delivery now uses custom SMTP through Resend with the verified sending subdomain `auth.takeitesee.com`; DKIM and sending/SPF-related DNS records are verified. No SMTP secret or API key is stored in this document.
+- A real production signup completed `signup -> confirmation email -> /auth/confirm -> authenticated account` successfully.
+- A real production password-recovery flow completed `forgot password -> recovery email -> /reset-password -> password update -> sign out -> fresh password sign-in` successfully.
+- Supabase email/password minimum password length is now `8`, matching the application-side minimum.
+- GitHub repository governance is active for the default `main` branch through the `Main branch protection` ruleset: pull requests are required, required approvals are `0` for the solo workflow, squash is the only allowed merge method, GitHub Actions check `web` is required, branch deletion and force pushes are blocked, and the bypass list is empty.
 - INR finance policy remains inactive.
 
 ## Production closures completed during Launch Readiness
@@ -49,6 +55,9 @@ This gate records the current TakeItEsee public-launch readiness state. Real cus
 - PR `#171`: corrected password-recovery page metadata titles while preserving private/noindex behavior.
 - PR `#172`: added the secure Supabase SSR `/auth/confirm` token-hash email-confirmation route; exact deployment runtime `error/fatal = 0`, `5xx = 0`.
 - PR `#173`: added safe bilingual invalid/expired confirmation-link guidance on the login surface; exact deployment runtime `error/fatal = 0`, `5xx = 0`.
+- PR `#174`: refreshed the auth-gate evidence after the code-side confirmation/recovery sequence; current production deployment is healthy and runtime-clean.
+
+Subsequent manual production configuration closed the hosted Auth email-delivery/E2E gate and the GitHub `main` governance gate without changing application code, database behavior, or Finance/Cashfree scope.
 
 All of these closures preserved the Finance/Cashfree HOLD boundary.
 
@@ -58,50 +67,46 @@ A small set of anonymous SECURITY DEFINER warnings remains intentionally where f
 
 Live function-definition review previously confirmed the audited functions use an empty fixed search path and explicit ownership, participant, scoped Admin, or Super Admin authorization checks. Removing the `authenticated` grant solely to silence the Advisor would break legitimate application workflows and is not part of this hardening step.
 
-Fresh Security Advisor review on 2026-09-01 also continues to report finance/payment/payout/recovery-related notices. Those items remain inside the explicit Finance/Cashfree HOLD boundary and are not launch-readiness change targets.
+Fresh Security Advisor review continues to report finance/payment/payout/recovery-related notices. Those items remain inside the explicit Finance/Cashfree HOLD boundary and are not launch-readiness change targets.
 
 ## Remaining non-finance launch blockers
 
 ### 1. Supabase leaked-password protection
 
-The Supabase Security Advisor reports leaked-password protection as disabled. Supabase documents this as an Auth setting that rejects passwords known to have appeared in public password leaks.
+The Supabase Security Advisor reports leaked-password protection as disabled. Direct dashboard review confirmed that `Prevent use of leaked passwords` is unavailable on the current project plan and is marked as requiring the Supabase Pro plan or above.
 
-Enable leaked-password protection in the canonical production project's Authentication settings before public launch, then re-run the Security Advisor. The connected Supabase capability available during this audit can inspect the project and database but does not expose a safe Auth-configuration write action, so no workaround was applied through SQL.
+The application and Supabase email provider now both enforce an 8-character minimum password, but leaked-password screening remains a plan-level external launch blocker. Do not represent this item as green until the project is on a plan that exposes the setting and the protection is enabled and re-audited.
 
 Reference: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
 
-### 2. Hosted Supabase Auth configuration and real-email E2E
-
-The application code path is now ready for signup confirmation and password recovery, but hosted Supabase Auth configuration still requires direct dashboard verification before this gate can be called green.
-
-Verify all of the following in the canonical production project:
-
-- canonical Site URL points to the production TakeItEsee origin,
-- allowed redirect URLs include the exact required production callback/recovery destinations and do not include unnecessary broad origins,
-- the signup-confirmation email template uses the Supabase SSR-compatible token-hash confirmation link that reaches `/auth/confirm` with `token_hash` and `type=email`,
-- SMTP/email delivery configuration is production-ready,
-- a real new-user signup receives the confirmation email and completes `signup -> email -> /auth/confirm -> authenticated account`,
-- a real password-reset request receives the recovery email and completes `forgot password -> recovery email -> /reset-password -> password update`.
-
-Do not mark these items green from code inspection alone. The connected Supabase capability used for this audit does not expose the hosted Auth email-template/Site URL/redirect-list/SMTP configuration writes needed to complete or prove this external gate.
-
-### 3. GitHub `main` branch protection
-
-`main` currently reports `protected=false`, with required status checks not enforced at branch level.
-
-Before public launch, protect `main` so routine production changes require a pull request and the permanent `Web CI` check. The connected GitHub capability can verify the current branch state but does not expose a branch-protection/ruleset write action in this workflow, so this remains an explicit repository-settings gate.
-
-### 4. Final square brand asset
+### 2. Final square brand asset
 
 Favicon, web-app manifest icons, and social-image work remain blocked because a proper approved square TakeItEsee brand asset has not been supplied. Do not invent, crop, redraw, or substitute a brand mark merely to clear this gate.
 
-### 5. Final legal policy text
+### 3. Final legal policy text
 
 Privacy Policy, Terms of Service, and Cookie Policy remain blocked pending approved legal text. Current product UI intentionally indicates that legal policy documents are being finalized. Do not fabricate legal terms to clear this gate.
 
-### 6. Privileged server configuration confirmation
+### 4. Privileged server configuration confirmation
 
 Use the Super Admin launch-readiness panel/API with a real Super Admin session to verify server-side Supabase service-role access and configuration state. Guest access is expected to fail closed. Never expose, print, commit, or return the service-role key itself.
+
+## Closed manual/external gates
+
+### Hosted Supabase Auth configuration and real-email E2E
+
+Closed on 2026-09-02 after direct dashboard configuration and real production testing:
+
+- canonical Site URL set to `https://www.takeitesee.com`,
+- production redirect URLs configured for canonical origins and password recovery,
+- custom Resend SMTP configured using the verified `auth.takeitesee.com` sending subdomain,
+- confirmation template changed from `ConfirmationURL` to the SSR-compatible token-hash `/auth/confirm` link,
+- real signup confirmation email delivered and established an authenticated account session,
+- real password recovery email delivered, password update succeeded, and a fresh sign-in with the new password succeeded.
+
+### GitHub `main` branch protection
+
+Closed on 2026-09-02 with active repository ruleset `Main branch protection` targeting the default branch. The ruleset requires a pull request and GitHub Actions `web` status check, permits only squash merges, blocks deletion and non-fast-forward/force pushes, uses zero required approvals for the current solo workflow, and has no bypass actors.
 
 ## Finance / Cashfree / payment HOLD
 
