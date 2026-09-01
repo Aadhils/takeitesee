@@ -1,19 +1,23 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
+const description = 'Discover verified professionals with active services on the TakeItEsee marketplace.';
+
 export const metadata: Metadata = {
   title: 'Verified Professionals',
-  description: 'Discover verified professionals with active services on the TakeItEsee marketplace.',
+  description,
   alternates: { canonical: '/professionals' },
   openGraph: {
     title: 'Verified Professionals | TakeItEsee',
-    description: 'Discover verified professionals with active services on the TakeItEsee marketplace.',
+    description,
     url: '/professionals',
+    images: ['/brand/social'],
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: 'Verified Professionals | TakeItEsee',
-    description: 'Discover verified professionals with active services on the TakeItEsee marketplace.',
+    description,
+    images: ['/brand/social'],
   },
 };
 

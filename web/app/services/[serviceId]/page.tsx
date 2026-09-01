@@ -91,8 +91,19 @@ export async function generateMetadata({ params }: { params: Promise<{ serviceId
     description,
     alternates: { canonical },
     robots: { index: true, follow: true },
-    openGraph: { title: socialTitle, description, url: canonical, type: 'website' },
-    twitter: { card: 'summary', title: socialTitle, description },
+    openGraph: {
+      title: socialTitle,
+      description,
+      url: canonical,
+      type: 'website',
+      images: ['/brand/social'],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: socialTitle,
+      description,
+      images: ['/brand/social'],
+    },
   };
 }
 

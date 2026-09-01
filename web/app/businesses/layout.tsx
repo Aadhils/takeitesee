@@ -1,19 +1,23 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
+const description = 'Find verified local service businesses and active marketplace listings on TakeItEsee.';
+
 export const metadata: Metadata = {
   title: 'Local Service Businesses',
-  description: 'Find verified local service businesses and active marketplace listings on TakeItEsee.',
+  description,
   alternates: { canonical: '/businesses' },
   openGraph: {
     title: 'Local Service Businesses | TakeItEsee',
-    description: 'Find verified local service businesses and active marketplace listings on TakeItEsee.',
+    description,
     url: '/businesses',
+    images: ['/brand/social'],
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: 'Local Service Businesses | TakeItEsee',
-    description: 'Find verified local service businesses and active marketplace listings on TakeItEsee.',
+    description,
+    images: ['/brand/social'],
   },
 };
 

@@ -1,19 +1,23 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
+const description = 'Get help using TakeItEsee marketplace discovery, bookings, provider services, and account features.';
+
 export const metadata: Metadata = {
   title: 'Help & Support',
-  description: 'Get help using TakeItEsee marketplace discovery, bookings, provider services, and account features.',
+  description,
   alternates: { canonical: '/help' },
   openGraph: {
     title: 'Help & Support | TakeItEsee',
-    description: 'Get help using TakeItEsee marketplace discovery, bookings, provider services, and account features.',
+    description,
     url: '/help',
+    images: ['/brand/social'],
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: 'Help & Support | TakeItEsee',
-    description: 'Get help using TakeItEsee marketplace discovery, bookings, provider services, and account features.',
+    description,
+    images: ['/brand/social'],
   },
 };
 
