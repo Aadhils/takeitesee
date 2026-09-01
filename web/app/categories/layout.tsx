@@ -10,6 +10,11 @@ export const metadata: Metadata = {
     description: 'Explore service categories available on TakeItEsee and discover active local marketplace listings.',
     url: '/categories',
   },
+  twitter: {
+    card: 'summary',
+    title: 'Service Categories | TakeItEsee',
+    description: 'Explore service categories available on TakeItEsee and discover active local marketplace listings.',
+  },
 };
 
 export default function CategoriesLayout({ children }: { children: ReactNode }) {

@@ -10,6 +10,11 @@ export const metadata: Metadata = {
     description: 'Discover verified professionals with active services on the TakeItEsee marketplace.',
     url: '/professionals',
   },
+  twitter: {
+    card: 'summary',
+    title: 'Verified Professionals | TakeItEsee',
+    description: 'Discover verified professionals with active services on the TakeItEsee marketplace.',
+  },
 };
 
 export default function ProfessionalsLayout({ children }: { children: ReactNode }) {
