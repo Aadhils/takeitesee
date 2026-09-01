@@ -89,10 +89,10 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
           <div className="footer-link-column footer-connect"><strong>{isTamil ? 'உதவி' : 'Support'}</strong><Link href="/help">{isTamil ? 'உதவி மையம்' : 'Help center'}</Link></div>
           <div className="footer-legal">
             <span>© 2026 takeitesee</span>
-            <span>{t('footer.privacy')}</span>
+            <Link href="/privacy">{t('footer.privacy')}</Link>
             <span>{t('footer.terms')}</span>
             <span>{t('footer.cookies')}</span>
-            <span className="footer-policy-note">{isTamil ? 'சட்டக் கொள்கை ஆவணங்கள் வெளியீட்டு தயார்நிலையின் ஒரு பகுதியாக இறுதி செய்யப்படுகின்றன.' : 'Legal policy documents are being finalized as part of launch readiness.'}</span>
+            <span className="footer-policy-note">{isTamil ? 'சேவை விதிமுறைகள் மற்றும் குக்கீ கொள்கை வெளியீட்டு தயார்நிலையின் ஒரு பகுதியாக இறுதி செய்யப்படுகின்றன.' : 'Terms of Service and Cookie Policy are being finalized as part of launch readiness.'}</span>
           </div>
         </div>
       </footer>
