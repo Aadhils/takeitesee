@@ -2,17 +2,17 @@
 
 Last audited: 2026-09-02 (Asia/Kolkata)
 
-This gate records the current TakeItEsee public-launch readiness state. Real customer payments, Cashfree behavior, refunds, payouts, recovery, settlement, reconciliation, and INR finance activation remain explicitly **HOLD** and must not be changed or activated as a side effect of launch-readiness work.
+This gate records the current TakeItEsee public-launch readiness state. Real customer payments, Cashfree behavior, refunds, payouts, recovery, settlement, reconciliation, cash collection, and INR finance activation remain explicitly **HOLD** and must not be changed or activated as a side effect of launch-readiness work.
 
 ## Current production baseline
 
 - Canonical public domain: `https://www.takeitesee.com`.
 - Canonical production Supabase project: `bukrpkymivkhdpueropt`.
-- Current audited production release: `2138d84754c09538ff001e396fcfd487b78e42db`.
-- Current audited Vercel deployment: `dpl_8qTNVtxakazRSkEjGomhkFGjHZXn`.
-- `GET /api/health` returned `status=ok`, `app=ok`, `database=ok`, release `2138d84754c0`.
-- Fresh deployment-scoped runtime verification returned zero `error`/`fatal` entries and zero `5xx` entries.
-- Vercel reported zero runtime error clusters in the final audit window and zero unresolved toolbar-feedback threads for the production project.
+- Current audited production release: `19a2d0775aa7ce2752261cc21f59fcbce1aebba5`.
+- Current audited Vercel deployment: `dpl_CqjbwZJbobAAaJnQznpK2RR2TgAr`.
+- `GET /api/health` returned `status=ok`, `app=ok`, `database=ok`, release `19a2d0775aa7`.
+- Fresh deployment-scoped runtime verification returned zero `error`/`fatal` entries and zero `5xx` entries after the Terms of Service production smoke.
+- Vercel reported zero unresolved toolbar-feedback threads for the production project during the same audit window.
 
 ## Verified green gates
 
@@ -35,14 +35,17 @@ This gate records the current TakeItEsee public-launch readiness state. Real cus
 - Production password-recovery UX exists at `/forgot-password` and `/reset-password`, with no-store/noindex protections and generic reset-request copy that avoids account enumeration.
 - Production signup email-confirmation callback support exists at `/auth/confirm` for the documented Supabase token-hash `type=email` flow. Missing, unsupported, invalid, or failed confirmation requests fail closed without leaking token values or raw Supabase errors.
 - Invalid/expired email-confirmation links land on the private login surface with visible English/Tamil guidance.
-- Hosted Supabase Auth production configuration is now manually verified: canonical Site URL is `https://www.takeitesee.com`, production redirect URLs cover the canonical origins and reset-password destinations, and the confirmation template uses `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`.
-- Production auth email delivery now uses custom SMTP through Resend with the verified sending subdomain `auth.takeitesee.com`; DKIM and sending/SPF-related DNS records are verified. No SMTP secret or API key is stored in this document.
+- Hosted Supabase Auth production configuration is manually verified: canonical Site URL is `https://www.takeitesee.com`, production redirect URLs cover the canonical origins and reset-password destinations, and the confirmation template uses `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`.
+- Production auth email delivery uses custom SMTP through Resend with the verified sending subdomain `auth.takeitesee.com`; DKIM and sending/SPF-related DNS records are verified. No SMTP secret or API key is stored in this document.
 - A real production signup completed `signup -> confirmation email -> /auth/confirm -> authenticated account` successfully.
 - A real production password-recovery flow completed `forgot password -> recovery email -> /reset-password -> password update -> sign out -> fresh password sign-in` successfully.
-- Supabase email/password minimum password length is now `8`, matching the application-side minimum.
+- Supabase email/password minimum password length is `8`, matching the application-side minimum.
 - GitHub repository governance is active for the default `main` branch through the `Main branch protection` ruleset: pull requests are required, required approvals are `0` for the solo workflow, squash is the only allowed merge method, GitHub Actions check `web` is required, branch deletion and force pushes are blocked, and the bypass list is empty.
-- A fresh ruleset read during the final candidate audit reconfirmed that the ruleset is active on the default branch with squash-only pull requests, required `web` status checks, deletion/non-fast-forward protection, and no bypass actors.
 - Guest production access to `GET /api/super-admin/readiness` fails closed with HTTP `401` and does not expose readiness/configuration details.
+- The approved TakeItEsee logo is the source of truth for favicon/PWA/Apple-touch/social-image routes and public metadata.
+- The approved Privacy Policy is publicly available at `/privacy`, linked from the footer, canonical/indexable, and present in the public sitemap.
+- Provider verification now requires consumer-facing legal/public-contact/grievance disclosure before approval and before public service publication. Trigger-only disclosure helpers are not directly executable by API roles.
+- The approved Terms of Service is publicly available at `/terms`, linked from the footer, canonical/indexable, and present in the public sitemap.
 - INR finance policy remains inactive.
 
 ## Production closures completed during Launch Readiness
@@ -62,21 +65,24 @@ This gate records the current TakeItEsee public-launch readiness state. Real cus
 - PR `#175`: refreshed manual gate evidence after real Auth email E2E and GitHub `main` ruleset closure; required `web` CI passed under the new ruleset and the exact production deployment remained healthy and runtime-clean.
 - PR `#176`: separated the Super Admin finance-readiness gate from public non-finance launch readiness; the exact production deployment remained healthy and guest access to the privileged readiness API continued to fail closed.
 - PR `#177`: recorded the final non-finance production launch-candidate audit; public/private smoke, SEO, health, runtime, Vercel feedback, and Supabase advisor checks remained clean.
-
-Subsequent manual production configuration closed the hosted Auth email-delivery/E2E gate and the GitHub `main` governance gate without changing Finance/Cashfree scope.
+- PR `#178`: closed the approved TakeItEsee brand-asset/web-identity gate using deterministic favicon/PWA/Apple-touch/social image routes derived from the approved source artwork.
+- PR `#179`: propagated the approved social image into nested public Open Graph/Twitter metadata.
+- PR `#180`: published the approved Privacy Policy at `/privacy`, linked it from the footer, and added it to the public sitemap.
+- PR `#181`: required provider consumer-facing legal/public-contact/grievance disclosure before verification approval and public service publication; canonical production migration applied and verified, including direct-execute hardening for trigger-only helpers.
+- PR `#182`: published the approved Terms of Service at `/terms`, linked it from the footer, added it to the public sitemap, and changed the footer legal-readiness note so only Cookie Policy remains pending. Required `web` CI passed and exact production deployment `dpl_CqjbwZJbobAAaJnQznpK2RR2TgAr` remained healthy and runtime-clean.
 
 All of these closures preserved the Finance/Cashfree HOLD boundary.
 
-## Final non-finance launch candidate audit
+## Final non-finance launch candidate audit (PR #177 baseline)
 
-A final production smoke and advisor pass was completed against release `2138d84754c09538ff001e396fcfd487b78e42db` / deployment `dpl_8qTNVtxakazRSkEjGomhkFGjHZXn`.
+The broad final production smoke and advisor pass was completed against release `2138d84754c09538ff001e396fcfd487b78e42db` / deployment `dpl_8qTNVtxakazRSkEjGomhkFGjHZXn`. Subsequent PRs `#178` through `#182` were separately CI-gated, deployed, and production-verified for their scoped changes.
 
 ### Public discovery and SEO
 
 - `/` returned `200`, the exact deployment marker, canonical `https://www.takeitesee.com`, indexable metadata, and WebSite structured data.
 - `/explore`, `/categories`, `/professionals`, and `/businesses` returned `200` with canonical/indexable metadata and graceful live-catalog empty states where the production catalog currently has no qualifying rows.
 - `/robots.txt` allows public discovery while disallowing private/API/account/provider/workflow paths and points to the canonical sitemap.
-- `/sitemap.xml` contains only public discovery/help routes and does not include private account, booking, provider, notification, requirement, review, or Admin surfaces.
+- `/sitemap.xml` contains only public discovery/help/legal routes and does not include private account, booking, provider, notification, requirement, review, or Admin surfaces.
 
 ### Auth and private boundaries
 
@@ -91,8 +97,8 @@ A final production smoke and advisor pass was completed against release `2138d84
 - The canonical Supabase project URL resolves to `bukrpkymivkhdpueropt`.
 - Fresh Security Advisor output contains the already-known leaked-password warning, intentional audited SECURITY DEFINER notices, and finance/payment HOLD notices; no new non-finance security blocker was identified.
 - Fresh Performance Advisor output reconfirmed that remaining missing foreign-key indexes and RLS performance warnings are in finance/payment/refund/payout/recovery/settlement scope. Newly-added non-finance indexes may appear as `unused_index` INFO on the current low-data marketplace; this is not evidence that they should be removed.
-- `/api/health` remained `app=ok`, `database=ok`, release `2138d84754c0` after the smoke probes.
-- Deployment-scoped `error`/`fatal` logs were zero, deployment-scoped `5xx` logs were zero, grouped runtime error clusters were zero, and unresolved Vercel toolbar feedback was zero.
+- The broad PR `#177` baseline health check remained `app=ok`, `database=ok` and runtime-clean.
+- Current release `19a2d0775aa7ce2752261cc21f59fcbce1aebba5` was separately verified after PR `#182`: `/terms` returned `200` with canonical/indexable metadata, the footer linked Privacy Policy and Terms of Service while leaving Cookie Policy pending, `/sitemap.xml` included `/privacy` and `/terms`, `/api/health` returned release `19a2d0775aa7`, deployment-scoped `error`/`fatal` logs were zero, deployment-scoped `5xx` logs were zero, and unresolved Vercel toolbar feedback was zero.
 
 Result: the **implemented non-finance application candidate is production-smoke clean**. Public launch is still not declared fully ready because the external/manual blockers below remain open.
 
@@ -110,13 +116,15 @@ Fresh Security Advisor review continues to report finance/payment/payout/recover
 
 The Supabase Security Advisor reports leaked-password protection as disabled. Direct dashboard review confirmed that `Prevent use of leaked passwords` is unavailable on the current project plan and is marked as requiring the Supabase Pro plan or above.
 
-The application and Supabase email provider now both enforce an 8-character minimum password, but leaked-password screening remains a plan-level external launch blocker. Do not represent this item as green until the project is on a plan that exposes the setting and the protection is enabled and re-audited.
+The application and Supabase email provider both enforce an 8-character minimum password, but leaked-password screening remains a plan-level external launch blocker. Do not represent this item as green until the project is on a plan that exposes the setting and the protection is enabled and re-audited.
 
 Reference: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
 
-### 2. Final legal policy text
+### 2. Cookie Policy
 
-Privacy Policy, Terms of Service, and Cookie Policy remain blocked pending approved legal text. Current product UI intentionally indicates that legal policy documents are being finalized. Do not fabricate legal terms to clear this gate.
+Privacy Policy and Terms of Service are approved and published. **Cookie Policy remains the only pending legal-policy document.**
+
+Current product UI intentionally links the approved Privacy Policy and Terms of Service while showing Cookie Policy as still being finalized. Do not fabricate Cookie Policy text merely to clear this gate; publication requires explicit approved wording followed by the normal PR, CI, production deployment, and smoke-verification workflow.
 
 ## Closed manual/external gates
 
@@ -140,6 +148,12 @@ Closed on 2026-09-02 after direct dashboard configuration and real production te
 ### GitHub `main` branch protection
 
 Closed on 2026-09-02 with active repository ruleset `Main branch protection` targeting the default branch. The ruleset requires a pull request and GitHub Actions `web` status check, permits only squash merges, blocks deletion and non-fast-forward/force pushes, uses zero required approvals for the current solo workflow, and has no bypass actors.
+
+### Privacy Policy and Terms of Service
+
+Privacy Policy wording was approved and published through PR `#180` at `/privacy`. Terms of Service wording was explicitly approved on 2026-09-02 and published through PR `#182` at `/terms`. Both routes are canonical/indexable, linked from the global footer, use the approved brand social metadata, and are present in the public sitemap.
+
+Provider consumer-grievance disclosure needed by the Terms architecture was closed before Terms publication through PR `#181`, including collection, Admin review visibility, public provider disclosure, server-side publishability gating, and trigger-helper execution hardening.
 
 ## Deferred finance-only privileged readiness
 
