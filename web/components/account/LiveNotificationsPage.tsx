@@ -29,9 +29,22 @@ export default function LiveNotificationsPage() {
   const { locale, t } = useOperationalTranslations();
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [customerName, setCustomerName] = useState('');
+  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  const guestCopy = locale === 'ta-IN' ? {
+    title: 'அறிவிப்புகளை பார்க்க sign in செய்யவும்',
+    help: 'உங்கள் booking, proposal மற்றும் message updates-ஐ பார்க்க உங்கள் account-ல் sign in செய்யவும்.',
+    signIn: 'Sign in',
+    createAccount: 'Account உருவாக்கவும்',
+  } : {
+    title: 'Sign in to view notifications',
+    help: 'Sign in to your account to see booking, proposal, messaging and service updates.',
+    signIn: 'Sign in',
+    createAccount: 'Create account',
+  };
 
   const labelFor = (type: string) => {
     if (type === 'message_received' || type === 'requirement_chat_opened') return t('notif.message');
@@ -46,16 +59,25 @@ export default function LiveNotificationsPage() {
   const load = async () => {
     try {
       setLoading(true);
-      const [response, user] = await Promise.all([fetch('/api/notifications', { cache: 'no-store' }), getSupabaseBrowserUser()]);
+      const user = await getSupabaseBrowserUser();
+      if (!user) {
+        setAuthenticated(false);
+        setItems([]);
+        setCustomerName('');
+        setError('');
+        return;
+      }
+
+      setAuthenticated(true);
+      const response = await fetch('/api/notifications', { cache: 'no-store' });
       const payload = await response.json() as { notifications?: NotificationItem[]; error?: string };
       if (!response.ok) throw new Error(payload.error ?? 'Unable to load notifications.');
       setItems(payload.notifications ?? []);
-      if (user) {
-        try {
-          const profile = await getCustomerProfile(user.id, user.email ?? undefined);
-          setCustomerName(profile.displayName || '');
-        } catch { }
-      }
+
+      try {
+        const profile = await getCustomerProfile(user.id, user.email ?? undefined);
+        setCustomerName(profile.displayName || '');
+      } catch { }
       setError('');
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Unable to load notifications.');
@@ -86,11 +108,19 @@ export default function LiveNotificationsPage() {
 
   return <LocalizedAccountShell active="/notifications" customerName={customerName || undefined} unreadCount={unread}>
     <section className="account-page-heading"><span className="eyebrow">{t('notif.eyebrow')}</span><h1>{t('notif.title')}</h1><p>{t('notif.intro')}</p></section>
-    <div className="notification-toolbar"><Badge tone={unread ? 'info' : 'neutral'}>{unread} {t('notif.unread')}</Badge>{unread ? <Button type="button" variant="quiet" loading={busy} onClick={() => void markAllRead()}>{t('notif.markAll')}</Button> : <span className="results-note">{t('notif.caughtUp')}</span>}</div>
-    {loading ? <Card><p>{t('notif.loading')}</p></Card> : error ? <Card><p className="field-error" role="alert">{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>{t('common.tryAgain')}</Button></Card> : items.length ? <div className="notification-list">{items.map((item) => {
-      const label = labelFor(item.event_type);
-      const href = hrefFor(item);
-      return <Card className={`notification-card ${!item.read_at ? 'notification-unread' : ''}`} key={item.id}><div className="notification-card-mark" aria-hidden="true">{label.slice(0,1)}</div><div className="notification-card-body"><div className="notification-card-top"><Badge tone={!item.read_at ? 'info' : 'neutral'}>{label}</Badge><time>{new Date(item.created_at).toLocaleString(locale)}</time></div><h2>{item.title}</h2><p>{item.body}</p><div className="notification-card-actions">{href ? <Link href={href} className="text-link">{item.conversation_id ? t('notif.openConversation') : t('notif.viewBooking')}</Link> : null}{!item.read_at ? <Button type="button" variant="quiet" onClick={() => void markRead(item.id)}>{t('notif.markRead')}</Button> : null}</div></div></Card>;
-    })}</div> : <Card><EmptyState title={t('notif.none')}>{t('notif.noneHelp')}</EmptyState></Card>}
+    {authenticated === false ? <Card>
+      <EmptyState title={guestCopy.title}>{guestCopy.help}</EmptyState>
+      <div className="button-row">
+        <Link href="/login" className="button button-primary">{guestCopy.signIn}</Link>
+        <Link href="/signup" className="button button-secondary">{guestCopy.createAccount}</Link>
+      </div>
+    </Card> : <>
+      {authenticated === true && !loading ? <div className="notification-toolbar"><Badge tone={unread ? 'info' : 'neutral'}>{unread} {t('notif.unread')}</Badge>{unread ? <Button type="button" variant="quiet" loading={busy} onClick={() => void markAllRead()}>{t('notif.markAll')}</Button> : <span className="results-note">{t('notif.caughtUp')}</span>}</div> : null}
+      {loading ? <Card><p>{t('notif.loading')}</p></Card> : error ? <Card><p className="field-error" role="alert">{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>{t('common.tryAgain')}</Button></Card> : items.length ? <div className="notification-list">{items.map((item) => {
+        const label = labelFor(item.event_type);
+        const href = hrefFor(item);
+        return <Card className={`notification-card ${!item.read_at ? 'notification-unread' : ''}`} key={item.id}><div className="notification-card-mark" aria-hidden="true">{label.slice(0,1)}</div><div className="notification-card-body"><div className="notification-card-top"><Badge tone={!item.read_at ? 'info' : 'neutral'}>{label}</Badge><time>{new Date(item.created_at).toLocaleString(locale)}</time></div><h2>{item.title}</h2><p>{item.body}</p><div className="notification-card-actions">{href ? <Link href={href} className="text-link">{item.conversation_id ? t('notif.openConversation') : t('notif.viewBooking')}</Link> : null}{!item.read_at ? <Button type="button" variant="quiet" onClick={() => void markRead(item.id)}>{t('notif.markRead')}</Button> : null}</div></div></Card>;
+      })}</div> : <Card><EmptyState title={t('notif.none')}>{t('notif.noneHelp')}</EmptyState></Card>}
+    </>}
   </LocalizedAccountShell>;
 }
