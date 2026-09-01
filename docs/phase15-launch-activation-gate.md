@@ -8,9 +8,9 @@ This gate records the current TakeItEsee public-launch readiness state. Real cus
 
 - Canonical public domain: `https://www.takeitesee.com`.
 - Canonical production Supabase project: `bukrpkymivkhdpueropt`.
-- Current audited production release: `30cf6297bca1985feb8063f67f3d40db515c60a9`.
-- Current audited Vercel deployment: `dpl_9JFs5gLASMHxfySUHgFYAYyX3NEV`.
-- `GET /api/health` returned `status=ok`, `app=ok`, `database=ok`, release `30cf6297bca1`.
+- Current audited production release: `2138d84754c09538ff001e396fcfd487b78e42db`.
+- Current audited Vercel deployment: `dpl_8qTNVtxakazRSkEjGomhkFGjHZXn`.
+- `GET /api/health` returned `status=ok`, `app=ok`, `database=ok`, release `2138d84754c0`.
 - Fresh deployment-scoped runtime verification returned zero `error`/`fatal` entries and zero `5xx` entries.
 - Vercel reported zero runtime error clusters in the final audit window and zero unresolved toolbar-feedback threads for the production project.
 
@@ -61,14 +61,15 @@ This gate records the current TakeItEsee public-launch readiness state. Real cus
 - PR `#174`: refreshed the auth-gate evidence after the code-side confirmation/recovery sequence; production deployment remained healthy and runtime-clean.
 - PR `#175`: refreshed manual gate evidence after real Auth email E2E and GitHub `main` ruleset closure; required `web` CI passed under the new ruleset and the exact production deployment remained healthy and runtime-clean.
 - PR `#176`: separated the Super Admin finance-readiness gate from public non-finance launch readiness; the exact production deployment remained healthy and guest access to the privileged readiness API continued to fail closed.
+- PR `#177`: recorded the final non-finance production launch-candidate audit; public/private smoke, SEO, health, runtime, Vercel feedback, and Supabase advisor checks remained clean.
 
-Subsequent manual production configuration closed the hosted Auth email-delivery/E2E gate and the GitHub `main` governance gate without changing application code, database behavior, or Finance/Cashfree scope.
+Subsequent manual production configuration closed the hosted Auth email-delivery/E2E gate and the GitHub `main` governance gate without changing Finance/Cashfree scope.
 
 All of these closures preserved the Finance/Cashfree HOLD boundary.
 
 ## Final non-finance launch candidate audit
 
-A final production smoke and advisor pass was completed against release `30cf6297bca1985feb8063f67f3d40db515c60a9` / deployment `dpl_9JFs5gLASMHxfySUHgFYAYyX3NEV`.
+A final production smoke and advisor pass was completed against release `2138d84754c09538ff001e396fcfd487b78e42db` / deployment `dpl_8qTNVtxakazRSkEjGomhkFGjHZXn`.
 
 ### Public discovery and SEO
 
@@ -90,7 +91,7 @@ A final production smoke and advisor pass was completed against release `30cf629
 - The canonical Supabase project URL resolves to `bukrpkymivkhdpueropt`.
 - Fresh Security Advisor output contains the already-known leaked-password warning, intentional audited SECURITY DEFINER notices, and finance/payment HOLD notices; no new non-finance security blocker was identified.
 - Fresh Performance Advisor output reconfirmed that remaining missing foreign-key indexes and RLS performance warnings are in finance/payment/refund/payout/recovery/settlement scope. Newly-added non-finance indexes may appear as `unused_index` INFO on the current low-data marketplace; this is not evidence that they should be removed.
-- `/api/health` remained `app=ok`, `database=ok`, release `30cf6297bca1` after the smoke probes.
+- `/api/health` remained `app=ok`, `database=ok`, release `2138d84754c0` after the smoke probes.
 - Deployment-scoped `error`/`fatal` logs were zero, deployment-scoped `5xx` logs were zero, grouped runtime error clusters were zero, and unresolved Vercel toolbar feedback was zero.
 
 Result: the **implemented non-finance application candidate is production-smoke clean**. Public launch is still not declared fully ready because the external/manual blockers below remain open.
@@ -113,15 +114,17 @@ The application and Supabase email provider now both enforce an 8-character mini
 
 Reference: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
 
-### 2. Final square brand asset
-
-Favicon, web-app manifest icons, and social-image work remain blocked because a proper approved square TakeItEsee brand asset has not been supplied. Do not invent, crop, redraw, or substitute a brand mark merely to clear this gate.
-
-### 3. Final legal policy text
+### 2. Final legal policy text
 
 Privacy Policy, Terms of Service, and Cookie Policy remain blocked pending approved legal text. Current product UI intentionally indicates that legal policy documents are being finalized. Do not fabricate legal terms to clear this gate.
 
 ## Closed manual/external gates
+
+### Approved TakeItEsee brand asset and web identity
+
+Closed on 2026-09-02 after the product owner reconfirmed the existing `official-takeitesee-logo.png` artwork as the final approved TakeItEsee logo and explicitly approved deriving web identity assets from that exact artwork.
+
+The implementation keeps the approved logo file as the single source of truth and generates square favicon/PWA/Apple-touch images plus the 1200×630 social image without redrawing or substituting the brand mark. Root metadata and the web-app manifest reference those deterministic brand-image routes. Finance/Cashfree behavior is unaffected.
 
 ### Hosted Supabase Auth configuration and real-email E2E
 

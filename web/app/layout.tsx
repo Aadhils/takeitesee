@@ -15,17 +15,34 @@ export const metadata: Metadata = {
   },
   description: siteDescription,
   applicationName: 'TakeItEsee',
+  manifest: '/manifest.webmanifest',
+  icons: {
+    icon: [
+      { url: '/brand/icon/32', sizes: '32x32', type: 'image/png' },
+      { url: '/brand/icon/192', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: [{ url: '/brand/icon/180', sizes: '180x180', type: 'image/png' }],
+  },
   openGraph: {
     type: 'website',
     siteName: 'TakeItEsee',
     title: 'TakeItEsee | Find Trusted Local Services',
     description: siteDescription,
     locale: 'en_IN',
+    images: [
+      {
+        url: '/brand/social',
+        width: 1200,
+        height: 630,
+        alt: 'TakeItEsee',
+      },
+    ],
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: 'TakeItEsee | Find Trusted Local Services',
     description: siteDescription,
+    images: ['/brand/social'],
   },
   robots: {
     index: true,
