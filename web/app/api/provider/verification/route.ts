@@ -25,7 +25,7 @@ export async function GET(request: Request) {
 
     const [{ data: requests, error }, { data: documents, error: documentError }] = await Promise.all([
       supabase.from('provider_verification_requests')
-        .select('id,provider_type,professional_id,business_id,legal_name,contact_phone,address,evidence_type,evidence_reference,evidence_note,status,review_note,reviewed_at,created_at,updated_at')
+        .select('id,provider_type,professional_id,business_id,legal_name,contact_phone,address,public_contact_email,website_url,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone,evidence_type,evidence_reference,evidence_note,status,review_note,reviewed_at,created_at,updated_at')
         .eq('applicant_user_id', session.user_id)
         .order('created_at', { ascending: false }),
       supabase.from('provider_verification_documents')
@@ -44,12 +44,31 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     await productionAuthProvider.requireProvider(request);
-    const input = await request.json() as { legal_name?: string; contact_phone?: string; address?: string; evidence_type?: string; evidence_reference?: string; evidence_note?: string };
+    const input = await request.json() as {
+      legal_name?: string;
+      contact_phone?: string;
+      address?: string;
+      public_contact_email?: string;
+      website_url?: string;
+      grievance_officer_name?: string;
+      grievance_officer_designation?: string;
+      grievance_email?: string;
+      grievance_phone?: string;
+      evidence_type?: string;
+      evidence_reference?: string;
+      evidence_note?: string;
+    };
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase.rpc('submit_provider_verification', {
       requested_legal_name: input.legal_name ?? '',
       requested_contact_phone: input.contact_phone ?? '',
       requested_address: input.address ?? '',
+      requested_public_contact_email: input.public_contact_email ?? '',
+      requested_website_url: input.website_url?.trim() || null,
+      requested_grievance_officer_name: input.grievance_officer_name ?? '',
+      requested_grievance_officer_designation: input.grievance_officer_designation ?? '',
+      requested_grievance_email: input.grievance_email ?? '',
+      requested_grievance_phone: input.grievance_phone ?? '',
       requested_evidence_type: input.evidence_type ?? '',
       requested_evidence_reference: input.evidence_reference ?? '',
       requested_evidence_note: input.evidence_note?.trim() || null,

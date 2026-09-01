@@ -19,17 +19,24 @@ function seoText(value: string | null | undefined, fallback: string, max = 160) 
   return `${text.slice(0, max - 1).trimEnd()}…`;
 }
 
+function hasMarketplaceDisclosure(provider: any) {
+  return Boolean(
+    provider?.legal_name?.trim() && provider?.principal_address?.trim() && provider?.public_contact_email?.trim() && provider?.public_contact_phone?.trim()
+    && provider?.grievance_officer_name?.trim() && provider?.grievance_officer_designation?.trim() && provider?.grievance_email?.trim() && provider?.grievance_phone?.trim(),
+  );
+}
+
 const loadBusiness = cache(async (providerId: string) => {
   const supabase = publicSupabase();
   if (!supabase) return null;
 
   const { data: business, error } = await supabase
     .from('businesses')
-    .select('id,name,description,location,verified')
+    .select('id,name,description,location,verified,legal_name,principal_address,public_contact_email,public_contact_phone,website_url,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone')
     .eq('id', providerId)
     .eq('verified', true)
     .maybeSingle();
-  if (error || !business) return null;
+  if (error || !business || !hasMarketplaceDisclosure(business)) return null;
 
   const { data: services, error: servicesError } = await supabase
     .from('services')
@@ -103,6 +110,8 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
     description: business.description || undefined,
     url: canonical,
     areaServed: business.location || undefined,
+    email: business.public_contact_email || undefined,
+    telephone: business.public_contact_phone || undefined,
     hasOfferCatalog: {
       '@type': 'OfferCatalog',
       name: 'Active services',
@@ -128,6 +137,15 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
         name: business.name || '',
         description: business.description || '',
         location: business.location || '',
+        legal_name: business.legal_name || '',
+        principal_address: business.principal_address || '',
+        public_contact_email: business.public_contact_email || '',
+        public_contact_phone: business.public_contact_phone || '',
+        website_url: business.website_url || null,
+        grievance_officer_name: business.grievance_officer_name || '',
+        grievance_officer_designation: business.grievance_officer_designation || '',
+        grievance_email: business.grievance_email || '',
+        grievance_phone: business.grievance_phone || '',
       }}
       services={services.map((service: any) => ({
         id: String(service.id),

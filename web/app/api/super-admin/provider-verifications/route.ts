@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     const supabase = await createSupabaseServerClient();
     const [{ data, error }, { data: documents, error: documentError }] = await Promise.all([
       supabase.from('provider_verification_requests')
-        .select('id,applicant_user_id,provider_type,professional_id,business_id,legal_name,contact_phone,address,evidence_type,evidence_reference,evidence_note,status,review_note,reviewed_by,reviewed_at,created_at,updated_at')
+        .select('id,applicant_user_id,provider_type,professional_id,business_id,legal_name,contact_phone,address,public_contact_email,website_url,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone,evidence_type,evidence_reference,evidence_note,status,review_note,reviewed_by,reviewed_at,created_at,updated_at')
         .order('created_at', { ascending: false }),
       supabase.from('provider_verification_documents')
         .select('id,verification_request_id,original_filename,mime_type,size_bytes,status,created_at,deleted_at')

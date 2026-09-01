@@ -9,8 +9,10 @@ import { useRemainingWorkspaceTranslations } from '../i18n/RemainingWorkspaceTra
 
 type Provider = { id: string; provider_type: 'professional' | 'business'; display_name: string; verified: boolean };
 type RequestRecord = {
-  id: string; legal_name: string; contact_phone: string; address: string; evidence_type: string; evidence_reference: string;
-  evidence_note?: string | null; status: 'pending' | 'approved' | 'changes_requested' | 'rejected' | 'withdrawn' | 'revoked';
+  id: string; legal_name: string; contact_phone: string; address: string; public_contact_email: string; website_url?: string | null;
+  grievance_officer_name: string; grievance_officer_designation: string; grievance_email: string; grievance_phone: string;
+  evidence_type: string; evidence_reference: string; evidence_note?: string | null;
+  status: 'pending' | 'approved' | 'changes_requested' | 'rejected' | 'withdrawn' | 'revoked';
   review_note?: string | null; reviewed_at?: string | null; created_at: string;
 };
 type VerificationDocument = { id: string; verification_request_id: string; original_filename: string; mime_type: string; size_bytes: number; status: 'active' | 'deleted'; created_at: string; deleted_at?: string | null };
@@ -19,6 +21,11 @@ type Payload = { provider: Provider; requests: RequestRecord[]; documents: Verif
 const bucket = 'provider-verification-documents';
 const allowedTypes = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']);
 const maxBytes = 8 * 1024 * 1024;
+const emptyForm = {
+  legal_name: '', contact_phone: '', address: '', public_contact_email: '', website_url: '',
+  grievance_officer_name: '', grievance_officer_designation: 'Grievance Officer', grievance_email: '', grievance_phone: '',
+  evidence_type: 'government_id', evidence_reference: '', evidence_note: '',
+};
 
 function tone(status: RequestRecord['status']) {
   if (status === 'approved') return 'success' as const;
@@ -38,8 +45,9 @@ function extensionFor(file: File) {
 
 export default function ProviderVerificationManager() {
   const { t, locale } = useRemainingWorkspaceTranslations();
+  const text = (en: string, ta: string) => locale === 'ta-IN' ? ta : en;
   const [payload, setPayload] = useState<Payload | null>(null);
-  const [form, setForm] = useState({ legal_name: '', contact_phone: '', address: '', evidence_type: 'government_id', evidence_reference: '', evidence_note: '' });
+  const [form, setForm] = useState({ ...emptyForm });
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -71,7 +79,7 @@ export default function ProviderVerificationManager() {
       const response = await fetch('/api/provider/verification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
       const body = await response.json() as { request?: RequestRecord; error?: string };
       if (!response.ok || !body.request) throw new Error(body.error ?? 'Verification request could not be submitted.');
-      setForm({ legal_name: '', contact_phone: '', address: '', evidence_type: 'government_id', evidence_reference: '', evidence_note: '' });
+      setForm({ ...emptyForm });
       await load();
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Verification request could not be submitted.'); }
     finally { setBusy(false); }
@@ -141,9 +149,16 @@ export default function ProviderVerificationManager() {
       <p className="summary-note">{payload.provider.verified ? t('verification.approvedHelp') : t('verification.lockedHelp')}</p>
     </Card> : null}
 
-    {payload?.provider.verified ? <Alert title={t('verification.approved')} tone="success">{t('verification.privateProtected')}</Alert> : pending ? <Card>
+    {payload?.provider.verified ? <Alert title={t('verification.approved')} tone="success">{text('Your verified marketplace identity and grievance contact are used for the public provider disclosure required for live services.', 'Live சேவைகளுக்குத் தேவையான பொது வழங்குநர் தகவல் மற்றும் grievance contact உங்கள் சரிபார்க்கப்பட்ட marketplace identity-யிலிருந்து காட்டப்படும்.')}</Alert> : pending ? <Card>
       <div className="section-heading"><div><span className="eyebrow">{t('verification.currentRequest')}</span><h2>{pending.legal_name}</h2></div><Badge tone="warning">{t('verification.pendingReview')}</Badge></div>
-      <dl className="review-details"><div><dt>{t('verification.evidenceType')}</dt><dd>{evidenceLabel(pending.evidence_type)}</dd></div><div><dt>{t('verification.reference')}</dt><dd>{pending.evidence_reference}</dd></div><div><dt>{t('verification.contact')}</dt><dd>{pending.contact_phone}</dd></div><div><dt>{t('verification.address')}</dt><dd>{pending.address}</dd></div></dl>
+      <dl className="review-details">
+        <div><dt>{t('verification.contact')}</dt><dd>{pending.contact_phone}</dd></div><div><dt>{t('verification.address')}</dt><dd>{pending.address}</dd></div>
+        <div><dt>{text('Public email', 'பொது மின்னஞ்சல்')}</dt><dd>{pending.public_contact_email}</dd></div><div><dt>{text('Website', 'இணையதளம்')}</dt><dd>{pending.website_url || '—'}</dd></div>
+        <div><dt>{text('Grievance officer', 'Grievance officer')}</dt><dd>{pending.grievance_officer_name} · {pending.grievance_officer_designation}</dd></div>
+        <div><dt>{text('Grievance contact', 'Grievance தொடர்பு')}</dt><dd>{pending.grievance_email} · {pending.grievance_phone}</dd></div>
+        <div><dt>{t('verification.evidenceType')}</dt><dd>{evidenceLabel(pending.evidence_type)}</dd></div><div><dt>{t('verification.reference')}</dt><dd>{pending.evidence_reference}</dd></div>
+      </dl>
+      <Alert title={text('Public marketplace disclosure', 'பொது marketplace disclosure')} tone="info">{text('Legal identity, public contact and grievance contact above will be displayed on your public provider profile after verification. Uploaded evidence documents remain private.', 'மேலுள்ள legal identity, public contact மற்றும் grievance contact verification பிறகு உங்கள் public provider profile-ல் காட்டப்படும். Upload செய்யும் evidence documents private ஆகவே இருக்கும்.')}</Alert>
 
       <div className="section-stack" style={{ marginTop: '1rem' }}>
         <div><strong>{t('verification.privateDocs')}</strong><p className="summary-note">{t('verification.docsHelp')}</p></div>
@@ -163,10 +178,17 @@ export default function ProviderVerificationManager() {
       <Card>
         <h2>{t('verification.start')}</h2>
         <p className="summary-note">{t('verification.startHelp')}</p>
+        <Alert title={text('Marketplace public-contact requirement', 'Marketplace பொது தொடர்பு தேவை')} tone="info">{text('The legal identity, public contact and grievance officer details entered below will be public after approval. Use business-facing contact details that consumers can use for service grievances.', 'கீழே உள்ள legal identity, public contact மற்றும் grievance officer விவரங்கள் approval பிறகு public ஆகும். Customers grievance அனுப்ப பயன்படுத்தக்கூடிய business-facing contact details-ஐ பயன்படுத்தவும்.')}</Alert>
         <form onSubmit={submit} style={{ display: 'grid', gap: '.9rem' }}>
           <Input label={t('verification.legalName')} required maxLength={160} value={form.legal_name} onChange={(event) => setForm({ ...form, legal_name: event.target.value })} />
-          <Input label={t('verification.contactPhone')} required maxLength={40} value={form.contact_phone} onChange={(event) => setForm({ ...form, contact_phone: event.target.value })} />
+          <Input label={text('Public contact phone', 'பொது தொடர்பு தொலைபேசி')} required maxLength={40} value={form.contact_phone} onChange={(event) => setForm({ ...form, contact_phone: event.target.value })} />
           <Input label={t('verification.registeredAddress')} required maxLength={500} value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} />
+          <Input label={text('Public contact email', 'பொது தொடர்பு மின்னஞ்சல்')} type="email" required maxLength={254} value={form.public_contact_email} onChange={(event) => setForm({ ...form, public_contact_email: event.target.value })} />
+          <Input label={text('Website URL (optional)', 'Website URL (விருப்பம்)')} type="url" maxLength={300} value={form.website_url} onChange={(event) => setForm({ ...form, website_url: event.target.value })} />
+          <Input label={text('Grievance officer name', 'Grievance officer பெயர்')} required maxLength={160} value={form.grievance_officer_name} onChange={(event) => setForm({ ...form, grievance_officer_name: event.target.value })} />
+          <Input label={text('Grievance officer designation', 'Grievance officer பதவி')} required maxLength={120} value={form.grievance_officer_designation} onChange={(event) => setForm({ ...form, grievance_officer_designation: event.target.value })} />
+          <Input label={text('Grievance email', 'Grievance மின்னஞ்சல்')} type="email" required maxLength={254} value={form.grievance_email} onChange={(event) => setForm({ ...form, grievance_email: event.target.value })} />
+          <Input label={text('Grievance phone', 'Grievance தொலைபேசி')} required maxLength={40} value={form.grievance_phone} onChange={(event) => setForm({ ...form, grievance_phone: event.target.value })} />
           <Select label={t('verification.evidenceType')} value={form.evidence_type} onChange={(event) => setForm({ ...form, evidence_type: event.target.value })}><option value="government_id">{evidenceLabel('government_id')}</option><option value="business_registration">{evidenceLabel('business_registration')}</option><option value="professional_license">{evidenceLabel('professional_license')}</option><option value="other">{evidenceLabel('other')}</option></Select>
           <Input label={t('verification.evidenceReference')} required maxLength={120} hint={t('verification.referenceHint')} value={form.evidence_reference} onChange={(event) => setForm({ ...form, evidence_reference: event.target.value })} />
           <label className="field"><span className="field-label">{t('verification.evidenceNote')}</span><textarea className="field-control" rows={4} maxLength={1200} value={form.evidence_note} onChange={(event) => setForm({ ...form, evidence_note: event.target.value })} placeholder={t('verification.notePlaceholder')} /></label>
