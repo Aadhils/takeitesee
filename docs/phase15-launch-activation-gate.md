@@ -8,18 +8,19 @@ This gate records the current TakeItEsee public-launch readiness state. Real cus
 
 - Canonical public domain: `https://www.takeitesee.com`.
 - Canonical production Supabase project: `bukrpkymivkhdpueropt`.
-- Current audited production release: `baa990a7b3f5030272aa0854a697e35b2f1026fd`.
-- Current audited Vercel deployment: `dpl_3L3qp7ejhQvzB9GvjVw4h2sujC6r`.
-- `GET /api/health` returned `status=ok`, `app=ok`, `database=ok`, release `baa990a7b3f5`.
+- Current audited production release: `30cf6297bca1985feb8063f67f3d40db515c60a9`.
+- Current audited Vercel deployment: `dpl_9JFs5gLASMHxfySUHgFYAYyX3NEV`.
+- `GET /api/health` returned `status=ok`, `app=ok`, `database=ok`, release `30cf6297bca1`.
 - Fresh deployment-scoped runtime verification returned zero `error`/`fatal` entries and zero `5xx` entries.
+- Vercel reported zero runtime error clusters in the final audit window and zero unresolved toolbar-feedback threads for the production project.
 
 ## Verified green gates
 
 - `takeitesee.com` / `www.takeitesee.com` use the canonical Supabase project `bukrpkymivkhdpueropt`.
 - Sitemap, robots, canonical-domain, and public/private indexability audits are clean.
 - Public discovery routes use indexable canonical metadata; private/account/provider workflow surfaces use `noindex`/`nofollow` and `X-Robots-Tag` protections where applicable.
-- Representative production smoke checks for home, explore, categories, login, provider onboarding, guest bookings, 404 recovery, password-recovery pages, email-confirmation failure handling, and `/api/health` completed without production runtime errors.
-- Unknown routes return a real HTTP `404` with branded recovery UI and automatic `noindex` behavior.
+- Representative production smoke checks for home, explore, categories, professionals, businesses, login, account guest state, provider onboarding, guest bookings, 404 recovery, password-recovery pages, email-confirmation failure handling, and `/api/health` completed without production runtime errors.
+- Unknown routes return a real HTTP `404` with branded recovery UI and automatic framework `noindex` behavior.
 - Root-level application failures have a self-contained `global-error.tsx` recovery fallback with retry/home actions.
 - Anonymous execution was removed from mutating and user-specific SECURITY DEFINER RPCs.
 - Trigger-only SECURITY DEFINER functions are no longer directly executable by `anon` or `authenticated` API roles.
@@ -40,6 +41,7 @@ This gate records the current TakeItEsee public-launch readiness state. Real cus
 - A real production password-recovery flow completed `forgot password -> recovery email -> /reset-password -> password update -> sign out -> fresh password sign-in` successfully.
 - Supabase email/password minimum password length is now `8`, matching the application-side minimum.
 - GitHub repository governance is active for the default `main` branch through the `Main branch protection` ruleset: pull requests are required, required approvals are `0` for the solo workflow, squash is the only allowed merge method, GitHub Actions check `web` is required, branch deletion and force pushes are blocked, and the bypass list is empty.
+- A fresh ruleset read during the final candidate audit reconfirmed that the ruleset is active on the default branch with squash-only pull requests, required `web` status checks, deletion/non-fast-forward protection, and no bypass actors.
 - Guest production access to `GET /api/super-admin/readiness` fails closed with HTTP `401` and does not expose readiness/configuration details.
 - INR finance policy remains inactive.
 
@@ -58,10 +60,40 @@ This gate records the current TakeItEsee public-launch readiness state. Real cus
 - PR `#173`: added safe bilingual invalid/expired confirmation-link guidance on the login surface; exact deployment runtime `error/fatal = 0`, `5xx = 0`.
 - PR `#174`: refreshed the auth-gate evidence after the code-side confirmation/recovery sequence; production deployment remained healthy and runtime-clean.
 - PR `#175`: refreshed manual gate evidence after real Auth email E2E and GitHub `main` ruleset closure; required `web` CI passed under the new ruleset and the exact production deployment remained healthy and runtime-clean.
+- PR `#176`: separated the Super Admin finance-readiness gate from public non-finance launch readiness; the exact production deployment remained healthy and guest access to the privileged readiness API continued to fail closed.
 
 Subsequent manual production configuration closed the hosted Auth email-delivery/E2E gate and the GitHub `main` governance gate without changing application code, database behavior, or Finance/Cashfree scope.
 
 All of these closures preserved the Finance/Cashfree HOLD boundary.
+
+## Final non-finance launch candidate audit
+
+A final production smoke and advisor pass was completed against release `30cf6297bca1985feb8063f67f3d40db515c60a9` / deployment `dpl_9JFs5gLASMHxfySUHgFYAYyX3NEV`.
+
+### Public discovery and SEO
+
+- `/` returned `200`, the exact deployment marker, canonical `https://www.takeitesee.com`, indexable metadata, and WebSite structured data.
+- `/explore`, `/categories`, `/professionals`, and `/businesses` returned `200` with canonical/indexable metadata and graceful live-catalog empty states where the production catalog currently has no qualifying rows.
+- `/robots.txt` allows public discovery while disallowing private/API/account/provider/workflow paths and points to the canonical sitemap.
+- `/sitemap.xml` contains only public discovery/help routes and does not include private account, booking, provider, notification, requirement, review, or Admin surfaces.
+
+### Auth and private boundaries
+
+- `/login` is private/noindex and exposes the password-recovery entry point.
+- `/forgot-password` and `/reset-password` return `200` with `Cache-Control: no-store, max-age=0` plus `noindex, nofollow, noarchive` protections.
+- Guest `/account`, `/bookings`, and `/provider/onboarding` responses expose only generic unauthenticated/checking shells and no customer/provider records.
+- Guest `/super-admin` does not expose Super Admin UI or data; the request resolves to the generic account-entry surface. The privileged readiness API separately returns `401` for guests.
+- A deliberately unknown production path returned a real HTTP `404` with branded recovery actions and framework-injected `noindex` behavior.
+
+### Database and runtime
+
+- The canonical Supabase project URL resolves to `bukrpkymivkhdpueropt`.
+- Fresh Security Advisor output contains the already-known leaked-password warning, intentional audited SECURITY DEFINER notices, and finance/payment HOLD notices; no new non-finance security blocker was identified.
+- Fresh Performance Advisor output reconfirmed that remaining missing foreign-key indexes and RLS performance warnings are in finance/payment/refund/payout/recovery/settlement scope. Newly-added non-finance indexes may appear as `unused_index` INFO on the current low-data marketplace; this is not evidence that they should be removed.
+- `/api/health` remained `app=ok`, `database=ok`, release `30cf6297bca1` after the smoke probes.
+- Deployment-scoped `error`/`fatal` logs were zero, deployment-scoped `5xx` logs were zero, grouped runtime error clusters were zero, and unresolved Vercel toolbar feedback was zero.
+
+Result: the **implemented non-finance application candidate is production-smoke clean**. Public launch is still not declared fully ready because the external/manual blockers below remain open.
 
 ## Intentional Supabase Security Advisor warnings
 
