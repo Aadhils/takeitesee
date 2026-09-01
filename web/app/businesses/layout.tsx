@@ -10,6 +10,11 @@ export const metadata: Metadata = {
     description: 'Find verified local service businesses and active marketplace listings on TakeItEsee.',
     url: '/businesses',
   },
+  twitter: {
+    card: 'summary',
+    title: 'Local Service Businesses | TakeItEsee',
+    description: 'Find verified local service businesses and active marketplace listings on TakeItEsee.',
+  },
 };
 
 export default function BusinessesLayout({ children }: { children: ReactNode }) {
