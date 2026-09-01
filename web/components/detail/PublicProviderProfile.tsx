@@ -10,6 +10,15 @@ type ProviderView = {
   name: string;
   description: string;
   location: string;
+  legal_name: string;
+  principal_address: string;
+  public_contact_email: string;
+  public_contact_phone: string;
+  website_url?: string | null;
+  grievance_officer_name: string;
+  grievance_officer_designation: string;
+  grievance_email: string;
+  grievance_phone: string;
 };
 
 type ProviderService = {
@@ -32,11 +41,20 @@ function LocalizedBreadcrumbs({ kind, text }: { kind: ProviderKind; text: (en: s
   );
 }
 
+function safeWebsite(value: string | null | undefined) {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : null;
+  } catch { return null; }
+}
+
 export default function PublicProviderProfile({ kind, provider, services }: { kind: ProviderKind; provider: ProviderView; services: ProviderService[] }) {
   const { locale } = useLanguage();
   const text = (en: string, ta: string) => locale === 'ta-IN' ? ta : en;
   const displayName = provider.name || (kind === 'business' ? text('Verified business', 'சரிபார்க்கப்பட்ட வணிகம்') : text('Verified professional', 'சரிபார்க்கப்பட்ட நிபுணர்'));
   const initials = (provider.name || (kind === 'business' ? 'VB' : 'VP')).split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
+  const website = safeWebsite(provider.website_url);
   const money = (amount: number, currency: string) => {
     try { return new Intl.NumberFormat(locale, { style: 'currency', currency, minimumFractionDigits: 2 }).format(amount); }
     catch { return `${currency} ${amount.toFixed(2)}`; }
@@ -94,6 +112,22 @@ export default function PublicProviderProfile({ kind, provider, services }: { ki
         </main>
 
         <aside className="profile-aside">
+          <Card>
+            <span className="eyebrow">{text('Provider disclosure', 'Provider disclosure')}</span>
+            <h2>{provider.legal_name}</h2>
+            <dl className="review-details">
+              <div><dt>{text('Principal address', 'முதன்மை முகவரி')}</dt><dd>{provider.principal_address}</dd></div>
+              <div><dt>{text('Public contact', 'பொது தொடர்பு')}</dt><dd><a href={`mailto:${provider.public_contact_email}`}>{provider.public_contact_email}</a><br/><a href={`tel:${provider.public_contact_phone}`}>{provider.public_contact_phone}</a></dd></div>
+              {website ? <div><dt>{text('Website', 'இணையதளம்')}</dt><dd><a href={website} target="_blank" rel="noreferrer">{text('Open provider website', 'Provider website திறக்க')}</a></dd></div> : null}
+            </dl>
+          </Card>
+          <Card>
+            <span className="eyebrow">{text('Consumer grievance', 'Consumer grievance')}</span>
+            <h2>{provider.grievance_officer_name}</h2>
+            <p className="summary-note">{provider.grievance_officer_designation}</p>
+            <p><a href={`mailto:${provider.grievance_email}`}>{provider.grievance_email}</a><br/><a href={`tel:${provider.grievance_phone}`}>{provider.grievance_phone}</a></p>
+            <p className="summary-note">{text('Use these provider contact details for service-related consumer grievances. You can also contact TakeItEsee support for platform assistance.', 'சேவை தொடர்பான consumer grievance-க்கு இந்த provider contact விவரங்களை பயன்படுத்தலாம். Platform உதவிக்கு TakeItEsee support-ஐயும் தொடர்புகொள்ளலாம்.')}</p>
+          </Card>
           <Card>
             <span className="eyebrow">{text('Live provider', 'Live வழங்குநர்')}</span>
             <h2>{kind === 'business' ? text('Verified business', 'சரிபார்க்கப்பட்ட வணிகம்') : text('Verified professional', 'சரிபார்க்கப்பட்ட நிபுணர்')}</h2>
