@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { ForgotPasswordForm } from '../../components/auth/AuthForms';
 
 export const metadata: Metadata = {
-  title: 'Forgot password | TakeItEsee',
+  title: 'Forgot password',
   robots: { index: false, follow: false },
 };
 
