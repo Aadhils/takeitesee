@@ -91,8 +91,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
             <span>© 2026 takeitesee</span>
             <Link href="/privacy">{t('footer.privacy')}</Link>
             <Link href="/terms">{t('footer.terms')}</Link>
-            <span>{t('footer.cookies')}</span>
-            <span className="footer-policy-note">{isTamil ? 'குக்கீ கொள்கை வெளியீட்டு தயார்நிலையின் ஒரு பகுதியாக இறுதி செய்யப்படுகிறது.' : 'Cookie Policy is being finalized as part of launch readiness.'}</span>
+            <Link href="/cookies">{t('footer.cookies')}</Link>
           </div>
         </div>
       </footer>
@@ -122,7 +121,6 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         .provider-draft-banner > .card > p { max-width: 72ch; line-height: 1.6; }
         .provider-draft-banner .account-actions { gap: 12px; align-items: stretch; }
         .provider-draft-banner h2 { margin-top: 8px; overflow-wrap: anywhere; }
-        .footer-policy-note { flex-basis: 100%; max-width: 72ch; opacity: .72; line-height: 1.5; }
 
         @media (max-width: 1100px) {
           .shell-bar { gap: 16px; }
