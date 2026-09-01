@@ -110,7 +110,7 @@ export async function signUpWithSupabase(input: SignUpInput) {
   const supabase = createSupabaseBrowserClient();
   const { data, error } = await supabase.auth.signUp({ email: input.email.trim().toLowerCase(), password: input.credential, options: { data: { name: input.name.trim(), phone: input.phone?.trim() || undefined, role: 'customer' } } });
   if (error || !data.user) throw new Error(error?.message ?? 'Unable to create an account.');
-  return data.user;
+  return { user: data.user, session: data.session };
 }
 
 export async function signOutWithSupabase() {
