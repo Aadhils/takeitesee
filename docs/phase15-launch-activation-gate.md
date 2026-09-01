@@ -8,9 +8,9 @@ This gate records the current TakeItEsee public-launch readiness state. Real cus
 
 - Canonical public domain: `https://www.takeitesee.com`.
 - Canonical production Supabase project: `bukrpkymivkhdpueropt`.
-- Current audited production release: `2e34c54648596571181dd1393a8c9c85087212ff`.
-- Current audited Vercel deployment: `dpl_3My1tYbCNMnG3SJjrZzqKRE4SBRx`.
-- `GET /api/health` returned `status=ok`, `app=ok`, `database=ok`, release `2e34c5464859`.
+- Current audited production release: `baa990a7b3f5030272aa0854a697e35b2f1026fd`.
+- Current audited Vercel deployment: `dpl_3L3qp7ejhQvzB9GvjVw4h2sujC6r`.
+- `GET /api/health` returned `status=ok`, `app=ok`, `database=ok`, release `baa990a7b3f5`.
 - Fresh deployment-scoped runtime verification returned zero `error`/`fatal` entries and zero `5xx` entries.
 
 ## Verified green gates
@@ -40,6 +40,7 @@ This gate records the current TakeItEsee public-launch readiness state. Real cus
 - A real production password-recovery flow completed `forgot password -> recovery email -> /reset-password -> password update -> sign out -> fresh password sign-in` successfully.
 - Supabase email/password minimum password length is now `8`, matching the application-side minimum.
 - GitHub repository governance is active for the default `main` branch through the `Main branch protection` ruleset: pull requests are required, required approvals are `0` for the solo workflow, squash is the only allowed merge method, GitHub Actions check `web` is required, branch deletion and force pushes are blocked, and the bypass list is empty.
+- Guest production access to `GET /api/super-admin/readiness` fails closed with HTTP `401` and does not expose readiness/configuration details.
 - INR finance policy remains inactive.
 
 ## Production closures completed during Launch Readiness
@@ -55,7 +56,8 @@ This gate records the current TakeItEsee public-launch readiness state. Real cus
 - PR `#171`: corrected password-recovery page metadata titles while preserving private/noindex behavior.
 - PR `#172`: added the secure Supabase SSR `/auth/confirm` token-hash email-confirmation route; exact deployment runtime `error/fatal = 0`, `5xx = 0`.
 - PR `#173`: added safe bilingual invalid/expired confirmation-link guidance on the login surface; exact deployment runtime `error/fatal = 0`, `5xx = 0`.
-- PR `#174`: refreshed the auth-gate evidence after the code-side confirmation/recovery sequence; current production deployment is healthy and runtime-clean.
+- PR `#174`: refreshed the auth-gate evidence after the code-side confirmation/recovery sequence; production deployment remained healthy and runtime-clean.
+- PR `#175`: refreshed manual gate evidence after real Auth email E2E and GitHub `main` ruleset closure; required `web` CI passed under the new ruleset and the exact production deployment remained healthy and runtime-clean.
 
 Subsequent manual production configuration closed the hosted Auth email-delivery/E2E gate and the GitHub `main` governance gate without changing application code, database behavior, or Finance/Cashfree scope.
 
@@ -87,10 +89,6 @@ Favicon, web-app manifest icons, and social-image work remain blocked because a 
 
 Privacy Policy, Terms of Service, and Cookie Policy remain blocked pending approved legal text. Current product UI intentionally indicates that legal policy documents are being finalized. Do not fabricate legal terms to clear this gate.
 
-### 4. Privileged server configuration confirmation
-
-Use the Super Admin launch-readiness panel/API with a real Super Admin session to verify server-side Supabase service-role access and configuration state. Guest access is expected to fail closed. Never expose, print, commit, or return the service-role key itself.
-
 ## Closed manual/external gates
 
 ### Hosted Supabase Auth configuration and real-email E2E
@@ -107,6 +105,14 @@ Closed on 2026-09-02 after direct dashboard configuration and real production te
 ### GitHub `main` branch protection
 
 Closed on 2026-09-02 with active repository ruleset `Main branch protection` targeting the default branch. The ruleset requires a pull request and GitHub Actions `web` status check, permits only squash merges, blocks deletion and non-fast-forward/force pushes, uses zero required approvals for the current solo workflow, and has no bypass actors.
+
+## Deferred finance-only privileged readiness
+
+The existing `LaunchReadinessPanel` is rendered inside `/super-admin/finance`, after Admin authentication plus an explicit `super_admin` role check. Its API, `GET /api/super-admin/readiness`, combines server/database security probes with Cashfree Payments, Cashfree Payouts, sandbox payment evidence, and INR finance-policy state.
+
+That endpoint's overall `blocked` / `sandbox_ready` result is therefore a **finance activation readiness result**, not a public non-finance launch result. While Finance/Cashfree remains HOLD, disabled or incomplete Cashfree/payout configuration and missing sandbox payment evidence are expected and must not be promoted into non-finance public-launch blockers.
+
+Current production verification confirms that guest access to this API returns HTTP `401` with only `Authentication required.` and no privileged readiness payload. A full Super Admin finance-readiness run is intentionally deferred until the Finance/Cashfree HOLD is explicitly lifted. Do not create/elevate a privileged identity, expose a service-role key, activate gateway credentials, or run payment/payout E2E merely to make this finance-only panel green.
 
 ## Finance / Cashfree / payment HOLD
 
@@ -126,9 +132,9 @@ Resume finance work only after the HOLD is explicitly lifted in a later instruct
 
 Public non-finance launch readiness and finance activation are separate gates. Clearing website, security, reliability, SEO, auth, brand, legal, or repository-governance blockers must never activate payment or finance behavior indirectly.
 
-## Super Admin readiness endpoint
+## Super Admin finance-readiness endpoint
 
-`GET /api/super-admin/readiness` is Super Admin-only and reports booleans/configuration state without returning secret values or database rows. Guest access correctly returns an authorization failure instead of readiness details. It checks:
+`GET /api/super-admin/readiness` is Super Admin-only and reports booleans/configuration state without returning secret values or database rows. Guest access correctly returns an authorization failure instead of readiness details. Within the finance workspace it checks:
 
 - canonical Supabase binding,
 - service-role database access,
@@ -136,6 +142,7 @@ Public non-finance launch readiness and finance activation are separate gates. C
 - public marketplace helper availability,
 - INR finance policy activation state,
 - Cashfree Payments mode/configuration completeness,
-- Cashfree Payouts mode/configuration completeness.
+- Cashfree Payouts mode/configuration completeness,
+- recent sandbox payment API/webhook evidence.
 
-Finance-related readiness fields are observational only while Finance/Cashfree remains HOLD.
+These finance-workspace checks remain deferred while Finance/Cashfree is HOLD and are not counted as public non-finance launch blockers.
