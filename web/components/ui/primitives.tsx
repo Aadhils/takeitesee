@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode, useId } from 'react';
+import { useDialogFocusTrap } from './useDialogFocusTrap';
 
 type ButtonVariant = 'primary' | 'secondary' | 'quiet' | 'danger';
 
@@ -189,13 +190,24 @@ export function ErrorState({ title = 'Something went wrong', children, action }:
 }
 
 export function Modal({ open, title, children, onClose }: { open: boolean; title: string; children: ReactNode; onClose: () => void }) {
+  const titleId = useId();
+  const dialogRef = useDialogFocusTrap<HTMLElement>({ open, onClose });
+
   if (!open) return null;
 
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
-      <section className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onMouseDown={(event) => event.stopPropagation()}>
+      <section
+        ref={dialogRef}
+        className="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
         <div className="modal-header">
-          <h2 id="modal-title">{title}</h2>
+          <h2 id={titleId}>{title}</h2>
           <button className="icon-button" type="button" aria-label="Close dialog" onClick={onClose}>x</button>
         </div>
         {children}
