@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
 import { Button, Card, Input } from '../../../components/ui/primitives';
+import { PasswordInput } from '../../../components/ui/PasswordInput';
 import { useOperationalTranslations } from '../../../components/i18n/OperationalTranslations';
 import {
   getSupabaseBrowserUser,
@@ -28,6 +29,8 @@ export default function AccountSecurityPage() {
   const [emailSubmitting, setEmailSubmitting] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [emailSuccess, setEmailSuccess] = useState('');
+  const showLabel = tamil ? 'Password-ஐ காட்டு' : 'Show password';
+  const hideLabel = tamil ? 'Password-ஐ மறை' : 'Hide password';
 
   useEffect(() => {
     let active = true;
@@ -150,9 +153,9 @@ export default function AccountSecurityPage() {
       </div>
       <h2>{tamil ? 'Password மாற்றவும்' : 'Change password'}</h2>
       <form onSubmit={submit} className="section-stack">
-        <Input label={tamil ? 'தற்போதைய password' : 'Current password'} type="password" autoComplete="current-password" required value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} />
-        <Input label={tamil ? 'புதிய password' : 'New password'} type="password" autoComplete="new-password" required minLength={8} hint={tamil ? 'குறைந்தது 8 characters.' : 'Use at least 8 characters.'} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} />
-        <Input label={tamil ? 'புதிய password-ஐ உறுதிப்படுத்தவும்' : 'Confirm new password'} type="password" autoComplete="new-password" required minLength={8} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} />
+        <PasswordInput label={tamil ? 'தற்போதைய password' : 'Current password'} autoComplete="current-password" required value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} showLabel={showLabel} hideLabel={hideLabel} />
+        <PasswordInput label={tamil ? 'புதிய password' : 'New password'} autoComplete="new-password" required minLength={8} hint={tamil ? 'குறைந்தது 8 characters.' : 'Use at least 8 characters.'} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} showLabel={showLabel} hideLabel={hideLabel} />
+        <PasswordInput label={tamil ? 'புதிய password-ஐ உறுதிப்படுத்தவும்' : 'Confirm new password'} autoComplete="new-password" required minLength={8} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} showLabel={showLabel} hideLabel={hideLabel} />
         {error ? <p className="field-error" role="alert">{error}</p> : null}
         {success ? <div className="alert alert-success" role="status"><strong>{success}</strong></div> : null}
         <div className="button-row">
@@ -167,7 +170,7 @@ export default function AccountSecurityPage() {
       <h2>{tamil ? 'Sign-in email மாற்றவும்' : 'Change sign-in email'}</h2>
       <p>{tamil ? 'புதிய email request Supabase Auth secure email-change policy வழியாக process செய்யப்படும். தேவையான confirmation முடியும் வரை தற்போதைய email தான் sign-in address.' : 'The new address is processed through the Supabase Auth secure email-change flow. Your current email remains the sign-in address until the required confirmation is complete.'}</p>
       <form onSubmit={submitEmailChange} className="section-stack">
-        <Input label={tamil ? 'தற்போதைய password' : 'Current password'} type="password" autoComplete="current-password" required value={emailCurrentPassword} onChange={(event) => setEmailCurrentPassword(event.target.value)} />
+        <PasswordInput label={tamil ? 'தற்போதைய password' : 'Current password'} autoComplete="current-password" required value={emailCurrentPassword} onChange={(event) => setEmailCurrentPassword(event.target.value)} showLabel={showLabel} hideLabel={hideLabel} />
         <Input label={tamil ? 'புதிய email' : 'New email'} type="email" autoComplete="email" required value={newEmail} onChange={(event) => setNewEmail(event.target.value)} />
         {emailError ? <p className="field-error" role="alert">{emailError}</p> : null}
         {emailSuccess ? <div className="alert alert-success" role="status"><strong>{emailSuccess}</strong></div> : null}
