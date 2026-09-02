@@ -9,7 +9,7 @@ export async function GET() {
 
     const { data, error } = await supabase
       .from('notifications')
-      .select('id,booking_id,conversation_id,event_type,title,body,created_at,read_at')
+      .select('id,booking_id,conversation_id,target_path,event_type,title,body,created_at,read_at')
       .eq('recipient_user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(100);
