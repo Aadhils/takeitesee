@@ -89,7 +89,7 @@ export function LocalizedProfilePage() {
 }
 
 export function LocalizedSettingsPage() {
-  const { t } = useRemainingWorkspaceTranslations();
+  const { t, locale } = useRemainingWorkspaceTranslations();
   const [settings, setSettings] = useState<AccountSettings>();
   const [form, setForm] = useState<AccountSettings>();
   const [customerName, setCustomerName] = useState<string>();
@@ -124,6 +124,20 @@ export function LocalizedSettingsPage() {
     finally { setSaving(false); }
   };
 
+  const accountActionsCopy = locale === 'ta-IN' ? {
+    eyebrow: 'Account actions',
+    title: 'Security & privacy',
+    help: 'Password-ஐ பாதுகாப்பாக மாற்றவும் அல்லது account / information deletion review உட்பட privacy request-ஐ submit செய்யவும். Deletion request உடனடி automatic deletion அல்ல.',
+    security: 'Password மாற்றவும்',
+    privacy: 'Privacy requests',
+  } : {
+    eyebrow: 'Account actions',
+    title: 'Security & privacy',
+    help: 'Change your password securely or submit a privacy request, including an account or information deletion review. A deletion request is not an immediate automatic deletion.',
+    security: 'Change password',
+    privacy: 'Privacy requests',
+  };
+
   return <LocalizedAccountShell active="/account/settings" customerName={customerName ?? t('account.yourAccount')}>
     <section className="account-page-heading"><span className="eyebrow">{t('settings.eyebrow')}</span><h1>{t('settings.title')}</h1><p>{t('settings.intro')}</p></section>
     {saved ? <div className="alert alert-success" role="status"><strong>{t('settings.saved')}</strong><span>{t('settings.savedHelp')}</span></div> : null}
@@ -132,7 +146,7 @@ export function LocalizedSettingsPage() {
       <Card className="settings-section"><span className="eyebrow">{t('settings.communication')}</span><h2>{t('settings.notificationPreferences')}</h2><Checkbox label={t('settings.bookingUpdates')} description={t('settings.bookingUpdatesHelp')} checked={form.notifyBookingUpdates} onChange={(event) => updateField('notifyBookingUpdates', event.target.checked)} /><Checkbox label={t('settings.reviewReminders')} description={t('settings.reviewRemindersHelp')} checked={form.notifyReviewReminders} onChange={(event) => updateField('notifyReviewReminders', event.target.checked)} /><Checkbox label={t('settings.productInfo')} description={t('settings.productInfoHelp')} checked={form.notifyProductUpdates} onChange={(event) => updateField('notifyProductUpdates', event.target.checked)} /></Card>
       <Card className="settings-section"><span className="eyebrow">{t('settings.experience')}</span><h2>{t('settings.languageAccessibility')}</h2><Select label={t('settings.language')} value={form.preferredLanguage} onChange={(event) => updateField('preferredLanguage', event.target.value)}><option value="English">English</option><option value="Tamil">தமிழ்</option><option value="Hindi">Hindi</option><option value="Malayalam">Malayalam</option></Select><Checkbox label={t('settings.reducedMotion')} description={t('settings.reducedMotionHelp')} checked={form.reducedMotion} onChange={(event) => updateField('reducedMotion', event.target.checked)} /><Checkbox label={t('settings.largerText')} description={t('settings.largerTextHelp')} checked={form.largerText} onChange={(event) => updateField('largerText', event.target.checked)} /></Card>
       <Card className="settings-section"><span className="eyebrow">{t('settings.privacy')}</span><h2>{t('settings.accountVisibility')}</h2><Checkbox label={t('settings.historyRecommendations')} description={t('settings.historyRecommendationsHelp')} checked={form.useHistoryForRecommendations} onChange={(event) => updateField('useHistoryForRecommendations', event.target.checked)} /><p className="settings-note">{t('settings.privacyNote')}</p></Card>
-      <Card className="settings-section settings-danger"><span className="eyebrow">{t('settings.danger')}</span><h2>{t('settings.accountActions')}</h2><p>{t('settings.dangerHelp')}</p><Button type="button" variant="danger" disabled>{t('settings.deleteAccount')}</Button></Card>
+      <Card className="settings-section"><span className="eyebrow">{accountActionsCopy.eyebrow}</span><h2>{accountActionsCopy.title}</h2><p>{accountActionsCopy.help}</p><div className="button-row"><Link href="/account/security" className="button button-secondary">{accountActionsCopy.security}</Link><Link href="/account/privacy" className="button button-secondary">{accountActionsCopy.privacy}</Link></div></Card>
     </div>{error ? <p className="field-error" role="alert">{error}</p> : null}<Button type="button" loading={saving} onClick={save}>{t('settings.save')}</Button></> : null}
   </LocalizedAccountShell>;
 }
