@@ -46,6 +46,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="app-shell">
+      <a className="skip-link" href="#main-content">{t('nav.skipToContent')}</a>
       <header className="site-header">
         <div className="shell-bar">
           {!isHomepage ? <Link href="/" className="inner-page-brand" aria-label={t('nav.goHome')}><img src="/official-takeitesee-logo.png" alt="" /></Link> : null}
@@ -75,7 +76,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         ) : null}
       </header>
 
-      <main className="page-frame">{children}</main>
+      <main id="main-content" className="page-frame" tabIndex={-1}>{children}</main>
 
       <footer className="site-footer">
         <div className="footer-inner">
