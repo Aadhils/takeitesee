@@ -1,6 +1,6 @@
-import { SignupForm } from '../../components/auth/AuthForms';
+import { LegalSignupForm } from '../../components/auth/LegalSignupForm';
 
 export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ returnTo?: string }> }) {
   const params = await searchParams;
-  return <SignupForm returnTo={params.returnTo ?? null} />;
+  return <LegalSignupForm returnTo={params.returnTo ?? null} />;
 }
