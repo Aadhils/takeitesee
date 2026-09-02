@@ -1,6 +1,6 @@
 # Phase 15 launch activation gate
 
-Last audited: 2026-09-02 (Asia/Kolkata)
+Last audited: 2026-09-02 (Asia/Kolkata), after PR `#193` production verification.
 
 This document is the current TakeItEsee public-launch readiness gate. Real customer payments, Cashfree behavior, refunds, payouts, recovery, settlement, reconciliation, cash collection, and INR finance activation remain explicitly **HOLD**. Launch-readiness work must not activate or alter that scope indirectly.
 
@@ -8,10 +8,12 @@ This document is the current TakeItEsee public-launch readiness gate. Real custo
 
 - Canonical public domain: `https://www.takeitesee.com`.
 - Canonical production Supabase project: `bukrpkymivkhdpueropt`.
-- Current audited production release: `689151ffd4b831575c3bd3e8ab12d21f20206ea9`.
-- Current audited Vercel deployment: `dpl_6wpwDV7A8FN8W4Z1PyEevqQK2nHQ`.
-- `GET /api/health` returned `status=ok`, `app=ok`, `database=ok`, release `689151ffd4b8`.
-- Deployment-scoped runtime verification returned zero `error`/`fatal` entries and zero `5xx` entries after the Cookie Policy production smoke.
+- Current audited production release: `268afa8a2cdce7ace0facf23a79f70fd1033f60b`.
+- Current audited Vercel deployment: `dpl_9Rtf5do9NwxmWmMvtszvuRNy2CyL`.
+- The deployment Git commit matches the audited production release exactly and is `READY` with both `www.takeitesee.com` and `takeitesee.com` aliases attached.
+- `GET /api/health` returned `status=ok`, `app=ok`, `database=ok`, release `268afa8a2cdc`.
+- Guest `GET /api/notifications` returned HTTP `401` with `no-store`; the `/notifications` surface remains private/noindex/noarchive.
+- Deployment-scoped runtime verification returned zero `error`/`fatal` entries and zero `5xx` entries after the PR `#193` smoke.
 - Vercel reported zero unresolved toolbar-feedback threads for the production project during the same audit window.
 
 ## Verified green gates
@@ -26,8 +28,10 @@ This document is the current TakeItEsee public-launch readiness gate. Real custo
 - Provider onboarding, core marketplace history/event, and Admin control-plane non-finance foreign-key relationships have covering indexes.
 - Live catalog verification reports **zero remaining unindexed non-finance foreign keys**. Remaining finance/payment/refund/payout/recovery/settlement warnings remain inside HOLD scope.
 - Production signup correctly handles Supabase email-confirmation pending sessions.
+- Signup requires an explicit 18+ acknowledgement and explicit Terms of Service / Privacy Policy acceptance; accepted legal versions are recorded server-side without fabricating acceptance for older accounts.
 - Production password recovery exists at `/forgot-password` and `/reset-password` with private/no-store/noindex behavior.
 - Production email-confirmation callback support exists at `/auth/confirm` and fails closed for invalid or unsupported requests.
+- Signed-in Account Security supports current-password re-verification and password change; secure email-change self-service is also available.
 - Hosted Supabase Auth production Site URL, redirect URLs, Resend SMTP delivery, confirmation template, and real signup/password-recovery E2E have been verified.
 - Supabase email/password minimum password length is `8`, matching the application minimum.
 - GitHub `main` governance requires a pull request and required `web` GitHub Actions check, allows squash-only merging, blocks deletion/non-fast-forward changes, and has no bypass actors.
@@ -38,6 +42,10 @@ This document is the current TakeItEsee public-launch readiness gate. Real custo
 - **Terms of Service** is production-published at `/terms`, canonical/indexable, linked from the global footer, and included in the public sitemap.
 - **Cookie Policy** is production-published at `/cookies`, canonical/indexable, linked from the global footer, and included in the public sitemap.
 - The global footer no longer shows any legal-policy `being finalized` notice.
+- Signed-in customers can submit and track privacy access/correction/deletion-review requests; deletion remains a reviewed/manual process rather than automatic deletion.
+- Signed-in customers can submit and track non-booking platform support/grievance requests; booking-specific support remains a separate workflow and the approved Grievance Officer email remains the guest fallback.
+- Privacy and platform-support review changes now create customer notifications routed directly to `/account/privacy` or `/account/support`; no-op review updates do not generate a notification.
+- The notification routing addition reused the existing non-finance `support_updated` event type, preserved existing notification rows, and did not alter payment/refund/payout notification event types or behavior.
 - INR finance policy remains inactive.
 
 ## Production closures completed during Launch Readiness
@@ -63,7 +71,16 @@ This document is the current TakeItEsee public-launch readiness gate. Real custo
 - PR `#181`: required provider consumer-facing legal/public-contact/grievance disclosure before verification approval and public service publication; production migration and trigger-helper execution hardening were verified.
 - PR `#182`: published the approved Terms of Service at `/terms`, linked it from the footer, and added it to the public sitemap.
 - PR `#183`: refreshed legal-gate evidence after the Terms production closure.
-- PR `#184`: published the approved Cookie Policy at `/cookies`, linked it from the footer, removed the final legal-policy pending notice, and added it to the public sitemap. Required `web` CI passed; exact deployment `dpl_6wpwDV7A8FN8W4Z1PyEevqQK2nHQ` returned `/cookies` `200`, canonical/indexable metadata, `/api/health` release `689151ffd4b8`, zero deployment-scoped `error`/`fatal`, zero `5xx`, and zero unresolved Vercel toolbar feedback.
+- PR `#184`: published the approved Cookie Policy at `/cookies`, linked it from the footer, removed the final legal-policy pending notice, and added it to the public sitemap.
+- PR `#185`: refreshed the launch gate after the complete approved Privacy/Terms/Cookie legal surface was production-verified.
+- PR `#186`: required 18+ and Terms/Privacy signup consent and recorded accepted legal versions server-side without backfilling existing accounts.
+- PR `#187`: added signed-in privacy access/correction/deletion-review requests, customer request history, guarded Super Admin review, and immutable customer request-core fields.
+- PR `#188`: added signed-in Account Security with current-password re-verification and password-change self-service.
+- PR `#189`: removed stale disabled Account Settings actions and linked the live Account Security and Privacy/deletion-review workflows.
+- PR `#190`: added secure signed-in email-change self-service and a private confirmed-auth-email profile sync path.
+- PR `#191`: exposed platform grievance and privacy-help discovery from the public Help Center while preserving the approved guest grievance-email path.
+- PR `#192`: added signed-in non-booking platform support/grievance submission and history plus a guarded Super Admin review queue; production release `cefa8c18828b51050c425bd637d654c37d077223` was smoke-clean.
+- PR `#193`: added privacy/platform-support status notifications using guarded private trigger helpers and an internal notification `target_path`; required `web` CI passed, canonical Supabase migration/advisors were verified, and exact production deployment `dpl_9Rtf5do9NwxmWmMvtszvuRNy2CyL` returned healthy release `268afa8a2cdc` with zero deployment-scoped `error`/`fatal`, zero `5xx`, and zero unresolved Vercel feedback.
 
 All closures above preserved the Finance/Cashfree HOLD boundary.
 
@@ -71,15 +88,20 @@ All closures above preserved the Finance/Cashfree HOLD boundary.
 
 The broad PR `#177` production smoke covered public discovery, private/auth boundaries, 404 behavior, health, runtime, Vercel feedback, and Supabase advisors. Subsequent PRs were independently CI-gated and production-verified for their scoped changes.
 
-The current release `689151ffd4b831575c3bd3e8ab12d21f20206ea9` has the complete approved public legal surface:
+The current release `268afa8a2cdce7ace0facf23a79f70fd1033f60b` includes the approved public legal surface plus the subsequent non-finance account and support closures:
 
-- `/privacy` — Privacy Policy,
-- `/terms` — Terms of Service,
-- `/cookies` — Cookie Policy.
+- `/privacy` — approved Privacy Policy,
+- `/terms` — approved Terms of Service,
+- `/cookies` — approved Cookie Policy,
+- signup 18+/legal-consent capture,
+- `/account/privacy` — signed-in privacy request submission/history,
+- `/account/security` — signed-in password/email security self-service,
+- `/account/support` — signed-in platform support/grievance submission/history,
+- `/notifications` — private notification center with direct routing for privacy/support review updates.
 
-All three routes are linked from the global footer and included in the canonical public sitemap. The Cookie Policy production response carried the exact deployment marker `dpl_6wpwDV7A8FN8W4Z1PyEevqQK2nHQ`, returned HTTP `200`, and rendered the approved effective/updated date and legal contact details.
+The exact PR `#193` production deployment is `dpl_9Rtf5do9NwxmWmMvtszvuRNy2CyL`. It is `READY`, carries both canonical domains, and the canonical health endpoint reports app/database green at release `268afa8a2cdc`. Guest notification API access remains fail-closed and the notification page remains noindex/noarchive.
 
-Result: the **implemented non-finance application candidate remains production-smoke clean**, and the brand/legal launch-readiness gates are closed.
+Result: the **implemented non-finance application candidate remains production-smoke clean**, with brand, legal, account-security, privacy-request, platform-support/grievance, and request-status-notification launch-readiness gates closed.
 
 ## Remaining non-finance launch blocker
 
@@ -123,6 +145,8 @@ The legal operator is UV MART Enterprises Private Limited. The policies publish 
 
 Some SECURITY DEFINER notices remain intentional where functions are required for public marketplace availability, RLS policy evaluation, or authenticated application workflows. Prior live definition review confirmed fixed search paths and explicit authorization context for the audited functions.
 
+The PR `#193` private notification trigger helpers are not directly executable by `public`, `anon`, or `authenticated`, run with an empty fixed search path, and produced no new Security/Performance Advisor blocker.
+
 Fresh finance/payment/payout/recovery-related advisor notices remain inside the explicit Finance/Cashfree HOLD boundary and are not non-finance launch-readiness change targets.
 
 ## Deferred finance-only privileged readiness
@@ -147,4 +171,4 @@ Resume finance work only after the HOLD is explicitly lifted in a later instruct
 
 ## Production activation remains separate
 
-Public non-finance launch readiness and finance activation are separate gates. Clearing website, security, reliability, SEO, auth, brand, legal, or repository-governance blockers must never activate payment or finance behavior indirectly.
+Public non-finance launch readiness and finance activation are separate gates. Clearing website, security, reliability, SEO, auth, brand, legal, repository-governance, privacy/support workflows, or notification blockers must never activate payment or finance behavior indirectly.
