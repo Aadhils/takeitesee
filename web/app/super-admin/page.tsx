@@ -11,12 +11,13 @@ export default async function SuperAdminPage() {
 
   const supabase = await createSupabaseServerClient();
 
-  const [applications, providerApplications, providerVerifications, serviceLaunches, providerTrust, payoutBatches, locations, categories, admins, auditEvents] = await Promise.all([
+  const [applications, providerApplications, providerVerifications, serviceLaunches, providerTrust, privacyRequests, payoutBatches, locations, categories, admins, auditEvents] = await Promise.all([
     supabase.from('platform_applications').select('id', { count: 'exact', head: true }),
     supabase.from('provider_applications').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase.from('provider_verification_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase.from('service_launch_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase.from('provider_trust_states').select('id', { count: 'exact', head: true }).neq('status', 'normal'),
+    supabase.from('privacy_requests').select('id', { count: 'exact', head: true }).in('status', ['submitted', 'in_review', 'awaiting_information']),
     supabase.from('provider_payout_batches').select('id', { count: 'exact', head: true }).eq('status', 'ready'),
     supabase.from('platform_locations').select('id', { count: 'exact', head: true }),
     supabase.from('platform_categories').select('id', { count: 'exact', head: true }),
@@ -30,6 +31,7 @@ export default async function SuperAdminPage() {
     ['Verification reviews', 'Verification reviews', providerVerifications.count ?? 0],
     ['Launch reviews', 'Launch reviews', serviceLaunches.count ?? 0],
     ['Trust attention', 'Trust கவனம்', providerTrust.count ?? 0],
+    ['Privacy requests', 'Privacy requests', privacyRequests.count ?? 0],
     ['Payout batches', 'Payout batches', payoutBatches.count ?? 0],
     ['Locations', 'இடங்கள்', locations.count ?? 0],
     ['Categories', 'வகைகள்', categories.count ?? 0],
@@ -45,6 +47,7 @@ export default async function SuperAdminPage() {
       <p><Link href="/super-admin/provider-verifications"><LocaleText en="Review provider verification →" ta="Provider verification review செய் →" /></Link></p>
       <p><Link href="/super-admin/provider-trust"><LocaleText en="Manage provider trust state →" ta="Provider trust state நிர்வகி →" /></Link></p>
       <p><Link href="/super-admin/service-launches"><LocaleText en="Review service launches →" ta="Service launches review செய் →" /></Link></p>
+      <p><Link href="/super-admin/privacy-requests"><LocaleText en="Review privacy requests →" ta="Privacy requests review செய் →" /></Link></p>
       <p><Link href="/super-admin/finance"><LocaleText en="Manage commission & payouts →" ta="Commission & payouts நிர்வகி →" /></Link></p>
       <p><Link href="/super-admin/applications"><LocaleText en="Manage applications →" ta="Applications நிர்வகி →" /></Link></p>
       <p><Link href="/super-admin/locations"><LocaleText en="Manage locations & markets →" ta="Locations & markets நிர்வகி →" /></Link></p>

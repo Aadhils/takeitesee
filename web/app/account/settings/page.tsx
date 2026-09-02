@@ -45,5 +45,27 @@ export default function AccountSettingsPage() {
     </Card>;
   }
 
-  return <LocalizedSettingsPage />;
+  const privacyCopy = locale === 'ta-IN' ? {
+    eyebrow: 'Privacy self-service',
+    title: 'Privacy requests',
+    body: 'உங்கள் தகவலுக்கான access, correction அல்லது deletion review request-ஐ account-லிருந்தே submit செய்து status பார்க்கலாம். Deletion request உடனடி automatic deletion அல்ல.',
+    action: 'Privacy requests நிர்வகிக்கவும்',
+  } : {
+    eyebrow: 'Privacy self-service',
+    title: 'Privacy requests',
+    body: 'Submit and track access, correction, or deletion-review requests from your account. A deletion request is not an immediate automatic account deletion.',
+    action: 'Manage privacy requests',
+  };
+
+  return <>
+    <LocalizedSettingsPage />
+    <div className="container section-stack">
+      <Card>
+        <span className="eyebrow">{privacyCopy.eyebrow}</span>
+        <h2>{privacyCopy.title}</h2>
+        <p>{privacyCopy.body}</p>
+        <Link href="/account/privacy" className="button button-secondary">{privacyCopy.action}</Link>
+      </Card>
+    </div>
+  </>;
 }
