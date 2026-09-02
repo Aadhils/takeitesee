@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, useState } from 'react';
 import { Button, Card, Input } from '../ui/primitives';
+import { PasswordInput } from '../ui/PasswordInput';
 import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 import { useLanguage } from '../i18n/LanguageProvider';
 import { createSupabaseBrowserClient } from '../../lib/supabase/browser';
@@ -61,6 +62,8 @@ export function LegalSignupForm({ returnTo }: { returnTo: string | null }) {
   const [submitting, setSubmitting] = useState(false);
   const [confirmationPending, setConfirmationPending] = useState(false);
   const productionAuth = isSupabaseConfigured();
+  const showLabel = locale === 'ta-IN' ? 'Password-ஐ காட்டு' : 'Show password';
+  const hideLabel = locale === 'ta-IN' ? 'Password-ஐ மறை' : 'Hide password';
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -138,7 +141,7 @@ export function LegalSignupForm({ returnTo }: { returnTo: string | null }) {
           <Input label={t('auth.name')} autoComplete="name" required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
           <Input label={t('auth.email')} type="email" autoComplete="email" required value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
           <Input label={t('auth.phoneOptional')} type="tel" autoComplete="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} />
-          <Input label={productionAuth ? t('auth.password') : t('auth.devCredential')} type="password" autoComplete="new-password" required value={form.credential} onChange={(event) => setForm({ ...form, credential: event.target.value })} />
+          <PasswordInput label={productionAuth ? t('auth.password') : t('auth.devCredential')} autoComplete="new-password" required value={form.credential} onChange={(event) => setForm({ ...form, credential: event.target.value })} showLabel={showLabel} hideLabel={hideLabel} />
           <div className="choice-row">
             <input
               id="signup-legal-consent"
