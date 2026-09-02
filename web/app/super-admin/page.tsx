@@ -11,13 +11,14 @@ export default async function SuperAdminPage() {
 
   const supabase = await createSupabaseServerClient();
 
-  const [applications, providerApplications, providerVerifications, serviceLaunches, providerTrust, privacyRequests, payoutBatches, locations, categories, admins, auditEvents] = await Promise.all([
+  const [applications, providerApplications, providerVerifications, serviceLaunches, providerTrust, privacyRequests, supportRequests, payoutBatches, locations, categories, admins, auditEvents] = await Promise.all([
     supabase.from('platform_applications').select('id', { count: 'exact', head: true }),
     supabase.from('provider_applications').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase.from('provider_verification_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase.from('service_launch_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase.from('provider_trust_states').select('id', { count: 'exact', head: true }).neq('status', 'normal'),
     supabase.from('privacy_requests').select('id', { count: 'exact', head: true }).in('status', ['submitted', 'in_review', 'awaiting_information']),
+    supabase.from('platform_support_requests').select('id', { count: 'exact', head: true }).in('status', ['submitted', 'in_review', 'awaiting_information']),
     supabase.from('provider_payout_batches').select('id', { count: 'exact', head: true }).eq('status', 'ready'),
     supabase.from('platform_locations').select('id', { count: 'exact', head: true }),
     supabase.from('platform_categories').select('id', { count: 'exact', head: true }),
@@ -32,6 +33,7 @@ export default async function SuperAdminPage() {
     ['Launch reviews', 'Launch reviews', serviceLaunches.count ?? 0],
     ['Trust attention', 'Trust கவனம்', providerTrust.count ?? 0],
     ['Privacy requests', 'Privacy requests', privacyRequests.count ?? 0],
+    ['Support requests', 'Support requests', supportRequests.count ?? 0],
     ['Payout batches', 'Payout batches', payoutBatches.count ?? 0],
     ['Locations', 'இடங்கள்', locations.count ?? 0],
     ['Categories', 'வகைகள்', categories.count ?? 0],
@@ -40,14 +42,15 @@ export default async function SuperAdminPage() {
   ] as const;
 
   return <main className="container section-stack">
-    <section className="page-intro"><span className="eyebrow"><LocaleText en="SaaS control plane" ta="SaaS கட்டுப்பாட்டு மையம்" /></span><h1>Super Admin</h1><p><LocaleText en="Manage the takeitesee ecosystem across provider access, verification, trust state, controlled service launch, platform finance, applications, markets, categories, and delegated administrators." ta="Provider access, verification, trust state, controlled service launch, platform finance, applications, markets, categories மற்றும் delegated administrators உட்பட takeitesee ecosystem-ஐ நிர்வகிக்கவும்." /></p></section>
+    <section className="page-intro"><span className="eyebrow"><LocaleText en="SaaS control plane" ta="SaaS கட்டுப்பாட்டு மையம்" /></span><h1>Super Admin</h1><p><LocaleText en="Manage the takeitesee ecosystem across provider access, verification, trust state, controlled service launch, platform operations, applications, markets, categories, and delegated administrators." ta="Provider access, verification, trust state, controlled service launch, platform operations, applications, markets, categories மற்றும் delegated administrators உட்பட takeitesee ecosystem-ஐ நிர்வகிக்கவும்." /></p></section>
     <section className="dashboard-grid" aria-label="Platform overview">{metrics.map(([en, ta, value]) => <article className="card" key={en}><span className="eyebrow"><LocaleText en={en} ta={ta} /></span><h2>{value}</h2></article>)}</section>
-    <section className="card"><h2><LocaleText en="Control plane" ta="கட்டுப்பாட்டு மையம்" /></h2><p><LocaleText en="Provider onboarding, identity verification, trust state, service launch scope, and finance settlement are separate guarded decisions. Public service activation and provider payout readiness remain independently controlled." ta="Provider onboarding, identity verification, trust state, service launch scope மற்றும் finance settlement தனித்தனி பாதுகாக்கப்பட்ட முடிவுகள். Public service activation மற்றும் provider payout readiness தனித்தனியாக கட்டுப்படுத்தப்படுகின்றன." /></p>
+    <section className="card"><h2><LocaleText en="Control plane" ta="கட்டுப்பாட்டு மையம்" /></h2><p><LocaleText en="Provider onboarding, identity verification, trust state, service launch scope, customer privacy, and platform support remain separate guarded decisions." ta="Provider onboarding, identity verification, trust state, service launch scope, customer privacy மற்றும் platform support தனித்தனி பாதுகாக்கப்பட்ட முடிவுகள்." /></p>
       <p><Link href="/super-admin/provider-applications"><LocaleText en="Review provider applications →" ta="Provider applications review செய் →" /></Link></p>
       <p><Link href="/super-admin/provider-verifications"><LocaleText en="Review provider verification →" ta="Provider verification review செய் →" /></Link></p>
       <p><Link href="/super-admin/provider-trust"><LocaleText en="Manage provider trust state →" ta="Provider trust state நிர்வகி →" /></Link></p>
       <p><Link href="/super-admin/service-launches"><LocaleText en="Review service launches →" ta="Service launches review செய் →" /></Link></p>
       <p><Link href="/super-admin/privacy-requests"><LocaleText en="Review privacy requests →" ta="Privacy requests review செய் →" /></Link></p>
+      <p><Link href="/super-admin/support-requests"><LocaleText en="Review platform support requests →" ta="Platform support requests review செய் →" /></Link></p>
       <p><Link href="/super-admin/finance"><LocaleText en="Manage commission & payouts →" ta="Commission & payouts நிர்வகி →" /></Link></p>
       <p><Link href="/super-admin/applications"><LocaleText en="Manage applications →" ta="Applications நிர்வகி →" /></Link></p>
       <p><Link href="/super-admin/locations"><LocaleText en="Manage locations & markets →" ta="Locations & markets நிர்வகி →" /></Link></p>
