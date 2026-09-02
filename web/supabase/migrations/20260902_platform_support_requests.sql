@@ -29,11 +29,11 @@ grant update (status, review_note, reviewed_by, updated_at, resolved_at) on tabl
 
 create policy "customers read own platform support requests"
   on public.platform_support_requests for select to authenticated
-  using (user_id = auth.uid() or private.is_super_admin());
+  using (user_id = (select auth.uid()) or private.is_super_admin());
 
 create policy "customers submit own platform support requests"
   on public.platform_support_requests for insert to authenticated
-  with check (user_id = auth.uid());
+  with check (user_id = (select auth.uid()));
 
 create policy "super admins review platform support requests"
   on public.platform_support_requests for update to authenticated
