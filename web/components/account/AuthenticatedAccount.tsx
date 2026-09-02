@@ -90,6 +90,14 @@ export default function AuthenticatedAccount() {
         <Badge tone="info">{t('account.customer')}</Badge>
       </Card>
 
+      <nav className="account-primary-nav" aria-label="Account shortcuts">
+        <Link href="/bookings" className="button button-primary">{t('account.myBookings')}</Link>
+        <Link href="/notifications" className="button button-secondary">{t('account.notifications')}</Link>
+        <Link href="/account/profile" className="button button-secondary">{t('account.profile')}</Link>
+        <Link href="/account/settings" className="button button-secondary">{t('account.settings')}</Link>
+        <Button type="button" variant="quiet" className="account-sign-out" onClick={signOut}>{t('account.signOut')}</Button>
+      </nav>
+
       <div className="dashboard-stat-grid">
         <Card><span className="eyebrow">{t('account.upcoming')}</span><h2>{summary.upcoming}</h2><p>{t('account.upcomingDetail')}</p></Card>
         <Card><span className="eyebrow">{t('account.completed')}</span><h2>{summary.completed}</h2><p>{t('account.completedDetail')}</p></Card>
@@ -97,14 +105,6 @@ export default function AuthenticatedAccount() {
         <Card><span className="eyebrow">{t('account.total')}</span><h2>{summary.total}</h2><p>{t('account.totalDetail')}</p></Card>
       </div>
       {bookingError ? <p role="alert" style={{ color: '#b42318' }}>{t('account.bookingUnavailable')}: {bookingError}</p> : null}
-
-      <div className="account-actions">
-        <Link href="/bookings" className="button button-primary">{t('account.myBookings')}</Link>
-        <Link href="/notifications" className="button button-secondary">{t('account.notifications')}</Link>
-        <Link href="/account/profile" className="button button-secondary">{t('account.profile')}</Link>
-        <Link href="/account/settings" className="button button-secondary">{t('account.settings')}</Link>
-        <Button type="button" variant="quiet" onClick={signOut}>{t('account.signOut')}</Button>
-      </div>
 
       <Card className="account-provider-entry">
         <span className="eyebrow">{t('account.providerWorkspace')}</span>

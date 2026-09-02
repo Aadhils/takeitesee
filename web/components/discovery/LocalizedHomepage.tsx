@@ -6,7 +6,8 @@ import { useLanguage } from '../i18n/LanguageProvider';
 
 const copy = {
   'en-IN': {
-    eyebrow: 'A better way to find help',
+    sloganLead: 'You post.',
+    sloganTail: 'We connect.',
     titleStart: 'Find the right service',
     titleMiddle: 'for the',
     titleAccent: 'next thing you need.',
@@ -27,7 +28,8 @@ const copy = {
     browseAll: 'Browse live marketplace',
   },
   'ta-IN': {
-    eyebrow: 'உதவியை கண்டுபிடிக்க ஒரு சிறந்த வழி',
+    sloganLead: 'நீங்கள் பதிவிடுங்கள்.',
+    sloganTail: 'நாங்கள் இணைக்கிறோம்.',
     titleStart: 'உங்களுக்கு தேவையான சரியான சேவையை',
     titleMiddle: 'அடுத்த தேவைக்காக',
     titleAccent: 'கண்டுபிடியுங்கள்.',
@@ -89,7 +91,7 @@ export default function LocalizedHomepage() {
           <div className="hero-logo-wrap">
             <img className="hero-logo" src="/official-takeitesee-logo.png" alt="takeitesee" />
           </div>
-          <span className="hero-eyebrow">{t.eyebrow}</span>
+          <p className="hero-brand-slogan"><strong>{t.sloganLead}</strong> {t.sloganTail}</p>
           <h1>{t.titleStart}<br />{t.titleMiddle} <span className="text-accent">{t.titleAccent}</span></h1>
           <p className="hero-lede">{t.lede}</p>
           <HomepageSearchForm />
