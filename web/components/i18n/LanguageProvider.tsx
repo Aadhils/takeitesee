@@ -11,6 +11,7 @@ const english = {
   'nav.main': 'Main navigation',
   'nav.mobile': 'Mobile navigation',
   'nav.mobilePrimary': 'Mobile primary navigation',
+  'nav.skipToContent': 'Skip to main content',
   'nav.explore': 'Explore',
   'nav.bookings': 'Bookings',
   'nav.notifications': 'Notifications',
@@ -98,6 +99,7 @@ const tamil: Record<TranslationKey, string> = {
   'nav.main': 'முக்கிய வழிசெலுத்தல்',
   'nav.mobile': 'மொபைல் வழிசெலுத்தல்',
   'nav.mobilePrimary': 'மொபைல் முதன்மை வழிசெலுத்தல்',
+  'nav.skipToContent': 'முக்கிய உள்ளடக்கத்திற்குச் செல்லுங்கள்',
   'nav.explore': 'சேவைகளை தேடுங்கள்',
   'nav.bookings': 'புக்கிங்ஸ்',
   'nav.notifications': 'அறிவிப்புகள்',
@@ -230,7 +232,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 }
 
 export function useLanguage() {
-  const context = useContext(LanguageContext);
-  if (!context) throw new Error('useLanguage must be used within LanguageProvider');
-  return context;
+  const value = useContext(LanguageContext);
+  if (!value) throw new Error('useLanguage must be used within LanguageProvider.');
+  return value;
 }

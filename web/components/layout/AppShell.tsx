@@ -46,6 +46,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="app-shell">
+      <a className="skip-link" href="#main-content">{t('nav.skipToContent')}</a>
       <header className="site-header">
         <div className="shell-bar">
           {!isHomepage ? <Link href="/" className="inner-page-brand" aria-label={t('nav.goHome')}><img src="/official-takeitesee-logo.png" alt="" /></Link> : null}
@@ -75,7 +76,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         ) : null}
       </header>
 
-      <main className="page-frame">{children}</main>
+      <main id="main-content" className="page-frame" tabIndex={-1}>{children}</main>
 
       <footer className="site-footer">
         <div className="footer-inner">
@@ -104,6 +105,9 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
       <style jsx global>{`
         *, *::before, *::after { box-sizing: border-box; }
         img, svg, video, canvas { max-width: 100%; height: auto; }
+        .skip-link { position: fixed; top: 10px; left: 10px; z-index: 100; border-radius: 8px; background: var(--color-primary-strong); color: #fff; padding: 10px 14px; font-weight: 700; transform: translateY(-160%); transition: transform .15s ease; }
+        .skip-link:focus { transform: translateY(0); }
+        .page-frame:focus { outline: none; }
         .page-frame, .shell-bar, .footer-inner { min-width: 0; }
         .page-intro h1, .account-page-heading h1, .provider-workspace h1 { overflow-wrap: anywhere; }
         .auth-page, .auth-card, .card, .field, .form-grid, .choice-row { min-width: 0; }
