@@ -12,6 +12,7 @@ type NotificationItem = {
   id: string;
   booking_id: string | null;
   conversation_id: string | null;
+  target_path: string | null;
   event_type: string;
   title: string;
   body: string;
@@ -20,6 +21,7 @@ type NotificationItem = {
 };
 
 function hrefFor(item: NotificationItem) {
+  if (item.target_path?.startsWith('/') && !item.target_path.startsWith('//')) return item.target_path;
   if (item.conversation_id) return `/messages?conversation=${encodeURIComponent(item.conversation_id)}`;
   if (item.booking_id) return `/bookings/${encodeURIComponent(item.booking_id)}`;
   return '';
@@ -119,7 +121,12 @@ export default function LiveNotificationsPage() {
       {loading ? <Card><p>{t('notif.loading')}</p></Card> : error ? <Card><p className="field-error" role="alert">{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>{t('common.tryAgain')}</Button></Card> : items.length ? <div className="notification-list">{items.map((item) => {
         const label = labelFor(item.event_type);
         const href = hrefFor(item);
-        return <Card className={`notification-card ${!item.read_at ? 'notification-unread' : ''}`} key={item.id}><div className="notification-card-mark" aria-hidden="true">{label.slice(0,1)}</div><div className="notification-card-body"><div className="notification-card-top"><Badge tone={!item.read_at ? 'info' : 'neutral'}>{label}</Badge><time>{new Date(item.created_at).toLocaleString(locale)}</time></div><h2>{item.title}</h2><p>{item.body}</p><div className="notification-card-actions">{href ? <Link href={href} className="text-link">{item.conversation_id ? t('notif.openConversation') : t('notif.viewBooking')}</Link> : null}{!item.read_at ? <Button type="button" variant="quiet" onClick={() => void markRead(item.id)}>{t('notif.markRead')}</Button> : null}</div></div></Card>;
+        const openLabel = item.target_path
+          ? (locale === 'ta-IN' ? 'Update-ஐ திற' : 'Open update')
+          : item.conversation_id
+            ? t('notif.openConversation')
+            : t('notif.viewBooking');
+        return <Card className={`notification-card ${!item.read_at ? 'notification-unread' : ''}`} key={item.id}><div className="notification-card-mark" aria-hidden="true">{label.slice(0,1)}</div><div className="notification-card-body"><div className="notification-card-top"><Badge tone={!item.read_at ? 'info' : 'neutral'}>{label}</Badge><time>{new Date(item.created_at).toLocaleString(locale)}</time></div><h2>{item.title}</h2><p>{item.body}</p><div className="notification-card-actions">{href ? <Link href={href} className="text-link">{openLabel}</Link> : null}{!item.read_at ? <Button type="button" variant="quiet" onClick={() => void markRead(item.id)}>{t('notif.markRead')}</Button> : null}</div></div></Card>;
       })}</div> : <Card><EmptyState title={t('notif.none')}>{t('notif.noneHelp')}</EmptyState></Card>}
     </>}
   </LocalizedAccountShell>;
