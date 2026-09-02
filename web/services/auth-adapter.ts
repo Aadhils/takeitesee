@@ -126,6 +126,13 @@ export async function updatePasswordWithSupabase(password: string) {
   return data.user;
 }
 
+export async function updateEmailWithSupabase(email: string) {
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase.auth.updateUser({ email: normalizeEmail(email) });
+  if (error || !data.user) throw new Error(error?.message ?? 'Unable to update email.');
+  return data.user;
+}
+
 export async function signOutWithSupabase() {
   const supabase = createSupabaseBrowserClient();
   const { error } = await supabase.auth.signOut();
