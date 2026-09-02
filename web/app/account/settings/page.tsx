@@ -45,6 +45,18 @@ export default function AccountSettingsPage() {
     </Card>;
   }
 
+  const securityCopy = locale === 'ta-IN' ? {
+    eyebrow: 'Account security',
+    title: 'Password & security',
+    body: 'உங்கள் தற்போதைய password-ஐ மீண்டும் verify செய்து புதிய password-ஐ பாதுகாப்பாக அமைக்கலாம். தற்போதைய password நினைவில் இல்லையெனில் secure recovery email flow கிடைக்கிறது.',
+    action: 'Account Security திறக்கவும்',
+  } : {
+    eyebrow: 'Account security',
+    title: 'Password & security',
+    body: 'Re-verify your current password and securely set a new one. If you do not remember the current password, the secure recovery email flow remains available.',
+    action: 'Open Account Security',
+  };
+
   const privacyCopy = locale === 'ta-IN' ? {
     eyebrow: 'Privacy self-service',
     title: 'Privacy requests',
@@ -60,6 +72,12 @@ export default function AccountSettingsPage() {
   return <>
     <LocalizedSettingsPage />
     <div className="container section-stack">
+      <Card>
+        <span className="eyebrow">{securityCopy.eyebrow}</span>
+        <h2>{securityCopy.title}</h2>
+        <p>{securityCopy.body}</p>
+        <Link href="/account/security" className="button button-secondary">{securityCopy.action}</Link>
+      </Card>
       <Card>
         <span className="eyebrow">{privacyCopy.eyebrow}</span>
         <h2>{privacyCopy.title}</h2>
