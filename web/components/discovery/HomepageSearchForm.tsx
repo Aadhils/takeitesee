@@ -115,24 +115,29 @@ export default function HomepageSearchForm() {
     ? (locale === 'ta-IN' ? 'இந்த browser-ல் குரல் தேடல் கிடைக்கவில்லை' : 'Voice search is not available in this browser')
     : (locale === 'ta-IN' ? 'குரல் தேடல்' : 'Voice search');
 
+  const voiceButton = (className: string) => (
+    <button
+      type="button"
+      className={`voice-search-button ${className}`}
+      aria-label={locale === 'ta-IN' ? 'குரல் மூலம் சேவை தேடவும்' : 'Search services by voice'}
+      aria-pressed={listening}
+      onClick={startVoiceSearch}
+      title={voiceTitle}
+    >
+      <VoiceSearchIcon />
+    </button>
+  );
+
   return (
     <>
       <form ref={formRef} className="search-panel hero-search-panel" action="/explore" onSubmit={handleSubmit}>
         <div className="search-field search-field-service">
           <span className="search-field-icon" aria-hidden="true">⌕</span>
           <Input label={t('home.searchNeed')} name="q" placeholder={t('home.searchNeed')} aria-label={t('home.searchNeedAria')} value={query} onChange={(event) => setQuery(event.target.value)} />
-          <button
-            type="button"
-            className="voice-search-button"
-            aria-label={locale === 'ta-IN' ? 'குரல் மூலம் சேவை தேடவும்' : 'Search services by voice'}
-            aria-pressed={listening}
-            onClick={startVoiceSearch}
-            title={voiceTitle}
-          >
-            <VoiceSearchIcon />
-          </button>
+          {voiceButton('voice-search-button-desktop')}
         </div>
         <div className="search-field search-field-location"><span className="search-field-icon" aria-hidden="true">⌖</span><Input label={t('home.where')} name="location" placeholder={t('home.locationPlaceholder')} aria-label={t('home.locationAria')} /></div>
+        {voiceButton('voice-search-button-mobile')}
         <Button type="submit" className="hero-search-button">{t('home.search')}</Button>
       </form>
       {voiceStatus ? <p className="voice-search-status" role="status" aria-live="polite">{voiceStatus}</p> : null}
