@@ -21,6 +21,10 @@ type RequirementRow = {
   needed_by: string | null;
   preferred_start_time: string | null;
   expected_duration_minutes: number | null;
+  schedule_pattern: 'one_time' | 'recurring';
+  recurrence_frequency: 'daily' | 'weekly' | 'monthly' | null;
+  recurrence_interval: number | null;
+  recurrence_count: number | null;
   status: 'open' | 'paused' | 'awarded' | 'fulfilled' | 'cancelled';
   published_at: string;
   closed_at: string | null;
@@ -57,6 +61,10 @@ function safeRequirement(row: RequirementRow) {
     needed_by: row.needed_by,
     preferred_start_time: row.preferred_start_time,
     expected_duration_minutes: row.expected_duration_minutes == null ? null : Number(row.expected_duration_minutes),
+    schedule_pattern: row.schedule_pattern,
+    recurrence_frequency: row.recurrence_frequency,
+    recurrence_interval: row.recurrence_interval == null ? null : Number(row.recurrence_interval),
+    recurrence_count: row.recurrence_count == null ? null : Number(row.recurrence_count),
     status: row.status,
     published_at: row.published_at,
     closed_at: row.closed_at,
@@ -67,7 +75,7 @@ function safeRequirement(row: RequirementRow) {
   };
 }
 
-const requirementSelect = 'id,requirement_reference,customer_id,category_id,location_id,title,description,service_mode,budget_type,budget_min_minor,budget_max_minor,currency,needed_by,preferred_start_time,expected_duration_minutes,status,published_at,closed_at,awarded_at,accepted_proposal_id,created_at,updated_at,platform_categories(name,code),platform_locations(name,code,timezone)';
+const requirementSelect = 'id,requirement_reference,customer_id,category_id,location_id,title,description,service_mode,budget_type,budget_min_minor,budget_max_minor,currency,needed_by,preferred_start_time,expected_duration_minutes,schedule_pattern,recurrence_frequency,recurrence_interval,recurrence_count,status,published_at,closed_at,awarded_at,accepted_proposal_id,created_at,updated_at,platform_categories(name,code),platform_locations(name,code,timezone)';
 
 export async function GET(request: Request) {
   try {
@@ -102,6 +110,10 @@ export async function POST(request: Request) {
       needed_by?: string | null;
       preferred_start_time?: string | null;
       expected_duration_minutes?: number | null;
+      schedule_pattern?: 'one_time' | 'recurring';
+      recurrence_frequency?: 'daily' | 'weekly' | 'monthly' | null;
+      recurrence_interval?: number | null;
+      recurrence_count?: number | null;
     };
 
     const supabase = await createSupabaseServerClient();
@@ -119,6 +131,10 @@ export async function POST(request: Request) {
       target_needed_by: input.needed_by || null,
       target_preferred_start_time: input.preferred_start_time || null,
       target_expected_duration_minutes: input.expected_duration_minutes ?? null,
+      target_schedule_pattern: input.schedule_pattern ?? 'one_time',
+      target_recurrence_frequency: input.recurrence_frequency ?? null,
+      target_recurrence_interval: input.recurrence_interval ?? null,
+      target_recurrence_count: input.recurrence_count ?? null,
     }).maybeSingle();
     if (error || !data) throw new Error(error?.message ?? 'Requirement could not be posted.');
 
