@@ -30,6 +30,15 @@ type VoiceWindow = Window & typeof globalThis & {
   webkitSpeechRecognition?: SpeechRecognitionConstructor;
 };
 
+function VoiceSearchIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" strokeWidth="1.9" />
+      <path d="M6.75 11.5a5.25 5.25 0 0 0 10.5 0M12 16.75V21M9.25 21h5.5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export default function HomepageSearchForm() {
   const { t, locale } = useLanguage();
   const formRef = useRef<HTMLFormElement>(null);
@@ -120,7 +129,7 @@ export default function HomepageSearchForm() {
             onClick={startVoiceSearch}
             title={voiceTitle}
           >
-            <span aria-hidden="true">🎤</span>
+            <VoiceSearchIcon />
           </button>
         </div>
         <div className="search-field search-field-location"><span className="search-field-icon" aria-hidden="true">⌖</span><Input label={t('home.where')} name="location" placeholder={t('home.locationPlaceholder')} aria-label={t('home.locationAria')} /></div>
