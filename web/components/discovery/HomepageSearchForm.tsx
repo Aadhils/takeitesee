@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useMemo, useRef, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Button, Input } from '../ui/primitives';
 import { useLanguage } from '../i18n/LanguageProvider';
 
@@ -35,12 +35,12 @@ export default function HomepageSearchForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const [query, setQuery] = useState('');
   const [listening, setListening] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState<boolean | null>(null);
   const [voiceStatus, setVoiceStatus] = useState('');
 
-  const voiceSupported = useMemo(() => {
-    if (typeof window === 'undefined') return false;
+  useEffect(() => {
     const voiceWindow = window as VoiceWindow;
-    return Boolean(voiceWindow.SpeechRecognition || voiceWindow.webkitSpeechRecognition);
+    setVoiceSupported(Boolean(voiceWindow.SpeechRecognition || voiceWindow.webkitSpeechRecognition));
   }, []);
 
   const navigateToExplore = (searchQuery: string, location: string) => {
@@ -57,34 +57,54 @@ export default function HomepageSearchForm() {
     navigateToExplore(query, location);
   };
 
-  const startVoiceSearch = () => {
-    if (!voiceSupported || listening) return;
+  const startVoiceSearch = async () => {
+    if (listening) return;
+
     const voiceWindow = window as VoiceWindow;
     const Recognition = voiceWindow.SpeechRecognition || voiceWindow.webkitSpeechRecognition;
-    if (!Recognition) return;
+    if (!Recognition) {
+      setVoiceSupported(false);
+      setVoiceStatus(locale === 'ta-IN' ? 'இந்த browser-ல் குரல் தேடல் கிடைக்கவில்லை.' : 'Voice search is not available in this browser.');
+      return;
+    }
 
-    const recognition = new Recognition();
-    recognition.lang = locale === 'ta-IN' ? 'ta-IN' : 'en-IN';
-    recognition.interimResults = false;
-    recognition.continuous = false;
-    recognition.onresult = (event) => {
-      const transcript = event.results?.[0]?.[0]?.transcript?.trim();
-      if (transcript) {
-        setQuery(transcript);
-        setVoiceStatus(locale === 'ta-IN' ? `குரல் தேடல்: ${transcript}` : `Voice search: ${transcript}`);
-        const location = formRef.current ? String(new FormData(formRef.current).get('location') ?? '') : '';
-        navigateToExplore(transcript, location);
+    try {
+      if (navigator.mediaDevices?.getUserMedia) {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((track) => track.stop());
       }
-    };
-    recognition.onerror = () => {
-      setVoiceStatus(locale === 'ta-IN' ? 'குரல் தேடலை பயன்படுத்த முடியவில்லை.' : 'Voice search could not be used.');
+
+      const recognition = new Recognition();
+      recognition.lang = locale === 'ta-IN' ? 'ta-IN' : 'en-IN';
+      recognition.interimResults = false;
+      recognition.continuous = false;
+      recognition.onresult = (event) => {
+        const transcript = event.results?.[0]?.[0]?.transcript?.trim();
+        if (transcript) {
+          setQuery(transcript);
+          setVoiceStatus(locale === 'ta-IN' ? `குரல் தேடல்: ${transcript}` : `Voice search: ${transcript}`);
+          const location = formRef.current ? String(new FormData(formRef.current).get('location') ?? '') : '';
+          navigateToExplore(transcript, location);
+        }
+      };
+      recognition.onerror = () => {
+        setVoiceStatus(locale === 'ta-IN' ? 'குரல் தேடலை பயன்படுத்த முடியவில்லை. Microphone permission-ஐ சரிபார்க்கவும்.' : 'Voice search could not be used. Check microphone permission.');
+        setListening(false);
+      };
+      recognition.onend = () => setListening(false);
+      setVoiceSupported(true);
+      setVoiceStatus(locale === 'ta-IN' ? 'கேட்கிறோம்…' : 'Listening…');
+      setListening(true);
+      recognition.start();
+    } catch {
+      setVoiceStatus(locale === 'ta-IN' ? 'Microphone permission தேவை. Browser site settings-ல் microphone access-ஐ Allow செய்யவும்.' : 'Microphone permission is required. Allow microphone access in your browser site settings.');
       setListening(false);
-    };
-    recognition.onend = () => setListening(false);
-    setVoiceStatus(locale === 'ta-IN' ? 'கேட்கிறோம்…' : 'Listening…');
-    setListening(true);
-    recognition.start();
+    }
   };
+
+  const voiceTitle = voiceSupported === false
+    ? (locale === 'ta-IN' ? 'இந்த browser-ல் குரல் தேடல் கிடைக்கவில்லை' : 'Voice search is not available in this browser')
+    : (locale === 'ta-IN' ? 'குரல் தேடல்' : 'Voice search');
 
   return (
     <>
@@ -97,9 +117,8 @@ export default function HomepageSearchForm() {
             className="voice-search-button"
             aria-label={locale === 'ta-IN' ? 'குரல் மூலம் சேவை தேடவும்' : 'Search services by voice'}
             aria-pressed={listening}
-            disabled={!voiceSupported}
             onClick={startVoiceSearch}
-            title={voiceSupported ? (locale === 'ta-IN' ? 'குரல் தேடல்' : 'Voice search') : (locale === 'ta-IN' ? 'இந்த browser-ல் குரல் தேடல் கிடைக்கவில்லை' : 'Voice search is not available in this browser')}
+            title={voiceTitle}
           >
             <span aria-hidden="true">🎤</span>
           </button>
