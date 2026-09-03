@@ -19,6 +19,8 @@ type RequirementRow = {
   budget_max_minor: number | null;
   currency: 'INR' | 'USD';
   needed_by: string | null;
+  preferred_start_time: string | null;
+  expected_duration_minutes: number | null;
   status: 'open' | 'paused' | 'awarded' | 'fulfilled' | 'cancelled';
   published_at: string;
   closed_at: string | null;
@@ -53,6 +55,8 @@ function safeRequirement(row: RequirementRow) {
     budget_max_minor: row.budget_max_minor == null ? null : Number(row.budget_max_minor),
     currency: row.currency,
     needed_by: row.needed_by,
+    preferred_start_time: row.preferred_start_time,
+    expected_duration_minutes: row.expected_duration_minutes == null ? null : Number(row.expected_duration_minutes),
     status: row.status,
     published_at: row.published_at,
     closed_at: row.closed_at,
@@ -63,7 +67,7 @@ function safeRequirement(row: RequirementRow) {
   };
 }
 
-const requirementSelect = 'id,requirement_reference,customer_id,category_id,location_id,title,description,service_mode,budget_type,budget_min_minor,budget_max_minor,currency,needed_by,status,published_at,closed_at,awarded_at,accepted_proposal_id,created_at,updated_at,platform_categories(name,code),platform_locations(name,code,timezone)';
+const requirementSelect = 'id,requirement_reference,customer_id,category_id,location_id,title,description,service_mode,budget_type,budget_min_minor,budget_max_minor,currency,needed_by,preferred_start_time,expected_duration_minutes,status,published_at,closed_at,awarded_at,accepted_proposal_id,created_at,updated_at,platform_categories(name,code),platform_locations(name,code,timezone)';
 
 export async function GET(request: Request) {
   try {
@@ -96,6 +100,8 @@ export async function POST(request: Request) {
       budget_max_minor?: number | null;
       currency?: string;
       needed_by?: string | null;
+      preferred_start_time?: string | null;
+      expected_duration_minutes?: number | null;
     };
 
     const supabase = await createSupabaseServerClient();
@@ -111,6 +117,8 @@ export async function POST(request: Request) {
       target_budget_max_minor: input.budget_max_minor ?? null,
       target_currency: input.currency ?? 'INR',
       target_needed_by: input.needed_by || null,
+      target_preferred_start_time: input.preferred_start_time || null,
+      target_expected_duration_minutes: input.expected_duration_minutes ?? null,
     }).maybeSingle();
     if (error || !data) throw new Error(error?.message ?? 'Requirement could not be posted.');
 
