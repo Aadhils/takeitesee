@@ -24,6 +24,8 @@ type Requirement = {
   budget_max_minor: number | null;
   currency: 'INR' | 'USD';
   needed_by: string | null;
+  preferred_start_time: string | null;
+  expected_duration_minutes: number | null;
   status: RequirementStatus;
   published_at: string;
   closed_at: string | null;
@@ -63,8 +65,15 @@ export default function CustomerRequirementsManager() {
   const [budgetMax, setBudgetMax] = useState('');
   const [currency, setCurrency] = useState<'INR' | 'USD'>('INR');
   const [neededBy, setNeededBy] = useState('');
+  const [preferredStartTime, setPreferredStartTime] = useState('');
+  const [expectedDurationHours, setExpectedDurationHours] = useState('');
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const tamil = locale.toLowerCase().startsWith('ta');
+  const preferredTimeLabel = tamil ? 'விருப்பமான தொடக்க நேரம் (விருப்பம்)' : 'Preferred start time (optional)';
+  const durationLabel = tamil ? 'எதிர்பார்க்கப்படும் நேரம் — மணிநேரம் (விருப்பம்)' : 'Expected duration — hours (optional)';
+  const timeBadgeLabel = tamil ? 'தொடக்க நேரம்' : 'Start';
+  const durationBadgeLabel = tamil ? 'கால அளவு' : 'Duration';
 
   const budgetLabel = (row: Requirement) => {
     if (row.budget_type === 'negotiable') return t('req.budgetNegotiable');
@@ -73,6 +82,11 @@ export default function CustomerRequirementsManager() {
     return `${formatter.format((row.budget_min_minor ?? 0) / 100)} – ${formatter.format((row.budget_max_minor ?? 0) / 100)}`;
   };
   const modeLabel = (value: ServiceMode) => value === 'onsite' ? t('req.onsite') : value === 'remote' ? t('req.remote') : t('req.either');
+  const durationLabelFor = (minutes: number) => {
+    if (minutes % 1440 === 0) return `${minutes / 1440} ${tamil ? 'நாள்' : minutes === 1440 ? 'day' : 'days'}`;
+    if (minutes % 60 === 0) return `${minutes / 60} ${tamil ? 'மணி' : minutes === 60 ? 'hour' : 'hours'}`;
+    return `${minutes} ${tamil ? 'நிமிடம்' : 'min'}`;
+  };
 
   const load = useCallback(async () => {
     setLoading(true); setError('');
@@ -104,7 +118,7 @@ export default function CustomerRequirementsManager() {
 
   const resetForm = () => {
     setTitle(''); setDescription(''); setServiceMode('onsite'); setBudgetType('negotiable');
-    setBudgetMin(''); setBudgetMax(''); setCurrency('INR'); setNeededBy('');
+    setBudgetMin(''); setBudgetMax(''); setCurrency('INR'); setNeededBy(''); setPreferredStartTime(''); setExpectedDurationHours('');
   };
 
   const submit = async (event: FormEvent) => {
@@ -116,6 +130,12 @@ export default function CustomerRequirementsManager() {
       const maxMinor = budgetType === 'negotiable' ? null : budgetType === 'fixed' ? minMinor : toMinor(budgetMax);
       if (budgetType !== 'negotiable' && minMinor == null) throw new Error(t('req.validBudget'));
       if (budgetType === 'range' && (maxMinor == null || maxMinor < (minMinor ?? 0))) throw new Error(t('req.validRange'));
+      if (preferredStartTime && !neededBy) throw new Error(tamil ? 'தொடக்க நேரத்தை தேர்வு செய்தால் தேவைப்படும் தேதியையும் தேர்வு செய்யுங்கள்.' : 'Choose a needed-by date when you provide a preferred start time.');
+      const durationHours = expectedDurationHours ? Number(expectedDurationHours) : null;
+      if (durationHours != null && (!Number.isFinite(durationHours) || durationHours < 0.25 || durationHours > 168)) {
+        throw new Error(tamil ? 'கால அளவு 0.25 முதல் 168 மணி நேரத்திற்குள் இருக்க வேண்டும்.' : 'Expected duration must be between 0.25 and 168 hours.');
+      }
+      const durationMinutes = durationHours == null ? null : Math.round(durationHours * 60);
 
       const response = await fetch('/api/requirements', {
         method: 'POST',
@@ -124,6 +144,7 @@ export default function CustomerRequirementsManager() {
           idempotency_key: crypto.randomUUID(), category_id: categoryId, location_id: locationId,
           title, description, service_mode: serviceMode, budget_type: budgetType,
           budget_min_minor: minMinor, budget_max_minor: maxMinor, currency, needed_by: neededBy || null,
+          preferred_start_time: preferredStartTime || null, expected_duration_minutes: durationMinutes,
         }),
       });
       const payload = await response.json() as { requirement?: Requirement; error?: string };
@@ -184,7 +205,11 @@ export default function CustomerRequirementsManager() {
           {budgetType === 'range' ? <Input label={t('req.maximumBudget')} type="number" min="1" step="1" required value={budgetMax} onChange={(event) => setBudgetMax(event.target.value)} /> : null}
         </div> : null}
         <Select label={t('req.currency')} value={currency} onChange={(event) => setCurrency(event.target.value as 'INR' | 'USD')}><option value="INR">INR</option><option value="USD">USD</option></Select>
-        <Input label={t('req.neededOptional')} type="date" min={today} value={neededBy} onChange={(event) => setNeededBy(event.target.value)} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+          <Input label={t('req.neededOptional')} type="date" min={today} value={neededBy} onChange={(event) => { setNeededBy(event.target.value); if (!event.target.value) setPreferredStartTime(''); }} />
+          <Input label={preferredTimeLabel} type="time" value={preferredStartTime} onChange={(event) => setPreferredStartTime(event.target.value)} disabled={!neededBy} />
+          <Input label={durationLabel} type="number" min="0.25" max="168" step="0.25" value={expectedDurationHours} onChange={(event) => setExpectedDurationHours(event.target.value)} placeholder="10" />
+        </div>
         <Button type="submit" loading={submitting} disabled={loading || !categoryId || !locationId}>{t('req.post')}</Button>
       </form>
     </Card>
@@ -202,6 +227,8 @@ export default function CustomerRequirementsManager() {
         <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap', margin: '.75rem 0' }}>
           <Badge tone="neutral">{row.category_name || t('common.service')}</Badge><Badge tone="neutral">{row.location_name || t('common.location')}</Badge><Badge tone="neutral">{modeLabel(row.service_mode)}</Badge><Badge tone="neutral">{budgetLabel(row)}</Badge>
           {row.needed_by ? <Badge tone="neutral">{t('common.neededBy')} {row.needed_by}</Badge> : null}
+          {row.preferred_start_time ? <Badge tone="neutral">{timeBadgeLabel} {row.preferred_start_time.slice(0, 5)}</Badge> : null}
+          {row.expected_duration_minutes ? <Badge tone="neutral">{durationBadgeLabel} {durationLabelFor(row.expected_duration_minutes)}</Badge> : null}
         </div>
         <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}>
           <Link className="button button-secondary" href={`/requirements/${encodeURIComponent(row.id)}`}>{t('req.viewDetails')}</Link>
