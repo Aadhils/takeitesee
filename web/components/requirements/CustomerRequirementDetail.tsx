@@ -19,6 +19,8 @@ type RequirementRow = {
   budget_max_minor: number | null;
   currency: 'INR' | 'USD';
   needed_by: string | null;
+  preferred_start_time: string | null;
+  expected_duration_minutes: number | null;
   status: RequirementStatus;
   published_at: string;
   closed_at: string | null;
@@ -64,6 +66,13 @@ export default function CustomerRequirementDetail({ requirementId }: { requireme
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const [proposalBusyId, setProposalBusyId] = useState('');
+  const tamil = locale.toLowerCase().startsWith('ta');
+  const durationLabel = (minutes: number | null) => {
+    if (minutes == null) return t('common.flexible');
+    if (minutes % 1440 === 0) return `${minutes / 1440} ${tamil ? 'நாள்' : minutes === 1440 ? 'day' : 'days'}`;
+    if (minutes % 60 === 0) return `${minutes / 60} ${tamil ? 'மணி' : minutes === 60 ? 'hour' : 'hours'}`;
+    return `${minutes} ${tamil ? 'நிமிடம்' : 'min'}`;
+  };
 
   const load = useCallback(async () => {
     setError('');
@@ -112,7 +121,7 @@ export default function CustomerRequirementDetail({ requirementId }: { requireme
     <Card className="policy-card">
       <div className="section-heading"><div><span className="eyebrow">{requirement.requirement_reference}</span><h1>{requirement.title}</h1></div><Badge tone={tone(requirement.status)}>{status(requirement.status)}</Badge></div>
       <p className="detail-copy">{requirement.description}</p>
-      <dl className="review-details"><div><dt>{t('common.category')}</dt><dd>{categoryName || t('common.service')}</dd></div><div><dt>{t('common.location')}</dt><dd>{locationName || t('common.location')}</dd></div><div><dt>{t('req.serviceMode')}</dt><dd>{status(requirement.service_mode)}</dd></div><div><dt>{t('common.budget')}</dt><dd>{formatBudget(requirement, locale, t('req.negotiable'))}</dd></div><div><dt>{t('common.neededBy')}</dt><dd>{requirement.needed_by || t('common.flexible')}</dd></div><div><dt>{t('common.posted')}</dt><dd>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(requirement.published_at))}</dd></div></dl>
+      <dl className="review-details"><div><dt>{t('common.category')}</dt><dd>{categoryName || t('common.service')}</dd></div><div><dt>{t('common.location')}</dt><dd>{locationName || t('common.location')}</dd></div><div><dt>{t('req.serviceMode')}</dt><dd>{status(requirement.service_mode)}</dd></div><div><dt>{t('common.budget')}</dt><dd>{formatBudget(requirement, locale, t('req.negotiable'))}</dd></div><div><dt>{t('common.neededBy')}</dt><dd>{requirement.needed_by || t('common.flexible')}</dd></div><div><dt>{tamil ? 'விருப்பமான தொடக்க நேரம்' : 'Preferred start time'}</dt><dd>{requirement.preferred_start_time ? requirement.preferred_start_time.slice(0, 5) : t('common.flexible')}</dd></div><div><dt>{tamil ? 'எதிர்பார்க்கப்படும் கால அளவு' : 'Expected duration'}</dt><dd>{durationLabel(requirement.expected_duration_minutes)}</dd></div><div><dt>{t('common.posted')}</dt><dd>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(requirement.published_at))}</dd></div></dl>
       {['open','paused'].includes(requirement.status) ? <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', marginTop: '1rem' }}>{requirement.status === 'open' ? <Button type="button" variant="quiet" loading={busy} onClick={() => void updateStatus('paused')}>{t('req.pauseNew')}</Button> : null}{requirement.status === 'paused' ? <Button type="button" variant="secondary" loading={busy} onClick={() => void updateStatus('open')}>{t('req.reopen')}</Button> : null}<Button type="button" variant="secondary" loading={busy} onClick={() => void updateStatus('fulfilled')}>{t('req.markFulfilled')}</Button><Button type="button" variant="danger" loading={busy} onClick={() => void updateStatus('cancelled')}>{t('common.cancel')}</Button></div> : requirement.status === 'awarded' ? <div style={{ display: 'grid', gap: '.65rem', marginTop: '1rem' }}><div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}><Link className="button button-primary" href="/messages">{t('req.openChat')}</Link><Button type="button" variant="danger" loading={busy} onClick={() => void updateStatus('cancelled')}>{t('req.cancelRequirement')}</Button></div><p className="summary-note">{t('req.awardedNote')}</p></div> : <p className="summary-note" style={{ marginTop: '1rem' }}>{t('req.closedNote')}</p>}
     </Card>
 
