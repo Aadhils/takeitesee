@@ -37,6 +37,7 @@
 .voice-search-button:hover:not(:disabled) { box-shadow:0 9px 18px rgb(76 79 227 / 22%); }
 .voice-search-button[aria-pressed='true'] { box-shadow:0 0 0 5px rgb(76 79 227 / 12%); }
 .voice-search-button:disabled { cursor:not-allowed; opacity:.45; }
+.voice-search-button-mobile { display:none; }
 .voice-search-status { width:min(100%, 874px); margin:7px auto 0; color:var(--color-ink-muted); font-size:.76rem; text-align:left; }
 
 /* Keep the trust strip visually secondary to the brand/search task. */
@@ -60,9 +61,10 @@
   .hero-search-panel .search-field-service { border-bottom:1px solid var(--color-border); padding-right:6px; }
   .hero-search-panel .search-field .field-control { min-height:44px; font-size:.88rem; }
   .hero-search-button { width:100%; min-height:45px; margin-top:6px; border-radius:13px; }
-  .voice-search-button { position:relative; grid-area:voice; justify-self:center; top:auto; right:auto; width:40px; height:40px; margin:8px 0 2px; border-color:rgb(76 79 227 / 18%); background:rgb(76 79 227 / 9%); color:var(--color-primary); box-shadow:none; transform:none; }
-  .voice-search-button:hover:not(:disabled) { background:rgb(76 79 227 / 13%); box-shadow:none; }
-  .voice-search-button[aria-pressed='true'] { background:rgb(76 79 227 / 15%); box-shadow:0 0 0 4px rgb(76 79 227 / 9%); }
+  .voice-search-button-desktop { display:none; }
+  .voice-search-button-mobile { position:relative; grid-area:voice; display:grid; justify-self:center; top:auto; right:auto; width:40px; height:40px; margin:8px 0 2px; border-color:rgb(76 79 227 / 18%); background:rgb(76 79 227 / 9%); color:var(--color-primary); box-shadow:none; transform:none; }
+  .voice-search-button-mobile:hover:not(:disabled) { background:rgb(76 79 227 / 13%); box-shadow:none; }
+  .voice-search-button-mobile[aria-pressed='true'] { background:rgb(76 79 227 / 15%); box-shadow:0 0 0 4px rgb(76 79 227 / 9%); }
   .hero-copy + .trust-strip, .hero-trust-strip, .trust-strip { margin-top:13px; }
 }
 
