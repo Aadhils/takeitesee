@@ -48,7 +48,7 @@ function fromProductionBooking(booking: ProductionBooking): CustomerBooking {
     durationMinutes: booking.duration_minutes,
     location: booking.location,
     customerNotes: booking.customer_notes,
-    basePrice: Math.round(Number(booking.quoted_price) * 100),
+    basePrice: Number(booking.quoted_price),
     currency: booking.currency,
     paymentStatus: booking.payment_status === 'paid' ? 'paid' : booking.payment_status,
     status: booking.status,
