@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useMemo, useRef, useState } from 'react';
 import { Button, Input } from '../ui/primitives';
 import { useLanguage } from '../i18n/LanguageProvider';
 
@@ -32,6 +32,7 @@ type VoiceWindow = Window & typeof globalThis & {
 
 export default function HomepageSearchForm() {
   const { t, locale } = useLanguage();
+  const formRef = useRef<HTMLFormElement>(null);
   const [query, setQuery] = useState('');
   const [listening, setListening] = useState(false);
   const [voiceStatus, setVoiceStatus] = useState('');
@@ -42,15 +43,18 @@ export default function HomepageSearchForm() {
     return Boolean(voiceWindow.SpeechRecognition || voiceWindow.webkitSpeechRecognition);
   }, []);
 
+  const navigateToExplore = (searchQuery: string, location: string) => {
+    const params = new URLSearchParams();
+    if (searchQuery.trim()) params.set('q', searchQuery.trim());
+    if (location.trim()) params.set('location', location.trim());
+    window.location.assign(params.toString() ? `/explore?${params.toString()}` : '/explore');
+  };
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const location = String(formData.get('location') ?? '').trim();
-    const params = new URLSearchParams();
-
-    if (query.trim()) params.set('q', query.trim());
-    if (location) params.set('location', location);
-    window.location.assign(params.toString() ? `/explore?${params.toString()}` : '/explore');
+    const location = String(formData.get('location') ?? '');
+    navigateToExplore(query, location);
   };
 
   const startVoiceSearch = () => {
@@ -68,6 +72,8 @@ export default function HomepageSearchForm() {
       if (transcript) {
         setQuery(transcript);
         setVoiceStatus(locale === 'ta-IN' ? `குரல் தேடல்: ${transcript}` : `Voice search: ${transcript}`);
+        const location = formRef.current ? String(new FormData(formRef.current).get('location') ?? '') : '';
+        navigateToExplore(transcript, location);
       }
     };
     recognition.onerror = () => {
@@ -82,7 +88,7 @@ export default function HomepageSearchForm() {
 
   return (
     <>
-      <form className="search-panel hero-search-panel" action="/explore" onSubmit={handleSubmit}>
+      <form ref={formRef} className="search-panel hero-search-panel" action="/explore" onSubmit={handleSubmit}>
         <div className="search-field search-field-service">
           <span className="search-field-icon" aria-hidden="true">⌕</span>
           <Input label={t('home.searchNeed')} name="q" placeholder={t('home.searchNeed')} aria-label={t('home.searchNeedAria')} value={query} onChange={(event) => setQuery(event.target.value)} />
