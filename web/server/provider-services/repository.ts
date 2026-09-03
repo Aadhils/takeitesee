@@ -1,7 +1,6 @@
 import type { EntityId } from '../../types/entities';
 import type { ServerCustomerSession } from '../../types/production-domain';
 import { createSupabaseServerClient } from '../../lib/supabase/server';
-import { createSupabaseServiceClient } from '../../lib/supabase/service';
 import { assertProductionBackendConfigured } from '../config';
 
 export type ProviderServiceStatus = 'draft' | 'active' | 'paused';
@@ -39,13 +38,11 @@ function validateInput(input: CreateProviderServiceInput | UpdateProviderService
 }
 
 async function resolveTrustStatus(owner: Omit<ResolvedOwner, 'trust_status'>): Promise<ProviderTrustStatus> {
-  // Phase 17 moved the trust primitive to the non-exposed private schema. Use the
-  // service-role-only public compatibility bridge; never re-expose it to provider sessions.
-  const supabase = createSupabaseServiceClient();
-  const { data, error } = await supabase.rpc('provider_trust_status', {
+  // The database RPC derives the provider id from auth.uid(), so a provider session can
+  // inspect only its own trust state while the underlying trust primitive stays private.
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc('provider_current_trust_status', {
     p_provider_type: owner.provider_type,
-    p_professional_id: owner.professional_id,
-    p_business_id: owner.business_id,
   });
   if (error) throw new Error(error.message);
   return (data ?? 'normal') as ProviderTrustStatus;
