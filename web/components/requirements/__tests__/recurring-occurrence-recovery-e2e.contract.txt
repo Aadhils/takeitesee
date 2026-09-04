@@ -1,0 +1,14 @@
+Recurring occurrence recovery E2E contract
+
+- The real customer retry RPC must execute successfully for a cancelled, unpaid recurring occurrence.
+- Recovery must create a new booking and replacement job while preserving the failed occurrence sequence number.
+- The prior cancelled booking must remain preserved for audit.
+- A completed requirement_occurrence_recoveries row must link the prior and replacement booking/job identifiers.
+- Recovery must not create the next occurrence or otherwise advance the recurring sequence.
+- Replacement booking payment status remains unpaid; the verification does not activate any payment flow.
+- The authenticated owning provider must see the replacement booking as a recovered occurrence with the prior booking reference and attempt number.
+- An unrelated authenticated user must not be able to read provider booking requirement context.
+- The verification SQL must run only against non-production data and end with ROLLBACK so fixture rows leave no residue.
+- Cash on Service behavior is unchanged.
+- Cashfree, online gateway, refund, payout, settlement and reconciliation remain HOLD.
+- Supabase Pro / leaked-password protection remains HOLD.
