@@ -6,10 +6,30 @@ import { useAdminControlTranslations } from '../i18n/AdminControlTranslations';
 
 type Status = 'open' | 'reviewing' | 'actioned' | 'dismissed';
 type ReportRow = {
-  id: string; report_reference: string; target_type: 'requirement'|'proposal'|'conversation'|'message'; target_id: string;
-  category: string; details: string | null; status: Status; admin_note: string | null; created_at: string; updated_at: string; resolved_at: string | null;
-  reporter_name: string; reported_user_name: string | null; requirement_id: string; requirement_reference: string; requirement_title: string;
-  proposal_reference: string | null; message_excerpt: string | null;
+  id: string;
+  report_reference: string;
+  context_kind: 'requirement' | 'job_application';
+  target_type: 'requirement'|'proposal'|'conversation'|'message';
+  target_id: string;
+  category: string;
+  details: string | null;
+  status: Status;
+  admin_note: string | null;
+  created_at: string;
+  updated_at: string;
+  resolved_at: string | null;
+  reporter_name: string;
+  reported_user_name: string | null;
+  requirement_id: string | null;
+  requirement_reference: string | null;
+  requirement_title: string | null;
+  proposal_reference: string | null;
+  job_application_id: string | null;
+  job_posting_id: string | null;
+  job_title: string | null;
+  application_status: string | null;
+  business_name: string | null;
+  message_excerpt: string | null;
 };
 
 function statusTone(status: Status) {
@@ -17,6 +37,10 @@ function statusTone(status: Status) {
   if (status === 'reviewing') return 'warning' as const;
   if (status === 'actioned') return 'success' as const;
   return 'neutral' as const;
+}
+
+function label(value: string | null | undefined) {
+  return (value || 'unknown').replaceAll('_',' ').replace(/\b\w/g,(letter)=>letter.toUpperCase());
 }
 
 export function MarketplaceModerationManager() {
@@ -61,13 +85,20 @@ export function MarketplaceModerationManager() {
     {error ? <Alert title={t('moderation.unavailable')} tone="danger">{error}</Alert> : null}
     {loading ? <Card><p>{t('moderation.loading')}</p></Card> : null}
     {!loading && reports.length === 0 ? <Card><p className="detail-copy">{t('moderation.empty')}</p></Card> : null}
-    {!loading ? reports.map((row) => <Card className="policy-card" key={row.id}>
-      <div className="section-heading"><div><span className="eyebrow">{row.report_reference} · {row.target_type}</span><h2>{row.requirement_title}</h2><p className="summary-note">{row.requirement_reference}</p></div><Badge tone={statusTone(row.status)}>{row.status.replaceAll('_',' ')}</Badge></div>
-      <dl className="review-details"><div><dt>{t('common.category')}</dt><dd>{row.category.replace('_',' ')}</dd></div><div><dt>{t('common.reporter')}</dt><dd>{row.reporter_name}</dd></div><div><dt>{t('common.reportedUser')}</dt><dd>{row.reported_user_name || t('common.notApplicable')}</dd></div><div><dt>{t('common.opened')}</dt><dd>{new Intl.DateTimeFormat(locale,{dateStyle:'medium',timeStyle:'short'}).format(new Date(row.created_at))}</dd></div>{row.proposal_reference ? <div><dt>{t('common.proposal')}</dt><dd>{row.proposal_reference}</dd></div> : null}</dl>
-      {row.details ? <Alert title={t('moderation.reporterDetails')} tone="info">{row.details}</Alert> : null}
-      {row.message_excerpt ? <div style={{ border: '1px solid #e7eaf0', borderRadius: 12, padding: '.8rem', marginTop: '.7rem' }}><strong>{t('moderation.messageExcerpt')}</strong><p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{row.message_excerpt}</p></div> : null}
-      {row.admin_note ? <p className="summary-note"><strong>{t('moderation.latestNote')}</strong> {row.admin_note}</p> : null}
-      {row.status === 'open' || row.status === 'reviewing' ? <div style={{ display: 'grid', gap: '.65rem', marginTop: '1rem' }}><label className="field"><span className="field-label">{t('moderation.note')}</span><textarea className="field-control" rows={3} maxLength={2000} value={notes[row.id] ?? ''} onChange={(event) => setNotes((current) => ({ ...current, [row.id]: event.target.value }))} placeholder={t('moderation.notePlaceholder')} /></label><div style={{ display: 'flex', gap: '.55rem', flexWrap: 'wrap' }}>{row.status === 'open' ? <Button type="button" variant="secondary" loading={busyId===row.id} onClick={() => void update(row.id,'reviewing')}>{t('moderation.startReview')}</Button> : null}<Button type="button" loading={busyId===row.id} onClick={() => void update(row.id,'actioned')}>{t('moderation.actioned')}</Button><Button type="button" variant="quiet" loading={busyId===row.id} onClick={() => void update(row.id,'dismissed')}>{t('moderation.dismiss')}</Button></div></div> : null}
-    </Card>) : null}
+    {!loading ? reports.map((row) => {
+      const jobContext = row.context_kind === 'job_application';
+      const title = jobContext ? row.job_title || 'Job application' : row.requirement_title || 'Marketplace report';
+      const reference = jobContext
+        ? [row.business_name, row.application_status ? `Application ${label(row.application_status)}` : null].filter(Boolean).join(' · ')
+        : row.requirement_reference || '';
+      return <Card className="policy-card" key={row.id}>
+        <div className="section-heading"><div><span className="eyebrow">{row.report_reference} · {jobContext ? 'job application' : row.target_type}</span><h2>{title}</h2><p className="summary-note">{reference}</p></div><Badge tone={statusTone(row.status)}>{row.status.replaceAll('_',' ')}</Badge></div>
+        <dl className="review-details"><div><dt>{t('common.category')}</dt><dd>{row.category.replace('_',' ')}</dd></div><div><dt>{t('common.reporter')}</dt><dd>{row.reporter_name}</dd></div><div><dt>{t('common.reportedUser')}</dt><dd>{row.reported_user_name || t('common.notApplicable')}</dd></div><div><dt>{t('common.opened')}</dt><dd>{new Intl.DateTimeFormat(locale,{dateStyle:'medium',timeStyle:'short'}).format(new Date(row.created_at))}</dd></div>{row.proposal_reference ? <div><dt>{t('common.proposal')}</dt><dd>{row.proposal_reference}</dd></div> : null}{jobContext ? <div><dt>Reported item</dt><dd>{label(row.target_type)}</dd></div> : null}</dl>
+        {row.details ? <Alert title={t('moderation.reporterDetails')} tone="info">{row.details}</Alert> : null}
+        {row.message_excerpt ? <div style={{ border: '1px solid #e7eaf0', borderRadius: 12, padding: '.8rem', marginTop: '.7rem' }}><strong>{t('moderation.messageExcerpt')}</strong><p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{row.message_excerpt}</p></div> : null}
+        {row.admin_note ? <p className="summary-note"><strong>{t('moderation.latestNote')}</strong> {row.admin_note}</p> : null}
+        {row.status === 'open' || row.status === 'reviewing' ? <div style={{ display: 'grid', gap: '.65rem', marginTop: '1rem' }}><label className="field"><span className="field-label">{t('moderation.note')}</span><textarea className="field-control" rows={3} maxLength={2000} value={notes[row.id] ?? ''} onChange={(event) => setNotes((current) => ({ ...current, [row.id]: event.target.value }))} placeholder={t('moderation.notePlaceholder')} /></label><div style={{ display: 'flex', gap: '.55rem', flexWrap: 'wrap' }}>{row.status === 'open' ? <Button type="button" variant="secondary" loading={busyId===row.id} onClick={() => void update(row.id,'reviewing')}>{t('moderation.startReview')}</Button> : null}<Button type="button" loading={busyId===row.id} onClick={() => void update(row.id,'actioned')}>{t('moderation.actioned')}</Button><Button type="button" variant="quiet" loading={busyId===row.id} onClick={() => void update(row.id,'dismissed')}>{t('moderation.dismiss')}</Button></div></div> : null}
+      </Card>;
+    }) : null}
   </div>;
 }
