@@ -32,6 +32,7 @@ type Requirement = {
   recurrence_frequency: RecurrenceFrequency | null;
   recurrence_interval: number | null;
   recurrence_count: number | null;
+  recurrence_weekdays: number[] | null;
   status: RequirementStatus;
   published_at: string;
   closed_at: string | null;
@@ -42,6 +43,16 @@ type Catalog = {
   categories: Array<{ id: string; name: string; code: string }>;
   locations: Array<{ id: string; name: string; code: string; timezone?: string | null }>;
 };
+
+const WEEKDAYS = [
+  { value: 0, short: 'Sun', tamil: 'ஞாயி' },
+  { value: 1, short: 'Mon', tamil: 'திங்கள்' },
+  { value: 2, short: 'Tue', tamil: 'செவ்வாய்' },
+  { value: 3, short: 'Wed', tamil: 'புதன்' },
+  { value: 4, short: 'Thu', tamil: 'வியாழன்' },
+  { value: 5, short: 'Fri', tamil: 'வெள்ளி' },
+  { value: 6, short: 'Sat', tamil: 'சனி' },
+] as const;
 
 function statusTone(status: RequirementStatus) {
   if (status === 'open') return 'success' as const;
@@ -77,6 +88,7 @@ export default function CustomerRequirementsManager() {
   const [recurrenceFrequency, setRecurrenceFrequency] = useState<RecurrenceFrequency>('weekly');
   const [recurrenceInterval, setRecurrenceInterval] = useState('1');
   const [recurrenceCount, setRecurrenceCount] = useState('4');
+  const [recurrenceWeekdays, setRecurrenceWeekdays] = useState<number[]>([]);
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const tamil = locale.toLowerCase().startsWith('ta');
@@ -91,6 +103,8 @@ export default function CustomerRequirementsManager() {
   const intervalLabel = tamil ? 'ஒவ்வொரு' : 'Every';
   const occurrenceCountLabel = tamil ? 'மொத்த சேவை எண்ணிக்கை' : 'Number of occurrences';
   const recurrenceBadgeLabel = tamil ? 'மீளும் சேவை' : 'Recurring';
+  const weekdayLabel = tamil ? 'சேவை நடைபெறும் வார நாட்கள்' : 'Service weekdays';
+  const weekdayHelp = tamil ? 'முதல் சேவை தேதியும் தேர்ந்தெடுத்த வார நாளில் இருக்க வேண்டும்.' : 'The first service date must fall on one of the selected weekdays.';
 
   const budgetLabel = (row: Requirement) => {
     if (row.budget_type === 'negotiable') return t('req.budgetNegotiable');
@@ -105,10 +119,12 @@ export default function CustomerRequirementsManager() {
     return `${minutes} ${tamil ? 'நிமிடம்' : 'min'}`;
   };
   const frequencyLabel = (value: RecurrenceFrequency) => value === 'daily' ? (tamil ? 'தினமும்' : 'day') : value === 'weekly' ? (tamil ? 'வாரம்' : 'week') : (tamil ? 'மாதம்' : 'month');
+  const weekdayNames = (values: number[]) => values.map((value) => WEEKDAYS.find((day) => day.value === value)).filter(Boolean).map((day) => tamil ? day!.tamil : day!.short).join(', ');
   const recurrenceLabelFor = (row: Requirement) => {
     if (row.schedule_pattern !== 'recurring' || !row.recurrence_frequency || !row.recurrence_interval || !row.recurrence_count) return oneTimeLabel;
     const every = row.recurrence_interval === 1 ? frequencyLabel(row.recurrence_frequency) : `${row.recurrence_interval} ${frequencyLabel(row.recurrence_frequency)}${!tamil ? 's' : ''}`;
-    return `${recurrenceBadgeLabel}: ${tamil ? 'ஒவ்வொரு' : 'every'} ${every} × ${row.recurrence_count}`;
+    const weekdays = row.recurrence_frequency === 'weekly' && row.recurrence_weekdays?.length ? ` · ${weekdayNames(row.recurrence_weekdays)}` : '';
+    return `${recurrenceBadgeLabel}: ${tamil ? 'ஒவ்வொரு' : 'every'} ${every} × ${row.recurrence_count}${weekdays}`;
   };
 
   const load = useCallback(async () => {
@@ -142,7 +158,7 @@ export default function CustomerRequirementsManager() {
   const resetForm = () => {
     setTitle(''); setDescription(''); setServiceMode('onsite'); setBudgetType('negotiable');
     setBudgetMin(''); setBudgetMax(''); setCurrency('INR'); setNeededBy(''); setPreferredStartTime(''); setExpectedDurationHours('');
-    setSchedulePattern('one_time'); setRecurrenceFrequency('weekly'); setRecurrenceInterval('1'); setRecurrenceCount('4');
+    setSchedulePattern('one_time'); setRecurrenceFrequency('weekly'); setRecurrenceInterval('1'); setRecurrenceCount('4'); setRecurrenceWeekdays([]);
   };
 
   const submit = async (event: FormEvent) => {
@@ -165,6 +181,14 @@ export default function CustomerRequirementsManager() {
       if (schedulePattern === 'recurring' && !neededBy) throw new Error(tamil ? 'மீளும் சேவைக்கு முதல் சேவை தேதியை தேர்வு செய்யுங்கள்.' : 'Choose the first service date for a recurring requirement.');
       if (schedulePattern === 'recurring' && (!Number.isInteger(interval) || interval! < 1 || interval! > 12)) throw new Error(tamil ? 'மீளும் இடைவெளி 1 முதல் 12 வரை இருக்க வேண்டும்.' : 'Repeat interval must be between 1 and 12.');
       if (schedulePattern === 'recurring' && (!Number.isInteger(count) || count! < 2 || count! > 365)) throw new Error(tamil ? 'சேவை எண்ணிக்கை 2 முதல் 365 வரை இருக்க வேண்டும்.' : 'Occurrence count must be between 2 and 365.');
+      const selectedWeekdays = schedulePattern === 'recurring' && recurrenceFrequency === 'weekly' ? [...recurrenceWeekdays].sort((a, b) => a - b) : null;
+      if (schedulePattern === 'recurring' && recurrenceFrequency === 'weekly' && selectedWeekdays?.length === 0) {
+        throw new Error(tamil ? 'வாராந்திர recurring சேவைக்கு குறைந்தது ஒரு வார நாளை தேர்வு செய்யுங்கள்.' : 'Choose at least one weekday for a weekly recurring requirement.');
+      }
+      if (selectedWeekdays?.length && neededBy) {
+        const firstDateWeekday = new Date(`${neededBy}T12:00:00Z`).getUTCDay();
+        if (!selectedWeekdays.includes(firstDateWeekday)) throw new Error(weekdayHelp);
+      }
 
       const response = await fetch('/api/requirements', {
         method: 'POST',
@@ -178,6 +202,7 @@ export default function CustomerRequirementsManager() {
           recurrence_frequency: schedulePattern === 'recurring' ? recurrenceFrequency : null,
           recurrence_interval: interval,
           recurrence_count: count,
+          recurrence_weekdays: selectedWeekdays,
         }),
       });
       const payload = await response.json() as { requirement?: Requirement; error?: string };
@@ -238,7 +263,7 @@ export default function CustomerRequirementsManager() {
           {budgetType === 'range' ? <Input label={t('req.maximumBudget')} type="number" min="1" step="1" required value={budgetMax} onChange={(event) => setBudgetMax(event.target.value)} /> : null}
         </div> : null}
         <Select label={t('req.currency')} value={currency} onChange={(event) => setCurrency(event.target.value as 'INR' | 'USD')}><option value="INR">INR</option><option value="USD">USD</option></Select>
-        <Select label={scheduleLabel} value={schedulePattern} onChange={(event) => setSchedulePattern(event.target.value as SchedulePattern)}>
+        <Select label={scheduleLabel} value={schedulePattern} onChange={(event) => { const next = event.target.value as SchedulePattern; setSchedulePattern(next); if (next !== 'recurring') setRecurrenceWeekdays([]); }}>
           <option value="one_time">{oneTimeLabel}</option><option value="recurring">{recurringLabel}</option>
         </Select>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
@@ -246,13 +271,25 @@ export default function CustomerRequirementsManager() {
           <Input label={preferredTimeLabel} type="time" value={preferredStartTime} onChange={(event) => setPreferredStartTime(event.target.value)} disabled={!neededBy} />
           <Input label={durationLabel} type="number" min="0.25" max="168" step="0.25" value={expectedDurationHours} onChange={(event) => setExpectedDurationHours(event.target.value)} placeholder="10" />
         </div>
-        {schedulePattern === 'recurring' ? <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
-          <Select label={recurrenceFrequencyLabel} value={recurrenceFrequency} onChange={(event) => setRecurrenceFrequency(event.target.value as RecurrenceFrequency)}>
-            <option value="daily">{tamil ? 'தினசரி' : 'Daily'}</option><option value="weekly">{tamil ? 'வாரந்தோறும்' : 'Weekly'}</option><option value="monthly">{tamil ? 'மாதந்தோறும்' : 'Monthly'}</option>
-          </Select>
-          <Input label={intervalLabel} type="number" min="1" max="12" step="1" required value={recurrenceInterval} onChange={(event) => setRecurrenceInterval(event.target.value)} />
-          <Input label={occurrenceCountLabel} type="number" min="2" max="365" step="1" required value={recurrenceCount} onChange={(event) => setRecurrenceCount(event.target.value)} />
-        </div> : null}
+        {schedulePattern === 'recurring' ? <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+            <Select label={recurrenceFrequencyLabel} value={recurrenceFrequency} onChange={(event) => { const next = event.target.value as RecurrenceFrequency; setRecurrenceFrequency(next); if (next !== 'weekly') setRecurrenceWeekdays([]); }}>
+              <option value="daily">{tamil ? 'தினசரி' : 'Daily'}</option><option value="weekly">{tamil ? 'வாரந்தோறும்' : 'Weekly'}</option><option value="monthly">{tamil ? 'மாதந்தோறும்' : 'Monthly'}</option>
+            </Select>
+            <Input label={intervalLabel} type="number" min="1" max="12" step="1" required value={recurrenceInterval} onChange={(event) => setRecurrenceInterval(event.target.value)} />
+            <Input label={occurrenceCountLabel} type="number" min="2" max="365" step="1" required value={recurrenceCount} onChange={(event) => setRecurrenceCount(event.target.value)} />
+          </div>
+          {recurrenceFrequency === 'weekly' ? <div style={{ display: 'grid', gap: '.55rem' }}>
+            <span style={{ fontWeight: 600 }}>{weekdayLabel}</span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.5rem' }}>
+              {WEEKDAYS.map((day) => {
+                const selected = recurrenceWeekdays.includes(day.value);
+                return <Button key={day.value} type="button" variant={selected ? 'secondary' : 'quiet'} aria-pressed={selected} onClick={() => setRecurrenceWeekdays((current) => selected ? current.filter((value) => value !== day.value) : [...current, day.value].sort((a, b) => a - b))}>{tamil ? day.tamil : day.short}</Button>;
+              })}
+            </div>
+            <span className="summary-note">{weekdayHelp}</span>
+          </div> : null}
+        </> : null}
         <Button type="submit" loading={submitting} disabled={loading || !categoryId || !locationId}>{t('req.post')}</Button>
       </form>
     </Card>
