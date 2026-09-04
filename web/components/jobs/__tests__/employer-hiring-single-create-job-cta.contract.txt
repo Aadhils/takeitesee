@@ -1,0 +1,9 @@
+Employer Hiring Workspace single Create Job CTA contract
+
+1. The Hiring Workspace hero remains the only visible Create Job entry point.
+2. The Job postings section heading must not expose a duplicate Create Job action.
+3. The empty Job postings state must not expose a duplicate Create Job action.
+4. Opening the hero Create Job action must continue to reveal the existing job form.
+5. Save draft and Publish job form actions remain available and unchanged.
+6. Existing job cards, applicant, interview, offer, messaging and moderation actions remain unchanged.
+7. No database, API, job lifecycle, finance, recurrence or Supabase Pro behavior changes in this slice.
