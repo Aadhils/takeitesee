@@ -1,0 +1,16 @@
+Professional multi-skill identity foundation contract
+
+1. A professional user keeps exactly one master professional_profiles identity; this slice does not remove or weaken the existing unique user_id ownership model.
+2. A master professional profile may own multiple professional_roles representing distinct talents or professional faces.
+3. Every professional role remains owned through professional_roles.professional_id -> professional_profiles.id. Client input cannot select or transfer ownership to another professional.
+4. An authenticated professional may read and mutate only roles belonging to their own master professional profile.
+5. Anonymous/public discovery may read only active professional roles whose parent professional profile is verified.
+6. An owner may still read and manage their own inactive roles so a talent can be paused without being deleted.
+7. Each role may independently express service-booking, freelance, part-time, full-time, and contract opportunity openness.
+8. This foundation does not implement subscription tiers, paid verification, paid search priority, search ranking changes, job applications, employer workflows, resume generation, or portfolio/media uploads.
+9. Provider verification remains separate from any future subscription. Paying for a plan must not itself make a professional verified.
+10. Existing business-provider profile behavior is unchanged by this slice.
+11. Existing services, bookings, recurring requirements, Cash on Service, and non-finance marketplace lifecycle behavior are unchanged by this slice.
+12. Cashfree, payment, refund, payout, settlement, reconciliation, disputes/chargebacks, collections/recovery finance behavior and INR finance activation remain HOLD.
+13. Supabase Pro / leaked-password protection remains HOLD.
+14. The professional_roles table must have explicit Data API grants plus RLS policies; RLS alone is not treated as Data API exposure configuration.
