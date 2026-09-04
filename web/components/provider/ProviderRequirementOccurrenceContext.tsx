@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Badge, Card } from '../ui/primitives';
 
@@ -13,6 +14,13 @@ type RequirementContext = {
   recurrence_interval: number | null;
   recurrence_weekdays: number[] | null;
   pricing_basis: 'per_occurrence' | 'whole_requirement' | null;
+  recovery: {
+    id: string;
+    attempt_number: number;
+    prior_booking_id: string;
+    prior_booking_reference: string;
+    recovered_at: string;
+  } | null;
 };
 
 const WEEKDAY_NAMES = {
@@ -55,10 +63,22 @@ export default function ProviderRequirementOccurrenceContext({ bookingId, locale
   return <Card className="provider-detail-card">
     <div className="section-heading">
       <div><span className="eyebrow">{tamil ? 'Requirement வேலை' : 'Requirement job'}</span><h2>{context.requirement_title}</h2></div>
-      <Badge tone={recurring ? 'info' : 'neutral'}>{recurring ? (tamil ? 'Recurring' : 'Recurring') : (tamil ? 'ஒருமுறை' : 'One time')}</Badge>
+      <Badge tone={recurring ? 'info' : 'neutral'}>{recurring ? 'Recurring' : (tamil ? 'ஒருமுறை' : 'One time')}</Badge>
     </div>
-    {recurring ? <p><strong>{tamil ? 'Occurrence' : 'Occurrence'} #{context.occurrence_number}</strong> / {context.occurrence_count}</p> : null}
+    {recurring ? <p><strong>Occurrence #{context.occurrence_number}</strong> / {context.occurrence_count}</p> : null}
     {cadence ? <p className="summary-note">{tamil ? 'அட்டவணை' : 'Schedule'}: {cadence}</p> : null}
     <p className="summary-note">{pricing}</p>
+
+    {context.recovery ? <div style={{ borderTop: '1px solid #e7eaf0', marginTop: '1rem', paddingTop: '1rem', display: 'grid', gap: '.45rem' }}>
+      <div style={{ display: 'flex', gap: '.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <Badge tone="warning">{tamil ? 'மீட்டெடுக்கப்பட்ட occurrence' : 'Recovered occurrence'}</Badge>
+        <strong>{tamil ? `Recovery முயற்சி #${context.recovery.attempt_number}` : `Recovery attempt #${context.recovery.attempt_number}`}</strong>
+      </div>
+      <p className="summary-note">{tamil ? 'இந்த booking, ரத்து செய்யப்பட்ட முந்தைய booking-ஐ மாற்றி அதே occurrence எண்ணில் உருவாக்கப்பட்டது.' : 'This booking replaces a cancelled booking while keeping the same occurrence number.'}</p>
+      <p className="summary-note">
+        {tamil ? 'முந்தைய booking' : 'Previous booking'}: <Link href={`/provider/bookings/${encodeURIComponent(context.recovery.prior_booking_id)}`}>{context.recovery.prior_booking_reference}</Link>
+      </p>
+      <p className="summary-note">{tamil ? 'மீட்டெடுத்த நேரம்' : 'Recovered'}: {new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(context.recovery.recovered_at))}</p>
+    </div> : null}
   </Card>;
 }
