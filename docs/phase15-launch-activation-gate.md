@@ -1,143 +1,151 @@
-# Phase 15 launch activation gate
+# Takeitesee non-finance launch activation gate
 
-Last consolidated: 2026-09-02 (Asia/Kolkata), after PR `#198` production verification.
+Last consolidated: 2026-09-05 (Asia/Kolkata), after PR `#238` production verification and canonical Supabase environment reconciliation.
 
-This document is the current TakeItEsee public-launch readiness gate. Real customer payments, Cashfree behavior, refunds, payouts, recovery, settlement, reconciliation, cash collection, disputes/chargebacks, and INR finance activation remain explicitly **HOLD**. Launch-readiness work must not activate or alter that scope indirectly.
+This document is the single current Takeitesee public non-finance launch-readiness gate. Completed scopes are closed work and must not be reopened without new failure evidence, an approved product requirement, or a dependency change.
 
-## Current production baseline
+## Current audited application baseline
 
-- Canonical public domain: `https://www.takeitesee.com`.
-- Apex domain: `https://takeitesee.com`.
-- Canonical production Supabase project: `bukrpkymivkhdpueropt`.
-- Vercel production project: `prj_tnzTyndMigNpGqH1x0SZ2sRpAUlf`.
-- Current audited production release before this documentation-only consolidation: `156ba88606cfdeacbc751d9632b1bd9d878a5d10`.
-- Current audited Vercel deployment before this documentation-only consolidation: `dpl_B4nmJ7wsRZLuV2VaEcCHMJ8aKuhW`.
-- That deployment is `READY`, carries both canonical domains, and its Git SHA exactly matches the audited release.
-- `GET /api/health` returned HTTP `200`, `status=ok`, `app=ok`, `database=ok`, release `156ba88606cf`.
-- Post-release runtime verification returned zero runtime errors and zero deployment-scoped `5xx` entries in the verification window.
-- Vercel reported zero unresolved toolbar-feedback threads for the production project during the same closure.
+The latest audited application release before this documentation-only guardrail change is:
 
-The release produced by the PR that updates this file must independently pass the same exact-SHA deployment, canonical-health, runtime, 5xx, and feedback closure before it becomes the new authoritative baseline.
+- canonical public domain: `https://www.takeitesee.com`
+- apex domain: `https://takeitesee.com`
+- authoritative Git `main`: `93ee19061c5ed3032661bcbf97c526b1ec644b4a`
+- Vercel production project: `prj_tnzTyndMigNpGqH1x0SZ2sRpAUlf`
+- Vercel production deployment: `dpl_43V3SxmkCGgbUhT6qUKaPcF38vb8`
+- deployment state: `READY`
+- deployment build source: branch `main`, commit prefix `93ee190`
+- canonical `/api/health`: HTTP `200`, `status=ok`, `app=ok`, `database=ok`, release `93ee19061c5e`
+- aggregated production runtime errors in the checked 24-hour window: none
+- deployment-scoped `5xx` in the checked one-hour window: none
+- unresolved Vercel toolbar feedback: none
 
-## Verified green non-finance gates
+The release produced by the PR that updates this file must independently pass the protected workflow and exact merged-SHA production checks before it supersedes the baseline above.
 
-The implemented non-finance candidate has production-verified coverage for:
+## Canonical Supabase environment — mandatory source of truth
 
-- canonical domain and production-environment integrity,
-- public discovery and private/auth boundaries,
-- real HTTP 404 and global error recovery,
-- Supabase RLS/RPC authorization hardening and non-finance index readiness,
-- signup/email confirmation/password recovery/account security/email change,
-- 18+ and Terms/Privacy consent recording,
-- approved Privacy Policy, Terms of Service, and Cookie Policy,
-- approved TakeItEsee favicon/PWA/Apple-touch/social identity,
-- provider legal/public-contact/grievance disclosure before verification/publication,
-- signed-in privacy request submission/history/review,
-- signed-in platform support/grievance submission/history/review,
-- direct privacy/support status-notification routing,
-- keyboard skip-navigation accessibility support,
-- production incident-response/rollback procedure,
-- production data-recovery readiness procedure,
-- production monitoring/observability operator baseline.
+Canonical live / production Supabase project:
 
-The INR finance policy remains inactive.
+- `bukrpkymivkhdpueropt`
 
-## Launch-readiness production closures
+Legacy / non-canonical Supabase project:
 
-The core production closures through PR `#193` established auth, reliability, database hardening, legal, brand, privacy, account-security, support/grievance, and request-status-notification readiness.
+- `txzbnfyyuredrtqileow`
 
-The final operational-readiness layer then added:
+A fresh read-only migration-history comparison on 2026-09-05 confirmed that `bukrpkymivkhdpueropt` contains the current launch-readiness and recurring-requirement migration lineage through PR `#238`, while `txzbnfyyuredrtqileow` remains on an older August 2026 booking/provider migration lineage.
 
-- PR `#194`: post-application launch-readiness operational closure work.
-- PR `#195`: production incident response and rollback runbook.
-- PR `#196`: keyboard skip navigation / main-content bypass accessibility support.
-- PR `#197`: production data recovery readiness runbook, including database-vs-Storage recovery boundaries and plan-safe restore guidance.
-- PR `#198`: production monitoring and observability runbook with canonical health/runtime/5xx/release-integrity signals and escalation guidance.
-- Current consolidation: final go-live operator checklist plus refreshed single-source launch gate.
+Therefore:
 
-All of these closures preserve the Finance/Cashfree HOLD boundary and do not enable Supabase Pro-only leaked-password protection.
+- do not label `bukrpkymivkhdpueropt` as test or staging;
+- do not treat `txzbnfyyuredrtqileow` as the current production database;
+- do not apply incremental current migrations to `txzbnfyyuredrtqileow` as though it were a normal promotion target;
+- verify the project ref against `docs/production-environments.md` before any state-changing database operation;
+- any future project switch is a reviewed data migration/cutover, not a simple Vercel environment-variable change.
 
-## Final non-finance candidate state
+## Verified green non-finance gates — CLOSED
 
-The TakeItEsee non-finance application candidate is production-smoke clean at the last audited release and has the operational documentation needed for release integrity, incident response, recovery, monitoring, and go-live handoff.
+The implemented non-finance candidate has already passed representative production or protected-workflow coverage for:
 
-Use `docs/production-go-live-operator-checklist.md` as the release-day execution checklist. A release is not closed merely because a PR merged; it must be tied to the exact production deployment and pass canonical health/runtime verification.
+- canonical domain and release integrity;
+- public discovery and private/auth boundaries;
+- HTTP 404/global error recovery;
+- signup, email confirmation, password recovery, account security and email change;
+- age/Terms/Privacy consent recording;
+- approved Privacy Policy, Terms of Service and Cookie Policy;
+- favicon/PWA/Apple-touch/social identity;
+- provider onboarding, verification, trust and controlled service publication;
+- provider legal/public-contact/grievance disclosure;
+- privacy request workflow;
+- platform support/grievance workflow and status notifications;
+- accessibility keyboard/focus improvements;
+- production incident-response, rollback, data-recovery and monitoring runbooks;
+- representative non-finance customer marketplace discovery, availability, booking request, provider acceptance and customer confirmed state;
+- universal requirement scheduling and recurring-service orchestration;
+- selected-weekday recurrence;
+- sequential recurring occurrence lifecycle;
+- recurring occurrence recovery/audit path;
+- customer/provider recurring final-state lifecycle consistency.
 
-### Current non-finance classification
+These passed areas are not a standing invitation for additional polish PRs. Reopen a closed scope only when a new bug, failing check, changed requirement, security finding, or explicit product feature requires it.
 
-**Application implementation:** launch candidate / production-smoke clean.
+## Recurring requirement lifecycle — FROZEN
 
-**Operational readiness:** incident response, recovery, monitoring, and go-live procedures documented.
+PRs `#220` through `#238` establish the current recurring requirement lifecycle, including recurrence intent, occurrence planning, sequential orchestration, selected weekdays, recovery, completion/advancement, final fulfillment and customer/provider final-state presentation.
 
-**External plan-level security item:** Supabase leaked-password protection remains HOLD until Pro upgrade and explicit resume instruction.
+This recurrence/recovery lifecycle is **CLOSED & FROZEN** for launch-readiness purposes.
 
-This plan-level HOLD must be represented accurately; it does not authorize unrelated application churn or a paid upgrade.
+Do not create more recurrence verification, consistency, wording, dashboard, or hardening work merely to re-check the same passed lifecycle. Normal regression coverage may run when another genuine feature changes shared code.
 
-## Remaining non-finance external gate — HOLD
+## Current product-development mode
 
-### Supabase leaked-password protection
+New development may proceed from the authoritative `main` baseline when it is a genuine product requirement rather than a re-verification of closed work.
 
-The Supabase Security Advisor reports leaked-password protection as disabled. Dashboard review previously confirmed that `Prevent use of leaked passwords` requires the Supabase Pro plan or above and is unavailable on the current plan.
+Major new product concepts — for example the proposed multi-skill professional identity, portfolio/resume, opportunity and subscription ecosystem — must be planned as new feature architecture and must not be represented as unfinished recurrence work.
 
-The application and Supabase email provider enforce an 8-character minimum password, but leaked-password screening remains an external plan-level gate. Do not represent this item as green until:
+## External plan-level security HOLD
 
-1. the canonical Supabase project is upgraded to a plan exposing the setting,
-2. the product owner explicitly resumes this HOLD work,
-3. `Prevent use of leaked passwords` is enabled in Supabase Auth, and
-4. a fresh Security Advisor audit confirms the leaked-password warning is cleared.
+Supabase leaked-password protection remains HOLD until:
 
-Do not upgrade, purchase, or enable a paid capability merely to make launch-readiness evidence green.
+1. the canonical project plan exposes the required setting;
+2. the product owner explicitly resumes this work;
+3. `Prevent use of leaked passwords` is enabled; and
+4. a fresh Security Advisor review confirms the warning is cleared.
 
-## Intentional Supabase advisor notices
-
-Some SECURITY DEFINER notices remain intentional where functions are required for public marketplace availability, RLS policy evaluation, or authenticated application workflows. Prior live definition review confirmed fixed/empty search paths and explicit ownership, participant, scoped-admin, or Super Admin authorization context for the audited functions.
-
-Do not blindly revoke authenticated grants from privileged RPCs solely because an advisor labels them SECURITY DEFINER. Review the function definition and authorization boundary in context.
-
-Finance/payment/payout/refund/recovery/settlement/reconciliation-related advisor notices remain inside the explicit Finance/Cashfree HOLD boundary and are not non-finance launch-readiness change targets.
-
-## Deferred finance-only privileged readiness
-
-`GET /api/super-admin/readiness` is a Super Admin-only finance-readiness surface combining database/security probes with Cashfree Payments, Cashfree Payouts, sandbox-payment evidence, and INR finance-policy state. Guest access must continue to fail closed without privileged readiness details.
-
-A full privileged finance-readiness run is intentionally deferred until Finance/Cashfree HOLD is explicitly lifted. Do not create or elevate a privileged identity, expose a service-role key, activate gateway credentials, or run payment/payout E2E merely to make this finance-only panel green.
+Do not purchase or activate a paid plan merely to make readiness evidence appear green.
 
 ## Finance / Cashfree / payment HOLD
 
-Cashfree, payment, cash collection, refunds, payouts, disputes/chargebacks, recovery, settlement, reconciliation, and INR finance behavior remain **HOLD**.
+Real customer payment collection, Cashfree Payments/Payouts, refunds, payouts, settlement, reconciliation, disputes/chargebacks, recovery/collections ledger behavior, and INR finance activation remain **HOLD**.
 
 Do not:
 
-- activate Cashfree sandbox or production credentials,
-- change payment/refund/payout/recovery/settlement/reconciliation behavior,
-- change finance policies, functions, indexes, state machines, or activation flags,
-- run payment/refund/payout/dispute/recovery end-to-end scenarios,
-- enable INR finance policy,
-- represent finance readiness as green based on non-finance launch evidence.
+- activate Cashfree sandbox or production credentials;
+- change payment/refund/payout/settlement/reconciliation state machines or policies as part of unrelated work;
+- run payment/refund/payout/dispute finance E2E merely for non-finance launch evidence;
+- enable INR finance policy;
+- represent finance readiness as green based on non-finance readiness.
 
-Resume finance work only after the HOLD is explicitly lifted in a later instruction.
+Cash on Service behavior must remain unchanged unless the product owner explicitly changes that requirement.
 
-## Final release-day source of truth
+## Privileged database / security rule
 
-For every production go-live or subsequent release, use `docs/production-go-live-operator-checklist.md` and record:
+Do not blindly change SECURITY DEFINER functions or grants because an advisor reports them. Review each function's authorization boundary, ownership checks, `search_path`, RLS interaction and execute grants in context.
 
-- PR number,
-- authoritative merged `main` SHA,
-- exact Vercel production deployment ID,
-- required `web` CI / Type check / Lint / Production build result,
-- canonical `/api/health` result and release prefix,
-- runtime error result,
-- deployment-scoped 5xx result,
-- unresolved Vercel feedback result,
-- canonical Supabase health/advisor evidence where relevant,
-- intentional/deferred warnings,
-- Finance/Cashfree HOLD status,
+For any new public-schema table, remember that Data API exposure and RLS are separate concerns. New application data must have explicit access intent and row-level authorization before exposure.
+
+## Release closure rule
+
+Every future release closure must record and verify:
+
+- PR number;
+- authoritative merged `main` SHA;
+- required web CI / type check / lint / production build result;
+- exact Vercel production deployment ID;
+- deployment Git SHA matches merged `main`;
+- canonical `/api/health` returns `status=ok`, `app=ok`, `database=ok` and the expected release prefix;
+- production runtime error result;
+- deployment-scoped `5xx` result for an appropriate checked window;
+- unresolved Vercel feedback result;
+- canonical Supabase project identity when database work is involved;
+- Finance/Cashfree HOLD status;
 - Supabase Pro/leaked-password HOLD status.
 
 Never record credentials, service-role keys, auth tokens, sensitive PII, or raw production database dumps in launch evidence.
 
-## Production activation remains separate
+## Current classification
 
-Public non-finance launch readiness and finance activation are separate programs. Clearing website, security, reliability, SEO, auth, accessibility, brand, legal, repository-governance, privacy/support, incident-response, recovery, monitoring, or go-live gates must never activate payment or finance behavior indirectly.
+**Non-finance application:** production-accepted launch candidate.
 
-The non-finance application can be declared GO only when the current release independently satisfies the final operator checklist. Finance remains NO-GO/HOLD until explicitly resumed.
+**Operational readiness:** documented and production-smoke verified.
+
+**Recurring requirement lifecycle:** CLOSED / FROZEN.
+
+**Canonical database:** `bukrpkymivkhdpueropt`.
+
+**Legacy non-canonical database:** `txzbnfyyuredrtqileow`.
+
+**Finance/Cashfree:** NO-GO / HOLD.
+
+**Supabase Pro leaked-password protection:** HOLD.
+
+Public non-finance development and finance activation remain separate programs.
