@@ -4,3 +4,23 @@
 
 @media(max-width:980px){.statsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.hiringHero{grid-template-columns:1fr}.heroActions{justify-content:flex-start}.formSection .formGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.hero{padding:18px}.row{display:grid}.actions{width:100%}.button{flex:1;text-align:center}.hiringHero{padding:20px}.heroMain h1{font-size:2rem}.heroActions{display:grid;grid-template-columns:1fr}.heroActions .button{width:100%}.statsGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.statCard{padding:14px}.statCard strong{font-size:24px}.workspaceTabs{margin-inline:-4px}.sectionHeading{display:grid}.sectionHeading>.button{width:100%}.formSection{padding:18px}.formSection .formGrid{grid-template-columns:1fr}.formActions{display:grid;padding:16px 18px}.jobCard{padding:16px}.jobMetric{justify-items:start}.jobFacts{display:grid;gap:6px}.emptyState{padding:22px}}
+
+@media(max-width:640px){
+  .workspaceTabs{position:sticky;top:66px;z-index:8;gap:4px;padding:5px;background:rgba(248,250,252,.96);backdrop-filter:blur(10px);scrollbar-width:none;box-shadow:0 5px 14px rgba(15,23,42,.04)}
+  .workspaceTabs::-webkit-scrollbar{display:none}
+  .tabButton{padding:10px 12px;border:1px solid transparent}
+  .tabActive{background:#312e81;color:#fff;border-color:#312e81;box-shadow:0 5px 14px rgba(49,46,129,.22)}
+  .tabActive .tabCount{background:#fff;color:#312e81}
+  .sectionHeading>.button{display:none}
+  .createCard{overflow:visible}
+  .createCard>.sectionHeading{padding:20px 18px 4px}
+  .formSection{gap:16px;padding:20px 18px}
+  .formSection h3{font-size:16px;padding-bottom:9px;border-bottom:1px solid #eef2f6;color:#1f2937}
+  .label{gap:8px;font-size:13px;font-weight:700;color:#344054}
+  .input,.select{min-height:48px;padding:12px 13px}
+  .textarea{min-height:132px;padding:12px 13px;line-height:1.5}
+  .fieldHint{line-height:1.5}
+  .formActions{position:sticky;bottom:66px;z-index:10;grid-template-columns:1fr 1fr;gap:10px;padding:12px 14px;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-top:1px solid #e4e7ec;box-shadow:0 -10px 24px rgba(15,23,42,.08)}
+  .formActions .button{min-height:48px;width:100%}
+  .formActions .secondary{border:1px solid #c7cdd8;background:#fff;color:#312e81;box-shadow:0 2px 8px rgba(15,23,42,.04)}
+}
