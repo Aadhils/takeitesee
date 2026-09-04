@@ -38,18 +38,28 @@ const loadProfessional = cache(async (providerId: string) => {
     .maybeSingle();
   if (error || !provider || !hasMarketplaceDisclosure(provider)) return null;
 
-  const { data: services, error: servicesError } = await supabase
-    .from('services')
-    .select('id,name,description,base_price,currency,duration_minutes,location')
-    .eq('professional_id', providerId)
-    .eq('provider_type', 'professional')
-    .eq('status', 'active')
-    .eq('active', true)
-    .order('name');
+  const [servicesResult, rolesResult] = await Promise.all([
+    supabase
+      .from('services')
+      .select('id,name,description,base_price,currency,duration_minutes,location')
+      .eq('professional_id', providerId)
+      .eq('provider_type', 'professional')
+      .eq('status', 'active')
+      .eq('active', true)
+      .order('name'),
+    supabase
+      .from('professional_roles')
+      .select('id,title,summary,experience_years,service_bookings_enabled,freelance_enabled,part_time_enabled,full_time_enabled,contract_enabled,display_order,created_at')
+      .eq('professional_id', providerId)
+      .eq('active', true)
+      .order('display_order', { ascending: true })
+      .order('created_at', { ascending: true }),
+  ]);
 
   return {
     provider: provider as any,
-    services: servicesError ? [] : (services ?? []) as any[],
+    services: servicesResult.error ? [] : (servicesResult.data ?? []) as any[],
+    roles: rolesResult.error ? [] : (rolesResult.data ?? []) as any[],
   };
 });
 
@@ -64,17 +74,19 @@ export async function generateMetadata({ params }: { params: Promise<{ providerI
     };
   }
 
-  const { provider, services } = record;
+  const { provider, services, roles } = record;
   const displayName = provider.headline || 'Verified professional';
   const location = provider.service_area || '';
-  const pageTitle = `${displayName}${location ? ` in ${location}` : ''}`;
+  const primaryTalent = roles[0]?.title ? ` · ${String(roles[0].title)}` : '';
+  const pageTitle = `${displayName}${primaryTalent}${location ? ` in ${location}` : ''}`;
   const socialTitle = `${pageTitle} | TakeItEsee`;
+  const talentText = roles.length ? ` Skills include ${roles.slice(0, 3).map((role: any) => role.title).join(', ')}.` : '';
   const description = seoText(
     provider.description,
-    `Explore services from ${displayName}${location ? ` in ${location}` : ''} on TakeItEsee.`,
+    `Explore services and professional talents from ${displayName}${location ? ` in ${location}` : ''} on TakeItEsee.${talentText}`,
   );
   const canonical = `${siteUrl}/professionals/${encodeURIComponent(providerId)}`;
-  const indexable = services.length > 0;
+  const indexable = services.length > 0 || roles.length > 0;
 
   return {
     title: { absolute: socialTitle },
@@ -102,10 +114,10 @@ export default async function ProfessionalProfilePage({ params }: { params: Prom
   const record = await loadProfessional(providerId);
   if (!record) notFound();
 
-  const { provider, services } = record;
+  const { provider, services, roles } = record;
   const displayName = provider.headline || 'Verified professional';
   const canonical = `${siteUrl}/professionals/${encodeURIComponent(providerId)}`;
-  const structuredData = services.length ? {
+  const structuredData = services.length || roles.length ? {
     '@context': 'https://schema.org',
     '@type': 'ProfessionalService',
     name: displayName,
@@ -114,7 +126,8 @@ export default async function ProfessionalProfilePage({ params }: { params: Prom
     areaServed: provider.service_area || undefined,
     email: provider.public_contact_email || undefined,
     telephone: provider.public_contact_phone || undefined,
-    hasOfferCatalog: {
+    knowsAbout: roles.length ? roles.map((role: any) => String(role.title)) : undefined,
+    hasOfferCatalog: services.length ? {
       '@type': 'OfferCatalog',
       name: 'Active services',
       itemListElement: services.slice(0, 20).map((service: any) => ({
@@ -125,7 +138,7 @@ export default async function ProfessionalProfilePage({ params }: { params: Prom
           url: `${siteUrl}/services/${encodeURIComponent(service.id)}`,
         },
       })),
-    },
+    } : undefined,
   } : null;
 
   return <>
@@ -149,6 +162,17 @@ export default async function ProfessionalProfilePage({ params }: { params: Prom
         grievance_email: provider.grievance_email || '',
         grievance_phone: provider.grievance_phone || '',
       }}
+      roles={roles.map((role: any) => ({
+        id: String(role.id),
+        title: String(role.title || ''),
+        summary: String(role.summary || ''),
+        experience_years: role.experience_years === null || role.experience_years === undefined ? null : Number(role.experience_years),
+        service_bookings_enabled: Boolean(role.service_bookings_enabled),
+        freelance_enabled: Boolean(role.freelance_enabled),
+        part_time_enabled: Boolean(role.part_time_enabled),
+        full_time_enabled: Boolean(role.full_time_enabled),
+        contract_enabled: Boolean(role.contract_enabled),
+      }))}
       services={services.map((service: any) => ({
         id: String(service.id),
         name: String(service.name || ''),
