@@ -5,7 +5,7 @@ Recurring occurrence recovery foundation contract
 - Retry keeps the same occurrence sequence number; it does not consume or skip to the next occurrence.
 - Any active/service_completed occurrence blocks recovery.
 - The failed booking must already be cancelled.
-- A paid cancelled booking is never auto-retried; support review is required.
+- Only an unpaid cancelled booking can be auto-retried; any pending, paid, failed, refunded or future non-unpaid payment state requires support review.
 - The prior booking is preserved for audit and its idempotency key is archived before creating the replacement booking.
 - A recovery audit record links prior and replacement booking/job IDs.
 - Replacement job IDs are preserved as audit UUIDs without a restrictive FK so a later cancelled replacement can be recovered again at the same occurrence sequence.
