@@ -20,9 +20,9 @@ async function communicationContext(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
   applicationIds: string[],
 ) {
-  if (!applicationIds.length) return { conversations: [], interviews: [], interview_events: [] };
+  if (!applicationIds.length) return { conversations: [], interviews: [], interview_events: [], resume_snapshots: [] };
 
-  const [conversationResult, interviewResult, eventResult] = await Promise.all([
+  const [conversationResult, interviewResult, eventResult, resumeSnapshotResult] = await Promise.all([
     supabase
       .from('marketplace_conversations')
       .select('id,job_application_id,status,closed_reason,last_message_at')
@@ -38,16 +38,22 @@ async function communicationContext(
       .select('*')
       .in('job_application_id', applicationIds)
       .order('created_at', { ascending: false }),
+    supabase
+      .from('job_application_resume_snapshots')
+      .select('job_application_id,professional_id,snapshot_version,snapshot,captured_at')
+      .in('job_application_id', applicationIds),
   ]);
 
   if (conversationResult.error) throw new Error(conversationResult.error.message);
   if (interviewResult.error) throw new Error(interviewResult.error.message);
   if (eventResult.error) throw new Error(eventResult.error.message);
+  if (resumeSnapshotResult.error) throw new Error(resumeSnapshotResult.error.message);
 
   return {
     conversations: conversationResult.data ?? [],
     interviews: interviewResult.data ?? [],
     interview_events: eventResult.data ?? [],
+    resume_snapshots: resumeSnapshotResult.data ?? [],
   };
 }
 
