@@ -18,14 +18,20 @@ export async function GET(request: Request, context: RouteContext) {
     await productionAuthProvider.requireCustomer(request);
     const { requirementId } = await context.params;
     const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.rpc('get_requirement_job_history', {
-      target_requirement_id: requirementId,
-    });
-    if (error) throw new Error(error.message);
-    return NextResponse.json({ jobs: data ?? [] });
+    const [{ data: jobs, error: jobsError }, { data: occurrencePlan, error: planError }] = await Promise.all([
+      supabase.rpc('get_requirement_job_history', {
+        target_requirement_id: requirementId,
+      }),
+      supabase.rpc('get_customer_requirement_occurrence_plan', {
+        target_requirement_id: requirementId,
+      }),
+    ]);
+    if (jobsError) throw new Error(jobsError.message);
+    if (planError) throw new Error(planError.message);
+    return NextResponse.json({ jobs: jobs ?? [], occurrence_plan: occurrencePlan ?? null });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Service job history could not be loaded.';
-    return NextResponse.json({ error: message }, { status: /authentication|required|accessible/i.test(message) ? 401 : 400 });
+    return NextResponse.json({ error: message }, { status: /authentication|required|accessible|own requirement/i.test(message) ? 401 : 400 });
   }
 }
 
