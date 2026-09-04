@@ -1,0 +1,16 @@
+Professional portfolio media foundation contract
+
+1. A professional keeps one master professional_profiles identity; portfolio media is child content and never creates another provider identity.
+2. Portfolio objects live in the private professional-portfolio-media bucket. There is no anonymous/public storage SELECT policy.
+3. Upload paths are owner scoped as <auth-user-id>/<owned-professional-id>/<random-file-name>; RLS blocks another user from uploading, reading, or deleting through that path.
+4. Supported media is JPEG/PNG/WebP image or MP4/WebM video. Images are capped at 8 MB; videos at 25 MB. Server-side registration re-checks the actual stored object MIME type and size.
+5. professional_portfolio_media is RLS enabled. Authenticated professionals can directly SELECT only their own metadata; direct client INSERT/UPDATE/DELETE grants are not exposed. Mutations go through owner-checking RPCs.
+6. A media item may optionally link to one professional_role, but that role must belong to the same professional profile.
+7. Dashboard owners can upload, preview, edit caption/alt text/role/order/public-active state, and delete their own media. Failed metadata registration cleans up the uploaded object.
+8. Public professional pages are eligible only after the existing verified-profile + marketplace-disclosure gate succeeds.
+9. Public profile rendering uses short-lived server-signed URLs for active media. Raw private object URLs are never used as public portfolio URLs.
+10. Role-linked media is public only while the linked professional role is also active/public. General portfolio media is not role-dependent.
+11. Media presentation is read-only to public users and does not create service bookings, job applications, messages, follows, likes, or comments.
+12. Business-provider media is outside this slice; existing business profile behavior remains unchanged.
+13. Subscription quotas/search priority/ranking boosts, resume generation, employer/job workflows, social-community interactions, and moderation/review workflows are outside this slice.
+14. Existing recurring-requirement behavior remains frozen. Cash on Service is unchanged. Cashfree/payment/refund/payout/settlement/reconciliation/disputes/collections remain HOLD. Supabase Pro/leaked-password protection remains HOLD.
