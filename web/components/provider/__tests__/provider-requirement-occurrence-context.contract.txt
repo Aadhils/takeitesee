@@ -1,0 +1,7 @@
+Provider recurring occurrence context contract
+
+- Requirement-backed provider bookings may expose requirement title and schedule pattern.
+- Recurring bookings expose the current occurrence sequence and total occurrence count.
+- Pricing basis is shown as per-occurrence or whole-requirement context only; payment lifecycle remains unchanged.
+- Non-requirement bookings return no context and keep the existing provider booking UI.
+- The read RPC authorizes the authenticated provider against booking ownership before returning requirement metadata.

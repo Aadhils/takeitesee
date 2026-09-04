@@ -9,6 +9,7 @@ import BookingReasonDialog from '../booking/BookingReasonDialog';
 import { ProviderHeading } from './ProviderPresentation';
 import { LiveProviderShell } from './LiveProviderShell';
 import ProviderCashCollectionPanel from './ProviderCashCollectionPanel';
+import ProviderRequirementOccurrenceContext from './ProviderRequirementOccurrenceContext';
 import { useRemainingWorkspaceTranslations } from '../i18n/RemainingWorkspaceTranslations';
 
 type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'rescheduled';
@@ -130,6 +131,7 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
           <div><dt>{t('providerBooking.customerNote')}</dt><dd>{booking.customer_notes || t('providerBooking.noNote')}</dd></div>
         </dl><Badge tone="neutral">{t('providerBooking.payment')} {booking.payment_status}</Badge>
       </Card>
+      <ProviderRequirementOccurrenceContext bookingId={booking.id} locale={locale} />
       <Card className="provider-detail-card"><span className="eyebrow">{t('providerBooking.nextAction')}</span><h2>{t('providerBooking.controls')}</h2>
         {booking.status === 'pending' ? <><p>{t('providerBooking.pendingHelp')}</p><div className="provider-actions"><Button type="button" disabled={busy} onClick={() => void act('accept')}>{t('providerBooking.accept')}</Button><Button type="button" variant="quiet" disabled={busy} onClick={() => setDeclineOpen(true)}>{t('providerBooking.decline')}</Button></div></> : null}
         {booking.status === 'rescheduled' ? <><p>{t('providerBooking.rescheduleHelp')}</p><div className="provider-actions"><Button type="button" disabled={busy} onClick={() => void act('accept')}>{t('providerBooking.acceptNew')}</Button><Button type="button" variant="quiet" disabled={busy} onClick={() => setDeclineOpen(true)}>{t('providerBooking.declineNew')}</Button></div></> : null}
