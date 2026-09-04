@@ -1,0 +1,10 @@
+Professional jobs workspace contract
+
+1. Professional provider mode renders a dedicated career workspace shell instead of stacking applications/interviews and employment offers in one continuous page.
+2. Applications & interviews is the default tab and preserves the existing ProviderJobMarketplace professional journey.
+3. Employment offers is a separate tab and preserves the existing JobOfferWorkspace two-party offer decision flow from #248.
+4. Business provider mode remains on EmployerHiringWorkspace unchanged.
+5. This slice is UI/shell organization only: no database migration, API contract, job application state machine, interview state machine, or employment offer state machine changes.
+6. Finance/Cashfree/payment/refund/payout/settlement work remains HOLD.
+7. Recurrence/recovery remains FROZEN.
+8. Supabase Pro leaked-password protection remains HOLD.
