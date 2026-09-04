@@ -1,0 +1,14 @@
+Professional public talent portfolio contract
+
+1. A public professional profile remains one verified `professional_profiles` identity.
+2. Only active `professional_roles` visible through the existing public RLS boundary may appear on `/professionals/[providerId]`.
+3. Inactive/private owner roles must not be exposed by the public profile query.
+4. Public role presentation may show title, summary, experience years and declared opportunity signals only.
+5. Opportunity signals (service bookings, freelance, part-time, full-time, contract) are profile presentation metadata; they do not grant booking, application or employment eligibility.
+6. Existing active service listings remain the only service-booking CTAs in this slice.
+7. Business public profiles keep their existing behavior and receive no professional-role section.
+8. SEO metadata may use public talent titles and structured-data `knowsAbout`, but must not expose private role data.
+9. Provider legal disclosure and grievance presentation remain unchanged.
+10. No subscription, ranking, job application, resume, portfolio media, recurrence or finance behavior is introduced here.
+11. Cash on Service remains unchanged. Cashfree/payment/refund/payout/settlement/reconciliation/disputes/collections remain HOLD.
+12. Supabase Pro / leaked-password protection remains HOLD.
