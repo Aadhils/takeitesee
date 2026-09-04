@@ -1,0 +1,7 @@
+Provider dashboard mobile footer contract
+
+- Provider workspace routes add an explicit provider-dashboard-active marker while mounted.
+- Mobile provider footer hides public audience link columns.
+- Mobile provider footer keeps brand/tagline and legal links visible.
+- Public marketplace pages keep the full footer.
+- No provider backend, job lifecycle, finance, recurrence, or Supabase behavior changes.
