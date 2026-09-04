@@ -7,18 +7,24 @@ import { useOperationalTranslations } from '../i18n/OperationalTranslations';
 
 type ConversationSummary = {
   id: string;
-  requirement_id: string;
-  requirement_reference: string;
-  requirement_title: string;
-  requirement_status: string;
+  conversation_kind: 'requirement' | 'job_application';
+  requirement_id: string | null;
+  requirement_reference: string | null;
+  requirement_title: string | null;
+  requirement_status: string | null;
+  job_application_id: string | null;
+  job_posting_id: string | null;
+  job_title: string | null;
+  application_status: string | null;
+  business_name: string | null;
   conversation_status: 'open' | 'closed';
-  closed_reason: 'fulfilled' | 'cancelled' | null;
-  participant_role: 'customer' | 'provider';
+  closed_reason: 'fulfilled' | 'cancelled' | 'hired' | 'rejected' | 'withdrawn' | null;
+  participant_role: 'customer' | 'provider' | 'applicant' | 'employer';
   counterpart_name: string;
-  proposal_reference: string;
-  amount_minor: number;
-  currency: 'INR' | 'USD';
-  service_name: string;
+  proposal_reference: string | null;
+  amount_minor: number | null;
+  currency: 'INR' | 'USD' | null;
+  service_name: string | null;
   last_message_body: string | null;
   last_message_at: string | null;
   opened_at: string;
@@ -26,13 +32,13 @@ type ConversationSummary = {
 };
 
 type MessageRow = { id: string; body: string; created_at: string; is_mine: boolean; sender_name: string };
-type ConversationDetail = {
-  id: string; requirement_id: string; requirement_reference: string; requirement_title: string; requirement_status: string;
-  conversation_status: 'open' | 'closed'; closed_reason: 'fulfilled' | 'cancelled' | null; participant_role: 'customer' | 'provider';
-  counterpart_name: string; proposal_reference: string; amount_minor: number; currency: 'INR' | 'USD'; service_name: string; opened_at: string; last_message_at: string | null;
-};
+type ConversationDetail = Omit<ConversationSummary, 'last_message_body' | 'unread_count'>;
 type ConversationPayload = { conversation?: ConversationDetail; messages?: MessageRow[]; error?: string };
 type SafetyState = { blocked_by_me: boolean; messaging_blocked: boolean };
+
+function statusLabel(value: string | null | undefined) {
+  return (value || 'unknown').replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
 
 export function MarketplaceMessagingWorkspace({ initialConversationId = '' }: { initialConversationId?: string }) {
   const { locale, t, status } = useOperationalTranslations();
@@ -48,8 +54,15 @@ export function MarketplaceMessagingWorkspace({ initialConversationId = '' }: { 
   const [safetyBusy, setSafetyBusy] = useState(false);
   const [error, setError] = useState('');
 
-  const money = (minor: number, currency: 'INR' | 'USD') => new Intl.NumberFormat(locale, { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(minor) / 100);
+  const money = (minor: number | null, currency: 'INR' | 'USD' | null) => {
+    if (minor == null || !currency) return '';
+    return new Intl.NumberFormat(locale, { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(minor) / 100);
+  };
   const activityLabel = (value: string | null, fallback: string) => new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value || fallback));
+  const contextTitle = (row: ConversationSummary | ConversationDetail) => row.conversation_kind === 'job_application' ? row.job_title || 'Job opportunity' : row.requirement_title || 'Service requirement';
+  const contextFallback = (row: ConversationSummary) => row.conversation_kind === 'job_application'
+    ? `Job application · ${statusLabel(row.application_status)}`
+    : [row.service_name, row.proposal_reference].filter(Boolean).join(' · ');
 
   const loadInbox = useCallback(async (silent = false) => {
     if (!silent) setLoadingInbox(true);
@@ -118,6 +131,11 @@ export function MarketplaceMessagingWorkspace({ initialConversationId = '' }: { 
     finally { setSafetyBusy(false); }
   };
 
+  const canCompose = detail?.conversation_status === 'open' && (
+    (detail.conversation_kind === 'requirement' && detail.requirement_status === 'awarded')
+    || (detail.conversation_kind === 'job_application' && ['shortlisted', 'interview'].includes(detail.application_status || ''))
+  ) && !safety.messaging_blocked;
+
   return <div style={{ display: 'grid', gap: '1rem' }}>
     <div className="section-heading"><div><span className="eyebrow">{t('msg.privateInbox')}</span><h1>{t('msg.title')}</h1><p className="detail-copy">{t('msg.intro')}</p></div><Badge tone={unreadTotal ? 'info' : 'neutral'}>{unreadTotal} {t('msg.unread')}</Badge></div>
     {error ? <Alert title={t('msg.unavailable')} tone="danger">{error}</Alert> : null}
@@ -129,21 +147,21 @@ export function MarketplaceMessagingWorkspace({ initialConversationId = '' }: { 
           {!loadingInbox && conversations.length === 0 ? <p className="detail-copy">{t('msg.none')}</p> : null}
           {conversations.map((row) => <button key={row.id} type="button" onClick={() => selectConversation(row.id)} style={{ textAlign: 'left', border: selectedId === row.id ? '2px solid currentColor' : '1px solid #e7eaf0', borderRadius: '14px', padding: '.9rem', background: 'transparent', cursor: 'pointer' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '.75rem', alignItems: 'start' }}><strong>{row.counterpart_name}</strong>{row.unread_count ? <Badge tone="info">{row.unread_count}</Badge> : <Badge tone={row.conversation_status === 'open' ? 'success' : 'neutral'}>{status(row.conversation_status)}</Badge>}</div>
-            <p style={{ margin: '.35rem 0 0' }}>{row.requirement_title}</p><p className="summary-note" style={{ margin: '.35rem 0 0' }}>{row.last_message_body || `${row.service_name} · ${row.proposal_reference}`}</p><small>{activityLabel(row.last_message_at, row.opened_at)}</small>
+            <p style={{ margin: '.35rem 0 0' }}>{contextTitle(row)}</p><p className="summary-note" style={{ margin: '.35rem 0 0' }}>{row.last_message_body || contextFallback(row)}</p><small>{activityLabel(row.last_message_at, row.opened_at)}</small>
           </button>)}
         </div>
       </Card>
       <Card className="policy-card">
         {!selectedId ? <div><span className="eyebrow">{t('msg.conversation')}</span><h2>{t('msg.select')}</h2><p className="detail-copy">{t('msg.selectHelp')}</p></div> : loadingThread && !detail ? <p>{t('msg.loadingThread')}</p> : detail ? <>
-          <div className="section-heading"><div><span className="eyebrow">{detail.requirement_reference}</span><h2>{detail.counterpart_name}</h2><p className="summary-note">{detail.service_name} · {money(detail.amount_minor, detail.currency)}</p></div><Badge tone={detail.conversation_status === 'open' ? 'success' : 'neutral'}>{status(detail.conversation_status)}</Badge></div>
-          <p className="detail-copy">{detail.requirement_title}</p>
-          <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap', alignItems: 'start', marginBottom: '.65rem' }}><Button type="button" variant={safety.blocked_by_me ? 'secondary' : 'danger'} loading={safetyBusy} onClick={() => void toggleBlock()}>{safety.blocked_by_me ? `${t('msg.unblock')} ${detail.counterpart_name}` : `${t('msg.block')} ${detail.counterpart_name}`}</Button><MarketplaceReportForm targetType="conversation" targetId={detail.id} label={t('msg.reportConversation')} /></div>
+          <div className="section-heading"><div><span className="eyebrow">{detail.conversation_kind === 'job_application' ? 'Job application' : detail.requirement_reference}</span><h2>{detail.counterpart_name}</h2><p className="summary-note">{detail.conversation_kind === 'job_application' ? `${detail.business_name || 'Employer'} · ${statusLabel(detail.application_status)}` : [detail.service_name, money(detail.amount_minor, detail.currency)].filter(Boolean).join(' · ')}</p></div><Badge tone={detail.conversation_status === 'open' ? 'success' : 'neutral'}>{status(detail.conversation_status)}</Badge></div>
+          <p className="detail-copy">{contextTitle(detail)}</p>
+          <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap', alignItems: 'start', marginBottom: '.65rem' }}><Button type="button" variant={safety.blocked_by_me ? 'secondary' : 'danger'} loading={safetyBusy} onClick={() => void toggleBlock()}>{safety.blocked_by_me ? `${t('msg.unblock')} ${detail.counterpart_name}` : `${t('msg.block')} ${detail.counterpart_name}`}</Button>{detail.conversation_kind === 'requirement' ? <MarketplaceReportForm targetType="conversation" targetId={detail.id} label={t('msg.reportConversation')} /> : null}</div>
           {safety.messaging_blocked ? <Alert title={t('msg.blocked')} tone="warning">{t('msg.blockedHelp')}</Alert> : null}
           <div style={{ display: 'grid', gap: '.65rem', maxHeight: '55vh', overflowY: 'auto', padding: '.5rem 0', marginTop: '.5rem' }}>
             {messages.length === 0 ? <p className="summary-note">{t('msg.noMessages')}</p> : null}
-            {messages.map((message) => <div key={message.id} style={{ display: 'flex', justifyContent: message.is_mine ? 'flex-end' : 'flex-start' }}><div style={{ maxWidth: '82%', border: '1px solid #e7eaf0', borderRadius: '14px', padding: '.7rem .85rem' }}><strong style={{ display: 'block', fontSize: '.82rem' }}>{message.is_mine ? t('common.you') : message.sender_name}</strong><p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', margin: '.25rem 0' }}>{message.body}</p><small>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(message.created_at))}</small>{!message.is_mine ? <div style={{ marginTop: '.35rem' }}><MarketplaceReportForm targetType="message" targetId={message.id} label={t('msg.reportMessage')} /></div> : null}</div></div>)}
+            {messages.map((message) => <div key={message.id} style={{ display: 'flex', justifyContent: message.is_mine ? 'flex-end' : 'flex-start' }}><div style={{ maxWidth: '82%', border: '1px solid #e7eaf0', borderRadius: '14px', padding: '.7rem .85rem' }}><strong style={{ display: 'block', fontSize: '.82rem' }}>{message.is_mine ? t('common.you') : message.sender_name}</strong><p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', margin: '.25rem 0' }}>{message.body}</p><small>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(message.created_at))}</small>{!message.is_mine && detail.conversation_kind === 'requirement' ? <div style={{ marginTop: '.35rem' }}><MarketplaceReportForm targetType="message" targetId={message.id} label={t('msg.reportMessage')} /></div> : null}</div></div>)}
           </div>
-          {detail.conversation_status === 'open' && detail.requirement_status === 'awarded' && !safety.messaging_blocked ? <div style={{ display: 'grid', gap: '.65rem', marginTop: '1rem' }}><label className="field"><span className="field-label">{t('msg.message')}</span><textarea className="field-control field-textarea" rows={3} maxLength={2000} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={`${t('msg.message')} ${detail.counterpart_name}`} /></label><div style={{ display: 'flex', justifyContent: 'space-between', gap: '.75rem', alignItems: 'center' }}><span className="summary-note">{draft.length}/2000</span><Button type="button" loading={sending} disabled={!draft.trim()} onClick={() => void send()}>{t('msg.send')}</Button></div></div> : detail.conversation_status !== 'open' || detail.requirement_status !== 'awarded' ? <Alert title={t('msg.readOnly')} tone="info">{t('msg.readOnlyPrefix')} {status(detail.closed_reason || detail.requirement_status)}. {t('msg.readOnlySuffix')}</Alert> : null}
+          {canCompose ? <div style={{ display: 'grid', gap: '.65rem', marginTop: '1rem' }}><label className="field"><span className="field-label">{t('msg.message')}</span><textarea className="field-control field-textarea" rows={3} maxLength={2000} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={`${t('msg.message')} ${detail.counterpart_name}`} /></label><div style={{ display: 'flex', justifyContent: 'space-between', gap: '.75rem', alignItems: 'center' }}><span className="summary-note">{draft.length}/2000</span><Button type="button" loading={sending} disabled={!draft.trim()} onClick={() => void send()}>{t('msg.send')}</Button></div></div> : <Alert title={t('msg.readOnly')} tone="info">{t('msg.readOnlyPrefix')} {detail.conversation_kind === 'job_application' ? statusLabel(detail.closed_reason || detail.application_status) : status(detail.closed_reason || detail.requirement_status || 'closed')}. {t('msg.readOnlySuffix')}</Alert>}
         </> : <p>{t('msg.threadUnavailable')}</p>}
       </Card>
     </div>
