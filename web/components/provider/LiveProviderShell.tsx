@@ -36,6 +36,7 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
     ];
     if (provider?.provider_type === 'professional') {
       links.push({ href: '/provider/portfolio', label: locale.toLowerCase().startsWith('ta') ? 'வேலை Portfolio' : 'Portfolio' });
+      links.push({ href: '/provider/resume', label: locale.toLowerCase().startsWith('ta') ? 'Resume & Career' : 'Resume & Career' });
     }
     links.push({ href: '/provider/profile', label: t('provider.profile') });
     return links;

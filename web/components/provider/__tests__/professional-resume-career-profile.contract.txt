@@ -1,0 +1,17 @@
+Professional resume / career profile contract
+
+1. One professional user keeps exactly one master professional_profiles identity.
+2. Career data extends that identity; it never creates a second professional account.
+3. professional_career_profiles is one-to-one with the master professional identity.
+4. Work experience, education, certifications and skills are owner-scoped child records.
+5. Career/resume data is private by default: public_resume_enabled defaults to false.
+6. Anonymous/public career reads require both public_resume_enabled=true and a verified parent professional identity.
+7. Authenticated owners can always read and manage their own career data through RLS ownership checks.
+8. Unrelated signed-in users cannot update or delete another professional's career data.
+9. Existing professional_roles remain the source of freelance, part-time, full-time and contract opportunity-mode signals.
+10. Publishing a resume does not independently verify employment, education or certification claims; public UI must state this boundary.
+11. Credential links accept only http/https URLs in the provider API and public presentation re-validates links before rendering.
+12. No employer, job-posting, applicant-management or job-application workflow is introduced by this foundation.
+13. No subscription/ranking boost, recurrence or finance/payment behavior is changed.
+14. Business provider behavior remains separate from the individual professional resume model.
+15. No SECURITY DEFINER mutation RPC is required; Data API access uses explicit grants plus RLS.
