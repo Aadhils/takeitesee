@@ -61,6 +61,36 @@ async function loadSignedPortfolioMedia(providerId: string, roles: any[]) {
   }
 }
 
+async function loadPublicCareer(supabase: ReturnType<typeof publicSupabase>, providerId: string) {
+  if (!supabase) return null;
+  try {
+    const { data: profile, error } = await supabase
+      .from('professional_career_profiles')
+      .select('professional_id,career_headline,career_summary,preferred_location,open_to_remote,willing_to_relocate,available_from,notice_period_days,availability_note,public_resume_enabled')
+      .eq('professional_id', providerId)
+      .eq('public_resume_enabled', true)
+      .maybeSingle();
+    if (error || !profile) return null;
+
+    const [experiences, education, certifications, skills] = await Promise.all([
+      supabase.from('professional_experiences').select('id,role_title,organization,employment_type,location,start_date,end_date,is_current,description,display_order').eq('professional_id', providerId).order('display_order', { ascending: true }).order('start_date', { ascending: false }),
+      supabase.from('professional_education').select('id,institution,qualification,field_of_study,start_date,end_date,description,display_order').eq('professional_id', providerId).order('display_order', { ascending: true }),
+      supabase.from('professional_certifications').select('id,name,issuing_organization,issue_date,expiry_date,credential_id,credential_url,display_order').eq('professional_id', providerId).order('display_order', { ascending: true }),
+      supabase.from('professional_skills').select('id,name,proficiency,years_experience,display_order').eq('professional_id', providerId).order('display_order', { ascending: true }).order('name'),
+    ]);
+
+    return {
+      profile,
+      experiences: experiences.error ? [] : (experiences.data ?? []),
+      education: education.error ? [] : (education.data ?? []),
+      certifications: certifications.error ? [] : (certifications.data ?? []),
+      skills: skills.error ? [] : (skills.data ?? []),
+    };
+  } catch {
+    return null;
+  }
+}
+
 const loadProfessional = cache(async (providerId: string) => {
   const supabase = publicSupabase();
   if (!supabase) return null;
@@ -73,7 +103,7 @@ const loadProfessional = cache(async (providerId: string) => {
     .maybeSingle();
   if (error || !provider || !hasMarketplaceDisclosure(provider)) return null;
 
-  const [servicesResult, rolesResult] = await Promise.all([
+  const [servicesResult, rolesResult, career] = await Promise.all([
     supabase
       .from('services')
       .select('id,name,description,base_price,currency,duration_minutes,location')
@@ -89,6 +119,7 @@ const loadProfessional = cache(async (providerId: string) => {
       .eq('active', true)
       .order('display_order', { ascending: true })
       .order('created_at', { ascending: true }),
+    loadPublicCareer(supabase, providerId),
   ]);
 
   const services = servicesResult.error ? [] : (servicesResult.data ?? []) as any[];
@@ -100,6 +131,7 @@ const loadProfessional = cache(async (providerId: string) => {
     services,
     roles,
     media,
+    career,
   };
 });
 
@@ -114,19 +146,21 @@ export async function generateMetadata({ params }: { params: Promise<{ providerI
     };
   }
 
-  const { provider, services, roles } = record;
+  const { provider, services, roles, career } = record;
   const displayName = provider.headline || 'Verified professional';
   const location = provider.service_area || '';
   const primaryTalent = roles[0]?.title ? ` · ${String(roles[0].title)}` : '';
   const pageTitle = `${displayName}${primaryTalent}${location ? ` in ${location}` : ''}`;
   const socialTitle = `${pageTitle} | TakeItEsee`;
-  const talentText = roles.length ? ` Skills include ${roles.slice(0, 3).map((role: any) => role.title).join(', ')}.` : '';
+  const skillNames = career?.skills?.slice(0, 3).map((skill: any) => String(skill.name || '')).filter(Boolean) ?? [];
+  const talentNames = roles.slice(0, Math.max(0, 3 - skillNames.length)).map((role: any) => String(role.title || '')).filter(Boolean);
+  const careerText = [...talentNames, ...skillNames].length ? ` Skills include ${[...talentNames, ...skillNames].join(', ')}.` : '';
   const description = seoText(
-    provider.description,
-    `Explore services, professional talents and work samples from ${displayName}${location ? ` in ${location}` : ''} on TakeItEsee.${talentText}`,
+    career?.profile?.career_summary || provider.description,
+    `Explore services, professional talents, career experience and work samples from ${displayName}${location ? ` in ${location}` : ''} on TakeItEsee.${careerText}`,
   );
   const canonical = `${siteUrl}/professionals/${encodeURIComponent(providerId)}`;
-  const indexable = services.length > 0 || roles.length > 0;
+  const indexable = services.length > 0 || roles.length > 0 || Boolean(career);
 
   return {
     title: { absolute: socialTitle },
@@ -154,19 +188,23 @@ export default async function ProfessionalProfilePage({ params }: { params: Prom
   const record = await loadProfessional(providerId);
   if (!record) notFound();
 
-  const { provider, services, roles, media } = record;
+  const { provider, services, roles, media, career } = record;
   const displayName = provider.headline || 'Verified professional';
   const canonical = `${siteUrl}/professionals/${encodeURIComponent(providerId)}`;
-  const structuredData = services.length || roles.length ? {
+  const knowsAbout = Array.from(new Set([
+    ...roles.map((role: any) => String(role.title || '')).filter(Boolean),
+    ...(career?.skills ?? []).map((skill: any) => String(skill.name || '')).filter(Boolean),
+  ]));
+  const structuredData = services.length || roles.length || career ? {
     '@context': 'https://schema.org',
     '@type': 'ProfessionalService',
     name: displayName,
-    description: provider.description || undefined,
+    description: career?.profile?.career_summary || provider.description || undefined,
     url: canonical,
     areaServed: provider.service_area || undefined,
     email: provider.public_contact_email || undefined,
     telephone: provider.public_contact_phone || undefined,
-    knowsAbout: roles.length ? roles.map((role: any) => String(role.title)) : undefined,
+    knowsAbout: knowsAbout.length ? knowsAbout : undefined,
     hasOfferCatalog: services.length ? {
       '@type': 'OfferCatalog',
       name: 'Active services',
@@ -214,6 +252,22 @@ export default async function ProfessionalProfilePage({ params }: { params: Prom
         contract_enabled: Boolean(role.contract_enabled),
       }))}
       media={media}
+      career={career ? {
+        profile: {
+          career_headline: String(career.profile.career_headline || ''),
+          career_summary: String(career.profile.career_summary || ''),
+          preferred_location: String(career.profile.preferred_location || ''),
+          open_to_remote: Boolean(career.profile.open_to_remote),
+          willing_to_relocate: Boolean(career.profile.willing_to_relocate),
+          available_from: career.profile.available_from ? String(career.profile.available_from) : null,
+          notice_period_days: career.profile.notice_period_days === null || career.profile.notice_period_days === undefined ? null : Number(career.profile.notice_period_days),
+          availability_note: String(career.profile.availability_note || ''),
+        },
+        experiences: career.experiences.map((item: any) => ({ ...item, id: String(item.id), display_order: Number(item.display_order || 0), is_current: Boolean(item.is_current) })),
+        education: career.education.map((item: any) => ({ ...item, id: String(item.id), display_order: Number(item.display_order || 0) })),
+        certifications: career.certifications.map((item: any) => ({ ...item, id: String(item.id), display_order: Number(item.display_order || 0) })),
+        skills: career.skills.map((item: any) => ({ ...item, id: String(item.id), years_experience: item.years_experience === null || item.years_experience === undefined ? null : Number(item.years_experience), display_order: Number(item.display_order || 0) })),
+      } : null}
       services={services.map((service: any) => ({
         id: String(service.id),
         name: String(service.name || ''),
