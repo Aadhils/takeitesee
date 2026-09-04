@@ -8,6 +8,7 @@ import { RequirementJobPanel } from './RequirementJobPanel';
 import { useOperationalTranslations } from '../i18n/OperationalTranslations';
 
 type RequirementStatus = 'open' | 'paused' | 'awarded' | 'fulfilled' | 'cancelled';
+type PricingBasis = 'per_occurrence' | 'whole_requirement';
 type RequirementRow = {
   id: string;
   requirement_reference: string;
@@ -45,6 +46,7 @@ type Proposal = {
   service_name: string;
   amount_minor: number;
   currency: 'INR' | 'USD';
+  pricing_basis: PricingBasis;
   message: string;
   estimated_start_date: string | null;
   status: 'submitted' | 'withdrawn' | 'accepted' | 'declined';
@@ -82,6 +84,9 @@ export default function CustomerRequirementDetail({ requirementId }: { requireme
     const unit = row.recurrence_frequency === 'daily' ? (tamil ? 'நாள்' : 'day') : row.recurrence_frequency === 'weekly' ? (tamil ? 'வாரம்' : 'week') : (tamil ? 'மாதம்' : 'month');
     return `${tamil ? 'ஒவ்வொரு' : 'Every'} ${row.recurrence_interval} ${unit}${!tamil && row.recurrence_interval !== 1 ? 's' : ''} × ${row.recurrence_count}`;
   };
+  const pricingBasisLabel = (basis: PricingBasis) => basis === 'whole_requirement'
+    ? (tamil ? 'முழு recurring requirement-க்கு மொத்த quote' : 'Total for the whole recurring requirement')
+    : (tamil ? 'ஒவ்வொரு service occurrence-க்கும்' : 'Per service occurrence');
 
   const load = useCallback(async () => {
     setError('');
@@ -139,7 +144,7 @@ export default function CustomerRequirementDetail({ requirementId }: { requireme
       {proposals.length === 0 ? <p className="detail-copy">{t('req.noProposals')}</p> : <div style={{ display: 'grid', gap: '1rem', marginTop: '1rem' }}>
         {proposals.map((proposal) => <div key={proposal.id} style={{ border: '1px solid #e7eaf0', borderRadius: '16px', padding: '1rem' }}>
           <div className="section-heading"><div><span className="eyebrow">{proposal.proposal_reference}</span><h3>{proposal.provider_display_name}</h3><p className="summary-note">{status(proposal.provider_type)} · {proposal.service_name}</p></div><Badge tone={proposalTone(proposal.status)}>{status(proposal.status)}</Badge></div>
-          <dl className="review-details"><div><dt>{t('common.quote')}</dt><dd>{formatMoney(proposal.amount_minor, proposal.currency, locale)}</dd></div><div><dt>{t('common.estimatedStart')}</dt><dd>{proposal.estimated_start_date || t('common.flexible')}</dd></div><div><dt>{t('common.submitted')}</dt><dd>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(proposal.submitted_at))}</dd></div></dl>
+          <dl className="review-details"><div><dt>{t('common.quote')}</dt><dd>{formatMoney(proposal.amount_minor, proposal.currency, locale)}</dd></div><div><dt>{tamil ? 'Quote basis' : 'Quote basis'}</dt><dd>{pricingBasisLabel(proposal.pricing_basis || 'per_occurrence')}</dd></div><div><dt>{t('common.estimatedStart')}</dt><dd>{proposal.estimated_start_date || t('common.flexible')}</dd></div><div><dt>{t('common.submitted')}</dt><dd>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(proposal.submitted_at))}</dd></div></dl>
           <p className="detail-copy">{proposal.message}</p>
           <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', alignItems: 'start' }}>{proposal.status === 'submitted' && canReviewProposals ? <><Button type="button" loading={proposalBusyId === proposal.id} onClick={() => void decideProposal(proposal.id, 'accept')}>{t('req.acceptProposal')}</Button><Button type="button" variant="quiet" loading={proposalBusyId === proposal.id} onClick={() => void decideProposal(proposal.id, 'decline')}>{t('req.decline')}</Button></> : null}<MarketplaceReportForm targetType="proposal" targetId={proposal.id} label={t('req.reportProposal')} /></div>
           {proposal.status === 'accepted' ? <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center', flexWrap: 'wrap', marginTop: '.6rem' }}><Link className="button button-secondary" href="/messages">{t('req.openChat')}</Link><p className="summary-note">{t('req.privateOnly')}</p></div> : null}
