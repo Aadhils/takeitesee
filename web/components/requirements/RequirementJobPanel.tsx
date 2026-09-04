@@ -80,8 +80,15 @@ export function RequirementJobPanel({ requirementId, requirementStatus }: { requ
 
   const tamil = locale.toLowerCase().startsWith('ta');
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
-  const liveJob = jobs.find((job) => ['active', 'service_completed', 'fulfilled'].includes(job.state));
-  const canCreate = requirementStatus === 'awarded' && !liveJob;
+  const liveJob = jobs.find((job) => ['active', 'service_completed'].includes(job.state));
+  const latestJob = useMemo(() => jobs.reduce<RequirementJob | null>((latest, job) => !latest || job.sequence_no > latest.sequence_no ? job : latest, null), [jobs]);
+  const nextOccurrence = useMemo(() => occurrencePlan?.occurrences.find((occurrence) => !occurrence.job_id) ?? null, [occurrencePlan]);
+  const recurringCanAdvance = occurrencePlan?.schedule_pattern !== 'recurring' || !latestJob || latestJob.state === 'fulfilled';
+  const canCreate = requirementStatus === 'awarded' && !liveJob && recurringCanAdvance && Boolean(nextOccurrence);
+  const minimumBookingDate = useMemo(() => {
+    const planned = occurrencePlan?.schedule_pattern === 'recurring' ? nextOccurrence?.scheduled_date : null;
+    return planned && planned > today ? planned : today;
+  }, [nextOccurrence, occurrencePlan?.schedule_pattern, today]);
   const money = (value: number, currency: 'INR' | 'USD') => new Intl.NumberFormat(locale, { style: 'currency', currency, maximumFractionDigits: 0 }).format(value);
   const paymentLabel = (job: RequirementJob) => {
     if (job.payment_method === 'cash_on_service') return job.payment_status === 'paid' ? t('job.cashReceived') : t('job.cashOnService');
@@ -91,6 +98,14 @@ export function RequirementJobPanel({ requirementId, requirementStatus }: { requ
   const pricingBasisLabel = (basis: PricingBasis) => basis === 'whole_requirement'
     ? (tamil ? 'முழு recurring requirement-க்கு மொத்த quote' : 'Total for the whole recurring requirement')
     : (tamil ? 'ஒவ்வொரு service occurrence-க்கும்' : 'Per service occurrence');
+  const occurrenceQuote = (sequenceNo: number) => {
+    if (!occurrencePlan?.quote_amount_minor || !occurrencePlan.currency) return null;
+    if (occurrencePlan.pricing_basis === 'per_occurrence' || occurrencePlan.schedule_pattern !== 'recurring') return occurrencePlan.quote_amount_minor;
+    const base = Math.floor(occurrencePlan.quote_amount_minor / occurrencePlan.occurrence_count);
+    return sequenceNo === occurrencePlan.occurrence_count
+      ? occurrencePlan.quote_amount_minor - base * (occurrencePlan.occurrence_count - 1)
+      : base;
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -109,6 +124,11 @@ export function RequirementJobPanel({ requirementId, requirementStatus }: { requ
   }, [requirementId]);
 
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    if (!canCreate || occurrencePlan?.schedule_pattern !== 'recurring' || !nextOccurrence) return;
+    setBookingDate((current) => current || nextOccurrence.scheduled_date || '');
+    setStartTime((current) => current || (nextOccurrence.preferred_start_time ? String(nextOccurrence.preferred_start_time).slice(0, 5) : ''));
+  }, [canCreate, nextOccurrence, occurrencePlan?.schedule_pattern]);
 
   const createJob = async (event: FormEvent) => {
     event.preventDefault();
@@ -145,21 +165,22 @@ export function RequirementJobPanel({ requirementId, requirementStatus }: { requ
     {loading ? <p>{t('job.loading')}</p> : null}
 
     {!loading && occurrencePlan?.schedule_pattern === 'recurring' ? <div style={{ display: 'grid', gap: '.75rem', marginTop: '1rem' }}>
-      <div className="section-heading"><div><span className="eyebrow">{tamil ? 'Recurring plan' : 'Recurring plan'}</span><h3>{tamil ? 'திட்டமிட்ட service occurrences' : 'Planned service occurrences'}</h3></div><Badge tone="info">{occurrencePlan.occurrence_count}</Badge></div>
+      <div className="section-heading"><div><span className="eyebrow">Recurring plan</span><h3>{tamil ? 'திட்டமிட்ட service occurrences' : 'Planned service occurrences'}</h3></div><Badge tone="info">{occurrencePlan.occurrence_count}</Badge></div>
       <p className="summary-note">{pricingBasisLabel(occurrencePlan.pricing_basis)}{occurrencePlan.quote_amount_minor != null && occurrencePlan.currency ? ` · ${money(Number(occurrencePlan.quote_amount_minor) / 100, occurrencePlan.currency)}` : ''}</p>
       <div style={{ display: 'grid', gap: '.55rem' }}>
-        {occurrencePlan.occurrences.map((occurrence) => <div key={occurrence.sequence_no} style={{ border: '1px solid #ececf2', borderRadius: '12px', padding: '.75rem' }}>
-          <div className="section-heading"><strong>{tamil ? 'Occurrence' : 'Occurrence'} #{occurrence.sequence_no}</strong>{occurrence.job_state ? <Badge tone={stateTone(occurrence.job_state)}>{status(occurrence.job_state)}</Badge> : <Badge tone="neutral">{tamil ? 'திட்டமிடப்பட்டது' : 'Planned'}</Badge>}</div>
-          <p className="summary-note">{occurrence.scheduled_date || t('common.flexible')}{occurrence.preferred_start_time ? ` · ${String(occurrence.preferred_start_time).slice(0,5)}` : ''}{occurrence.expected_duration_minutes ? ` · ${occurrence.expected_duration_minutes} ${t('common.minutes')}` : ''}</p>
+        {occurrencePlan.occurrences.map((occurrence) => { const quoteMinor = occurrenceQuote(occurrence.sequence_no); return <div key={occurrence.sequence_no} style={{ border: '1px solid #ececf2', borderRadius: '12px', padding: '.75rem' }}>
+          <div className="section-heading"><strong>Occurrence #{occurrence.sequence_no}</strong>{occurrence.job_state ? <Badge tone={stateTone(occurrence.job_state)}>{status(occurrence.job_state)}</Badge> : <Badge tone="neutral">{tamil ? 'திட்டமிடப்பட்டது' : 'Planned'}</Badge>}</div>
+          <p className="summary-note">{occurrence.scheduled_date || t('common.flexible')}{occurrence.preferred_start_time ? ` · ${String(occurrence.preferred_start_time).slice(0,5)}` : ''}{occurrence.expected_duration_minutes ? ` · ${occurrence.expected_duration_minutes} ${t('common.minutes')}` : ''}{quoteMinor != null && occurrencePlan.currency ? ` · ${money(quoteMinor / 100, occurrencePlan.currency)}` : ''}</p>
           {occurrence.booking_reference ? <p className="summary-note">{t('common.booking')}: {occurrence.booking_reference}</p> : null}
-        </div>)}
+        </div>; })}
       </div>
-      <p className="summary-note">{tamil ? 'இது schedule plan மட்டும். Recurring bookings தானாக உருவாக்கப்படவில்லை.' : 'This is the schedule plan only. Recurring bookings are not auto-created yet.'}</p>
+      <p className="summary-note">{tamil ? 'ஒவ்வொரு occurrence-மும் முந்தைய occurrence முழுமையாக complete மற்றும் settle ஆன பிறகே அடுத்த booking ஆக உருவாக்கப்படும்.' : 'Each occurrence is booked only after the previous occurrence is fully completed and settled.'}</p>
     </div> : null}
 
     {!loading && canCreate ? <form onSubmit={createJob} style={{ display: 'grid', gap: '.85rem', marginTop: '1rem' }}>
+      {occurrencePlan?.schedule_pattern === 'recurring' && nextOccurrence ? <p className="summary-note">{tamil ? `அடுத்த occurrence #${nextOccurrence.sequence_no}` : `Next occurrence #${nextOccurrence.sequence_no}`}{nextOccurrence.scheduled_date ? ` · ${nextOccurrence.scheduled_date}` : ''}</p> : null}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '.75rem' }}>
-        <label className="field"><span className="field-label">{t('job.serviceDate')}</span><input className="field-control" type="date" min={today} required value={bookingDate} onChange={(event) => setBookingDate(event.target.value)} /></label>
+        <label className="field"><span className="field-label">{t('job.serviceDate')}</span><input className="field-control" type="date" min={minimumBookingDate} required value={bookingDate} onChange={(event) => setBookingDate(event.target.value)} /></label>
         <label className="field"><span className="field-label">{t('job.startTime')}</span><input className="field-control" type="time" required value={startTime} onChange={(event) => setStartTime(event.target.value)} /></label>
       </div>
       <label className="field"><span className="field-label">{t('job.notes')}</span><textarea className="field-control field-textarea" rows={3} maxLength={1000} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder={t('job.notesPlaceholder')} /></label>
@@ -168,6 +189,7 @@ export function RequirementJobPanel({ requirementId, requirementStatus }: { requ
     </form> : null}
 
     {!loading && requirementStatus === 'awarded' && liveJob?.state === 'service_completed' ? <p className="summary-note" style={{ marginTop: '1rem' }}>{t('job.completedNote')}</p> : null}
+    {!loading && requirementStatus === 'awarded' && occurrencePlan?.schedule_pattern === 'recurring' && latestJob && !liveJob && latestJob.state !== 'fulfilled' ? <p className="summary-note" style={{ marginTop: '1rem' }}>{tamil ? 'அடுத்த occurrence உருவாக்க, முந்தைய occurrence complete மற்றும் settle ஆக வேண்டும்.' : 'The previous occurrence must be completed and settled before the next one can be booked.'}</p> : null}
     {!loading && requirementStatus === 'fulfilled' ? <p className="summary-note" style={{ marginTop: '1rem' }}>{t('job.fulfilledNote')}</p> : null}
 
     {jobs.length ? <div style={{ display: 'grid', gap: '.75rem', marginTop: '1rem' }}>
