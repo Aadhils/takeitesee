@@ -1,0 +1,14 @@
+Provider final recurring lifecycle contract
+
+- Provider requirement context exposes provider-safe requirement_status and job_state after ownership is authenticated.
+- A fulfilled recurring requirement must be identifiable as fulfilled in provider requirement context.
+- A fulfilled occurrence must expose job_state=fulfilled.
+- Normal fulfilled occurrences must not carry recovery metadata.
+- Recovered fulfilled occurrences must preserve recovery attempt and prior-booking context.
+- Customer occurrence plan and provider occurrence context must agree on final fulfilled occurrence states.
+- Customer recovery history and provider recovered-occurrence context must agree on the completed recovery audit.
+- Unrelated providers must remain blocked from booking requirement context.
+- Provider final-state presentation is read-only and must not change recurrence sequencing or recovery eligibility.
+- Cash on Service behavior is unchanged.
+- Cashfree, online gateway, refunds, payouts, settlement and reconciliation remain HOLD.
+- Supabase Pro / leaked-password protection remains HOLD.

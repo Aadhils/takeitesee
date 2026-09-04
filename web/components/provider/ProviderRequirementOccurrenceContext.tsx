@@ -4,9 +4,13 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Badge, Card } from '../ui/primitives';
 
+type RequirementStatus = 'open' | 'paused' | 'awarded' | 'fulfilled' | 'cancelled';
+type JobState = 'active' | 'declined' | 'cancelled' | 'service_completed' | 'fulfilled';
 type RequirementContext = {
   requirement_id: string;
   requirement_title: string;
+  requirement_status: RequirementStatus;
+  job_state: JobState;
   schedule_pattern: 'one_time' | 'recurring';
   occurrence_number: number;
   occurrence_count: number;
@@ -59,15 +63,30 @@ export default function ProviderRequirementOccurrenceContext({ bookingId, locale
   const pricing = context.pricing_basis === 'whole_requirement'
     ? (tamil ? 'முழு requirement-க்கான quote' : 'Quote covers the whole requirement')
     : (tamil ? 'ஒவ்வொரு occurrence-க்கும் quote' : 'Quote is per occurrence');
+  const lifecycle = context.requirement_status === 'fulfilled'
+    ? { tone: 'success' as const, label: tamil ? 'Requirement நிறைவு' : 'Requirement fulfilled' }
+    : context.requirement_status === 'cancelled'
+      ? { tone: 'danger' as const, label: tamil ? 'Requirement ரத்து' : 'Requirement cancelled' }
+      : context.job_state === 'fulfilled'
+        ? { tone: 'success' as const, label: tamil ? 'Occurrence நிறைவு' : 'Occurrence fulfilled' }
+        : context.job_state === 'service_completed'
+          ? { tone: 'warning' as const, label: tamil ? 'சேவை முடிந்தது' : 'Service completed' }
+          : context.job_state === 'cancelled' || context.job_state === 'declined'
+            ? { tone: 'danger' as const, label: tamil ? 'Occurrence நிறுத்தப்பட்டது' : 'Occurrence stopped' }
+            : { tone: 'info' as const, label: tamil ? 'Occurrence செயலில்' : 'Occurrence active' };
 
   return <Card className="provider-detail-card">
     <div className="section-heading">
       <div><span className="eyebrow">{tamil ? 'Requirement வேலை' : 'Requirement job'}</span><h2>{context.requirement_title}</h2></div>
-      <Badge tone={recurring ? 'info' : 'neutral'}>{recurring ? 'Recurring' : (tamil ? 'ஒருமுறை' : 'One time')}</Badge>
+      <div style={{ display: 'flex', gap: '.45rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        <Badge tone={recurring ? 'info' : 'neutral'}>{recurring ? 'Recurring' : (tamil ? 'ஒருமுறை' : 'One time')}</Badge>
+        <Badge tone={lifecycle.tone}>{lifecycle.label}</Badge>
+      </div>
     </div>
     {recurring ? <p><strong>Occurrence #{context.occurrence_number}</strong> / {context.occurrence_count}</p> : null}
     {cadence ? <p className="summary-note">{tamil ? 'அட்டவணை' : 'Schedule'}: {cadence}</p> : null}
     <p className="summary-note">{pricing}</p>
+    {context.requirement_status === 'fulfilled' && recurring ? <p className="summary-note">{tamil ? 'இந்த recurring requirement-ன் அனைத்து service occurrences-மும் நிறைவடைந்துள்ளன. இந்த context read-only final history ஆகும்.' : 'All service occurrences for this recurring requirement are complete. This context is now read-only final history.'}</p> : null}
 
     {context.recovery ? <div style={{ borderTop: '1px solid #e7eaf0', marginTop: '1rem', paddingTop: '1rem', display: 'grid', gap: '.45rem' }}>
       <div style={{ display: 'flex', gap: '.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
