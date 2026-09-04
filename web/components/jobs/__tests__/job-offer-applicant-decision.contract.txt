@@ -1,0 +1,17 @@
+Job offer + applicant decision contract
+
+1. A verified Business employer may issue an employment offer only for its own application while that application is in interview status.
+2. An issued offer is immutable. Changing terms requires the employer to withdraw the pending offer and issue a revised version.
+3. At most one pending offer may exist per application. Revised offers receive the next offer_number automatically.
+4. Only the Professional applicant and owning Business employer may read an offer.
+5. Only the applicant may accept or decline a pending offer. Only the employer may withdraw a pending offer.
+6. Employer-side direct interview -> hired transitions are forbidden.
+7. Applicant acceptance of a pending offer atomically changes the application from interview -> hired.
+8. Declining or employer-withdrawing an offer leaves the application in interview so revised terms can be issued.
+9. Rejecting or withdrawing the application automatically closes any pending offer.
+10. Existing job conversation lifecycle remains authoritative: accepted offer -> hired closes the application conversation as hired.
+11. Offer lifecycle notifications are participant-scoped for issued, accepted, declined, and employer-withdrawn events.
+12. Offer compensation is informational employment-term data only. It does not activate Cashfree, payroll, payment collection, refunds, payouts, settlement, reconciliation, disputes, or finance recovery.
+13. Finance/Cashfree HOLD, recurring requirement/recovery FROZEN scope, and Supabase Pro leaked-password protection HOLD remain unchanged.
+14. Pre-persistence rollback verification covers direct-hire blocking, participant RLS, outsider blocking, immutable terms, one pending offer, accept -> hired, decline, revised offer numbering, employer withdrawal, application withdrawal cleanup, existing chat closure, and notifications.
+15. The corrected rollback verification matrix is 15/15 PASS; the initial single false result was an assertion-pattern error and left zero rollback residue.
