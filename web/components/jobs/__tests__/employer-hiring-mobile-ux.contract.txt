@@ -1,0 +1,14 @@
+Employer Hiring Workspace mobile UX contract
+
+1. Mobile provider navigation keeps the current provider route visible by scrolling the active item into view.
+2. Mobile provider navigation remains horizontally scrollable and does not wrap into multiple rows.
+3. The active provider navigation item has a distinct selected-pill treatment.
+4. Employer Hiring Workspace keeps the hero + Create job primary entry point.
+5. The secondary Create job button in the Job postings section heading is hidden on mobile to avoid duplicate CTAs.
+6. Empty-state Create job remains available when there are no postings.
+7. Create Job form groups remain Job basics, Requirements, and Compensation.
+8. Mobile form controls use comfortable touch sizing and clearer section separation.
+9. Save draft and Publish job remain the existing backend actions and become a sticky mobile action bar while the form is open.
+10. The selected Hiring Workspace tab has stronger mobile contrast; Jobs, Applicants, Interviews, and Offers semantics are unchanged.
+11. Provider dashboard footer is reduced on mobile while public-site footer behavior is unchanged.
+12. No API, database, job lifecycle, interview, offer, resume snapshot, moderation, finance, recurrence, or Supabase Pro behavior is changed by this slice.
