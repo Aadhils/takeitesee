@@ -16,7 +16,7 @@ export async function GET(request: Request, context: RouteContext) {
     const [{ data: requirement, error }, { data: events, error: eventError }, { data: proposals, error: proposalError }] = await Promise.all([
       supabase
         .from('customer_requirements')
-        .select('id,requirement_reference,customer_id,category_id,location_id,title,description,service_mode,budget_type,budget_min_minor,budget_max_minor,currency,needed_by,preferred_start_time,expected_duration_minutes,schedule_pattern,recurrence_frequency,recurrence_interval,recurrence_count,status,published_at,closed_at,awarded_at,accepted_proposal_id,created_at,updated_at,platform_categories(name,code),platform_locations(name,code,timezone)')
+        .select('id,requirement_reference,customer_id,category_id,location_id,title,description,service_mode,budget_type,budget_min_minor,budget_max_minor,currency,needed_by,preferred_start_time,expected_duration_minutes,schedule_pattern,recurrence_frequency,recurrence_interval,recurrence_count,recurrence_weekdays,status,published_at,closed_at,awarded_at,accepted_proposal_id,created_at,updated_at,platform_categories(name,code),platform_locations(name,code,timezone)')
         .eq('id', requirementId)
         .eq('customer_id', session.user_id)
         .maybeSingle(),
