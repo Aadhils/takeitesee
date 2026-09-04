@@ -31,7 +31,8 @@
   line-height: 1.6;
 }
 
-.opportunities {
+.opportunities,
+.careerSignals {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -44,6 +45,71 @@
 
 .heroFacts {
   margin-top: 18px;
+}
+
+.careerNote {
+  margin: 0;
+  padding: 14px 16px;
+  border-left: 3px solid var(--color-primary);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  background: var(--color-surface-muted);
+  color: var(--color-ink-muted);
+  line-height: 1.6;
+}
+
+.careerBlock {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.careerBlock h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.careerTimeline {
+  display: grid;
+  gap: 10px;
+}
+
+.careerItem {
+  display: grid;
+  gap: 7px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.careerItem strong {
+  font-size: .98rem;
+}
+
+.careerItem span,
+.careerItem p {
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: .86rem;
+  line-height: 1.55;
+}
+
+.careerItemTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.careerItemTop > div {
+  display: grid;
+  gap: 4px;
+}
+
+.careerGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
 }
 
 .mediaGrid {
@@ -95,11 +161,13 @@
 
 @media (max-width: 760px) {
   .talentGrid,
-  .mediaGrid {
+  .mediaGrid,
+  .careerGrid {
     grid-template-columns: 1fr;
   }
 
-  .talentCardTop {
+  .talentCardTop,
+  .careerItemTop {
     flex-direction: column;
     gap: 10px;
   }
