@@ -1,0 +1,11 @@
+Recurring final-state UI contract
+
+1. A fulfilled recurring requirement must show the customer service-job panel top status as Fulfilled, never Not scheduled merely because no live job remains.
+2. The existing fulfilled occurrence plan remains visible and read-only after final closure.
+3. Final-state occurrence copy must explain that all planned occurrences are complete rather than suggesting another occurrence can be booked.
+4. The job creation form must remain unavailable once requirement status is fulfilled.
+5. Recovery history remains visible after final fulfillment.
+6. A fulfilled recurring requirement must present recovery as read-only audit history and must not present a retry action.
+7. Existing completed recovery links to prior cancelled and replacement bookings remain available.
+8. No customer/provider booking lifecycle, occurrence sequencing, recovery eligibility, payment, Cash on Service, Cashfree, refund, payout, settlement or reconciliation behavior is changed by this UI-only slice.
+9. No Supabase migration is required for this final-state presentation hardening.
