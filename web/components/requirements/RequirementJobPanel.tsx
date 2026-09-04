@@ -85,6 +85,11 @@ export function RequirementJobPanel({ requirementId, requirementStatus }: { requ
   const nextOccurrence = useMemo(() => occurrencePlan?.occurrences.find((occurrence) => !occurrence.job_id) ?? null, [occurrencePlan]);
   const recurringCanAdvance = occurrencePlan?.schedule_pattern !== 'recurring' || !latestJob || latestJob.state === 'fulfilled';
   const canCreate = requirementStatus === 'awarded' && !liveJob && recurringCanAdvance && Boolean(nextOccurrence);
+  const panelStatus = requirementStatus === 'fulfilled'
+    ? { tone: 'success' as const, label: status('fulfilled') }
+    : liveJob
+      ? { tone: stateTone(liveJob.state), label: status(liveJob.state) }
+      : { tone: 'neutral' as const, label: t('job.notScheduled') };
   const minimumBookingDate = useMemo(() => {
     const planned = occurrencePlan?.schedule_pattern === 'recurring' ? nextOccurrence?.scheduled_date : null;
     return planned && planned > today ? planned : today;
@@ -155,7 +160,7 @@ export function RequirementJobPanel({ requirementId, requirementStatus }: { requ
   return <Card className="policy-card">
     <div className="section-heading">
       <div><span className="eyebrow">{t('job.eyebrow')}</span><h2>{t('job.title')}</h2></div>
-      <Badge tone={liveJob ? stateTone(liveJob.state) : 'neutral'}>{liveJob ? status(liveJob.state) : t('job.notScheduled')}</Badge>
+      <Badge tone={panelStatus.tone}>{panelStatus.label}</Badge>
     </div>
     <p className="detail-copy">{t('job.intro')}</p>
 
@@ -174,7 +179,9 @@ export function RequirementJobPanel({ requirementId, requirementStatus }: { requ
           {occurrence.booking_reference ? <p className="summary-note">{t('common.booking')}: {occurrence.booking_reference}</p> : null}
         </div>; })}
       </div>
-      <p className="summary-note">{tamil ? 'ஒவ்வொரு occurrence-மும் முந்தைய occurrence முழுமையாக complete மற்றும் settle ஆன பிறகே அடுத்த booking ஆக உருவாக்கப்படும்.' : 'Each occurrence is booked only after the previous occurrence is fully completed and settled.'}</p>
+      <p className="summary-note">{requirementStatus === 'fulfilled'
+        ? (tamil ? 'அனைத்து திட்டமிட்ட occurrences-மும் முழுமையாக முடிந்துள்ளன. இந்த occurrence history இப்போது read-only.' : 'All planned occurrences are fully complete. This occurrence history is now read-only.')
+        : (tamil ? 'ஒவ்வொரு occurrence-மும் முந்தைய occurrence முழுமையாக complete மற்றும் settle ஆன பிறகே அடுத்த booking ஆக உருவாக்கப்படும்.' : 'Each occurrence is booked only after the previous occurrence is fully completed and settled.')}</p>
     </div> : null}
 
     {!loading && canCreate ? <form onSubmit={createJob} style={{ display: 'grid', gap: '.85rem', marginTop: '1rem' }}>
