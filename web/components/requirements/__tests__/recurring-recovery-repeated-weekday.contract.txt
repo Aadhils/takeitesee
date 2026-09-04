@@ -1,0 +1,15 @@
+Recurring recovery repeated-attempt + weekday regression contract
+
+- Repeated recovery may retry the same failed recurring occurrence more than once only through the audited recovery flow.
+- Every successful retry preserves the failed occurrence sequence number; recovery must never advance to a later occurrence.
+- Recovery audit history must form a chain: original cancelled booking -> first replacement -> second replacement.
+- Provider recovered-occurrence context must report attempt_number=2 for the second completed recovery and point to the immediately prior failed replacement booking.
+- Weekly recurring requirements with recurrence_weekdays must create/recover jobs only on one of those selected weekdays.
+- When recurrence_interval > 1, selected-weekday jobs must also stay inside an active recurrence week measured from needed_by.
+- Rejected weekday/interval recovery attempts must leave no recovery-audit residue and must preserve the current cancelled job.
+- The centralized customer_create_requirement_job schedule gate remains authoritative for normal occurrence creation and recovery replacements.
+- Provider availability, blackout, overlap, duration and quote checks remain authoritative after the recurrence schedule gate.
+- Automatic recovery remains limited to cancelled + unpaid occurrences; any payment activity still requires support review.
+- Cash on Service behavior is unchanged.
+- Cashfree / online gateway / refund / payout / settlement / reconciliation remain HOLD.
+- Supabase Pro / leaked-password protection remains HOLD.
