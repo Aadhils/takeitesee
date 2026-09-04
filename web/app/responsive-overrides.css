@@ -302,22 +302,22 @@ nav[aria-label="Hiring workspace sections"] + section > div > button {
     min-width: 0;
   }
 
-  .app-shell:has(.provider-layout) .site-footer .footer-inner {
+  body.provider-dashboard-active .site-footer .footer-inner {
     grid-template-columns: 1fr;
     gap: 14px;
     padding: 28px 0 16px;
   }
 
-  .app-shell:has(.provider-layout) .footer-link-column {
-    display: none;
+  body.provider-dashboard-active .footer-link-column {
+    display: none !important;
   }
 
-  .app-shell:has(.provider-layout) .footer-brand-column p {
+  body.provider-dashboard-active .footer-brand-column p {
     margin-top: 8px;
     line-height: 1.5;
   }
 
-  .app-shell:has(.provider-layout) .footer-legal {
+  body.provider-dashboard-active .footer-legal {
     gap: 10px 14px;
     padding-top: 13px;
   }
