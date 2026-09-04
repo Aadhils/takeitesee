@@ -1,0 +1,13 @@
+Job Application Resume Snapshot + Employer Review contract
+
+1. Every newly submitted job application captures exactly one immutable career-only resume snapshot through the database trigger.
+2. The snapshot belongs to the job application and is readable only by the applicant and the Business owner of that job posting.
+3. Anonymous users and unrelated authenticated users cannot read an application snapshot.
+4. Browser-authenticated users cannot insert, update, or delete snapshot rows directly; snapshot capture is database-controlled.
+5. Later edits to Professional career/resume data do not mutate the historical application snapshot.
+6. The Professional public_resume_enabled setting is neither required nor modified by applying; job-application sharing is a separate explicit disclosure context.
+7. Snapshot data may include career headline/summary, availability, selected talent, skills, experience, education, and certifications.
+8. Snapshot data must not include phone/email contact fields, legal/KYC fields, grievance details, payment/finance data, payout data, or settlement data.
+9. Employer applicant review renders the frozen application snapshot alongside job/application status and cover note.
+10. Existing job application status, private messaging, interview scheduling, moderation, and public Professional profile behavior remain unchanged.
+11. Finance/Cashfree remains HOLD, recurring requirement/recovery remains FROZEN, and Supabase Pro leaked-password protection remains HOLD.
