@@ -3,8 +3,11 @@ import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import PublicProviderProfile from '../../../components/detail/PublicProviderProfile';
+import { createSupabaseServiceClient } from '../../../lib/supabase/service';
 
 const siteUrl = 'https://www.takeitesee.com';
+const portfolioBucket = 'professional-portfolio-media';
+const signedMediaTtlSeconds = 15 * 60;
 
 function publicSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -24,6 +27,38 @@ function hasMarketplaceDisclosure(provider: any) {
     provider?.legal_name?.trim() && provider?.principal_address?.trim() && provider?.public_contact_email?.trim() && provider?.public_contact_phone?.trim()
     && provider?.grievance_officer_name?.trim() && provider?.grievance_officer_designation?.trim() && provider?.grievance_email?.trim() && provider?.grievance_phone?.trim(),
   );
+}
+
+async function loadSignedPortfolioMedia(providerId: string, roles: any[]) {
+  try {
+    const service = createSupabaseServiceClient();
+    const { data: mediaRows, error } = await service
+      .from('professional_portfolio_media')
+      .select('id,professional_role_id,media_type,object_path,caption,alt_text,display_order,created_at')
+      .eq('professional_id', providerId)
+      .eq('active', true)
+      .order('display_order', { ascending: true })
+      .order('created_at', { ascending: false });
+    if (error || !mediaRows?.length) return [];
+
+    const roleTitle = new Map(roles.map((role: any) => [String(role.id), String(role.title || '')]));
+    const visibleRows = mediaRows.filter((row: any) => !row.professional_role_id || roleTitle.has(String(row.professional_role_id)));
+    const signed = await Promise.all(visibleRows.map(async (row: any) => {
+      const { data, error: signedError } = await service.storage.from(portfolioBucket).createSignedUrl(String(row.object_path), signedMediaTtlSeconds);
+      if (signedError || !data?.signedUrl) return null;
+      return {
+        id: String(row.id),
+        media_type: row.media_type === 'video' ? 'video' as const : 'image' as const,
+        signed_url: data.signedUrl,
+        caption: String(row.caption || ''),
+        alt_text: String(row.alt_text || ''),
+        role_title: row.professional_role_id ? roleTitle.get(String(row.professional_role_id)) || null : null,
+      };
+    }));
+    return signed.filter((item): item is NonNullable<typeof item> => Boolean(item));
+  } catch {
+    return [];
+  }
 }
 
 const loadProfessional = cache(async (providerId: string) => {
@@ -56,10 +91,15 @@ const loadProfessional = cache(async (providerId: string) => {
       .order('created_at', { ascending: true }),
   ]);
 
+  const services = servicesResult.error ? [] : (servicesResult.data ?? []) as any[];
+  const roles = rolesResult.error ? [] : (rolesResult.data ?? []) as any[];
+  const media = await loadSignedPortfolioMedia(providerId, roles);
+
   return {
     provider: provider as any,
-    services: servicesResult.error ? [] : (servicesResult.data ?? []) as any[],
-    roles: rolesResult.error ? [] : (rolesResult.data ?? []) as any[],
+    services,
+    roles,
+    media,
   };
 });
 
@@ -83,7 +123,7 @@ export async function generateMetadata({ params }: { params: Promise<{ providerI
   const talentText = roles.length ? ` Skills include ${roles.slice(0, 3).map((role: any) => role.title).join(', ')}.` : '';
   const description = seoText(
     provider.description,
-    `Explore services and professional talents from ${displayName}${location ? ` in ${location}` : ''} on TakeItEsee.${talentText}`,
+    `Explore services, professional talents and work samples from ${displayName}${location ? ` in ${location}` : ''} on TakeItEsee.${talentText}`,
   );
   const canonical = `${siteUrl}/professionals/${encodeURIComponent(providerId)}`;
   const indexable = services.length > 0 || roles.length > 0;
@@ -114,7 +154,7 @@ export default async function ProfessionalProfilePage({ params }: { params: Prom
   const record = await loadProfessional(providerId);
   if (!record) notFound();
 
-  const { provider, services, roles } = record;
+  const { provider, services, roles, media } = record;
   const displayName = provider.headline || 'Verified professional';
   const canonical = `${siteUrl}/professionals/${encodeURIComponent(providerId)}`;
   const structuredData = services.length || roles.length ? {
@@ -173,6 +213,7 @@ export default async function ProfessionalProfilePage({ params }: { params: Prom
         full_time_enabled: Boolean(role.full_time_enabled),
         contract_enabled: Boolean(role.contract_enabled),
       }))}
+      media={media}
       services={services.map((service: any) => ({
         id: String(service.id),
         name: String(service.name || ''),

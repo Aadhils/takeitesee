@@ -43,6 +43,15 @@ type ProfessionalRole = {
   contract_enabled: boolean;
 };
 
+type ProfessionalMedia = {
+  id: string;
+  media_type: 'image' | 'video';
+  signed_url: string;
+  caption: string;
+  alt_text: string;
+  role_title: string | null;
+};
+
 function LocalizedBreadcrumbs({ kind, text }: { kind: ProviderKind; text: (en: string, ta: string) => string }) {
   return (
     <nav className="breadcrumbs" aria-label={text('Breadcrumb', 'வழிசெலுத்தல்')}>
@@ -67,11 +76,13 @@ export default function PublicProviderProfile({
   provider,
   services,
   roles = [],
+  media = [],
 }: {
   kind: ProviderKind;
   provider: ProviderView;
   services: ProviderService[];
   roles?: ProfessionalRole[];
+  media?: ProfessionalMedia[];
 }) {
   const { locale } = useLanguage();
   const text = (en: string, ta: string) => locale === 'ta-IN' ? ta : en;
@@ -97,7 +108,7 @@ export default function PublicProviderProfile({
     : text('Independent professional on TakeItEsee', 'TakeItEsee-ல் சுயாதீன நிபுணர்');
   const aboutFallback = kind === 'business'
     ? text('This verified business publishes live services through TakeItEsee.', 'இந்த சரிபார்க்கப்பட்ட வணிகம் TakeItEsee மூலம் live சேவைகளை வெளியிடுகிறது.')
-    : text('This verified professional publishes live services and professional talents through one verified TakeItEsee identity.', 'இந்த சரிபார்க்கப்பட்ட நிபுணர் ஒரே verified TakeItEsee identity மூலம் live services மற்றும் professional talents-ஐ வெளியிடுகிறார்.');
+    : text('This verified professional publishes live services, professional talents and selected work samples through one verified TakeItEsee identity.', 'இந்த சரிபார்க்கப்பட்ட நிபுணர் ஒரே verified TakeItEsee identity மூலம் live services, professional talents மற்றும் தேர்ந்தெடுத்த work samples-ஐ வெளியிடுகிறார்.');
 
   return (
     <div className="profile-page">
@@ -115,6 +126,7 @@ export default function PublicProviderProfile({
           <p className="card-location">{provider.location || text('Service area confirmed during booking', 'Booking போது service area உறுதிசெய்யப்படும்')}</p>
           {kind === 'professional' ? <div className={`profile-facts ${styles.heroFacts}`} aria-label={text('Professional profile summary', 'Professional profile சுருக்கம்')}>
             <span><strong>{roles.length}</strong>{text('Public talents', 'Public talents')}</span>
+            <span><strong>{media.length}</strong>{text('Work samples', 'Work samples')}</span>
             <span><strong>{services.length}</strong>{text('Active services', 'Active services')}</span>
             <span><strong>{openOpportunityTypes.length}</strong>{text('Opportunity types', 'Opportunity types')}</span>
           </div> : null}
@@ -164,6 +176,30 @@ export default function PublicProviderProfile({
             </div> : <p className="empty-inline">{text('No public talents have been added yet.', 'Public talents இன்னும் add செய்யப்படவில்லை.')}</p>}
           </section> : null}
 
+          {kind === 'professional' && media.length ? <section className="detail-section" aria-labelledby="professional-work-showcase-heading">
+            <div className="section-heading">
+              <div><span className="eyebrow">{text('Work showcase', 'Work showcase')}</span><h2 id="professional-work-showcase-heading">{text('Previous work & experience', 'Previous work & experience')}</h2></div>
+              <Badge tone="success">{text(`${media.length} samples`, `${media.length} samples`)}</Badge>
+            </div>
+            <p className="detail-copy">{text(
+              'Selected photos and videos shared by this verified professional to demonstrate previous work, projects, service outcomes, or practical experience.',
+              'இந்த verified professional முன்பு செய்த work, projects, service results அல்லது practical experience-ஐ காட்ட தேர்ந்தெடுத்து share செய்த photos/videos.',
+            )}</p>
+            <div className={styles.mediaGrid}>
+              {media.map((item) => <article className={styles.mediaCard} key={item.id}>
+                <div className={styles.mediaPreview}>
+                  {item.media_type === 'image'
+                    ? <img src={item.signed_url} alt={item.alt_text || item.caption || text('Professional work sample', 'Professional work sample')} loading="lazy" />
+                    : <video src={item.signed_url} controls preload="metadata" playsInline aria-label={item.caption || text('Professional portfolio video', 'Professional portfolio video')} />}
+                </div>
+                <div className={styles.mediaBody}>
+                  <div className="detail-badges"><Badge tone="info">{item.media_type === 'image' ? text('Photo', 'Photo') : text('Video', 'Video')}</Badge>{item.role_title ? <Badge tone="success">{item.role_title}</Badge> : null}</div>
+                  <h3>{item.caption || text('Professional work sample', 'Professional work sample')}</h3>
+                </div>
+              </article>)}
+            </div>
+          </section> : null}
+
           <section className="detail-section">
             <div className="section-heading">
               <div><span className="eyebrow">{text('Available services', 'கிடைக்கும் சேவைகள்')}</span><h2>{text('Choose a service', 'ஒரு சேவையை தேர்வு செய்')}</h2></div>
@@ -190,6 +226,7 @@ export default function PublicProviderProfile({
             <h2>{text('One verified identity', 'ஒரே verified identity')}</h2>
             <dl className="review-details">
               <div><dt>{text('Public talents', 'Public talents')}</dt><dd>{roles.length}</dd></div>
+              <div><dt>{text('Work samples', 'Work samples')}</dt><dd>{media.length}</dd></div>
               <div><dt>{text('Active services', 'Active services')}</dt><dd>{services.length}</dd></div>
               <div><dt>{text('Service area', 'Service area')}</dt><dd>{provider.location || text('Booking dependent', 'Booking dependent')}</dd></div>
             </dl>
@@ -197,8 +234,8 @@ export default function PublicProviderProfile({
               {openOpportunityTypes.map((label) => <Badge key={label} tone="info">{label}</Badge>)}
             </div> : null}
             <p className="summary-note">{text(
-              'Talent cards are profile signals only. Booking and future career workflows keep their own eligibility and approval rules.',
-              'Talent cards profile signal மட்டும். Booking மற்றும் future career workflows தங்களுடைய eligibility / approval rules-ஐ தனியாக வைத்திருக்கும்.',
+              'Talent and media cards are profile signals only. Booking and future career workflows keep their own eligibility and approval rules.',
+              'Talent மற்றும் media cards profile signal மட்டும். Booking மற்றும் future career workflows தங்களுடைய eligibility / approval rules-ஐ தனியாக வைத்திருக்கும்.',
             )}</p>
           </Card> : null}
           <Card>
@@ -222,7 +259,7 @@ export default function PublicProviderProfile({
             <h2>{kind === 'business' ? text('Verified business', 'சரிபார்க்கப்பட்ட வணிகம்') : text('Verified professional', 'சரிபார்க்கப்பட்ட நிபுணர்')}</h2>
             <p>{kind === 'business'
               ? text('Only active, published services from this business are shown here.', 'இந்த வணிகத்தின் active, published சேவைகள் மட்டும் இங்கே காட்டப்படுகின்றன.')
-              : text('Only active public talents and published services from this provider are shown here.', 'இந்த provider-ன் active public talents மற்றும் published services மட்டும் இங்கே காட்டப்படுகின்றன.')}</p>
+              : text('Only active public talents, selected work media, and published services from this provider are shown here.', 'இந்த provider-ன் active public talents, selected work media மற்றும் published services மட்டும் இங்கே காட்டப்படுகின்றன.')}</p>
             <Link href="/explore" className="button button-secondary">{text('Explore services', 'சேவைகளை பார்க்க')}</Link>
           </Card>
         </aside>

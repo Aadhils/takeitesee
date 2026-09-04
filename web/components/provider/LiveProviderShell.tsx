@@ -19,21 +19,27 @@ type ProviderContext = {
 };
 
 export function LiveProviderShell({ children, active }: { children: React.ReactNode; active: string }) {
-  const { t } = useIdentityWorkspaceTranslations();
+  const { t, locale } = useIdentityWorkspaceTranslations();
   const [provider, setProvider] = useState<ProviderContext | null>(null);
-  const providerLinks = useMemo(() => [
-    { href: '/provider', label: t('provider.dashboard') },
-    { href: '/provider/setup', label: t('provider.setup') },
-    { href: '/provider/leads', label: t('provider.leads') },
-    { href: '/provider/messages', label: t('provider.messages') },
-    { href: '/provider/bookings', label: t('provider.bookings') },
-    { href: '/provider/schedule', label: t('provider.schedule') },
-    { href: '/provider/services', label: t('provider.services') },
-    { href: '/provider/verification', label: t('provider.verification') },
-    { href: '/provider/earnings', label: t('provider.earnings') },
-    { href: '/provider/reviews', label: t('provider.reviews') },
-    { href: '/provider/profile', label: t('provider.profile') },
-  ], [t]);
+  const providerLinks = useMemo(() => {
+    const links = [
+      { href: '/provider', label: t('provider.dashboard') },
+      { href: '/provider/setup', label: t('provider.setup') },
+      { href: '/provider/leads', label: t('provider.leads') },
+      { href: '/provider/messages', label: t('provider.messages') },
+      { href: '/provider/bookings', label: t('provider.bookings') },
+      { href: '/provider/schedule', label: t('provider.schedule') },
+      { href: '/provider/services', label: t('provider.services') },
+      { href: '/provider/verification', label: t('provider.verification') },
+      { href: '/provider/earnings', label: t('provider.earnings') },
+      { href: '/provider/reviews', label: t('provider.reviews') },
+    ];
+    if (provider?.provider_type === 'professional') {
+      links.push({ href: '/provider/portfolio', label: locale.toLowerCase().startsWith('ta') ? 'வேலை Portfolio' : 'Portfolio' });
+    }
+    links.push({ href: '/provider/profile', label: t('provider.profile') });
+    return links;
+  }, [locale, provider?.provider_type, t]);
 
   useEffect(() => {
     let cancelled = false;
