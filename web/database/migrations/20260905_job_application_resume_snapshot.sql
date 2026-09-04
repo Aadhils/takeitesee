@@ -156,7 +156,7 @@ begin
     'certifications', certification_payload,
     'disclosure', jsonb_build_object(
       'purpose', 'job_application_employer_review',
-      'public_resume_setting_bypassed', false,
+      'public_resume_visibility_required', false,
       'contains_contact_or_kyc', false
     )
   );
