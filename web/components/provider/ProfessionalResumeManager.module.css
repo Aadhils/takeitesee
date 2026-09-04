@@ -1,0 +1,139 @@
+.stack {
+  display: grid;
+  gap: 20px;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.summaryCard {
+  display: grid;
+  gap: 8px;
+  padding: 20px;
+}
+
+.summaryCard strong {
+  font-size: 1.5rem;
+}
+
+.summaryCard p {
+  margin: 0;
+  color: var(--color-ink-muted);
+  line-height: 1.55;
+}
+
+.sectionCard {
+  display: grid;
+  gap: 20px;
+  padding: 22px;
+}
+
+.sectionHeading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.sectionHeading h2 {
+  margin: 5px 0 0;
+}
+
+.formStack,
+.inlineEditor {
+  display: grid;
+  gap: 16px;
+}
+
+.inlineEditor {
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border, #e5e7eb);
+}
+
+.inlineEditor h3 {
+  margin: 0;
+}
+
+.twoCol {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.choiceGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.actions,
+.itemActions,
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.opportunityBox {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 14px;
+  background: var(--color-surface-muted, #f8fafc);
+}
+
+.itemGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.itemCard {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 14px;
+}
+
+.itemCard h3 {
+  margin: 5px 0 7px;
+}
+
+.itemCard p {
+  margin: 4px 0 0;
+  color: var(--color-ink-muted);
+  line-height: 1.55;
+}
+
+.itemActions {
+  align-self: flex-start;
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .twoCol,
+  .choiceGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sectionHeading,
+  .itemCard {
+    flex-direction: column;
+  }
+
+  .itemActions {
+    align-self: stretch;
+  }
+}
