@@ -80,6 +80,7 @@ export function RequirementOccurrenceRecoveryPanel({ requirementId, onRecovered 
     ? occurrencePlan?.occurrences.find((occurrence) => occurrence.sequence_no === recoverableJob.sequence_no) ?? null
     : null;
   const canRecover = Boolean(recoverableJob && recoverableJob.booking_status === 'cancelled' && recoverableJob.payment_status === 'unpaid');
+  const finalReadOnly = requirement?.status === 'fulfilled';
   const minimumDate = useMemo(() => {
     const planned = recoverableOccurrence?.scheduled_date;
     return planned && planned > today ? planned : today;
@@ -141,13 +142,16 @@ export function RequirementOccurrenceRecoveryPanel({ requirementId, onRecovered 
 
   return <Card className="policy-card">
     <div className="section-heading">
-      <div><span className="eyebrow">Occurrence recovery</span><h2>{tamil ? 'Recurring occurrence retry & history' : 'Recurring occurrence retry & history'}</h2></div>
+      <div><span className="eyebrow">Occurrence recovery</span><h2>{finalReadOnly ? (tamil ? 'Recurring occurrence recovery history' : 'Recurring occurrence recovery history') : (tamil ? 'Recurring occurrence retry & history' : 'Recurring occurrence retry & history')}</h2></div>
       <Badge tone="neutral">{recoveries.length}</Badge>
     </div>
-    <p className="detail-copy">{tamil ? 'Failed recurring occurrence-ஐ அடுத்த sequence-க்கு skip செய்யாமல் அதே occurrence number-ல் மீண்டும் booking செய்யலாம்.' : 'Retry a failed recurring occurrence at the same sequence number without skipping ahead.'}</p>
+    <p className="detail-copy">{finalReadOnly
+      ? (tamil ? 'இந்த recurring requirement முழுமையாக fulfilled. முந்தைய recovery records audit/history ஆக read-only நிலையில் பாதுகாக்கப்படுகின்றன.' : 'This recurring requirement is fully fulfilled. Previous recovery records remain available as read-only audit history.')
+      : (tamil ? 'Failed recurring occurrence-ஐ அடுத்த sequence-க்கு skip செய்யாமல் அதே occurrence number-ல் மீண்டும் booking செய்யலாம்.' : 'Retry a failed recurring occurrence at the same sequence number without skipping ahead.')}</p>
 
     {error ? <Alert title={tamil ? 'Recovery update தோல்வி' : 'Recovery update failed'} tone="danger">{error}</Alert> : null}
     {notice ? <Alert title={tamil ? 'Occurrence recovered' : 'Occurrence recovered'} tone="success">{notice}</Alert> : null}
+    {finalReadOnly ? <Alert title={tamil ? 'Recurring service completed' : 'Recurring service completed'} tone="success">{tamil ? 'அனைத்து planned occurrences-மும் முடிந்துவிட்டன. புதிய recovery retry action கிடையாது; history மட்டும் பார்க்கலாம்.' : 'All planned occurrences are complete. No further recovery retry action is available; the history remains viewable.'}</Alert> : null}
 
     {recoverableJob ? <div style={{ display: 'grid', gap: '.8rem', marginTop: '1rem', border: '1px solid #ececf2', borderRadius: '14px', padding: '1rem' }}>
       <div className="section-heading"><div><span className="eyebrow">{recoverableJob.booking_reference}</span><h3>{tamil ? `Occurrence #${recoverableJob.sequence_no} retry` : `Retry occurrence #${recoverableJob.sequence_no}`}</h3></div><Badge tone="danger">{status(recoverableJob.state)}</Badge></div>
