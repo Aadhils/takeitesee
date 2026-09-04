@@ -16,6 +16,41 @@ async function providerContext(request: Request) {
   return { session, supabase, mode: 'professional' as const, professional };
 }
 
+async function communicationContext(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  applicationIds: string[],
+) {
+  if (!applicationIds.length) return { conversations: [], interviews: [], interview_events: [] };
+
+  const [conversationResult, interviewResult, eventResult] = await Promise.all([
+    supabase
+      .from('marketplace_conversations')
+      .select('id,job_application_id,status,closed_reason,last_message_at')
+      .eq('conversation_kind', 'job_application')
+      .in('job_application_id', applicationIds),
+    supabase
+      .from('job_interviews')
+      .select('*')
+      .in('job_application_id', applicationIds)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('job_interview_events')
+      .select('*')
+      .in('job_application_id', applicationIds)
+      .order('created_at', { ascending: false }),
+  ]);
+
+  if (conversationResult.error) throw new Error(conversationResult.error.message);
+  if (interviewResult.error) throw new Error(interviewResult.error.message);
+  if (eventResult.error) throw new Error(eventResult.error.message);
+
+  return {
+    conversations: conversationResult.data ?? [],
+    interviews: interviewResult.data ?? [],
+    interview_events: eventResult.data ?? [],
+  };
+}
+
 export async function GET(request: Request) {
   try {
     const context = await providerContext(request);
@@ -36,7 +71,9 @@ export async function GET(request: Request) {
         if (error) throw new Error(error.message);
         professionals = (data ?? []) as Record<string, unknown>[];
       }
-      return NextResponse.json({ mode: 'business', business: context.business, jobs: jobs ?? [], applications, professionals });
+      const applicationIds = applications.map((item) => String(item.id || '')).filter(Boolean);
+      const communication = await communicationContext(context.supabase, applicationIds);
+      return NextResponse.json({ mode: 'business', business: context.business, jobs: jobs ?? [], applications, professionals, ...communication });
     }
 
     const [{ data: applications, error: applicationsError }, { data: roles, error: rolesError }] = await Promise.all([
@@ -52,7 +89,9 @@ export async function GET(request: Request) {
       if (error) throw new Error(error.message);
       jobs = (data ?? []) as Record<string, unknown>[];
     }
-    return NextResponse.json({ mode: 'professional', professional: context.professional, roles: roles ?? [], applications: applications ?? [], jobs });
+    const applicationIds = (applications ?? []).map((application) => application.id);
+    const communication = await communicationContext(context.supabase, applicationIds);
+    return NextResponse.json({ mode: 'professional', professional: context.professional, roles: roles ?? [], applications: applications ?? [], jobs, ...communication });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to load job workspace.' }, { status: 401 });
   }

@@ -1,0 +1,15 @@
+Job application communication + interview scheduling contract
+
+1. Reuse the existing marketplace conversation/message/read-marker/block transport. Do not introduce a second chat system.
+2. A job application conversation is created only after the employer moves an application to shortlisted or interview.
+3. The job conversation participants are exactly the applicant professional user and the owning business employer user.
+4. Submitted applications have no private conversation. Hired, rejected and withdrawn applications close the existing conversation as read-only history.
+5. Job messaging is writable only while the application is shortlisted or interview and the conversation is open/unblocked.
+6. Existing requirement conversations retain their awarded-provider messaging rules unchanged.
+7. A verified business employer may schedule an interview only while the application status is interview.
+8. The employer may reschedule or cancel. The applicant may accept or decline a scheduled interview but cannot change schedule details.
+9. At most one non-cancelled interview row may exist per application. Rescheduling updates the same row.
+10. Interview lifecycle changes create participant-readable audit snapshots and notifications.
+11. Interview rows/events are participant-only under RLS. Anonymous and unrelated authenticated users receive no interview access.
+12. Job conversations reuse block/unblock safety. Requirement-scoped moderation/reporting remains unchanged; job-specific moderation is outside this slice.
+13. No subscription, search-ranking, recruiter billing, finance/Cashfree, recurring requirement/recovery, or Supabase Pro behavior changes are part of this slice.
