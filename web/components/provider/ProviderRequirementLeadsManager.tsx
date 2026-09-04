@@ -11,7 +11,7 @@ type Lead = {
   id: string; requirement_reference: string; title: string; description: string; service_mode: string;
   budget_type: 'fixed' | 'range' | 'negotiable'; budget_min_minor: number | null; budget_max_minor: number | null;
   currency: 'INR' | 'USD'; needed_by: string | null; preferred_start_time: string | null; expected_duration_minutes: number | null;
-  schedule_pattern: 'one_time' | 'recurring'; recurrence_frequency: 'daily' | 'weekly' | 'monthly' | null; recurrence_interval: number | null; recurrence_count: number | null;
+  schedule_pattern: 'one_time' | 'recurring'; recurrence_frequency: 'daily' | 'weekly' | 'monthly' | null; recurrence_interval: number | null; recurrence_count: number | null; recurrence_weekdays: number[] | null;
   published_at: string; category_name: string; location_name: string; matching_service_id: string; already_proposed: boolean;
 };
 type Proposal = {
@@ -22,6 +22,10 @@ type Proposal = {
 type Marketplace = { leads: Lead[]; proposals: Proposal[] };
 type Draft = { amount: string; pricingBasis: PricingBasis; message: string; estimatedStartDate: string };
 const emptyDraft: Draft = { amount: '', pricingBasis: 'per_occurrence', message: '', estimatedStartDate: '' };
+const WEEKDAY_NAMES = {
+  en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+  ta: ['ஞாயி', 'திங்கள்', 'செவ்வாய்', 'புதன்', 'வியாழன்', 'வெள்ளி', 'சனி'],
+} as const;
 
 function proposalTone(status: Proposal['status']) { if (status === 'accepted') return 'success' as const; if (status === 'submitted') return 'info' as const; if (status === 'declined') return 'danger' as const; return 'neutral' as const; }
 
@@ -42,10 +46,14 @@ export function ProviderRequirementLeadsManager() {
     return `${minutes} ${tamil ? 'நிமிடம்' : 'min'}`;
   };
   const startTimeLabel = (value: string | null) => value ? value.slice(0, 5) : t('common.flexible');
+  const weekdayLabel = (values: number[] | null) => values?.length
+    ? values.map((value) => (tamil ? WEEKDAY_NAMES.ta : WEEKDAY_NAMES.en)[value] ?? String(value)).join(', ')
+    : '';
   const recurrenceLabel = (lead: Lead) => {
     if (lead.schedule_pattern !== 'recurring' || !lead.recurrence_frequency || !lead.recurrence_interval || !lead.recurrence_count) return tamil ? 'ஒருமுறை' : 'One-time';
     const unit = lead.recurrence_frequency === 'daily' ? (tamil ? 'நாள்' : 'day') : lead.recurrence_frequency === 'weekly' ? (tamil ? 'வாரம்' : 'week') : (tamil ? 'மாதம்' : 'month');
-    return `${tamil ? 'ஒவ்வொரு' : 'Every'} ${lead.recurrence_interval} ${unit}${!tamil && lead.recurrence_interval !== 1 ? 's' : ''} × ${lead.recurrence_count}`;
+    const weekdays = lead.recurrence_frequency === 'weekly' && lead.recurrence_weekdays?.length ? ` · ${weekdayLabel(lead.recurrence_weekdays)}` : '';
+    return `${tamil ? 'ஒவ்வொரு' : 'Every'} ${lead.recurrence_interval} ${unit}${!tamil && lead.recurrence_interval !== 1 ? 's' : ''} × ${lead.recurrence_count}${weekdays}`;
   };
   const pricingBasisLabel = (basis: PricingBasis) => basis === 'whole_requirement'
     ? (tamil ? 'முழு recurring requirement-க்கு மொத்த quote' : 'Total for the whole recurring requirement')
@@ -85,7 +93,7 @@ export function ProviderRequirementLeadsManager() {
       {loading ? <Card><p>{t('lead.loading')}</p></Card> : null}{!loading && marketplace.leads.length === 0 ? <Card><p>{t('lead.none')}</p></Card> : null}
       {marketplace.leads.map((lead) => { const draft = drafts[lead.id] ?? emptyDraft; const alreadyProposed = lead.already_proposed || submittedRequirementIds.has(lead.id); return <Card className="policy-card" key={lead.id}>
         <div className="section-heading"><div><span className="eyebrow">{lead.requirement_reference}</span><h3>{lead.title}</h3></div><Badge tone="success">{t('common.open')}</Badge></div><p className="detail-copy">{lead.description}</p>
-        <dl className="review-details"><div><dt>{t('common.category')}</dt><dd>{lead.category_name}</dd></div><div><dt>{t('common.location')}</dt><dd>{lead.location_name}</dd></div><div><dt>{t('common.mode')}</dt><dd>{modeLabel(lead.service_mode)}</dd></div><div><dt>{t('lead.customerBudget')}</dt><dd>{leadBudget(lead)}</dd></div><div><dt>{t('common.neededBy')}</dt><dd>{lead.needed_by || t('common.flexible')}</dd></div><div><dt>{tamil ? 'விருப்பமான தொடக்க நேரம்' : 'Preferred start time'}</dt><dd>{startTimeLabel(lead.preferred_start_time)}</dd></div><div><dt>{tamil ? 'எதிர்பார்க்கப்படும் கால அளவு' : 'Expected duration'}</dt><dd>{durationLabel(lead.expected_duration_minutes)}</dd></div><div><dt>{tamil ? 'சேவை அட்டவணை' : 'Service schedule'}</dt><dd>{recurrenceLabel(lead)}</dd></div><div><dt>{t('common.posted')}</dt><dd>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(lead.published_at))}</dd></div></dl>
+        <dl className="review-details"><div><dt>{t('common.category')}</dt><dd>{lead.category_name}</dd></div><div><dt>{t('common.location')}</dt><dd>{lead.location_name}</dd></div><div><dt>{t('common.mode')}</dt><dd>{modeLabel(lead.service_mode)}</dd></div><div><dt>{t('lead.customerBudget')}</dt><dd>{leadBudget(lead)}</dd></div><div><dt>{t('common.neededBy')}</dt><dd>{lead.needed_by || t('common.flexible')}</dd></div><div><dt>{tamil ? 'விருப்பமான தொடக்க நேரம்' : 'Preferred start time'}</dt><dd>{startTimeLabel(lead.preferred_start_time)}</dd></div><div><dt>{tamil ? 'எதிர்பார்க்கப்படும் கால அளவு' : 'Expected duration'}</dt><dd>{durationLabel(lead.expected_duration_minutes)}</dd></div><div><dt>{tamil ? 'சேவை அட்டவணை' : 'Service schedule'}</dt><dd>{recurrenceLabel(lead)}</dd></div>{lead.recurrence_frequency === 'weekly' && lead.recurrence_weekdays?.length ? <div><dt>{tamil ? 'வார நாட்கள்' : 'Weekdays'}</dt><dd>{weekdayLabel(lead.recurrence_weekdays)}</dd></div> : null}<div><dt>{t('common.posted')}</dt><dd>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(lead.published_at))}</dd></div></dl>
         {alreadyProposed ? <p className="summary-note" style={{ marginTop: '1rem' }}>{t('lead.already')}</p> : <div style={{ display: 'grid', gap: '.75rem', marginTop: '1rem' }}>
           <label className="field"><span className="field-label">{t('lead.yourQuote')} ({lead.currency})</span><input className="field-control" type="number" min="1" step="1" value={draft.amount} onChange={(event) => updateDraft(lead.id, { amount: event.target.value })} placeholder="1200" /></label>
           {lead.schedule_pattern === 'recurring' ? <label className="field"><span className="field-label">{tamil ? 'Quote எதற்காக?' : 'What does this quote cover?'}</span><select className="field-control" value={draft.pricingBasis} onChange={(event) => updateDraft(lead.id, { pricingBasis: event.target.value as PricingBasis })}><option value="per_occurrence">{pricingBasisLabel('per_occurrence')}</option><option value="whole_requirement">{pricingBasisLabel('whole_requirement')}</option></select></label> : <p className="summary-note">{pricingBasisLabel('per_occurrence')}</p>}
@@ -97,7 +105,7 @@ export function ProviderRequirementLeadsManager() {
       <div className="section-heading"><div><span className="eyebrow">{t('lead.myProposals')}</span><h2>{t('lead.track')}</h2></div><Badge tone="neutral">{marketplace.proposals.length}</Badge></div>
       {marketplace.proposals.length === 0 ? <Card><p>{t('lead.noneSubmitted')}</p></Card> : marketplace.proposals.map((proposal) => <Card className="policy-card" key={proposal.id}>
         <div className="section-heading"><div><span className="eyebrow">{proposal.proposal_reference}</span><h3>{proposal.requirement_title}</h3></div><Badge tone={proposalTone(proposal.status)}>{status(proposal.status)}</Badge></div>
-        <dl className="review-details"><div><dt>{t('lead.requirement')}</dt><dd>{proposal.requirement_reference}</dd></div><div><dt>{t('common.category')}</dt><dd>{proposal.category_name}</dd></div><div><dt>{t('common.location')}</dt><dd>{proposal.location_name}</dd></div><div><dt>{t('lead.yourQuote')}</dt><dd>{money(proposal.amount_minor, proposal.currency)}</dd></div><div><dt>{tamil ? 'Quote basis' : 'Quote basis'}</dt><dd>{pricingBasisLabel(proposal.pricing_basis || 'per_occurrence')}</dd></div><div><dt>{t('lead.startDate')}</dt><dd>{proposal.estimated_start_date || t('common.flexible')}</dd></div><div><dt>{t('lead.requirementStatus')}</dt><dd>{status(proposal.requirement_status)}</dd></div></dl>
+        <dl className="review-details"><div><dt>{t('lead.requirement')}</dt><dd>{proposal.requirement_reference}</dd></div><div><dt>{t('common.category')}</dt><dd>{proposal.category_name}</dd></div><div><dt>{t('common.location')}</dt><dd>{proposal.location_name}</dd></div><div><dt>{t('lead.yourQuote')}</dt><dd>{money(proposal.amount_minor, proposal.currency)}</dd></div><div><dt>Quote basis</dt><dd>{pricingBasisLabel(proposal.pricing_basis || 'per_occurrence')}</dd></div><div><dt>{t('lead.startDate')}</dt><dd>{proposal.estimated_start_date || t('common.flexible')}</dd></div><div><dt>{t('lead.requirementStatus')}</dt><dd>{status(proposal.requirement_status)}</dd></div></dl>
         <p className="detail-copy">{proposal.message}</p><div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', alignItems: 'start' }}>{proposal.status === 'submitted' && proposal.requirement_status === 'open' ? <Button type="button" variant="quiet" loading={busyId === proposal.id} onClick={() => void withdrawProposal(proposal)}>{t('lead.withdraw')}</Button> : null}<MarketplaceReportForm targetType="requirement" targetId={proposal.requirement_id} label={t('lead.reportRequirement')} /></div>
       </Card>)}
     </section>
