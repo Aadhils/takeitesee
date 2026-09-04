@@ -40,7 +40,7 @@ create table if not exists public.professional_experiences (
   location text,
   start_date date not null,
   end_date date,
-  current_role boolean not null default false,
+  is_current boolean not null default false,
   description text,
   display_order integer not null default 0,
   created_at timestamptz not null default now(),
@@ -56,7 +56,7 @@ create table if not exists public.professional_experiences (
   constraint professional_experiences_description_check
     check (description is null or char_length(description) <= 2400),
   constraint professional_experiences_dates_check
-    check ((current_role and end_date is null) or (not current_role and (end_date is null or end_date >= start_date))),
+    check ((is_current and end_date is null) or (not is_current and (end_date is null or end_date >= start_date))),
   constraint professional_experiences_display_order_check
     check (display_order between 0 and 9999)
 );
@@ -236,7 +236,6 @@ using (exists (
 
 -- Child tables: owners always see their own rows. Public reads inherit the same
 -- verified + explicit resume-public gate from the parent career profile.
-
 do $$
 declare
   table_name text;
