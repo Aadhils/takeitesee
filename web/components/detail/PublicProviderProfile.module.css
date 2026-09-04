@@ -1,0 +1,58 @@
+.talentGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.talentCard {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 20px;
+}
+
+.talentCardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.talentCardTop h3 {
+  margin: 5px 0 0;
+  font-size: 1.18rem;
+  line-height: 1.2;
+}
+
+.talentCard > p {
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: .86rem;
+  line-height: 1.6;
+}
+
+.opportunities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.snapshotCard {
+  display: grid;
+  gap: 14px;
+}
+
+.heroFacts {
+  margin-top: 18px;
+}
+
+@media (max-width: 760px) {
+  .talentGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .talentCardTop {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
