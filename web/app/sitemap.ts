@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic';
 const staticEntries: MetadataRoute.Sitemap = [
   { url: siteUrl, changeFrequency: 'daily', priority: 1 },
   { url: `${siteUrl}/explore`, changeFrequency: 'daily', priority: 0.9 },
+  { url: `${siteUrl}/jobs`, changeFrequency: 'daily', priority: 0.9 },
   { url: `${siteUrl}/categories`, changeFrequency: 'weekly', priority: 0.8 },
   { url: `${siteUrl}/professionals`, changeFrequency: 'daily', priority: 0.8 },
   { url: `${siteUrl}/businesses`, changeFrequency: 'daily', priority: 0.8 },
