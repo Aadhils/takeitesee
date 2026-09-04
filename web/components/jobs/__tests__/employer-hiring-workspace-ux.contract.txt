@@ -1,0 +1,18 @@
+Employer Hiring Workspace UX contract
+
+1. Business accounts use the polished Hiring Workspace; Professional job workspace behavior remains unchanged.
+2. Backend job, application, interview, offer, messaging, moderation, resume-snapshot and hiring consent APIs are reused without schema/state-machine changes.
+3. Hiring overview exposes Open jobs, Applicants, Upcoming interviews and Pending offers as actionable summary cards.
+4. Business workflow is organized into Jobs, Applicants, Interviews and Offers tabs.
+5. Create-job form is hidden by default and opened by a clear + Create job action.
+6. Job form groups Job basics, Requirements and Compensation instead of exposing one undifferentiated long form.
+7. Initial-status dropdown is removed from UI; explicit Save draft and Publish job actions send the existing draft/open statuses.
+8. Publish is disabled for an unverified Business; Save draft remains available subject to existing backend rules.
+9. Required-skill text remains API-compatible while rendering entered values as preview chips.
+10. Job cards surface status, employment/workplace type, location, compensation, openings, deadline and applicant count.
+11. Applicant tab preserves existing stage transitions and never reintroduces direct employer Hired action.
+12. Interview tab preserves existing schedule/reschedule/cancel APIs and audit history.
+13. Offers tab reuses JobOfferWorkspace and two-party applicant acceptance from #248.
+14. Employer Applicant Resume Review remains available inside Applicants.
+15. Layout is responsive: four KPI cards on desktop, two-column summary on small screens, single-column forms on mobile.
+16. Finance/Cashfree, recurrence/recovery and Supabase Pro leaked-password holds are untouched.
