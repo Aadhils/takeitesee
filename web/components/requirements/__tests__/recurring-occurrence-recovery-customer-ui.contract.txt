@@ -1,0 +1,14 @@
+Recurring occurrence recovery customer UI contract
+
+- Customer requirement detail exposes recurring occurrence recovery without rebuilding the existing job lifecycle.
+- Recovery details are loaded only through a customer-authenticated API read model for the owned requirement.
+- Retry is presented only for an awarded recurring requirement whose latest job is cancelled/declined and no active/service-completed job exists.
+- The failed booking must be cancelled and payment_status must be unpaid before the UI enables automatic retry.
+- Pending, paid, failed, refunded or any future non-unpaid payment state remains blocked for automatic retry and requires support review.
+- Retry submits only booking date, start time and optional notes to customer_retry_requirement_occurrence(...); backend ownership, same-sequence, schedule, selected-weekday, availability, blackout, overlap and allocation gates remain authoritative.
+- Recovery booking date cannot be earlier than today or the planned occurrence date, whichever is later.
+- Successful recovery refreshes the existing customer requirement detail/job panel so the replacement job is immediately reflected.
+- Recovery history is read-only and links the prior cancelled booking to its replacement booking when available.
+- Cash on Service behavior is unchanged.
+- Cashfree, online gateway, refund, payout, settlement and reconciliation remain HOLD.
+- Supabase Pro HOLD is unchanged.
