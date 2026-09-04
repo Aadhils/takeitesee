@@ -52,6 +52,58 @@ type ProfessionalMedia = {
   role_title: string | null;
 };
 
+type ProfessionalCareer = {
+  profile: {
+    career_headline: string;
+    career_summary: string;
+    preferred_location: string;
+    open_to_remote: boolean;
+    willing_to_relocate: boolean;
+    available_from: string | null;
+    notice_period_days: number | null;
+    availability_note: string;
+  };
+  experiences: Array<{
+    id: string;
+    role_title: string;
+    organization: string;
+    employment_type: string;
+    location: string | null;
+    start_date: string;
+    end_date: string | null;
+    is_current: boolean;
+    description: string | null;
+    display_order: number;
+  }>;
+  education: Array<{
+    id: string;
+    institution: string;
+    qualification: string;
+    field_of_study: string | null;
+    start_date: string | null;
+    end_date: string | null;
+    description: string | null;
+    display_order: number;
+  }>;
+  certifications: Array<{
+    id: string;
+    name: string;
+    issuing_organization: string;
+    issue_date: string | null;
+    expiry_date: string | null;
+    credential_id: string | null;
+    credential_url: string | null;
+    display_order: number;
+  }>;
+  skills: Array<{
+    id: string;
+    name: string;
+    proficiency: string | null;
+    years_experience: number | null;
+    display_order: number;
+  }>;
+};
+
 function LocalizedBreadcrumbs({ kind, text }: { kind: ProviderKind; text: (en: string, ta: string) => string }) {
   return (
     <nav className="breadcrumbs" aria-label={text('Breadcrumb', 'வழிசெலுத்தல்')}>
@@ -77,12 +129,14 @@ export default function PublicProviderProfile({
   services,
   roles = [],
   media = [],
+  career = null,
 }: {
   kind: ProviderKind;
   provider: ProviderView;
   services: ProviderService[];
   roles?: ProfessionalRole[];
   media?: ProfessionalMedia[];
+  career?: ProfessionalCareer | null;
 }) {
   const { locale } = useLanguage();
   const text = (en: string, ta: string) => locale === 'ta-IN' ? ta : en;
@@ -93,6 +147,12 @@ export default function PublicProviderProfile({
     try { return new Intl.NumberFormat(locale, { style: 'currency', currency, minimumFractionDigits: 2 }).format(amount); }
     catch { return `${currency} ${amount.toFixed(2)}`; }
   };
+  const careerDate = (value: string | null) => {
+    if (!value) return text('Not specified', 'குறிப்பிடவில்லை');
+    try { return new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${value}T00:00:00Z`)); }
+    catch { return value; }
+  };
+  const careerType = (value: string) => value.replaceAll('_', ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 
   const opportunityLabels = (role: ProfessionalRole) => [
     role.service_bookings_enabled ? text('Service bookings', 'Service booking') : null,
@@ -120,6 +180,7 @@ export default function PublicProviderProfile({
             <Badge tone="success">{text('Verified profile', 'சரிபார்க்கப்பட்ட profile')}</Badge>
             <Badge tone="info">{kind === 'business' ? text('Business provider', 'வணிக வழங்குநர்') : text('Professional provider', 'நிபுணர் வழங்குநர்')}</Badge>
             {kind === 'professional' && roles.length > 1 ? <Badge tone="info">{text('Multi-skill professional', 'Multi-skill professional')}</Badge> : null}
+            {kind === 'professional' && career ? <Badge tone="success">{text('Public career profile', 'Public career profile')}</Badge> : null}
           </div>
           <h1>{displayName}</h1>
           <p className="profile-headline">{provider.description || profileFallback}</p>
@@ -176,6 +237,55 @@ export default function PublicProviderProfile({
             </div> : <p className="empty-inline">{text('No public talents have been added yet.', 'Public talents இன்னும் add செய்யப்படவில்லை.')}</p>}
           </section> : null}
 
+          {kind === 'professional' && career ? <section className="detail-section" aria-labelledby="professional-career-heading">
+            <div className="section-heading">
+              <div><span className="eyebrow">{text('Career profile', 'Career profile')}</span><h2 id="professional-career-heading">{career.profile.career_headline || text('Professional resume', 'Professional resume')}</h2></div>
+              <Badge tone="success">{text('Published', 'Published')}</Badge>
+            </div>
+            {career.profile.career_summary ? <p className="detail-copy">{career.profile.career_summary}</p> : null}
+            <div className={styles.careerSignals} aria-label={text('Career availability', 'Career availability')}>
+              {career.profile.preferred_location ? <Badge tone="info">{text('Preferred', 'Preferred')}: {career.profile.preferred_location}</Badge> : null}
+              {career.profile.open_to_remote ? <Badge tone="success">{text('Remote open', 'Remote open')}</Badge> : null}
+              {career.profile.willing_to_relocate ? <Badge tone="info">{text('Open to relocate', 'Relocate செய்ய open')}</Badge> : null}
+              {career.profile.available_from ? <Badge tone="info">{text('Available', 'Available')}: {careerDate(career.profile.available_from)}</Badge> : null}
+              {career.profile.notice_period_days !== null ? <Badge tone="info">{career.profile.notice_period_days} {text('day notice', 'day notice')}</Badge> : null}
+            </div>
+            {career.profile.availability_note ? <p className={styles.careerNote}>{career.profile.availability_note}</p> : null}
+
+            {career.skills.length ? <div className={styles.careerBlock}>
+              <h3>{text('Skills', 'Skills')}</h3>
+              <div className={styles.careerSignals}>{career.skills.map((skill) => <Badge tone="info" key={skill.id}>{skill.name}{skill.proficiency ? ` · ${careerType(skill.proficiency)}` : ''}{skill.years_experience !== null ? ` · ${skill.years_experience} ${text('yr', 'yr')}` : ''}</Badge>)}</div>
+            </div> : null}
+
+            {career.experiences.length ? <div className={styles.careerBlock}>
+              <h3>{text('Experience', 'Experience')}</h3>
+              <div className={styles.careerTimeline}>{career.experiences.map((item) => <article className={styles.careerItem} key={item.id}>
+                <div className={styles.careerItemTop}><div><strong>{item.role_title}</strong><span>{item.organization}{item.location ? ` · ${item.location}` : ''}</span></div><Badge tone={item.is_current ? 'success' : 'info'}>{item.is_current ? text('Current', 'Current') : careerType(item.employment_type)}</Badge></div>
+                <p>{careerDate(item.start_date)} — {item.is_current ? text('Present', 'Present') : careerDate(item.end_date)}</p>
+                {item.description ? <p>{item.description}</p> : null}
+              </article>)}</div>
+            </div> : null}
+
+            {(career.education.length || career.certifications.length) ? <div className={styles.careerGrid}>
+              {career.education.length ? <div className={styles.careerBlock}>
+                <h3>{text('Education', 'Education')}</h3>
+                <div className={styles.careerTimeline}>{career.education.map((item) => <article className={styles.careerItem} key={item.id}><strong>{item.qualification}</strong><span>{item.institution}{item.field_of_study ? ` · ${item.field_of_study}` : ''}</span>{item.start_date || item.end_date ? <p>{careerDate(item.start_date)} — {careerDate(item.end_date)}</p> : null}{item.description ? <p>{item.description}</p> : null}</article>)}</div>
+              </div> : null}
+              {career.certifications.length ? <div className={styles.careerBlock}>
+                <h3>{text('Certifications', 'Certifications')}</h3>
+                <div className={styles.careerTimeline}>{career.certifications.map((item) => {
+                  const credential = safeWebsite(item.credential_url);
+                  return <article className={styles.careerItem} key={item.id}><strong>{item.name}</strong><span>{item.issuing_organization}</span>{item.issue_date ? <p>{text('Issued', 'Issued')}: {careerDate(item.issue_date)}{item.expiry_date ? ` · ${text('Expires', 'Expires')}: ${careerDate(item.expiry_date)}` : ''}</p> : null}{item.credential_id ? <p>{text('Credential', 'Credential')}: {item.credential_id}</p> : null}{credential ? <a href={credential} target="_blank" rel="noreferrer">{text('Open credential', 'Credential திறக்க')}</a> : null}</article>;
+                })}</div>
+              </div> : null}
+            </div> : null}
+
+            <p className="summary-note">{text(
+              'Career details are provided by the professional and are not separately verified by TakeItEsee unless explicitly stated.',
+              'Career details professional வழங்கிய தகவல்கள். Explicit-ஆ குறிப்பிடப்படாத வரை TakeItEsee அவற்றை தனியாக verify செய்ததாக பொருள் இல்லை.',
+            )}</p>
+          </section> : null}
+
           {kind === 'professional' && media.length ? <section className="detail-section" aria-labelledby="professional-work-showcase-heading">
             <div className="section-heading">
               <div><span className="eyebrow">{text('Work showcase', 'Work showcase')}</span><h2 id="professional-work-showcase-heading">{text('Previous work & experience', 'Previous work & experience')}</h2></div>
@@ -227,6 +337,7 @@ export default function PublicProviderProfile({
             <dl className="review-details">
               <div><dt>{text('Public talents', 'Public talents')}</dt><dd>{roles.length}</dd></div>
               <div><dt>{text('Work samples', 'Work samples')}</dt><dd>{media.length}</dd></div>
+              <div><dt>{text('Career profile', 'Career profile')}</dt><dd>{career ? text('Published', 'Published') : text('Private / not published', 'Private / not published')}</dd></div>
               <div><dt>{text('Active services', 'Active services')}</dt><dd>{services.length}</dd></div>
               <div><dt>{text('Service area', 'Service area')}</dt><dd>{provider.location || text('Booking dependent', 'Booking dependent')}</dd></div>
             </dl>
@@ -234,8 +345,8 @@ export default function PublicProviderProfile({
               {openOpportunityTypes.map((label) => <Badge key={label} tone="info">{label}</Badge>)}
             </div> : null}
             <p className="summary-note">{text(
-              'Talent and media cards are profile signals only. Booking and future career workflows keep their own eligibility and approval rules.',
-              'Talent மற்றும் media cards profile signal மட்டும். Booking மற்றும் future career workflows தங்களுடைய eligibility / approval rules-ஐ தனியாக வைத்திருக்கும்.',
+              'Talent, career and media details are profile signals only. Booking and future job workflows keep their own eligibility and approval rules.',
+              'Talent, career மற்றும் media details profile signal மட்டும். Booking மற்றும் future job workflows தங்களுடைய eligibility / approval rules-ஐ தனியாக வைத்திருக்கும்.',
             )}</p>
           </Card> : null}
           <Card>
@@ -259,7 +370,7 @@ export default function PublicProviderProfile({
             <h2>{kind === 'business' ? text('Verified business', 'சரிபார்க்கப்பட்ட வணிகம்') : text('Verified professional', 'சரிபார்க்கப்பட்ட நிபுணர்')}</h2>
             <p>{kind === 'business'
               ? text('Only active, published services from this business are shown here.', 'இந்த வணிகத்தின் active, published சேவைகள் மட்டும் இங்கே காட்டப்படுகின்றன.')
-              : text('Only active public talents, selected work media, and published services from this provider are shown here.', 'இந்த provider-ன் active public talents, selected work media மற்றும் published services மட்டும் இங்கே காட்டப்படுகின்றன.')}</p>
+              : text('Only active public talents, opt-in career details, selected work media, and published services from this provider are shown here.', 'இந்த provider-ன் active public talents, opt-in career details, selected work media மற்றும் published services மட்டும் இங்கே காட்டப்படுகின்றன.')}</p>
             <Link href="/explore" className="button button-secondary">{text('Explore services', 'சேவைகளை பார்க்க')}</Link>
           </Card>
         </aside>
