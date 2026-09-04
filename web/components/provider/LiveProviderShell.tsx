@@ -66,6 +66,12 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
   }, [active]);
 
   useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.body.classList.add('provider-dashboard-active');
+    return () => { document.body.classList.remove('provider-dashboard-active'); };
+  }, []);
+
+  useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia('(max-width: 900px)').matches) return;
     const frame = window.requestAnimationFrame(() => {
       activeLinkRef.current?.scrollIntoView({ block: 'nearest', inline: 'center' });
