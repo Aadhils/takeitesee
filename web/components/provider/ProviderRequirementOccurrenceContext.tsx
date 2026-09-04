@@ -11,8 +11,14 @@ type RequirementContext = {
   occurrence_count: number;
   recurrence_frequency: 'daily' | 'weekly' | 'monthly' | null;
   recurrence_interval: number | null;
+  recurrence_weekdays: number[] | null;
   pricing_basis: 'per_occurrence' | 'whole_requirement' | null;
 };
+
+const WEEKDAY_NAMES = {
+  en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+  ta: ['ஞாயி', 'திங்கள்', 'செவ்வாய்', 'புதன்', 'வியாழன்', 'வெள்ளி', 'சனி'],
+} as const;
 
 export default function ProviderRequirementOccurrenceContext({ bookingId, locale }: { bookingId: string; locale: string }) {
   const [context, setContext] = useState<RequirementContext | null>(null);
@@ -36,8 +42,11 @@ export default function ProviderRequirementOccurrenceContext({ bookingId, locale
   if (!context) return error ? <Card><p role="status" className="summary-note">{error}</p></Card> : null;
   const tamil = locale.toLowerCase().startsWith('ta');
   const recurring = context.schedule_pattern === 'recurring';
+  const weekdays = context.recurrence_frequency === 'weekly' && context.recurrence_weekdays?.length
+    ? context.recurrence_weekdays.map((value) => (tamil ? WEEKDAY_NAMES.ta : WEEKDAY_NAMES.en)[value] ?? String(value)).join(', ')
+    : null;
   const cadence = recurring && context.recurrence_frequency
-    ? `${context.recurrence_interval && context.recurrence_interval > 1 ? `${context.recurrence_interval} × ` : ''}${context.recurrence_frequency}`
+    ? `${context.recurrence_interval && context.recurrence_interval > 1 ? `${context.recurrence_interval} × ` : ''}${context.recurrence_frequency}${weekdays ? ` · ${weekdays}` : ''}`
     : null;
   const pricing = context.pricing_basis === 'whole_requirement'
     ? (tamil ? 'முழு requirement-க்கான quote' : 'Quote covers the whole requirement')
