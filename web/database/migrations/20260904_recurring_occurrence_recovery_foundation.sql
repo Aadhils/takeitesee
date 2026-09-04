@@ -11,7 +11,8 @@ create table if not exists public.requirement_occurrence_recoveries (
   prior_proposal_id uuid not null references public.requirement_proposals(id) on delete restrict,
   action text not null default 'retry_same_occurrence' check (action in ('retry_same_occurrence')),
   status text not null default 'initiated' check (status in ('initiated','completed')),
-  replacement_job_id uuid references public.marketplace_requirement_jobs(id) on delete restrict,
+  -- Requirement job rows are intentionally replaceable on a later retry. Preserve their UUIDs as audit facts without FK delete blocking.
+  replacement_job_id uuid,
   replacement_booking_id uuid references public.bookings(id) on delete restrict,
   created_by uuid not null references public.users(id) on delete restrict,
   created_at timestamptz not null default now(),
