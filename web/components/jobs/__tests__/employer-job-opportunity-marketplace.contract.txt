@@ -1,0 +1,15 @@
+Employer + Job Opportunity Marketplace Foundation contract
+
+1. Existing verified Business identity is the employer identity; no duplicate employer account is created.
+2. Existing verified Professional identity is the applicant identity; no duplicate applicant account is created.
+3. Public job board exposes only open, in-deadline jobs from verified businesses.
+4. Business owners can create draft jobs; only verified businesses can publish open jobs.
+5. Professionals must be verified before applying and cannot apply to their own business job.
+6. One Professional may submit at most one application per job posting.
+7. Applicant may only withdraw an active application; they cannot self-promote status.
+8. Employer status transitions are controlled: submitted -> shortlisted/interview/rejected; shortlisted -> interview/rejected; interview -> hired/rejected.
+9. Job/application ownership is enforced by RLS; anon receives no application access.
+10. Salary data is descriptive employment compensation only and does not activate payments, payouts, settlement or Cashfree.
+11. Subscription/search-priority boosts are outside this slice.
+12. Resume/Career and Portfolio remain independent existing profile modules; this slice does not rewrite them.
+13. Recurring requirement/recovery lifecycle remains frozen and unchanged.
