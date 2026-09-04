@@ -15,16 +15,41 @@ type RecoveryBody = {
 
 export async function GET(request: Request, context: RouteContext) {
   try {
-    await productionAuthProvider.requireCustomer(request);
+    const session = await productionAuthProvider.requireCustomer(request);
     const { requirementId } = await context.params;
     const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.rpc('get_customer_requirement_recovery_history', {
-      target_requirement_id: requirementId,
+    const [requirementResult, jobsResult, planResult, recoveryResult] = await Promise.all([
+      supabase
+        .from('customer_requirements')
+        .select('id,status,schedule_pattern')
+        .eq('id', requirementId)
+        .eq('customer_id', session.user_id)
+        .maybeSingle(),
+      supabase.rpc('get_requirement_job_history', {
+        target_requirement_id: requirementId,
+      }),
+      supabase.rpc('get_customer_requirement_occurrence_plan', {
+        target_requirement_id: requirementId,
+      }),
+      supabase.rpc('get_customer_requirement_recovery_history', {
+        target_requirement_id: requirementId,
+      }),
+    ]);
+
+    if (requirementResult.error) throw new Error(requirementResult.error.message);
+    if (!requirementResult.data) return NextResponse.json({ error: 'Requirement was not found.' }, { status: 404 });
+    if (jobsResult.error) throw new Error(jobsResult.error.message);
+    if (planResult.error) throw new Error(planResult.error.message);
+    if (recoveryResult.error) throw new Error(recoveryResult.error.message);
+
+    return NextResponse.json({
+      requirement: requirementResult.data,
+      jobs: jobsResult.data ?? [],
+      occurrence_plan: planResult.data ?? null,
+      recoveries: recoveryResult.data ?? [],
     });
-    if (error) throw new Error(error.message);
-    return NextResponse.json({ recoveries: data ?? [] });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Occurrence recovery history could not be loaded.';
+    const message = error instanceof Error ? error.message : 'Occurrence recovery details could not be loaded.';
     return NextResponse.json({ error: message }, { status: /authentication|required|access/i.test(message) ? 401 : 400 });
   }
 }
