@@ -7,6 +7,7 @@ import { useOperationalTranslations } from '../i18n/OperationalTranslations';
 
 type RequirementStatus = 'open' | 'paused' | 'awarded' | 'fulfilled' | 'cancelled';
 type JobState = 'active' | 'declined' | 'cancelled' | 'service_completed' | 'fulfilled';
+type PricingBasis = 'per_occurrence' | 'whole_requirement';
 type RequirementJob = {
   id: string;
   sequence_no: number;
@@ -27,6 +28,29 @@ type RequirementJob = {
   currency: 'INR' | 'USD';
   service_name: string;
 };
+type PlannedOccurrence = {
+  sequence_no: number;
+  scheduled_date: string | null;
+  preferred_start_time: string | null;
+  expected_duration_minutes: number | null;
+  job_id: string | null;
+  job_state: JobState | null;
+  booking_id: string | null;
+  booking_reference: string | null;
+  booking_status: string | null;
+  booked_date: string | null;
+  booked_start_time: string | null;
+};
+type OccurrencePlan = {
+  schedule_pattern: 'one_time' | 'recurring';
+  recurrence_frequency: 'daily' | 'weekly' | 'monthly' | null;
+  recurrence_interval: number | null;
+  occurrence_count: number;
+  pricing_basis: PricingBasis;
+  quote_amount_minor: number | null;
+  currency: 'INR' | 'USD' | null;
+  occurrences: PlannedOccurrence[];
+};
 
 type CreateResponse = {
   job?: { id: string };
@@ -45,6 +69,7 @@ function stateTone(state: JobState) {
 export function RequirementJobPanel({ requirementId, requirementStatus }: { requirementId: string; requirementStatus: RequirementStatus }) {
   const { locale, t, status } = useOperationalTranslations();
   const [jobs, setJobs] = useState<RequirementJob[]>([]);
+  const [occurrencePlan, setOccurrencePlan] = useState<OccurrencePlan | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -53,6 +78,7 @@ export function RequirementJobPanel({ requirementId, requirementStatus }: { requ
   const [startTime, setStartTime] = useState('');
   const [notes, setNotes] = useState('');
 
+  const tamil = locale.toLowerCase().startsWith('ta');
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const liveJob = jobs.find((job) => ['active', 'service_completed', 'fulfilled'].includes(job.state));
   const canCreate = requirementStatus === 'awarded' && !liveJob;
@@ -62,14 +88,18 @@ export function RequirementJobPanel({ requirementId, requirementStatus }: { requ
     if (job.payment_method === 'online_gateway') return `${t('job.online')} · ${status(job.payment_status)}`;
     return t('job.paymentUnselected');
   };
+  const pricingBasisLabel = (basis: PricingBasis) => basis === 'whole_requirement'
+    ? (tamil ? 'முழு recurring requirement-க்கு மொத்த quote' : 'Total for the whole recurring requirement')
+    : (tamil ? 'ஒவ்வொரு service occurrence-க்கும்' : 'Per service occurrence');
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/job`, { cache: 'no-store' });
-      const payload = await response.json() as { jobs?: RequirementJob[]; error?: string };
+      const payload = await response.json() as { jobs?: RequirementJob[]; occurrence_plan?: OccurrencePlan | null; error?: string };
       if (!response.ok) throw new Error(payload.error || 'Service job history could not be loaded.');
       setJobs(payload.jobs ?? []);
+      setOccurrencePlan(payload.occurrence_plan ?? null);
       setError('');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Service job history could not be loaded.');
@@ -113,6 +143,19 @@ export function RequirementJobPanel({ requirementId, requirementStatus }: { requ
     {notice ? <Alert title={t('job.created')} tone="success">{notice}</Alert> : null}
 
     {loading ? <p>{t('job.loading')}</p> : null}
+
+    {!loading && occurrencePlan?.schedule_pattern === 'recurring' ? <div style={{ display: 'grid', gap: '.75rem', marginTop: '1rem' }}>
+      <div className="section-heading"><div><span className="eyebrow">{tamil ? 'Recurring plan' : 'Recurring plan'}</span><h3>{tamil ? 'திட்டமிட்ட service occurrences' : 'Planned service occurrences'}</h3></div><Badge tone="info">{occurrencePlan.occurrence_count}</Badge></div>
+      <p className="summary-note">{pricingBasisLabel(occurrencePlan.pricing_basis)}{occurrencePlan.quote_amount_minor != null && occurrencePlan.currency ? ` · ${money(Number(occurrencePlan.quote_amount_minor) / 100, occurrencePlan.currency)}` : ''}</p>
+      <div style={{ display: 'grid', gap: '.55rem' }}>
+        {occurrencePlan.occurrences.map((occurrence) => <div key={occurrence.sequence_no} style={{ border: '1px solid #ececf2', borderRadius: '12px', padding: '.75rem' }}>
+          <div className="section-heading"><strong>{tamil ? 'Occurrence' : 'Occurrence'} #{occurrence.sequence_no}</strong>{occurrence.job_state ? <Badge tone={stateTone(occurrence.job_state)}>{status(occurrence.job_state)}</Badge> : <Badge tone="neutral">{tamil ? 'திட்டமிடப்பட்டது' : 'Planned'}</Badge>}</div>
+          <p className="summary-note">{occurrence.scheduled_date || t('common.flexible')}{occurrence.preferred_start_time ? ` · ${String(occurrence.preferred_start_time).slice(0,5)}` : ''}{occurrence.expected_duration_minutes ? ` · ${occurrence.expected_duration_minutes} ${t('common.minutes')}` : ''}</p>
+          {occurrence.booking_reference ? <p className="summary-note">{t('common.booking')}: {occurrence.booking_reference}</p> : null}
+        </div>)}
+      </div>
+      <p className="summary-note">{tamil ? 'இது schedule plan மட்டும். Recurring bookings தானாக உருவாக்கப்படவில்லை.' : 'This is the schedule plan only. Recurring bookings are not auto-created yet.'}</p>
+    </div> : null}
 
     {!loading && canCreate ? <form onSubmit={createJob} style={{ display: 'grid', gap: '.85rem', marginTop: '1rem' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '.75rem' }}>
