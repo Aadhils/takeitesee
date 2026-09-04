@@ -66,7 +66,11 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Service job could not be created.';
-    const status = /authentication|own requirement/i.test(message) ? 403 : /already has an active|outside|blocked|booking during|future booking|accepted proposal/i.test(message) ? 409 : 400;
+    const status = /authentication|own requirement/i.test(message)
+      ? 403
+      : /already has an active|previous occurrence|all recurring|one-time requirement already|planned date|outside|blocked|booking during|future booking|accepted proposal|too small to allocate/i.test(message)
+        ? 409
+        : 400;
     return NextResponse.json({ error: message }, { status });
   }
 }
