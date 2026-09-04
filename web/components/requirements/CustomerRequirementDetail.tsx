@@ -26,6 +26,7 @@ type RequirementRow = {
   recurrence_frequency: 'daily' | 'weekly' | 'monthly' | null;
   recurrence_interval: number | null;
   recurrence_count: number | null;
+  recurrence_weekdays: number[] | null;
   status: RequirementStatus;
   published_at: string;
   closed_at: string | null;
@@ -54,6 +55,11 @@ type Proposal = {
   decided_at: string | null;
 };
 
+const WEEKDAY_NAMES = {
+  en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+  ta: ['ஞாயி', 'திங்கள்', 'செவ்வாய்', 'புதன்', 'வியாழன்', 'வெள்ளி', 'சனி'],
+} as const;
+
 function relationName(value: RequirementRow['platform_categories'] | RequirementRow['platform_locations']) {
   const row = Array.isArray(value) ? value[0] : value;
   return row?.name || '';
@@ -79,10 +85,14 @@ export default function CustomerRequirementDetail({ requirementId }: { requireme
     if (minutes % 60 === 0) return `${minutes / 60} ${tamil ? 'மணி' : minutes === 60 ? 'hour' : 'hours'}`;
     return `${minutes} ${tamil ? 'நிமிடம்' : 'min'}`;
   };
+  const weekdayLabel = (values: number[] | null) => values?.length
+    ? values.map((value) => (tamil ? WEEKDAY_NAMES.ta : WEEKDAY_NAMES.en)[value] ?? String(value)).join(', ')
+    : '';
   const recurrenceLabel = (row: RequirementRow) => {
     if (row.schedule_pattern !== 'recurring' || !row.recurrence_frequency || !row.recurrence_interval || !row.recurrence_count) return tamil ? 'ஒருமுறை' : 'One-time';
     const unit = row.recurrence_frequency === 'daily' ? (tamil ? 'நாள்' : 'day') : row.recurrence_frequency === 'weekly' ? (tamil ? 'வாரம்' : 'week') : (tamil ? 'மாதம்' : 'month');
-    return `${tamil ? 'ஒவ்வொரு' : 'Every'} ${row.recurrence_interval} ${unit}${!tamil && row.recurrence_interval !== 1 ? 's' : ''} × ${row.recurrence_count}`;
+    const weekdays = row.recurrence_frequency === 'weekly' && row.recurrence_weekdays?.length ? ` · ${weekdayLabel(row.recurrence_weekdays)}` : '';
+    return `${tamil ? 'ஒவ்வொரு' : 'Every'} ${row.recurrence_interval} ${unit}${!tamil && row.recurrence_interval !== 1 ? 's' : ''} × ${row.recurrence_count}${weekdays}`;
   };
   const pricingBasisLabel = (basis: PricingBasis) => basis === 'whole_requirement'
     ? (tamil ? 'முழு recurring requirement-க்கு மொத்த quote' : 'Total for the whole recurring requirement')
@@ -135,7 +145,7 @@ export default function CustomerRequirementDetail({ requirementId }: { requireme
     <Card className="policy-card">
       <div className="section-heading"><div><span className="eyebrow">{requirement.requirement_reference}</span><h1>{requirement.title}</h1></div><Badge tone={tone(requirement.status)}>{status(requirement.status)}</Badge></div>
       <p className="detail-copy">{requirement.description}</p>
-      <dl className="review-details"><div><dt>{t('common.category')}</dt><dd>{categoryName || t('common.service')}</dd></div><div><dt>{t('common.location')}</dt><dd>{locationName || t('common.location')}</dd></div><div><dt>{t('req.serviceMode')}</dt><dd>{status(requirement.service_mode)}</dd></div><div><dt>{t('common.budget')}</dt><dd>{formatBudget(requirement, locale, t('req.negotiable'))}</dd></div><div><dt>{t('common.neededBy')}</dt><dd>{requirement.needed_by || t('common.flexible')}</dd></div><div><dt>{tamil ? 'விருப்பமான தொடக்க நேரம்' : 'Preferred start time'}</dt><dd>{requirement.preferred_start_time ? requirement.preferred_start_time.slice(0, 5) : t('common.flexible')}</dd></div><div><dt>{tamil ? 'எதிர்பார்க்கப்படும் கால அளவு' : 'Expected duration'}</dt><dd>{durationLabel(requirement.expected_duration_minutes)}</dd></div><div><dt>{tamil ? 'சேவை அட்டவணை' : 'Service schedule'}</dt><dd>{recurrenceLabel(requirement)}</dd></div><div><dt>{t('common.posted')}</dt><dd>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(requirement.published_at))}</dd></div></dl>
+      <dl className="review-details"><div><dt>{t('common.category')}</dt><dd>{categoryName || t('common.service')}</dd></div><div><dt>{t('common.location')}</dt><dd>{locationName || t('common.location')}</dd></div><div><dt>{t('req.serviceMode')}</dt><dd>{status(requirement.service_mode)}</dd></div><div><dt>{t('common.budget')}</dt><dd>{formatBudget(requirement, locale, t('req.negotiable'))}</dd></div><div><dt>{t('common.neededBy')}</dt><dd>{requirement.needed_by || t('common.flexible')}</dd></div><div><dt>{tamil ? 'விருப்பமான தொடக்க நேரம்' : 'Preferred start time'}</dt><dd>{requirement.preferred_start_time ? requirement.preferred_start_time.slice(0, 5) : t('common.flexible')}</dd></div><div><dt>{tamil ? 'எதிர்பார்க்கப்படும் கால அளவு' : 'Expected duration'}</dt><dd>{durationLabel(requirement.expected_duration_minutes)}</dd></div><div><dt>{tamil ? 'சேவை அட்டவணை' : 'Service schedule'}</dt><dd>{recurrenceLabel(requirement)}</dd></div>{requirement.recurrence_frequency === 'weekly' && requirement.recurrence_weekdays?.length ? <div><dt>{tamil ? 'வார நாட்கள்' : 'Weekdays'}</dt><dd>{weekdayLabel(requirement.recurrence_weekdays)}</dd></div> : null}<div><dt>{t('common.posted')}</dt><dd>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(requirement.published_at))}</dd></div></dl>
       {['open','paused'].includes(requirement.status) ? <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', marginTop: '1rem' }}>{requirement.status === 'open' ? <Button type="button" variant="quiet" loading={busy} onClick={() => void updateStatus('paused')}>{t('req.pauseNew')}</Button> : null}{requirement.status === 'paused' ? <Button type="button" variant="secondary" loading={busy} onClick={() => void updateStatus('open')}>{t('req.reopen')}</Button> : null}<Button type="button" variant="secondary" loading={busy} onClick={() => void updateStatus('fulfilled')}>{t('req.markFulfilled')}</Button><Button type="button" variant="danger" loading={busy} onClick={() => void updateStatus('cancelled')}>{t('common.cancel')}</Button></div> : requirement.status === 'awarded' ? <div style={{ display: 'grid', gap: '.65rem', marginTop: '1rem' }}><div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}><Link className="button button-primary" href="/messages">{t('req.openChat')}</Link><Button type="button" variant="danger" loading={busy} onClick={() => void updateStatus('cancelled')}>{t('req.cancelRequirement')}</Button></div><p className="summary-note">{t('req.awardedNote')}</p></div> : <p className="summary-note" style={{ marginTop: '1rem' }}>{t('req.closedNote')}</p>}
     </Card>
 
@@ -144,7 +154,7 @@ export default function CustomerRequirementDetail({ requirementId }: { requireme
       {proposals.length === 0 ? <p className="detail-copy">{t('req.noProposals')}</p> : <div style={{ display: 'grid', gap: '1rem', marginTop: '1rem' }}>
         {proposals.map((proposal) => <div key={proposal.id} style={{ border: '1px solid #e7eaf0', borderRadius: '16px', padding: '1rem' }}>
           <div className="section-heading"><div><span className="eyebrow">{proposal.proposal_reference}</span><h3>{proposal.provider_display_name}</h3><p className="summary-note">{status(proposal.provider_type)} · {proposal.service_name}</p></div><Badge tone={proposalTone(proposal.status)}>{status(proposal.status)}</Badge></div>
-          <dl className="review-details"><div><dt>{t('common.quote')}</dt><dd>{formatMoney(proposal.amount_minor, proposal.currency, locale)}</dd></div><div><dt>{tamil ? 'Quote basis' : 'Quote basis'}</dt><dd>{pricingBasisLabel(proposal.pricing_basis || 'per_occurrence')}</dd></div><div><dt>{t('common.estimatedStart')}</dt><dd>{proposal.estimated_start_date || t('common.flexible')}</dd></div><div><dt>{t('common.submitted')}</dt><dd>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(proposal.submitted_at))}</dd></div></dl>
+          <dl className="review-details"><div><dt>{t('common.quote')}</dt><dd>{formatMoney(proposal.amount_minor, proposal.currency, locale)}</dd></div><div><dt>Quote basis</dt><dd>{pricingBasisLabel(proposal.pricing_basis || 'per_occurrence')}</dd></div><div><dt>{t('common.estimatedStart')}</dt><dd>{proposal.estimated_start_date || t('common.flexible')}</dd></div><div><dt>{t('common.submitted')}</dt><dd>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(proposal.submitted_at))}</dd></div></dl>
           <p className="detail-copy">{proposal.message}</p>
           <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', alignItems: 'start' }}>{proposal.status === 'submitted' && canReviewProposals ? <><Button type="button" loading={proposalBusyId === proposal.id} onClick={() => void decideProposal(proposal.id, 'accept')}>{t('req.acceptProposal')}</Button><Button type="button" variant="quiet" loading={proposalBusyId === proposal.id} onClick={() => void decideProposal(proposal.id, 'decline')}>{t('req.decline')}</Button></> : null}<MarketplaceReportForm targetType="proposal" targetId={proposal.id} label={t('req.reportProposal')} /></div>
           {proposal.status === 'accepted' ? <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center', flexWrap: 'wrap', marginTop: '.6rem' }}><Link className="button button-secondary" href="/messages">{t('req.openChat')}</Link><p className="summary-note">{t('req.privateOnly')}</p></div> : null}
