@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useLanguage } from '../i18n/LanguageProvider';
 import { Badge, Card } from '../ui/primitives';
+import styles from './PublicProviderProfile.module.css';
 
 type ProviderKind = 'business' | 'professional';
 
@@ -112,7 +113,7 @@ export default function PublicProviderProfile({
           <h1>{displayName}</h1>
           <p className="profile-headline">{provider.description || profileFallback}</p>
           <p className="card-location">{provider.location || text('Service area confirmed during booking', 'Booking போது service area உறுதிசெய்யப்படும்')}</p>
-          {kind === 'professional' ? <div className="profile-facts" aria-label={text('Professional profile summary', 'Professional profile சுருக்கம்')}>
+          {kind === 'professional' ? <div className={`profile-facts ${styles.heroFacts}`} aria-label={text('Professional profile summary', 'Professional profile சுருக்கம்')}>
             <span><strong>{roles.length}</strong>{text('Public talents', 'Public talents')}</span>
             <span><strong>{services.length}</strong>{text('Active services', 'Active services')}</span>
             <span><strong>{openOpportunityTypes.length}</strong>{text('Opportunity types', 'Opportunity types')}</span>
@@ -140,11 +141,11 @@ export default function PublicProviderProfile({
               'These active talents belong to the same verified professional identity. Availability can differ by role.',
               'இந்த active talents அனைத்தும் ஒரே verified professional identity-க்கு சொந்தமானவை. ஒவ்வொரு role-க்கும் availability வேறுபடலாம்.',
             )}</p>
-            {roles.length ? <div className="professional-talent-grid">
+            {roles.length ? <div className={styles.talentGrid}>
               {roles.map((role) => {
                 const opportunities = opportunityLabels(role);
-                return <Card className="professional-talent-card" key={role.id}>
-                  <div className="talent-card-top">
+                return <Card className={styles.talentCard} key={role.id}>
+                  <div className={styles.talentCardTop}>
                     <div>
                       <span className="eyebrow">{text('Professional role', 'Professional role')}</span>
                       <h3>{role.title}</h3>
@@ -154,7 +155,7 @@ export default function PublicProviderProfile({
                       : text(`${role.experience_years} yr experience`, `${role.experience_years} வருட அனுபவம்`)}</Badge> : null}
                   </div>
                   <p>{role.summary || text('This professional has marked this talent as active on TakeItEsee.', 'இந்த talent-ஐ இந்த professional TakeItEsee-ல் active ஆக வைத்துள்ளார்.')}</p>
-                  <div className="talent-opportunities" aria-label={text('Open opportunity types', 'Open opportunity types')}>
+                  <div className={styles.opportunities} aria-label={text('Open opportunity types', 'Open opportunity types')}>
                     {opportunities.length ? opportunities.map((label) => <Badge key={label} tone={label === text('Service bookings', 'Service booking') ? 'success' : 'info'}>{label}</Badge>)
                       : <span className="empty-inline">{text('No opportunity type is currently marked open.', 'தற்போது எந்த opportunity type-மும் open ஆக mark செய்யப்படவில்லை.')}</span>}
                   </div>
@@ -184,7 +185,7 @@ export default function PublicProviderProfile({
         </main>
 
         <aside className="profile-aside">
-          {kind === 'professional' ? <Card className="professional-snapshot-card">
+          {kind === 'professional' ? <Card className={styles.snapshotCard}>
             <span className="eyebrow">{text('Professional snapshot', 'Professional snapshot')}</span>
             <h2>{text('One verified identity', 'ஒரே verified identity')}</h2>
             <dl className="review-details">
@@ -192,7 +193,7 @@ export default function PublicProviderProfile({
               <div><dt>{text('Active services', 'Active services')}</dt><dd>{services.length}</dd></div>
               <div><dt>{text('Service area', 'Service area')}</dt><dd>{provider.location || text('Booking dependent', 'Booking dependent')}</dd></div>
             </dl>
-            {openOpportunityTypes.length ? <div className="talent-opportunities">
+            {openOpportunityTypes.length ? <div className={styles.opportunities}>
               {openOpportunityTypes.map((label) => <Badge key={label} tone="info">{label}</Badge>)}
             </div> : null}
             <p className="summary-note">{text(
