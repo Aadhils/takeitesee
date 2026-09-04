@@ -1,0 +1,17 @@
+# Job marketplace moderation contract (#246)
+
+1. A participant may report a job-application conversation using the existing marketplace report endpoint/RPC.
+2. A participant may report an incoming message in a job-application conversation.
+3. A participant cannot report their own message.
+4. An unrelated authenticated user cannot report a job conversation/message they do not participate in.
+5. Duplicate active reports by the same reporter for the same target are rejected.
+6. Job reports are stored in the existing marketplace moderation ledger with context_kind=job_application and job_application_id set; requirement_id remains null.
+7. Existing requirement/proposal/conversation/message reports remain context_kind=requirement with their prior authorization semantics.
+8. The reporter can read their own report and moderation event history.
+9. Platform-scope Admin/Super Admin can view and manage job reports in the existing /admin/moderation queue.
+10. Category/location-only Admin scope does not gain visibility or manage access to job reports.
+11. Closing a report still requires an admin note and creates the existing reporter moderation-status notification.
+12. Job moderation does not auto-ban, delete messages, delete conversations, or erase audit history.
+13. Existing conversation block/unblock behavior remains independent and unchanged.
+14. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/disputes/collections remain HOLD.
+15. Recurring requirement/recovery lifecycle remains FROZEN and Supabase Pro leaked-password protection remains HOLD.
