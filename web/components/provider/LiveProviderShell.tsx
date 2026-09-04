@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert } from '../ui/primitives';
 import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 
@@ -21,6 +21,7 @@ type ProviderContext = {
 export function LiveProviderShell({ children, active }: { children: React.ReactNode; active: string }) {
   const { t, locale } = useIdentityWorkspaceTranslations();
   const [provider, setProvider] = useState<ProviderContext | null>(null);
+  const activeLinkRef = useRef<HTMLAnchorElement | null>(null);
   const providerLinks = useMemo(() => {
     const tamil = locale.toLowerCase().startsWith('ta');
     const links = [
@@ -64,6 +65,14 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
     return () => { cancelled = true; };
   }, [active]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia('(max-width: 900px)').matches) return;
+    const frame = window.requestAnimationFrame(() => {
+      activeLinkRef.current?.scrollIntoView({ block: 'nearest', inline: 'center' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [active, locale, provider?.provider_type]);
+
   const workspaceState = (value: ProviderContext | null) => {
     if (!value) return t('provider.workspace');
     if (value.trust_status === 'suspended') return t('provider.suspended');
@@ -82,7 +91,7 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
         <div><strong>{displayName}</strong><span>{workspaceState(provider)}</span></div>
       </div>
       <nav aria-label={t('provider.nav')}>
-        {providerLinks.map((link) => <Link href={link.href} className={active === link.href ? 'provider-nav-active' : ''} aria-current={active === link.href ? 'page' : undefined} key={link.href}>
+        {providerLinks.map((link) => <Link ref={active === link.href ? activeLinkRef : undefined} href={link.href} className={active === link.href ? 'provider-nav-active' : ''} aria-current={active === link.href ? 'page' : undefined} key={link.href}>
           {link.label}{link.href === '/provider/bookings' && pending > 0 ? <span className="provider-nav-count">{pending}</span> : null}
         </Link>)}
       </nav>
