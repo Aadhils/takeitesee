@@ -1,0 +1,14 @@
+Recurring final fulfillment / closure contract
+
+1. A recurring requirement remains awarded while fewer than recurrence_count occurrences are fulfilled.
+2. A recovered occurrence keeps its original sequence number and can still contribute one fulfilled occurrence after the existing completion + customer confirmation + payment-settled gates pass.
+3. Normal later occurrences advance sequentially and do not inherit recovery metadata from an earlier recovered occurrence.
+4. Completing the final required occurrence changes the requirement from awarded to fulfilled.
+5. Final requirement fulfillment sets closed_at exactly through the existing fulfillment synchronization path.
+6. Once the requirement is fulfilled, customers cannot create a sequence beyond recurrence_count and no extra marketplace_requirement_jobs row may appear.
+7. Completed requirement_occurrence_recoveries audit history remains intact through later occurrence creation and final requirement closure.
+8. Provider context for the final normal occurrence reports the final occurrence number and recovery=null.
+9. Final-fulfillment verification must be rollback-only and leave no synthetic requirement, proposal, booking, job, closeout or recovery rows behind.
+10. Cash on Service behavior is unchanged.
+11. Cashfree, online gateway, refunds, payouts, settlement and reconciliation remain HOLD and are not activated by this contract.
+12. Supabase Pro / leaked-password protection work remains HOLD.
