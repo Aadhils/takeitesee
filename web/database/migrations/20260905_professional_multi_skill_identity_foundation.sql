@@ -43,11 +43,15 @@ grant select on table public.professional_roles to anon, authenticated;
 grant insert, update, delete on table public.professional_roles to authenticated;
 grant select, insert, update, delete on table public.professional_roles to service_role;
 
+-- Keep anonymous and authenticated SELECT paths separate so authenticated users
+-- do not evaluate two overlapping permissive policies on every row.
 drop policy if exists professional_roles_public_read on public.professional_roles;
-create policy professional_roles_public_read
+drop policy if exists professional_roles_owner_read on public.professional_roles;
+drop policy if exists professional_roles_anon_public_read on public.professional_roles;
+create policy professional_roles_anon_public_read
 on public.professional_roles
 for select
-to anon, authenticated
+to anon
 using (
   active
   and exists (
@@ -58,8 +62,8 @@ using (
   )
 );
 
-drop policy if exists professional_roles_owner_read on public.professional_roles;
-create policy professional_roles_owner_read
+drop policy if exists professional_roles_authenticated_read on public.professional_roles;
+create policy professional_roles_authenticated_read
 on public.professional_roles
 for select
 to authenticated
@@ -69,6 +73,15 @@ using (
     from public.professional_profiles profile
     where profile.id = professional_roles.professional_id
       and profile.user_id = (select auth.uid())
+  )
+  or (
+    active
+    and exists (
+      select 1
+      from public.professional_profiles profile
+      where profile.id = professional_roles.professional_id
+        and profile.verified = true
+    )
   )
 );
 
