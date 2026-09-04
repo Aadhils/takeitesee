@@ -169,13 +169,33 @@ body {
     gap: 8px;
     max-width: 100%;
     overflow-x: auto;
-    padding: 2px 0 8px;
-    scrollbar-width: thin;
+    padding: 3px 2px 9px;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .provider-sidebar nav::-webkit-scrollbar {
+    display: none;
   }
 
   .provider-sidebar nav a {
     flex: 0 0 auto;
+    min-height: 40px;
+    align-items: center;
+    border: 1px solid transparent !important;
+    border-radius: 999px;
+    padding: 9px 13px;
     white-space: nowrap;
+    scroll-snap-align: center;
+  }
+
+  .provider-sidebar nav .provider-nav-active {
+    border-color: #d8d2ff !important;
+    background: var(--color-selected);
+    color: var(--color-primary-strong);
+    box-shadow: 0 4px 14px rgb(49 46 129 / 9%);
   }
 
   .provider-exit-link {
@@ -259,9 +279,13 @@ body {
     justify-content: center;
   }
 
+  .provider-sidebar {
+    margin-bottom: 22px;
+  }
+
   .provider-sidebar nav {
-    margin-right: -12px;
-    padding-right: 12px;
+    margin-inline: -4px -12px;
+    padding-inline: 4px 16px;
   }
 
   .provider-avatar-large {
@@ -271,6 +295,26 @@ body {
   .provider-profile-services > div,
   .provider-transaction-list > div {
     min-width: 0;
+  }
+
+  .app-shell:has(.provider-layout) .site-footer .footer-inner {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 28px 0 16px;
+  }
+
+  .app-shell:has(.provider-layout) .footer-link-column {
+    display: none;
+  }
+
+  .app-shell:has(.provider-layout) .footer-brand-column p {
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+
+  .app-shell:has(.provider-layout) .footer-legal {
+    gap: 10px 14px;
+    padding-top: 13px;
   }
 }
 
