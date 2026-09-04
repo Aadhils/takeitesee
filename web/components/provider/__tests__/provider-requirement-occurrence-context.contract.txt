@@ -3,5 +3,11 @@ Provider recurring occurrence context contract
 - Requirement-backed provider bookings may expose requirement title and schedule pattern.
 - Recurring bookings expose the current occurrence sequence and total occurrence count.
 - Pricing basis is shown as per-occurrence or whole-requirement context only; payment lifecycle remains unchanged.
+- A completed recovery whose replacement booking is the current provider booking may expose a recovery marker, retry attempt number, recovery time and the provider-owned prior cancelled booking reference.
+- Recovery context is exposed only after the current booking passes the existing provider ownership check.
+- The prior booking link is returned only when the prior booking has the same provider identity as the replacement booking.
+- Repeated same-sequence recoveries increment the provider-visible recovery attempt count without advancing the occurrence sequence.
+- Non-recovered requirement bookings return recovery=null and keep the existing recurrence card.
 - Non-requirement bookings return no context and keep the existing provider booking UI.
 - The read RPC authorizes the authenticated provider against booking ownership before returning requirement metadata.
+- Customer-only recovery audit access, booking lifecycle, Cash on Service and all finance-hold behavior remain unchanged.
