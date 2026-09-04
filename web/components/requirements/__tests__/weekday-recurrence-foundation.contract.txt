@@ -1,0 +1,10 @@
+Universal Services selected-weekday recurrence foundation
+
+- Weekly recurring requirements may optionally carry selected weekdays as 0=Sunday through 6=Saturday.
+- The first needed-by date must match one selected weekday.
+- Existing weekly requirements with no selected-weekday array keep legacy same-weekday weekly behavior.
+- Daily and monthly recurring requirements do not accept selected weekdays.
+- Selected weekday arrays are normalized and idempotency-safe.
+- Customer occurrence plans derive ordered dates across selected weekdays and recurrence intervals.
+- Sequential requirement-job creation uses the same planned-date helper and keeps existing availability, blackout, conflict, payment, closeout and Cash-on-Service gates.
+- No Cashfree or online finance activation is introduced.
