@@ -22,6 +22,7 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
   const { t, locale } = useIdentityWorkspaceTranslations();
   const [provider, setProvider] = useState<ProviderContext | null>(null);
   const providerLinks = useMemo(() => {
+    const tamil = locale.toLowerCase().startsWith('ta');
     const links = [
       { href: '/provider', label: t('provider.dashboard') },
       { href: '/provider/setup', label: t('provider.setup') },
@@ -35,8 +36,12 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
       { href: '/provider/reviews', label: t('provider.reviews') },
     ];
     if (provider?.provider_type === 'professional') {
-      links.push({ href: '/provider/portfolio', label: locale.toLowerCase().startsWith('ta') ? 'வேலை Portfolio' : 'Portfolio' });
-      links.push({ href: '/provider/resume', label: locale.toLowerCase().startsWith('ta') ? 'Resume & Career' : 'Resume & Career' });
+      links.push({ href: '/provider/portfolio', label: tamil ? 'வேலை Portfolio' : 'Portfolio' });
+      links.push({ href: '/provider/resume', label: 'Resume & Career' });
+      links.push({ href: '/provider/jobs', label: tamil ? 'Jobs & Applications' : 'Jobs & Applications' });
+    }
+    if (provider?.provider_type === 'business') {
+      links.push({ href: '/provider/jobs', label: tamil ? 'Employer Jobs' : 'Employer Jobs' });
     }
     links.push({ href: '/provider/profile', label: t('provider.profile') });
     return links;
