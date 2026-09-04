@@ -136,6 +136,11 @@ body {
   max-width: 100%;
 }
 
+/* Employer hiring workspace: the hero owns the single Create Job entry point. */
+nav[aria-label="Hiring workspace sections"] + section > div > button {
+  display: none !important;
+}
+
 @media (max-width: 1100px) {
   .provider-layout {
     grid-template-columns: 190px minmax(0, 1fr);
