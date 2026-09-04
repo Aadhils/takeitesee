@@ -1,6 +1,6 @@
-import CustomerRequirementDetail from '../../../components/requirements/CustomerRequirementDetail';
+import { CustomerRequirementWorkspace } from '../../../components/requirements/CustomerRequirementWorkspace';
 
 export default async function RequirementDetailPage({ params }: { params: Promise<{ requirementId: string }> }) {
   const { requirementId } = await params;
-  return <CustomerRequirementDetail requirementId={requirementId} />;
+  return <CustomerRequirementWorkspace requirementId={requirementId} />;
 }
