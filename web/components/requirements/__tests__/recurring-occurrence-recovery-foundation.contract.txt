@@ -1,0 +1,13 @@
+Recurring occurrence recovery foundation contract
+
+- Recovery applies only to awarded recurring requirements owned by the authenticated customer.
+- Only the latest cancelled/declined occurrence can be retried.
+- Retry keeps the same occurrence sequence number; it does not consume or skip to the next occurrence.
+- Any active/service_completed occurrence blocks recovery.
+- The failed booking must already be cancelled.
+- A paid cancelled booking is never auto-retried; support review is required.
+- The prior booking is preserved for audit and its idempotency key is archived before creating the replacement booking.
+- A recovery audit record links prior and replacement booking/job IDs.
+- The existing customer_create_requirement_job RPC remains authoritative for schedule, provider availability, blackout, overlap, duration and quote allocation checks.
+- Cash on Service behavior is unchanged.
+- Cashfree, online gateway, refund, payout, settlement and reconciliation behavior is unchanged and remains on hold.
