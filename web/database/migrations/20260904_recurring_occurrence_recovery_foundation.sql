@@ -116,8 +116,8 @@ begin
   if failed_booking.status<>'cancelled' then
     raise exception 'The failed occurrence booking must be cancelled before retry.';
   end if;
-  if failed_booking.payment_status='paid' then
-    raise exception 'A paid cancelled occurrence requires support review before retry.';
+  if failed_booking.payment_status<>'unpaid' then
+    raise exception 'A cancelled occurrence with payment activity requires support review before retry.';
   end if;
 
   archived_key:=failed_booking.idempotency_key||':recovered:'||substr(replace(gen_random_uuid()::text,'-',''),1,8);
