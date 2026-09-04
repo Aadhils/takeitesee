@@ -1,0 +1,17 @@
+Recurring recovery completion -> next occurrence advancement contract
+
+1. Completing a recovered recurring occurrence never advances its occurrence number; the recovered job remains the same sequence until fulfilled.
+2. A completed recovered occurrence becomes fulfilled only after the existing customer completion confirmation and payment-settled closeout gates pass.
+3. Customer completion confirmation must trigger requirement-job fulfillment without requiring an unrelated later booking update.
+4. A recurring requirement remains awarded while fewer than recurrence_count occurrences are fulfilled.
+5. After recovered sequence #1 is fulfilled, the next customer-created job advances exactly to sequence #2.
+6. Sequence #2 uses the existing planned-occurrence helper and selected-weekday/recurrence-interval scheduling gates.
+7. Sequence #3 must not be created implicitly when sequence #2 is created.
+8. Completed recovery audit rows for sequence #1 remain unchanged after fulfillment and next-occurrence creation.
+9. Provider context for the recovered sequence keeps its recovery attempt metadata.
+10. Provider context for a normal next occurrence has the new occurrence number and recovery=null.
+11. sync_requirement_job_booking_state() and sync_requirement_job_from_closeout() keep SECURITY DEFINER behavior but use an empty search_path.
+12. The rollback-only E2E may synthesize a settled completion state but must isolate finance/payment notification/reconciliation triggers and leave zero fixture residue.
+13. Cash on Service behavior is unchanged.
+14. Cashfree, online gateway, refund, payout, settlement, reconciliation and provider finance work remain HOLD.
+15. Supabase Pro / leaked-password protection work remains HOLD.
