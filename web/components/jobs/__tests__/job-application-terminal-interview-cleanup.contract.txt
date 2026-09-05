@@ -10,5 +10,5 @@ Job application terminal interview cleanup contract
 8. Interview cancellation notifies the other participant: applicant withdrawal notifies the employer; employer-driven terminal change notifies the applicant.
 9. Existing job-application conversation closure remains authoritative and unchanged.
 10. Existing pending employment-offer terminal cleanup remains authoritative and unchanged.
-11. Professional withdrawal remains an explicit user action; the UI must require a confirmation step before submitting `withdrawn`.
+11. Existing Professional withdrawal UI and API surface remain unchanged; this slice hardens terminal downstream cleanup only.
 12. No job-posting, application, interview scheduling, offer, messaging, moderation, finance, Cashfree, payment, refund, payout, settlement, reconciliation, recovery, or recurrence semantic expansion is introduced beyond terminal cleanup.
