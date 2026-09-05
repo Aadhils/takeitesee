@@ -4,6 +4,8 @@ import { createSupabaseServerClient } from '../../../../lib/supabase/server';
 
 export const runtime = 'nodejs';
 
+type ProviderType = 'professional' | 'business';
+
 export async function GET(request: Request) {
   try {
     const session = await productionAuthProvider.requireCustomer(request);
@@ -19,13 +21,45 @@ export async function GET(request: Request) {
     if (businessResult.error) throw new Error(businessResult.error.message);
     if (applicationsResult.error) throw new Error(applicationsResult.error.message);
 
-    const provider = professionalResult.data
-      ? { id: professionalResult.data.id, provider_type: 'professional' as const, display_name: professionalResult.data.headline || 'Professional provider', location: professionalResult.data.service_area || '', verified: Boolean(professionalResult.data.verified) }
-      : businessResult.data
-        ? { id: businessResult.data.id, provider_type: 'business' as const, display_name: businessResult.data.name, location: businessResult.data.location || '', verified: Boolean(businessResult.data.verified) }
-        : null;
+    const providers = [] as Array<{
+      id: string;
+      provider_type: ProviderType;
+      display_name: string;
+      location: string;
+      verified: boolean;
+    }>;
 
-    return NextResponse.json({ provider, applications: applicationsResult.data ?? [] });
+    if (professionalResult.data) {
+      providers.push({
+        id: professionalResult.data.id,
+        provider_type: 'professional',
+        display_name: professionalResult.data.headline || 'Professional provider',
+        location: professionalResult.data.service_area || '',
+        verified: Boolean(professionalResult.data.verified),
+      });
+    }
+
+    if (businessResult.data) {
+      providers.push({
+        id: businessResult.data.id,
+        provider_type: 'business',
+        display_name: businessResult.data.name,
+        location: businessResult.data.location || '',
+        verified: Boolean(businessResult.data.verified),
+      });
+    }
+
+    const availableProviderTypes: ProviderType[] = [];
+    if (!professionalResult.data) availableProviderTypes.push('professional');
+    if (!businessResult.data) availableProviderTypes.push('business');
+
+    return NextResponse.json({
+      // Keep the singular field for compatibility with older clients while the UI moves to providers[].
+      provider: providers[0] ?? null,
+      providers,
+      available_provider_types: availableProviderTypes,
+      applications: applicationsResult.data ?? [],
+    });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to load provider onboarding.' }, { status: 401 });
   }
