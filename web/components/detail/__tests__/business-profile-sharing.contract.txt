@@ -1,0 +1,12 @@
+Public business profile sharing contract
+
+1. Every verified public Business profile exposes a Share profile action without requiring authentication.
+2. On browsers that support the Web Share API, the action opens the native share flow with the Business display name and canonical TakeItEsee Business profile URL.
+3. If native sharing is unavailable or fails for a non-user-cancellation reason, the action falls back to copying the canonical profile URL to the clipboard.
+4. User-cancelled native share flows are not treated as errors and do not copy automatically after cancellation.
+5. The shared URL is rebuilt from the current TakeItEsee origin plus /businesses/{providerId}; transient query parameters are not propagated.
+6. The action provides English and Tamil labels plus visible copied/shared confirmation and an accessible polite error message when both share and copy fail.
+7. Sharing is read-only: it creates no booking, saved-service relation, Provider state, moderation event, notification or database record.
+8. Existing Business profile disclosure, services, contact/grievance information, SEO metadata and booking navigation remain unchanged.
+9. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remains HOLD. Recurrence/recovery remains FROZEN. Supabase Pro leaked-password protection remains HOLD.
+10. The share component is intentionally reusable for a future Professional profile slice, but this contract and PR expose it only on public Business profiles.
