@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import PublicProviderProfile from '../../../components/detail/PublicProviderProfile';
+import { PortfolioMediaSafetyPanel } from '../../../components/safety/PortfolioMediaSafetyPanel';
 import { createSupabaseServiceClient } from '../../../lib/supabase/service';
 
 const siteUrl = 'https://www.takeitesee.com';
@@ -277,5 +278,8 @@ export default async function ProfessionalProfilePage({ params }: { params: Prom
         duration_minutes: service.duration_minutes ? Number(service.duration_minutes) : null,
       }))}
     />
+    {media.length ? <div className="container section-stack">
+      <PortfolioMediaSafetyPanel media={media.map((item) => ({ id: item.id, media_type: item.media_type, caption: item.caption }))} />
+    </div> : null}
   </>;
 }

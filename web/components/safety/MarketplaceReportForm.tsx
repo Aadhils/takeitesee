@@ -3,7 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { Alert, Button } from '../ui/primitives';
 
-type TargetType = 'requirement' | 'proposal' | 'conversation' | 'message';
+type TargetType = 'requirement' | 'proposal' | 'conversation' | 'message' | 'portfolio_media';
 type Category = 'spam' | 'harassment' | 'fraud' | 'unsafe' | 'off_platform' | 'inappropriate' | 'other';
 
 const categories: Array<{ value: Category; label: string }> = [
@@ -18,7 +18,7 @@ const categories: Array<{ value: Category; label: string }> = [
 
 export function MarketplaceReportForm({ targetType, targetId, label = 'Report' }: { targetType: TargetType; targetId: string; label?: string }) {
   const [open, setOpen] = useState(false);
-  const [category, setCategory] = useState<Category>('spam');
+  const [category, setCategory] = useState<Category>(targetType === 'portfolio_media' ? 'inappropriate' : 'spam');
   const [details, setDetails] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');

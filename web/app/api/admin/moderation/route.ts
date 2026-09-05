@@ -1,9 +1,51 @@
 import { NextResponse } from 'next/server';
 import { productionAuthProvider } from '../../../../server/auth/session';
 import { createSupabaseServerClient } from '../../../../lib/supabase/server';
+import { createSupabaseServiceClient } from '../../../../lib/supabase/service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+const portfolioBucket = 'professional-portfolio-media';
+const portfolioPreviewTtlSeconds = 10 * 60;
+
+type ModerationQueueRow = {
+  context_kind?: string;
+  target_type?: string;
+  target_id?: string;
+  [key: string]: unknown;
+};
+
+async function addPortfolioPreviews(rows: ModerationQueueRow[]) {
+  const targetIds = Array.from(new Set(rows
+    .filter((row) => row.context_kind === 'professional_portfolio' && row.target_type === 'portfolio_media' && row.target_id)
+    .map((row) => String(row.target_id))));
+  if (!targetIds.length) return rows;
+
+  try {
+    const service = createSupabaseServiceClient();
+    const { data: mediaRows, error } = await service
+      .from('professional_portfolio_media')
+      .select('id,object_path,media_type')
+      .in('id', targetIds);
+    if (error || !mediaRows?.length) return rows;
+
+    const previews = new Map<string, { media_type: string; signed_url: string }>();
+    await Promise.all(mediaRows.map(async (media) => {
+      const { data, error: signedError } = await service.storage
+        .from(portfolioBucket)
+        .createSignedUrl(String(media.object_path), portfolioPreviewTtlSeconds);
+      if (!signedError && data?.signedUrl) previews.set(String(media.id), { media_type: String(media.media_type), signed_url: data.signedUrl });
+    }));
+
+    return rows.map((row) => {
+      const preview = row.target_id ? previews.get(String(row.target_id)) : undefined;
+      return preview ? { ...row, portfolio_media_type: preview.media_type, portfolio_preview_url: preview.signed_url } : row;
+    });
+  } catch {
+    return rows;
+  }
+}
 
 export async function GET(request: Request) {
   try {
@@ -11,7 +53,8 @@ export async function GET(request: Request) {
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase.rpc('get_marketplace_moderation_queue');
     if (error) throw new Error(error.message);
-    return NextResponse.json({ reports: data ?? [] });
+    const reports = await addPortfolioPreviews(Array.isArray(data) ? data as ModerationQueueRow[] : []);
+    return NextResponse.json({ reports });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Moderation queue could not be loaded.';
     return NextResponse.json({ error: message }, { status: /authentication/i.test(message) ? 401 : 403 });
