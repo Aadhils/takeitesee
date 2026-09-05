@@ -32,7 +32,7 @@ type ReadinessStep = {
 export default function ProfessionalPublicReadinessManager() {
   const { locale } = useIdentityWorkspaceTranslations();
   const tamil = locale.toLowerCase().startsWith('ta');
-  const text = (en: string, ta: string) => tamil ? ta : en;
+  const text = useCallback((en: string, ta: string) => tamil ? ta : en, [tamil]);
   const [profile, setProfile] = useState<ProviderProfile | null>(null);
   const [roles, setRoles] = useState<ProfessionalRole[]>([]);
   const [publicResumeEnabled, setPublicResumeEnabled] = useState(false);
@@ -68,7 +68,7 @@ export default function ProfessionalPublicReadinessManager() {
     } finally {
       setLoading(false);
     }
-  }, [tamil]);
+  }, [text]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -117,7 +117,7 @@ export default function ProfessionalPublicReadinessManager() {
       ready: steps.every((step) => step.done),
       completed: steps.filter((step) => step.done).length,
     };
-  }, [profile, publicResumeEnabled, roles, tamil]);
+  }, [profile, publicResumeEnabled, roles, text]);
 
   return <LiveProviderShell active="/provider/public-readiness">
     <ProviderHeading
