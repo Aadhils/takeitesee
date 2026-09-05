@@ -1,0 +1,13 @@
+Job posting application integrity contract
+
+1. A Business may continue to change ordinary job-posting terms only while the posting has no applications.
+2. The first persisted job application locks the posting terms that applicants relied on: title, description, employment type, workplace type, location, required skills, minimum experience, openings, compensation fields, and application deadline.
+3. After the first application, the owning Business cannot mutate any locked posting term through the Data API or future app-server edit paths.
+4. Job lifecycle status remains independently mutable through the existing controlled employer workflow; closing, reopening, or marking filled must not rewrite the locked terms.
+5. Platform moderation remains independent: Admin pause/restore may still change moderation state and force/retain draft status without rewriting job terms.
+6. A job posting with one or more applications cannot be deleted, because deletion must not cascade-delete application, resume-snapshot, conversation, interview, offer, moderation, or audit evidence.
+7. A job posting with zero applications may still be deleted under the existing owning-Business RLS policy.
+8. The owning Business cannot reassign business ownership or mutate server-controlled moderation fields; existing #258 column-privilege boundaries remain authoritative.
+9. The integrity guard must be SECURITY INVOKER with an empty search_path and direct EXECUTE revoked from PUBLIC, anon, and authenticated.
+10. Existing application/interview/offer state machines are unchanged; no new employment transition is introduced.
+11. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD; recurring requirement/recovery remains FROZEN; Supabase Pro leaked-password work remains HOLD.
