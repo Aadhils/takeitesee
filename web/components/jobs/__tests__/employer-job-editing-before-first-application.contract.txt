@@ -1,0 +1,14 @@
+Employer job editing before first application contract
+
+1. An owning Business can edit applicant-facing job terms only while the job has zero applications.
+2. Editable terms are title, description, employment type, workplace type, location, required skills, minimum experience, openings, salary range/currency/period, and application deadline.
+3. Job status is not editable through the terms-edit endpoint; publish/close/filled lifecycle remains on the existing status action.
+4. The edit endpoint must re-check Business ownership server-side and must never trust a client-supplied business id.
+5. The edit endpoint must return a conflict when an application already exists, with the #259 database trigger remaining the race-safe final invariant.
+6. Employer Hiring Workspace exposes Edit job only when the current job has zero applications.
+7. Once a job has any application, the UI shows that terms are locked and does not expose the edit form.
+8. Saving an edit refreshes the hiring workspace and preserves current job status and moderation state.
+9. Existing application, interview, messaging, employment offer, moderation, and public job-report behavior must remain unchanged.
+10. No finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery behavior is introduced or activated.
+11. Recurring requirement/recovery lifecycle remains FROZEN.
+12. Supabase Pro leaked-password protection remains HOLD.
