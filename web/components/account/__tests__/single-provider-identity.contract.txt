@@ -10,8 +10,10 @@ Single Provider Identity per Account contract
 8. /account presents "Start earning on TakeItEsee" only before a Provider identity is selected; it explains the exclusive Professional-or-Business choice before onboarding.
 9. /provider/onboarding requires an explicit acknowledgement that only one Provider identity can be registered on the account before submission.
 10. After approval, /account and /provider/onboarding show the selected Provider identity and explain that the opposite type requires a separate account; they do not advertise an add-another-provider action.
-11. Admin review shows existing Provider identity context. Any pending application against an account that already owns either Provider type is a Provider identity conflict; Approve is disabled while Reject remains available. Database guards remain authoritative.
-12. Existing Customer functionality remains active alongside the selected Provider identity. Admin/Super Admin permissions remain separate permitted platform workspaces and do not count as a second Provider identity.
-13. Provider verification remains a separate review after onboarding approval. Verification/trust/service launch semantics are otherwise unchanged.
-14. Production had zero dual-provider owning accounts and zero pending Provider applications before migration 20260905230426, so no destructive provider-identity conversion was required.
-15. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery activation remains HOLD. Recurrence/recovery remains FROZEN. Supabase Pro leaked-password protection remains HOLD.
+11. Customer-only /account must not render a second legacy "Provider workspace / Start providing services" entry below the exclusive Professional-or-Business chooser; the chooser is the single authoritative Provider entry point.
+12. On mobile, the fixed primary bottom navigation must reserve enough bottom clearance that footer/legal content can be scrolled fully above the navigation and remains readable/tappable.
+13. Admin review shows existing Provider identity context. Any pending application against an account that already owns either Provider type is a Provider identity conflict; Approve is disabled while Reject remains available. Database guards remain authoritative.
+14. Existing Customer functionality remains active alongside the selected Provider identity. Admin/Super Admin permissions remain separate permitted platform workspaces and do not count as a second Provider identity.
+15. Provider verification remains a separate review after onboarding approval. Verification/trust/service launch semantics are otherwise unchanged.
+16. Production had zero dual-provider owning accounts and zero pending Provider applications before migration 20260905230426, so no destructive provider-identity conversion was required.
+17. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery activation remains HOLD. Recurrence/recovery remains FROZEN. Supabase Pro leaked-password protection remains HOLD.

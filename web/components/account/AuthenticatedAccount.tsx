@@ -110,16 +110,6 @@ export default function AuthenticatedAccount() {
         <Card><span className="eyebrow">{t('account.total')}</span><h2>{summary.total}</h2><p>{t('account.totalDetail')}</p></Card>
       </div>
       {bookingError ? <p role="alert" style={{ color: '#b42318' }}>{t('account.bookingUnavailable')}: {bookingError}</p> : null}
-
-      <Card className="account-provider-entry">
-        <span className="eyebrow">{t('account.providerWorkspace')}</span>
-        <h2>{t('onboarding.startProviding')}</h2>
-        <p>{t('onboarding.startIntro')}</p>
-        <div className="account-actions">
-          <Link href="/provider/onboarding" className="button button-primary">{t('onboarding.startProviding')}</Link>
-          <Link href="/provider" className="button button-secondary">{t('account.openProvider')}</Link>
-        </div>
-      </Card>
     </div>
   );
 }
