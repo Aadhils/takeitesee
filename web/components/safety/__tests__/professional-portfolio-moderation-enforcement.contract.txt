@@ -1,0 +1,12 @@
+Professional portfolio moderation enforcement contract
+
+1. Public portfolio reporting and report-status lifecycle from #256 remain the source of truth; this slice adds an explicit content-visibility enforcement action rather than changing report semantics.
+2. Professional portfolio media keeps the owner's `active` publication preference and adds a separate server-controlled moderation state: `clear` or `paused`.
+3. Only platform-scope Admin / Super Admin may change portfolio moderation state, and only through a moderation report whose context is `professional_portfolio` and target is the exact `portfolio_media` row.
+4. Pausing media immediately sets owner `active=false` and moderation state `paused`, removing the item from existing public presentation without deleting storage or metadata.
+5. A Professional cannot republish an Admin-paused item. The owner may still edit descriptive metadata or delete the item.
+6. Restoring media changes moderation state back to `clear` but intentionally leaves `active=false`; the Professional must explicitly republish after restoration.
+7. Every Admin pause/restore requires a note, writes a moderation report audit event, and notifies the Professional owner. Report status (`open/reviewing/actioned/dismissed`) remains a separate audit lifecycle.
+8. Admin preview URLs remain short-lived and private; raw storage object paths are never exposed to the browser.
+9. No automatic deletion, account suspension, verification revocation, job/application/interview/offer state change, service/booking state change, finance change, or recurrence/recovery change is introduced.
+10. Finance/Cashfree remains HOLD, recurring requirement/recovery remains FROZEN, and Supabase Pro leaked-password protection remains HOLD.
