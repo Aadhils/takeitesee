@@ -7,12 +7,15 @@ export const runtime = 'nodejs';
 async function providerContext(request: Request) {
   const session = await productionAuthProvider.requireProvider(request);
   const supabase = await createSupabaseServerClient();
-  const { data: business, error: businessError } = await supabase.from('businesses').select('id,name,verified').eq('owner_user_id', session.user_id).limit(1).maybeSingle();
-  if (businessError) throw new Error(businessError.message);
-  if (business) return { session, supabase, mode: 'business' as const, business };
+  if (session.roles.includes('business_owner')) {
+    const { data: business, error: businessError } = await supabase.from('businesses').select('id,name,verified').eq('owner_user_id', session.user_id).limit(1).maybeSingle();
+    if (businessError) throw new Error(businessError.message);
+    if (!business) throw new Error('Business profile not found.');
+    return { session, supabase, mode: 'business' as const, business };
+  }
   const { data: professional, error: professionalError } = await supabase.from('professional_profiles').select('id,headline,verified').eq('user_id', session.user_id).limit(1).maybeSingle();
   if (professionalError) throw new Error(professionalError.message);
-  if (!professional) throw new Error('Provider profile not found.');
+  if (!professional) throw new Error('Professional profile not found.');
   return { session, supabase, mode: 'professional' as const, professional };
 }
 

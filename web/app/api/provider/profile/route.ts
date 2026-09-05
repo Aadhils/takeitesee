@@ -5,6 +5,16 @@ import { createSupabaseServerClient } from '../../../../lib/supabase/server';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+function profileInput(input: { display_name?: string; description?: string; location?: string }) {
+  const displayName = input.display_name?.trim() ?? '';
+  const description = input.description?.trim() || null;
+  const location = input.location?.trim() ?? '';
+  if (displayName.length < 2 || displayName.length > 120) throw new Error('Display name must be 2 to 120 characters.');
+  if (description && description.length > 1200) throw new Error('Description must be 1200 characters or fewer.');
+  if (location.length < 2 || location.length > 160) throw new Error('Service area must be 2 to 160 characters.');
+  return { displayName, description, location };
+}
+
 export async function GET(request: Request) {
   try {
     const session = await productionAuthProvider.requireProvider(request);
@@ -36,17 +46,52 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    await productionAuthProvider.requireProvider(request);
-    const input = await request.json() as { display_name?: string; description?: string; location?: string };
-    if (!input.display_name || !input.location) return NextResponse.json({ error: 'Display name and service area are required.' }, { status: 400 });
+    const session = await productionAuthProvider.requireProvider(request);
+    const input = profileInput(await request.json() as { display_name?: string; description?: string; location?: string });
     const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.rpc('update_provider_profile', {
-      requested_display_name: input.display_name,
-      requested_description: input.description ?? '',
-      requested_location: input.location,
-    });
+
+    if (session.roles.includes('professional')) {
+      const { data: profile, error } = await supabase
+        .from('professional_profiles')
+        .update({ headline: input.displayName, description: input.description, service_area: input.location, updated_at: new Date().toISOString() })
+        .eq('user_id', session.user_id)
+        .select('id')
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!profile) throw new Error('Professional profile was not found.');
+      const { data: complete, error: completeError } = await supabase.rpc('provider_profile_is_complete', {
+        p_provider_type: 'professional',
+        p_professional_id: profile.id,
+        p_business_id: null,
+      });
+      if (completeError) throw new Error(completeError.message);
+      if (!complete) {
+        const { error: pauseError } = await supabase.from('services').update({ status: 'paused', active: false, updated_at: new Date().toISOString() }).eq('professional_id', profile.id).eq('status', 'active');
+        if (pauseError) throw new Error(pauseError.message);
+      }
+      return NextResponse.json({ result: { provider_type: 'professional', provider_id: profile.id, profile_complete: Boolean(complete) } });
+    }
+
+    const { data: business, error } = await supabase
+      .from('businesses')
+      .update({ name: input.displayName, description: input.description, location: input.location, updated_at: new Date().toISOString() })
+      .eq('owner_user_id', session.user_id)
+      .select('id')
+      .limit(1)
+      .maybeSingle();
     if (error) throw new Error(error.message);
-    return NextResponse.json({ result: data });
+    if (!business) throw new Error('Business profile was not found.');
+    const { data: complete, error: completeError } = await supabase.rpc('provider_profile_is_complete', {
+      p_provider_type: 'business',
+      p_professional_id: null,
+      p_business_id: business.id,
+    });
+    if (completeError) throw new Error(completeError.message);
+    if (!complete) {
+      const { error: pauseError } = await supabase.from('services').update({ status: 'paused', active: false, updated_at: new Date().toISOString() }).eq('business_id', business.id).eq('status', 'active');
+      if (pauseError) throw new Error(pauseError.message);
+    }
+    return NextResponse.json({ result: { provider_type: 'business', provider_id: business.id, profile_complete: Boolean(complete) } });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to update provider profile.' }, { status: 400 });
   }
