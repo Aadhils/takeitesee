@@ -1,0 +1,12 @@
+Safe employer job deletion contract
+
+1. Only the authenticated owning Business may delete one of its own job postings through the supported server route.
+2. A job with zero applications may be permanently deleted.
+3. Once the first application exists, the supported API must reject deletion with a conflict response.
+4. The #259 database trigger remains the race-safe final invariant if an application arrives between the API pre-check and DELETE.
+5. The Business jobs workspace must expose deletion only for zero-application jobs; jobs with applicants must never show a destructive delete action.
+6. Deletion must require an explicit second confirmation step and explain that the action is permanent.
+7. Deleting an open zero-application job removes it from public discovery by deleting the owned posting; no applicant/hiring evidence exists to cascade.
+8. Job status, edit, applicant, interview, offer and moderation lifecycles remain unchanged.
+9. Professional jobs workspace must not expose Business job deletion controls.
+10. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remains untouched; recurrence/recovery remains FROZEN.
