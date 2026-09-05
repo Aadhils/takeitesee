@@ -1,0 +1,12 @@
+Public job discovery filters contract
+
+1. Public /jobs keeps showing only the open jobs returned by the existing /api/jobs endpoint.
+2. Job discovery adds client-side keyword search across job title, description, Business name, location and required skills.
+3. Job discovery adds employment-type and workplace-type filters based only on values present in the loaded open-job result set.
+4. Job discovery adds a free-text location filter and a skill filter based only on values present in the loaded open-job result set.
+5. All active filters compose with AND semantics; keyword matching is case-insensitive.
+6. The UI shows the filtered result count and a clear-filters action when any filter is active.
+7. If open jobs exist but none match the active filters, the page shows a distinct no-matches state instead of the global no-open-jobs state.
+8. Applying, reporting and viewing My applications keep their existing behavior.
+9. No database schema, job publication, moderation, application, interview, offer, messaging, finance or recurrence semantics change.
+10. This is discovery-only; saved-job persistence is explicitly outside this slice.
