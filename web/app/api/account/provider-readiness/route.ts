@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '../../../../../lib/supabase/server';
-import { productionAuthProvider } from '../../../../../server/auth/session';
+import { createSupabaseServerClient } from '../../../../lib/supabase/server';
+import { productionAuthProvider } from '../../../../server/auth/session';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
