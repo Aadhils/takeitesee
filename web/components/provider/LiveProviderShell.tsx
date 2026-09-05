@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert } from '../ui/primitives';
+import { WorkspaceSwitcher } from '../account/WorkspaceSwitcher';
 import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 
 type TrustStatus = 'normal' | 'reverification_required' | 'suspended';
@@ -96,11 +97,13 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
         <div className="provider-avatar provider-avatar-large" aria-hidden="true">{avatar}</div>
         <div><strong>{displayName}</strong><span>{workspaceState(provider)}</span></div>
       </div>
+      <WorkspaceSwitcher currentWorkspace={provider?.provider_type} compact />
       <nav aria-label={t('provider.nav')}>
         {providerLinks.map((link) => <Link ref={active === link.href ? activeLinkRef : undefined} href={link.href} className={active === link.href ? 'provider-nav-active' : ''} aria-current={active === link.href ? 'page' : undefined} key={link.href}>
           {link.label}{link.href === '/provider/bookings' && pending > 0 ? <span className="provider-nav-count">{pending}</span> : null}
         </Link>)}
       </nav>
+      <Link href="/account#workspaces" className="provider-exit-link">{locale.toLowerCase().startsWith('ta') ? 'என் Profiles' : 'My profiles'}</Link>
       <Link href="/" className="provider-exit-link">{t('provider.viewMarketplace')}</Link>
     </aside>
     <main className="provider-content">
