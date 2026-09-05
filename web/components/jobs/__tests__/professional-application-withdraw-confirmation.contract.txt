@@ -1,0 +1,14 @@
+Professional application withdrawal confirmation contract
+
+1. Professional applications in active states (`submitted`, `shortlisted`, `interview`) continue to expose a withdrawal action.
+2. The first withdrawal click must not call the application-status API; it only reveals the confirmation state.
+3. Confirmation clearly warns that withdrawal ends the application and that any active interview will be cancelled under the existing terminal lifecycle integrity rule.
+4. The confirmation state provides a non-destructive `Keep application` action that returns to the ordinary withdrawal control without mutating application state.
+5. Only `Confirm withdrawal` submits the existing `application_status` mutation with `status='withdrawn'`.
+6. While the shared workspace mutation is saving, withdrawal controls are disabled to prevent duplicate submissions.
+7. Terminal applications do not expose the withdrawal control.
+8. Existing application ownership/state validation remains authoritative in the API and database; this slice does not broaden allowed transitions.
+9. Existing #268 terminal cleanup remains authoritative for interview cancellation, audit events, notifications, pending offers, and conversation closure.
+10. Business hiring controls, interview scheduling/responding, offers, messaging, job publication/moderation, Saved Jobs, and Applicant Finder behavior remain unchanged.
+11. English and Tamil workspace modes both present withdrawal intent and confirmation wording.
+12. No database migration and no finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery or recurrence semantic change is introduced.
