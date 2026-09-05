@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Alert, Card } from '../ui/primitives';
 import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
@@ -50,6 +51,20 @@ export default function ProfessionalResumeWorkspace() {
       'Resume and career data belongs to an individual professional identity. Business hiring/employer features will be a separate workflow.',
       'Resume / career data individual professional identity-க்கு. Business hiring / employer features தனி workflow ஆக இருக்கும்.',
     )}</Alert> : null}
+    {!loading && profile?.provider_type === 'professional' ? <Card>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+        <div>
+          <strong>{text('PDF resume export', 'PDF resume export')}</strong>
+          <p style={{ margin: '.35rem 0 0', opacity: .78 }}>{text(
+            'Open a clean A4 resume preview, then use Save as PDF or Print. Your private resume does not need to be published first.',
+            'Clean A4 resume preview-ஐ open செய்து Save as PDF அல்லது Print செய்யலாம். Private resume-ஐ முதலில் public publish செய்ய வேண்டியதில்லை.',
+          )}</p>
+        </div>
+        <Link href="/provider/resume/export" style={{ textDecoration: 'none', border: '1px solid currentColor', borderRadius: '.7rem', padding: '.65rem .9rem', fontWeight: 650 }}>
+          {text('Export PDF', 'PDF Export')}
+        </Link>
+      </div>
+    </Card> : null}
     {!loading && profile?.provider_type === 'professional' ? <ProfessionalResumeManager verified={profile.verified} /> : null}
   </LiveProviderShell>;
 }
