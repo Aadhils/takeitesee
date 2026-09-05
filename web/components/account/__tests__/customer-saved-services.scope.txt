@@ -1,0 +1,1 @@
+Scope boundary: Customer Saved Services is a customer marketplace shortlist feature. It does not modify Jobs/Hiring, Requirements/recurrence, Bookings lifecycle, provider onboarding/verification/trust, messaging, moderation, finance, Cashfree, payment, refund, payout, settlement, reconciliation, recovery, or Supabase Auth settings.

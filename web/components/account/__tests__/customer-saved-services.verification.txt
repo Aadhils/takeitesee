@@ -1,0 +1,18 @@
+Customer Saved Services database verification
+
+Canonical Supabase project: bukrpkymivkhdpueropt
+Migration: 20260905214724_customer_saved_services_foundation
+
+- migration applied successfully
+- customer_saved_services policies: owner SELECT / INSERT / DELETE, authenticated only
+- public/anon table privileges revoked; authenticated has SELECT/INSERT/DELETE
+- composite primary key prevents duplicate customer/service saves
+- rollback-only owner save/remove succeeded
+- rollback-only non-owner insert was rejected by RLS
+- rollback residue: 0 rows
+- customer_id FK: ON DELETE CASCADE
+- service_id FK: ON DELETE CASCADE
+- post-migration security advisor: no customer_saved_services-specific finding
+- post-migration performance advisor: no missing-FK-index or auth-initplan finding; new service_id index is reported unused before traffic, as expected
+
+Existing finance/legacy advisor findings and Supabase Pro leaked-password protection remain outside this scope.
