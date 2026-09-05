@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useLanguage } from '../i18n/LanguageProvider';
 import { Badge, Card } from '../ui/primitives';
+import SavedServiceAction from './SavedServiceAction';
 
 type Review = { id: string; reviewer_name: string; rating: number; comment: string; date: string; verified_booking: boolean };
 type LiveService = {
@@ -107,6 +108,7 @@ export default function LiveServiceDetail({ service, reviews, exploreHref = '/ex
 
     <aside className="detail-aside">
       <Card className="booking-summary"><div className="section-heading"><div><span className="eyebrow">{text('Booking', 'Booking')}</span><h2>{text('Booking summary', 'Booking சுருக்கம்')}</h2></div><Badge tone="success">{text('Live service', 'Live சேவை')}</Badge></div><dl><div><dt>{text('Service', 'சேவை')}</dt><dd>{service.name}</dd></div><div><dt>{text('Provider', 'வழங்குநர்')}</dt><dd>{providerName}</dd></div><div><dt>{text('Estimated price', 'மதிப்பிடப்பட்ட விலை')}</dt><dd>{money(service.base_price, service.currency)}</dd></div></dl></Card>
+      <SavedServiceAction serviceId={service.id} />
       <Link href={bookingHref} className="button button-primary detail-cta">{text('Choose a date and time', 'தேதி மற்றும் நேரத்தை தேர்வு செய்')}</Link>
     </aside>
     </div>
