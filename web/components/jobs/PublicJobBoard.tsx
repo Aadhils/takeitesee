@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { MarketplaceReportForm } from '../safety/MarketplaceReportForm';
 import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 import styles from './JobMarketplace.module.css';
 
@@ -106,7 +107,10 @@ export function PublicJobBoard() {
         {job.minimum_experience_years != null ? <div className={styles.muted}>{job.minimum_experience_years}+ years experience preferred</div> : null}
         {money(job) ? <strong>{money(job)}</strong> : <span className={styles.muted}>{ta ? 'சம்பள விவரம் employer உடன்' : 'Compensation discussed with employer'}</span>}
         {job.application_deadline ? <div className={styles.muted}>Apply by {new Date(`${job.application_deadline}T00:00:00`).toLocaleDateString()}</div> : null}
-        <div className={styles.actions}><button className={styles.button} type="button" onClick={() => { setSelectedJobId(job.id); setMessage(null); }}>{ta ? 'Apply' : 'Apply with TakeItEsee profile'}</button></div>
+        <div className={styles.actions}>
+          <button className={styles.button} type="button" onClick={() => { setSelectedJobId(job.id); setMessage(null); }}>{ta ? 'Apply' : 'Apply with TakeItEsee profile'}</button>
+          <MarketplaceReportForm targetType="job_posting" targetId={job.id} label={ta ? 'Job report' : 'Report job'} />
+        </div>
       </article>)}
     </section>
 
