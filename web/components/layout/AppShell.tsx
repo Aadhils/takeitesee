@@ -174,6 +174,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
           .provider-draft-banner h2 { font-size: clamp(1.35rem, 6.5vw, 1.8rem); line-height: 1.15; }
           .provider-draft-banner .account-actions { margin-top: 18px; gap: 10px; }
           .alert { align-items: flex-start; overflow-wrap: anywhere; }
+          .site-footer { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
           .footer-inner { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 18px; padding-top: 36px; }
           .footer-brand-column, .footer-legal { grid-column: 1 / -1; }
           .footer-connect { grid-column: 1 / -1; }
