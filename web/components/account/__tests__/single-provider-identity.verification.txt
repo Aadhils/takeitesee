@@ -1,0 +1,33 @@
+Single Provider Identity production verification
+
+Canonical Supabase project: bukrpkymivkhdpueropt
+Migration: 20260905230426_single_provider_identity_per_account
+
+Pre-migration production audit:
+- Professional profile rows: 1 (existing synthetic Professional row has no owning user_id)
+- Business profile rows: 1
+- real dual-provider owning accounts: 0
+- pending provider applications: 0
+- customer-only accounts: 70
+- Business-only owning accounts: 1
+- no destructive identity migration required
+
+Rollback-only migration matrix:
+- existing Business owner -> Professional insert blocked by cross-table trigger ✅
+- temporary Professional owner -> Business insert blocked by cross-table trigger ✅
+- second Business for the same owner blocked by unique owner index ✅
+- existing Business owner -> submit Professional application blocked ✅
+- customer-only account -> first Business application allowed ✅
+- same customer -> second provider application while first pending blocked ✅
+- transaction rolled back; no fixture residue ✅
+
+Persisted verification:
+- businesses_owner_user_id_idx is UNIQUE for non-null owner_user_id ✅
+- professional_profiles_single_provider_identity trigger live ✅
+- businesses_single_provider_identity trigger live ✅
+- enforce_single_provider_identity is SECURITY INVOKER with search_path='' ✅
+- direct helper EXECUTE revoked from public/anon/authenticated ✅
+- submit_provider_application and review_provider_application use search_path='' and enforce the single-provider account rule ✅
+- dual-provider owning accounts after migration: 0 ✅
+- pending provider applications after migration: 0 ✅
+- no new single-provider helper security-advisor finding; existing finance/legacy SECURITY DEFINER findings and leaked-password warning remain outside this scope ✅
