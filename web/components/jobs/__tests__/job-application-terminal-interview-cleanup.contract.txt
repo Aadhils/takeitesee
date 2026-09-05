@@ -1,0 +1,14 @@
+Job application terminal interview cleanup contract
+
+1. Professional application withdrawal remains limited to active application states (`submitted`, `shortlisted`, `interview`) by the existing job-application transition guard.
+2. Employer rejection and hire transitions remain governed by the existing application lifecycle; this slice does not broaden who may change application state.
+3. When an application becomes `withdrawn`, `rejected`, or `hired`, any interview still `scheduled` or `accepted` for that application is automatically changed to `cancelled`.
+4. Declined or already-cancelled interview history is preserved and is not rewritten by terminal application cleanup.
+5. Automatic cancellation preserves interview identity and schedule fields while setting `cancelled_at` and `updated_at`.
+6. Cleanup runs through a private SECURITY INVOKER trigger helper with `search_path=''` and no direct PUBLIC / anon / authenticated execute privilege.
+7. Automatic interview cancellation produces the existing immutable `job_interview_events` cancellation audit event with the application-transition actor.
+8. Interview cancellation notifies the other participant: applicant withdrawal notifies the employer; employer-driven terminal change notifies the applicant.
+9. Existing job-application conversation closure remains authoritative and unchanged.
+10. Existing pending employment-offer terminal cleanup remains authoritative and unchanged.
+11. Professional withdrawal remains an explicit user action; the UI must require a confirmation step before submitting `withdrawn`.
+12. No job-posting, application, interview scheduling, offer, messaging, moderation, finance, Cashfree, payment, refund, payout, settlement, reconciliation, recovery, or recurrence semantic expansion is introduced beyond terminal cleanup.
