@@ -10,7 +10,7 @@ type TrustState = { status?: 'normal' | 'reverification_required' | 'suspended';
 type ReadinessService = Record<string, unknown> & { id?: string; launch_ready?: boolean };
 type Readiness = { provider_id?: string; marketplace_live?: boolean; services?: ReadinessService[] } & Record<string, unknown>;
 
-function activeProviderType(roles: string[]): ProviderType {
+function activeProviderType(roles: readonly string[]): ProviderType {
   return roles.includes('professional') ? 'professional' : 'business';
 }
 
