@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 import styles from './WorkspaceSwitcher.module.css';
@@ -13,13 +14,27 @@ type WorkspaceOption = {
   target: string;
   verified?: boolean;
 };
+type AddableProfileOption = {
+  id: 'professional' | 'business';
+  label: string;
+  display_name: string;
+  description: string;
+  target: string;
+  pending: boolean;
+};
 
-type WorkspacePayload = { active?: WorkspaceKind; workspaces?: WorkspaceOption[]; error?: string };
+type WorkspacePayload = {
+  active?: WorkspaceKind;
+  workspaces?: WorkspaceOption[];
+  addable_profiles?: AddableProfileOption[];
+  error?: string;
+};
 
 export function WorkspaceSwitcher({ currentWorkspace, compact = false }: { currentWorkspace?: WorkspaceKind; compact?: boolean }) {
   const { locale } = useIdentityWorkspaceTranslations();
   const tamil = locale.toLowerCase().startsWith('ta');
   const [workspaces, setWorkspaces] = useState<WorkspaceOption[]>([]);
+  const [addableProfiles, setAddableProfiles] = useState<AddableProfileOption[]>([]);
   const [active, setActive] = useState<WorkspaceKind | undefined>(currentWorkspace);
   const [switching, setSwitching] = useState<WorkspaceKind | null>(null);
   const [error, setError] = useState('');
@@ -35,6 +50,7 @@ export function WorkspaceSwitcher({ currentWorkspace, compact = false }: { curre
       .then((payload) => {
         if (cancelled) return;
         setWorkspaces(payload.workspaces ?? []);
+        setAddableProfiles(payload.addable_profiles ?? []);
         setActive(currentWorkspace ?? payload.active);
       })
       .catch((cause) => { if (!cancelled) setError(cause instanceof Error ? cause.message : 'Unable to load workspaces.'); });
@@ -92,7 +108,7 @@ export function WorkspaceSwitcher({ currentWorkspace, compact = false }: { curre
         return <article className={`${styles.card} ${selected ? styles.cardActive : ''}`} key={workspace.id}>
           <div className={styles.row}>
             <div><div className={styles.role}>{workspace.label}</div><div className={styles.name}>{workspace.display_name}</div></div>
-            {selected ? <span className={`${styles.badge} ${styles.activeBadge}`}>{tamil ? 'தற்போது' : 'Current'}</span> : workspace.verified ? <span className={styles.badge}>{tamil ? 'Verified' : 'Verified'}</span> : null}
+            {selected ? <span className={`${styles.badge} ${styles.activeBadge}`}>{tamil ? 'தற்போது' : 'Current'}</span> : workspace.verified ? <span className={styles.badge}>Verified</span> : null}
           </div>
           <div className={styles.description}>{workspace.description}</div>
           <button className={styles.button} type="button" disabled={selected || switching !== null} onClick={() => void switchWorkspace(workspace.id)}>
@@ -101,5 +117,24 @@ export function WorkspaceSwitcher({ currentWorkspace, compact = false }: { curre
         </article>;
       })}
     </div>
+
+    {addableProfiles.length ? <div className={styles.addSection}>
+      <div className={styles.subheading}>
+        <h3>{tamil ? 'மற்றொரு provider profile சேர்க்கவும்' : 'Add another provider profile'}</h3>
+        <p>{tamil ? 'புதிய account உருவாக்க வேண்டாம். இதே login-ல் இல்லாத Professional அல்லது Business profile-ஐ platform review மூலம் சேர்க்கலாம்.' : 'Do not create another account. Add the missing Professional or Business profile to this same login through platform review.'}</p>
+      </div>
+      <div className={styles.grid}>
+        {addableProfiles.map((profile) => <article className={`${styles.card} ${styles.addCard}`} key={`add-${profile.id}`}>
+          <div className={styles.row}>
+            <div><div className={styles.role}>{profile.label}</div><div className={styles.name}>{profile.display_name}</div></div>
+            <span className={`${styles.badge} ${profile.pending ? styles.pendingBadge : styles.availableBadge}`}>{profile.pending ? (tamil ? 'Review pending' : 'Pending review') : (tamil ? 'கிடைக்கிறது' : 'Available')}</span>
+          </div>
+          <div className={styles.description}>{profile.description}</div>
+          <Link className={styles.button} href={profile.target}>
+            {profile.pending ? (tamil ? 'Application நிலையை பார்க்க' : 'View application') : (tamil ? 'இந்த profile சேர்க்க' : 'Add this profile')}
+          </Link>
+        </article>)}
+      </div>
+    </div> : null}
   </section>;
 }
