@@ -1,3 +1,5 @@
+import { cookies } from 'next/headers';
+
 export const WORKSPACE_COOKIE = 'takeitesee_workspace';
 
 export type WorkspaceKind = 'customer' | 'professional' | 'business' | 'admin' | 'super_admin';
@@ -19,6 +21,18 @@ function cookieValue(cookieHeader: string | null, name: string) {
 
 export function workspacePreferenceFromRequest(request?: Request): WorkspaceKind | null {
   const value = cookieValue(request?.headers.get('cookie') ?? null, WORKSPACE_COOKIE);
+  return isWorkspaceKind(value) ? value : null;
+}
+
+export async function getWorkspacePreference(request?: Request): Promise<WorkspaceKind | null> {
+  const requestPreference = workspacePreferenceFromRequest(request);
+  if (requestPreference) return requestPreference;
+
+  // Some server repositories call auth helpers without forwarding the Request object.
+  // Next's server cookie store keeps the signed-in user's workspace preference available
+  // in those paths without treating the cookie as an authorization claim.
+  const store = await cookies();
+  const value = store.get(WORKSPACE_COOKIE)?.value;
   return isWorkspaceKind(value) ? value : null;
 }
 
