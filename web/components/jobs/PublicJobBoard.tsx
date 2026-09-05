@@ -24,6 +24,8 @@ type Job = {
   business?: { id: string; name: string; verified: boolean; location?: string | null } | null;
 };
 
+type SavedJobSummary = { job_posting_id: string };
+
 function label(value: string) {
   return value.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
@@ -52,6 +54,9 @@ export function PublicJobBoard() {
   const [workplaceType, setWorkplaceType] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [skillFilter, setSkillFilter] = useState('');
+  const [canSaveJobs, setCanSaveJobs] = useState(false);
+  const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
+  const [savingJobId, setSavingJobId] = useState<string | null>(null);
 
   const selectedJob = useMemo(() => jobs.find((job) => job.id === selectedJobId) ?? null, [jobs, selectedJobId]);
   const employmentTypes = useMemo(() => [...new Set(jobs.map((job) => job.employment_type).filter(Boolean))].sort(), [jobs]);
@@ -88,12 +93,48 @@ export function PublicJobBoard() {
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    void fetch('/api/provider/saved-jobs', { cache: 'no-store' })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const payload = await response.json() as { saved_jobs?: SavedJobSummary[] };
+        if (!cancelled) {
+          setCanSaveJobs(true);
+          setSavedJobIds((payload.saved_jobs ?? []).map((item) => item.job_posting_id));
+        }
+      })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, []);
+
   function clearFilters() {
     setKeyword('');
     setEmploymentType('');
     setWorkplaceType('');
     setLocationFilter('');
     setSkillFilter('');
+  }
+
+  async function toggleSaved(jobId: string) {
+    const alreadySaved = savedJobIds.includes(jobId);
+    setSavingJobId(jobId);
+    setMessage(null);
+    try {
+      const response = await fetch('/api/provider/saved-jobs', {
+        method: alreadySaved ? 'DELETE' : 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ job_posting_id: jobId }),
+      });
+      const payload = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(payload.error || (alreadySaved ? 'Unable to remove saved job.' : 'Unable to save job.'));
+      setSavedJobIds((current) => alreadySaved ? current.filter((id) => id !== jobId) : [...new Set([...current, jobId])]);
+      setMessage({ tone: 'success', text: alreadySaved ? (ta ? 'Saved list-லிருந்து job அகற்றப்பட்டது.' : 'Job removed from saved jobs.') : (ta ? 'Job saved. Saved Jobs tab-ல் மீண்டும் பார்க்கலாம்.' : 'Job saved. You can find it in Saved jobs.') });
+    } catch (error) {
+      setMessage({ tone: 'error', text: error instanceof Error ? error.message : 'Unable to update saved job.' });
+    } finally {
+      setSavingJobId(null);
+    }
   }
 
   async function apply() {
@@ -147,7 +188,7 @@ export function PublicJobBoard() {
     {!loading && jobs.length > 0 && filteredJobs.length === 0 ? <div className={`${styles.empty} ${styles.emptyState}`}><span className={styles.emptyIcon}>⌕</span><strong>{ta ? 'Matching jobs இல்லை' : 'No jobs match these filters'}</strong><span>{ta ? 'ஒரு filter-ஐ மாற்றி அல்லது clear செய்து மீண்டும் பார்க்கவும்.' : 'Try broadening or clearing one of your filters.'}</span><button className={`${styles.button} ${styles.secondary}`} type="button" onClick={clearFilters}>{ta ? 'அனைத்து filters clear செய்ய' : 'Clear all filters'}</button></div> : null}
 
     <section className={styles.grid}>
-      {filteredJobs.map((job) => <article className={styles.card} key={job.id}>
+      {filteredJobs.map((job) => <article className={styles.card} id={`job-${job.id}`} key={job.id}>
         <div className={styles.row}><div><h3>{job.title}</h3><div className={styles.muted}>{job.business?.name ?? 'Verified business'}</div></div>{job.business?.verified ? <span className={styles.pill}>Verified business</span> : null}</div>
         <div className={styles.meta}>
           <span className={styles.pill}>{label(job.employment_type)}</span>
@@ -162,6 +203,7 @@ export function PublicJobBoard() {
         {job.application_deadline ? <div className={styles.muted}>Apply by {new Date(`${job.application_deadline}T00:00:00`).toLocaleDateString()}</div> : null}
         <div className={styles.actions}>
           <button className={styles.button} type="button" onClick={() => { setSelectedJobId(job.id); setMessage(null); }}>{ta ? 'Apply' : 'Apply with TakeItEsee profile'}</button>
+          {canSaveJobs ? <button className={`${styles.button} ${styles.secondary}`} type="button" aria-pressed={savedJobIds.includes(job.id)} disabled={savingJobId === job.id} onClick={() => void toggleSaved(job.id)}>{savingJobId === job.id ? 'Saving…' : savedJobIds.includes(job.id) ? (ta ? 'Saved ✓' : 'Saved ✓') : (ta ? 'Save job' : 'Save job')}</button> : null}
           <MarketplaceReportForm targetType="job_posting" targetId={job.id} label={ta ? 'Job report' : 'Report job'} />
         </div>
       </article>)}
