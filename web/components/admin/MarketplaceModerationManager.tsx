@@ -35,6 +35,9 @@ type ReportRow = {
   portfolio_caption?: string | null;
   portfolio_media_type?: 'image' | 'video' | null;
   portfolio_preview_url?: string | null;
+  portfolio_active?: boolean | null;
+  portfolio_moderation_state?: 'clear' | 'paused' | null;
+  portfolio_moderation_updated_at?: string | null;
 };
 
 function statusTone(status: Status) {
@@ -85,6 +88,21 @@ export function MarketplaceModerationManager() {
     finally { setBusyId(''); }
   };
 
+  const moderatePortfolio = async (reportId: string, mediaAction: 'pause' | 'restore') => {
+    if (busyId) return;
+    setBusyId(reportId); setError('');
+    try {
+      const response = await fetch('/api/admin/moderation', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ report_id: reportId, media_action: mediaAction, note: notes[reportId] || '' }),
+      });
+      const payload = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(payload.error || 'Portfolio moderation action could not be applied.');
+      await load();
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Portfolio moderation action could not be applied.'); }
+    finally { setBusyId(''); }
+  };
+
   return <div style={{ display: 'grid', gap: '1rem' }}>
     <div className="section-heading"><div><span className="eyebrow">{t('moderation.eyebrow')}</span><h1>{t('moderation.title')}</h1><p className="detail-copy">{t('moderation.intro')}</p></div><Badge tone={openCount ? 'danger' : 'success'}>{openCount} {t('common.open')}</Badge></div>
     {error ? <Alert title={t('moderation.unavailable')} tone="danger">{error}</Alert> : null}
@@ -104,19 +122,31 @@ export function MarketplaceModerationManager() {
       const contextLabel = portfolioContext ? 'professional portfolio' : jobContext ? 'job application' : row.target_type;
       return <Card className="policy-card" key={row.id}>
         <div className="section-heading"><div><span className="eyebrow">{row.report_reference} · {contextLabel}</span><h2>{title}</h2><p className="summary-note">{reference}</p></div><Badge tone={statusTone(row.status)}>{row.status.replaceAll('_',' ')}</Badge></div>
-        <dl className="review-details"><div><dt>{t('common.category')}</dt><dd>{row.category.replace('_',' ')}</dd></div><div><dt>{t('common.reporter')}</dt><dd>{row.reporter_name}</dd></div><div><dt>{t('common.reportedUser')}</dt><dd>{row.reported_user_name || t('common.notApplicable')}</dd></div><div><dt>{t('common.opened')}</dt><dd>{new Intl.DateTimeFormat(locale,{dateStyle:'medium',timeStyle:'short'}).format(new Date(row.created_at))}</dd></div>{row.proposal_reference ? <div><dt>{t('common.proposal')}</dt><dd>{row.proposal_reference}</dd></div> : null}{jobContext || portfolioContext ? <div><dt>Reported item</dt><dd>{portfolioContext ? `${label(row.portfolio_media_type)} work sample` : label(row.target_type)}</dd></div> : null}</dl>
+        <dl className="review-details"><div><dt>{t('common.category')}</dt><dd>{row.category.replace('_',' ')}</dd></div><div><dt>{t('common.reporter')}</dt><dd>{row.reporter_name}</dd></div><div><dt>{t('common.reportedUser')}</dt><dd>{row.reported_user_name || t('common.notApplicable')}</dd></div><div><dt>{t('common.opened')}</dt><dd>{new Intl.DateTimeFormat(locale,{dateStyle:'medium',timeStyle:'short'}).format(new Date(row.created_at))}</dd></div>{row.proposal_reference ? <div><dt>{t('common.proposal')}</dt><dd>{row.proposal_reference}</dd></div> : null}{jobContext || portfolioContext ? <div><dt>Reported item</dt><dd>{portfolioContext ? `${label(row.portfolio_media_type)} work sample` : label(row.target_type)}</dd></div> : null}{portfolioContext && row.portfolio_moderation_state ? <div><dt>Content state</dt><dd>{row.portfolio_moderation_state === 'paused' ? 'Admin paused' : row.portfolio_active ? 'Public-ready' : 'Owner paused'}</dd></div> : null}</dl>
         {row.details ? <Alert title={t('moderation.reporterDetails')} tone="info">{row.details}</Alert> : null}
         {row.message_excerpt ? <div style={{ border: '1px solid #e7eaf0', borderRadius: 12, padding: '.8rem', marginTop: '.7rem' }}><strong>{t('moderation.messageExcerpt')}</strong><p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{row.message_excerpt}</p></div> : null}
         {portfolioContext ? <div style={{ border: '1px solid #e7eaf0', borderRadius: 12, padding: '.8rem', marginTop: '.7rem', display: 'grid', gap: '.55rem' }}>
-          <strong>Private moderation preview</strong>
+          <div className="section-heading"><div><strong>Private moderation preview</strong><p className="summary-note">Short-lived preview generated only after Admin authorization.</p></div>{row.portfolio_moderation_state ? <Badge tone={row.portfolio_moderation_state === 'paused' ? 'warning' : 'success'}>{row.portfolio_moderation_state === 'paused' ? 'Admin paused' : 'Clear'}</Badge> : null}</div>
           {row.portfolio_preview_url ? row.portfolio_media_type === 'video'
             ? <video src={row.portfolio_preview_url} controls preload="metadata" playsInline style={{ width: '100%', maxHeight: 420, borderRadius: 10, background: '#101828' }} />
             : <img src={row.portfolio_preview_url} alt={row.portfolio_caption || 'Reported professional portfolio media'} style={{ width: '100%', maxHeight: 420, objectFit: 'contain', borderRadius: 10, background: '#f2f4f7' }} />
           : <p className="summary-note">Preview unavailable. The signed moderation preview may have expired or the media may no longer exist.</p>}
-          <p className="summary-note">This preview is generated only after Admin authorization and uses a short-lived private storage URL.</p>
+          {row.portfolio_moderation_state ? <>
+            <label className="field"><span className="field-label">Enforcement / decision note</span><textarea className="field-control" rows={3} maxLength={2000} value={notes[row.id] ?? ''} onChange={(event) => setNotes((current) => ({ ...current, [row.id]: event.target.value }))} placeholder="Record why this content is being paused, restored, actioned, or dismissed." /></label>
+            <div className="button-row">
+              {row.portfolio_moderation_state === 'paused'
+                ? <Button type="button" variant="secondary" loading={busyId===row.id} onClick={() => void moderatePortfolio(row.id,'restore')}>Restore media</Button>
+                : <Button type="button" variant="danger" loading={busyId===row.id} onClick={() => void moderatePortfolio(row.id,'pause')}>Pause media</Button>}
+            </div>
+            <p className="summary-note">Pause immediately removes the item from public presentation. Restore removes the Admin lock but keeps the item private until the Professional explicitly republishes it.</p>
+          </> : <p className="summary-note">The reported media may no longer exist, so no visibility action is available.</p>}
         </div> : null}
         {row.admin_note ? <p className="summary-note"><strong>{t('moderation.latestNote')}</strong> {row.admin_note}</p> : null}
-        {row.status === 'open' || row.status === 'reviewing' ? <div style={{ display: 'grid', gap: '.65rem', marginTop: '1rem' }}><label className="field"><span className="field-label">{t('moderation.note')}</span><textarea className="field-control" rows={3} maxLength={2000} value={notes[row.id] ?? ''} onChange={(event) => setNotes((current) => ({ ...current, [row.id]: event.target.value }))} placeholder={t('moderation.notePlaceholder')} /></label><div style={{ display: 'flex', gap: '.55rem', flexWrap: 'wrap' }}>{row.status === 'open' ? <Button type="button" variant="secondary" loading={busyId===row.id} onClick={() => void update(row.id,'reviewing')}>{t('moderation.startReview')}</Button> : null}<Button type="button" loading={busyId===row.id} onClick={() => void update(row.id,'actioned')}>{t('moderation.actioned')}</Button><Button type="button" variant="quiet" loading={busyId===row.id} onClick={() => void update(row.id,'dismissed')}>{t('moderation.dismiss')}</Button></div><p className="summary-note">Closing a report records the moderation decision only. Portfolio media is not automatically deleted or deactivated.</p></div> : null}
+        {row.status === 'open' || row.status === 'reviewing' ? <div style={{ display: 'grid', gap: '.65rem', marginTop: '1rem' }}>
+          {!portfolioContext ? <label className="field"><span className="field-label">{t('moderation.note')}</span><textarea className="field-control" rows={3} maxLength={2000} value={notes[row.id] ?? ''} onChange={(event) => setNotes((current) => ({ ...current, [row.id]: event.target.value }))} placeholder={t('moderation.notePlaceholder')} /></label> : null}
+          <div style={{ display: 'flex', gap: '.55rem', flexWrap: 'wrap' }}>{row.status === 'open' ? <Button type="button" variant="secondary" loading={busyId===row.id} onClick={() => void update(row.id,'reviewing')}>{t('moderation.startReview')}</Button> : null}<Button type="button" loading={busyId===row.id} onClick={() => void update(row.id,'actioned')}>{t('moderation.actioned')}</Button><Button type="button" variant="quiet" loading={busyId===row.id} onClick={() => void update(row.id,'dismissed')}>{t('moderation.dismiss')}</Button></div>
+          <p className="summary-note">Report status and content visibility are separate controls. Use Pause / Restore for portfolio visibility; Actioned / Dismissed closes the report audit lifecycle.</p>
+        </div> : null}
       </Card>;
     }) : null}
   </div>;
