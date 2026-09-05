@@ -1,0 +1,13 @@
+Professional portfolio media moderation contract
+
+1. Public Professional work-sample photos/videos are reportable only through the existing marketplace moderation workflow.
+2. The report target is portfolio_media and the moderation context is professional_portfolio.
+3. Reporting requires an authenticated user and must reject the Professional owner reporting their own portfolio media.
+4. Only media that is currently eligible for the verified public Professional profile is reportable.
+5. A reporter may have only one active open/reviewing report for the same portfolio media item.
+6. Portfolio reports are visible/manageable only to platform-scope Admin/Super Admin authority; category/location-only moderation scope must not gain access.
+7. Admin moderation may receive a short-lived signed preview only after Admin authorization; raw private storage object paths must not be exposed to the browser.
+8. Closing a moderation report records an audit decision and reporter notification only; it must not automatically delete/deactivate media or suspend the Professional.
+9. Existing requirement/proposal/message/job moderation semantics remain unchanged.
+10. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery are untouched.
+11. Recurrence/recovery remains FROZEN and Supabase Pro leaked-password protection remains HOLD.
