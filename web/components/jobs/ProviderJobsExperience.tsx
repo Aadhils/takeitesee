@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import styles from './JobMarketplace.module.css';
 import { EmployerHiringWorkspace } from './EmployerHiringWorkspace';
@@ -30,6 +31,19 @@ export function ProviderJobsExperience(){
 
   if(error) return <div className={`${styles.alert} ${styles.error}`}>{error}</div>;
   if(!mode) return <div className={styles.empty}>Loading jobs workspace…</div>;
-  if(mode==='business') return <><EmployerHiringWorkspace/><SafeJobDeletionPanel/></>;
+  if(mode==='business') return <>
+    <EmployerHiringWorkspace/>
+    <section className={`${styles.card} ${styles.section}`}>
+      <div className={styles.sectionHeading}>
+        <div>
+          <span className={styles.eyebrow}>Applicant discovery</span>
+          <h2>Find applicants faster</h2>
+          <p className={styles.muted}>Search and filter applicants across jobs, hiring stages and Professional verification without changing their application status.</p>
+        </div>
+        <Link className={styles.button} href="/provider/jobs/applicants">Open applicant finder</Link>
+      </div>
+    </section>
+    <SafeJobDeletionPanel/>
+  </>;
   return <ProfessionalJobsWorkspace/>;
 }
