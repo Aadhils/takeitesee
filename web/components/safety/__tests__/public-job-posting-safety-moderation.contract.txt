@@ -1,0 +1,17 @@
+Public job posting safety moderation contract
+
+1. Public verified Business job postings are reportable by signed-in marketplace users.
+2. A Business owner cannot report their own job posting.
+3. Only currently public-eligible jobs are reportable: verified Business, open status, unexpired deadline, moderation state clear.
+4. Duplicate open/reviewing reports for the same reporter and job posting are rejected.
+5. Job posting reports use a dedicated job_posting moderation context and do not alter job application/message moderation semantics.
+6. Platform-scope Admin/Super Admin can review job posting reports; delegated category/location Admin access is not expanded.
+7. Report status and job visibility are separate controls.
+8. Admin Pause sets the job moderation state to paused and returns the job to draft immediately, removing it from public discovery.
+9. While moderation state is paused, the Business owner cannot republish the job, including through direct Data API updates.
+10. Admin Restore clears the moderation lock but does not reopen the job; the Business must explicitly publish again.
+11. Pause/Restore each require a note, write a content_action audit event, and notify the Business owner.
+12. Admin Actioned/Dismissed closes only the report audit lifecycle and does not automatically ban/suspend the Business.
+13. Existing applications, resume snapshots, conversations, interviews, offers and hiring state machines remain unchanged.
+14. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD.
+15. Recurring requirement/recovery remains FROZEN and Supabase Pro leaked-password protection remains HOLD.

@@ -3,7 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { Alert, Button } from '../ui/primitives';
 
-type TargetType = 'requirement' | 'proposal' | 'conversation' | 'message' | 'portfolio_media';
+type TargetType = 'requirement' | 'proposal' | 'conversation' | 'message' | 'portfolio_media' | 'job_posting';
 type Category = 'spam' | 'harassment' | 'fraud' | 'unsafe' | 'off_platform' | 'inappropriate' | 'other';
 
 const categories: Array<{ value: Category; label: string }> = [

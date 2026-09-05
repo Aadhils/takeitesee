@@ -70,9 +70,19 @@ export async function GET(request: Request) {
   try {
     await productionAuthProvider.requireAdmin(request);
     const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.rpc('get_marketplace_moderation_queue');
-    if (error) throw new Error(error.message);
-    const reports = await addPortfolioPreviews(Array.isArray(data) ? data as ModerationQueueRow[] : []);
+    const [marketplaceResult, jobPostingResult] = await Promise.all([
+      supabase.rpc('get_marketplace_moderation_queue'),
+      supabase.rpc('get_job_posting_moderation_queue'),
+    ]);
+    if (marketplaceResult.error) throw new Error(marketplaceResult.error.message);
+    if (jobPostingResult.error) throw new Error(jobPostingResult.error.message);
+    const baseRows = Array.isArray(marketplaceResult.data) ? marketplaceResult.data as ModerationQueueRow[] : [];
+    const jobRows = Array.isArray(jobPostingResult.data) ? jobPostingResult.data as ModerationQueueRow[] : [];
+    const reports = await addPortfolioPreviews([...baseRows, ...jobRows].sort((left, right) => {
+      const leftDate = Date.parse(String(left.created_at ?? '')) || 0;
+      const rightDate = Date.parse(String(right.created_at ?? '')) || 0;
+      return rightDate - leftDate;
+    }));
     return NextResponse.json({ reports });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Moderation queue could not be loaded.';
@@ -88,6 +98,8 @@ export async function PATCH(request: Request) {
       status?: 'open'|'reviewing'|'actioned'|'dismissed';
       note?: string;
       media_action?: 'pause'|'restore';
+      job_action?: 'pause'|'restore';
+      job_report?: boolean;
     };
     if (!body.report_id) return NextResponse.json({ error: 'Report ID is required.' }, { status: 400 });
     const note = String(body.note ?? '').trim();
@@ -107,15 +119,33 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ media: data });
     }
 
+    if (body.job_action) {
+      if (!['pause','restore'].includes(body.job_action)) return NextResponse.json({ error: 'Choose a valid job moderation action.' }, { status: 400 });
+      if (note.length < 3) return NextResponse.json({ error: 'A moderation note is required to change job visibility.' }, { status: 400 });
+      const { data, error } = await supabase.rpc('admin_set_job_posting_moderation', {
+        target_report_id: body.report_id,
+        requested_state: body.job_action === 'pause' ? 'paused' : 'clear',
+        requested_note: note,
+      }).maybeSingle();
+      if (error || !data) throw new Error(error?.message ?? 'Job moderation action could not be applied.');
+      return NextResponse.json({ job: data });
+    }
+
     if (!body.status || !['open','reviewing','actioned','dismissed'].includes(body.status)) return NextResponse.json({ error: 'Choose a valid moderation status.' }, { status: 400 });
     if (['actioned','dismissed'].includes(body.status) && note.length < 3) return NextResponse.json({ error: 'A moderation note is required to close a report.' }, { status: 400 });
-    const { data, error } = await supabase.rpc('admin_update_marketplace_moderation_report', {
-      target_report_id: body.report_id,
-      requested_status: body.status,
-      requested_note: note || null,
-    }).maybeSingle();
-    if (error || !data) throw new Error(error?.message ?? 'Moderation report could not be updated.');
-    return NextResponse.json({ report: data });
+    const result = body.job_report
+      ? await supabase.rpc('admin_update_job_posting_moderation_report', {
+          target_report_id: body.report_id,
+          requested_status: body.status,
+          requested_note: note || null,
+        }).maybeSingle()
+      : await supabase.rpc('admin_update_marketplace_moderation_report', {
+          target_report_id: body.report_id,
+          requested_status: body.status,
+          requested_note: note || null,
+        }).maybeSingle();
+    if (result.error || !result.data) throw new Error(result.error?.message ?? 'Moderation report could not be updated.');
+    return NextResponse.json({ report: result.data });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Moderation report could not be updated.';
     const status = /authentication/i.test(message) ? 401 : /permission|required/i.test(message) ? 403 : 400;
