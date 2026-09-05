@@ -16,15 +16,16 @@ export async function GET(request: Request) {
     const session = await productionAuthProvider.requireProvider(request);
     const supabase = await createSupabaseServerClient();
 
-    const { data: business, error: businessError } = await supabase
-      .from('businesses')
-      .select('id, name, verified, location')
-      .eq('owner_user_id', session.user_id)
-      .limit(1)
-      .maybeSingle();
-    if (businessError) throw new Error(businessError.message);
+    if (session.roles.includes('business_owner')) {
+      const { data: business, error: businessError } = await supabase
+        .from('businesses')
+        .select('id, name, verified, location')
+        .eq('owner_user_id', session.user_id)
+        .limit(1)
+        .maybeSingle();
+      if (businessError) throw new Error(businessError.message);
+      if (!business) throw new Error('Business profile not found.');
 
-    if (business) {
       const [{ count, error: countError }, { data: trust, error: trustError }] = await Promise.all([
         supabase.from('bookings').select('id', { count: 'exact', head: true }).eq('business_id', business.id).eq('status', 'pending'),
         supabase.from('provider_trust_states').select('status,reason').eq('business_id', business.id).maybeSingle(),
@@ -54,8 +55,7 @@ export async function GET(request: Request) {
       .limit(1)
       .maybeSingle();
     if (professionalError) throw new Error(professionalError.message);
-
-    if (!professional) throw new Error('Provider profile not found.');
+    if (!professional) throw new Error('Professional profile not found.');
 
     const [{ data: user, error: userError }, { count, error: countError }, { data: trust, error: trustError }] = await Promise.all([
       supabase.from('users').select('name').eq('id', session.user_id).maybeSingle(),
