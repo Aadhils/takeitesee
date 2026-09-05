@@ -3,6 +3,7 @@ import type { PlatformRole } from '../../types/ownership';
 import type { ServerCustomerSession } from '../../types/production-domain';
 import { assertProductionBackendConfigured } from '../config';
 import { createSupabaseServerClient } from '../../lib/supabase/server';
+import { workspacePreferenceFromRequest } from './workspace';
 
 export interface ServerAuthProvider {
   getSession(request?: Request): Promise<ServerCustomerSession | null>;
@@ -99,7 +100,17 @@ export const productionAuthProvider: ServerAuthProvider = {
     if (!session || (!session.roles.includes('professional') && !session.roles.includes('business_owner'))) {
       throw new Error('Provider authentication required.');
     }
-    return session;
+
+    const hasProfessional = session.roles.includes('professional');
+    const hasBusiness = session.roles.includes('business_owner');
+    if (!hasProfessional || !hasBusiness) return session;
+
+    // This cookie is a workspace preference only, never an authorization claim. getSession()
+    // already re-derives all roles from authenticated server-side ownership on every request.
+    const preference = workspacePreferenceFromRequest(request);
+    const activeProvider = preference === 'professional' ? 'professional' : 'business';
+    const roles = session.roles.filter((role) => activeProvider === 'professional' ? role !== 'business_owner' : role !== 'professional');
+    return { ...session, roles };
   },
   async requireAdmin(request?: Request) {
     const session = await this.getSession(request);
