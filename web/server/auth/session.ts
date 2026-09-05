@@ -3,7 +3,7 @@ import type { PlatformRole } from '../../types/ownership';
 import type { ServerCustomerSession } from '../../types/production-domain';
 import { assertProductionBackendConfigured } from '../config';
 import { createSupabaseServerClient } from '../../lib/supabase/server';
-import { workspacePreferenceFromRequest } from './workspace';
+import { getWorkspacePreference } from './workspace';
 
 export interface ServerAuthProvider {
   getSession(request?: Request): Promise<ServerCustomerSession | null>;
@@ -107,7 +107,7 @@ export const productionAuthProvider: ServerAuthProvider = {
 
     // This cookie is a workspace preference only, never an authorization claim. getSession()
     // already re-derives all roles from authenticated server-side ownership on every request.
-    const preference = workspacePreferenceFromRequest(request);
+    const preference = await getWorkspacePreference(request);
     const activeProvider = preference === 'professional' ? 'professional' : 'business';
     const roles = session.roles.filter((role) => activeProvider === 'professional' ? role !== 'business_owner' : role !== 'professional');
     return { ...session, roles };
