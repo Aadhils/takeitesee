@@ -1,0 +1,14 @@
+Employer Applicant Finder contract
+
+1. Business provider jobs workspace exposes a dedicated Applicant Finder entry point.
+2. Applicant Finder is Business-only and refuses Professional-mode workspace data.
+3. Finder uses the existing authenticated /api/provider/job-marketplace payload; no new database or API write surface is introduced.
+4. Keyword search matches available applicant headline, service area, job title, cover note and application stage context.
+5. Employer can filter applicants by job posting, current application stage and Professional verification state.
+6. Employer can sort matching applicants by newest, oldest, Professional headline A-Z or job title A-Z.
+7. Filtered result count and clear-filter controls distinguish no applicants from no matching applicants.
+8. Candidate cards preserve profile, conversation and hiring-workspace navigation without mutating application status.
+9. Existing application/interview/offer/message/job lifecycle semantics remain unchanged.
+10. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remains HOLD.
+11. Recurrence/recovery remains FROZEN.
+12. Supabase Pro leaked-password protection remains HOLD.
