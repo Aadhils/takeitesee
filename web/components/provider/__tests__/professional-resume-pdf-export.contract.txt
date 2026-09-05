@@ -1,0 +1,10 @@
+Professional resume PDF export contract
+
+1. Only the authenticated Professional owner can load private structured resume data used by the export view.
+2. Export does not require public_resume_enabled and does not change public resume visibility.
+3. The Resume & Career workspace exposes an Export PDF entry point only while the active provider identity is Professional.
+4. The export view presents the Professional display name, career summary, availability, talents, skills, experience, education and certifications from the existing structured resume model.
+5. The export view is A4/print optimized and exposes a Save as PDF / Print action using the browser print engine so Unicode resume text remains renderable without a new PDF/font dependency.
+6. Print output hides app controls/navigation and keeps the resume document content only.
+7. Export is read-only: it does not mutate resume data, verification, job applications, offers, moderation, finance or recurrence state.
+8. Business provider identities do not receive an individual Professional resume export surface.
