@@ -160,6 +160,17 @@ export async function PATCH(request: Request) {
       const status = typeof body.status === 'string' ? body.status : '';
       if (!jobId || !['draft','open','closed','filled'].includes(status)) return NextResponse.json({ error: 'Invalid job status.' }, { status: 400 });
       if (status === 'open' && !context.business.verified) return NextResponse.json({ error: 'Verify your business before publishing jobs.' }, { status: 403 });
+      if (status === 'open') {
+        const { data: job, error: jobError } = await context.supabase
+          .from('job_postings')
+          .select('id,moderation_state')
+          .eq('id', jobId)
+          .eq('business_id', context.business.id)
+          .maybeSingle();
+        if (jobError) throw new Error(jobError.message);
+        if (!job) return NextResponse.json({ error: 'Job posting was not found.' }, { status: 404 });
+        if (job.moderation_state === 'paused') return NextResponse.json({ error: 'This job is paused by TakeItEsee moderation and cannot be published yet.' }, { status: 403 });
+      }
       const { data, error } = await context.supabase.from('job_postings').update({ status, updated_at: new Date().toISOString() }).eq('id', jobId).eq('business_id', context.business.id).select('*').single();
       if (error) throw new Error(error.message);
       return NextResponse.json({ job: data });
