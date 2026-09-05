@@ -1,0 +1,11 @@
+Public service sharing contract
+
+1. Every live public service detail exposes a Share service action without requiring authentication.
+2. On browsers that support the Web Share API, the action opens the native share flow with the service name, Provider display name and canonical TakeItEsee service URL.
+3. If native sharing is unavailable or fails for a non-user-cancellation reason, the action falls back to copying the canonical service URL to the clipboard.
+4. User-cancelled native share flows are not treated as errors and do not copy automatically after cancellation.
+5. The shared URL is rebuilt from the current TakeItEsee origin plus /services/{serviceId}; transient query parameters are not propagated.
+6. The action provides English and Tamil labels plus visible copied/shared confirmation and an accessible polite error message when both share and copy fail.
+7. Sharing is read-only: it creates no booking, saved-service relation, Provider state, moderation event, notification or database record.
+8. Existing Save service, Provider profile, reviews and Choose a date and time behavior remain unchanged.
+9. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remains HOLD. Recurrence/recovery remains FROZEN. Supabase Pro leaked-password protection remains HOLD.
