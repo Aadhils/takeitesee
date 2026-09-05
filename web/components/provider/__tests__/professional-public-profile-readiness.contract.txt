@@ -1,0 +1,11 @@
+Professional public profile readiness contract
+
+1. The Professional provider workspace exposes a dedicated Public profile readiness destination; Business providers do not receive this navigation item.
+2. Readiness is read-only and reports four independent public gates: profile basics, provider verification, marketplace disclosure, and public professional content.
+3. Profile basics use the existing launch thresholds: display name/headline >= 2 characters, description >= 20 characters, and service area >= 2 characters.
+4. Marketplace disclosure completeness is calculated from the current provider profile record, not inferred only from verification status. Legal name, principal address, public email/phone, grievance officer name/designation, and grievance email/phone are all required.
+5. Public content is ready when at least one active service, one active professional role, or a published public career profile exists.
+6. The public-profile CTA appears only when all four gates are complete; incomplete providers receive direct links to the existing Profile, Verification, Services, and Resume workspaces instead of duplicate editing forms.
+7. Existing verification submission, role CRUD, resume CRUD, service activation, marketplace visibility, booking, job, moderation, notification, and provider identity state machines are unchanged.
+8. No database migration or new API route is introduced. The existing provider profile GET payload gains only a derived marketplace_disclosure_complete boolean.
+9. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remains HOLD. Recurrence/recovery remains FROZEN. Supabase Pro leaked-password protection remains HOLD.
