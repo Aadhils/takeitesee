@@ -18,6 +18,8 @@ type PortfolioMedia = {
   caption: string | null;
   alt_text: string | null;
   active: boolean;
+  moderation_state: 'clear' | 'paused';
+  moderation_updated_at: string | null;
   display_order: number;
   created_at: string;
   updated_at: string;
@@ -242,8 +244,8 @@ export default function ProfessionalPortfolioMediaManager({
       </div>
     </div>
     <p>{text(
-      'Show real previous work, projects, service outcomes, demos, or professional experience. Media stays in a private bucket and only active items on a verified profile are signed for public viewing.',
-      'முன்பு செய்த வேலை, projects, service results, demos அல்லது professional experience-ஐ photos/videos மூலம் காட்டலாம். Media private bucket-ல் இருக்கும்; verified profile-ன் active items மட்டும் public viewing-க்கு signed URL பெறும்.',
+      'Show real previous work, projects, service outcomes, demos, or professional experience. Media stays in a private bucket and only active items that are clear of moderation controls are signed for public viewing.',
+      'முன்பு செய்த வேலை, projects, service results, demos அல்லது professional experience-ஐ photos/videos மூலம் காட்டலாம். Media private bucket-ல் இருக்கும்; active மற்றும் moderation clear உள்ள items மட்டும் public viewing-க்கு signed URL பெறும்.',
     )}</p>
     <p className="summary-note">{text(
       'This is portfolio presentation only. It does not change service-booking eligibility, job eligibility, verification, subscription priority, or search ranking.',
@@ -288,8 +290,12 @@ export default function ProfessionalPortfolioMediaManager({
         <div className={styles.body}>
           <div className="section-heading">
             <div><strong>{item.caption || item.original_filename}</strong><p className="summary-note">{item.media_type.toUpperCase()} · {sizeLabel(Number(item.size_bytes))}{item.professional_role_id ? ` · ${roleName.get(item.professional_role_id) ?? text('Role-linked', 'Role-linked')}` : ''}</p></div>
-            <Badge tone={item.active ? 'success' : 'neutral'}>{item.active ? text('Public-ready', 'Public-ready') : text('Paused', 'Paused')}</Badge>
+            <Badge tone={item.moderation_state === 'paused' ? 'warning' : item.active ? 'success' : 'neutral'}>{item.moderation_state === 'paused' ? text('Admin paused', 'Admin pause') : item.active ? text('Public-ready', 'Public-ready') : text('Paused', 'Paused')}</Badge>
           </div>
+          {item.moderation_state === 'paused' ? <Alert title={text('Hidden by moderation', 'Moderation மூலம் மறைக்கப்பட்டுள்ளது')} tone="warning">{text(
+            'TakeItEsee moderation has paused this work sample. You may edit its details or delete it, but you cannot republish it until an Admin restores it. After restoration, it remains private until you explicitly enable public display again.',
+            'TakeItEsee moderation இந்த work sample-ஐ pause செய்துள்ளது. Details edit அல்லது delete செய்யலாம்; Admin restore செய்யும் வரை republish செய்ய முடியாது. Restore ஆன பிறகும் நீங்கள் public display-ஐ மீண்டும் explicitly enable செய்யும் வரை இது private-ஆவே இருக்கும்.',
+          )}</Alert> : null}
           <div className="button-row"><Button type="button" variant="secondary" onClick={() => startEdit(item)} disabled={saving || removingId === item.id}>{text('Edit details', 'Details edit')}</Button><Button type="button" variant="danger" loading={removingId === item.id} onClick={() => void remove(item)}>{text('Delete', 'Delete')}</Button></div>
 
           {editingId === item.id ? <form onSubmit={saveEdit} className={styles.editor}>
@@ -300,7 +306,9 @@ export default function ProfessionalPortfolioMediaManager({
             <Textarea label={text('Caption', 'Caption')} value={editForm.caption} maxLength={600} rows={3} onChange={(event) => setEditForm((current) => ({ ...current, caption: event.target.value }))} />
             {item.media_type === 'image' ? <Input label={text('Accessible image description', 'Accessible image description')} value={editForm.alt_text} maxLength={240} onChange={(event) => setEditForm((current) => ({ ...current, alt_text: event.target.value }))} /> : null}
             <Input label={text('Display order', 'Display order')} type="number" min={0} max={9999} step={1} value={editForm.display_order} onChange={(event) => setEditForm((current) => ({ ...current, display_order: event.target.value }))} />
-            <Checkbox label={text('Show on public profile', 'Public profile-ல் காட்டவும்')} checked={editForm.active} onChange={(event) => setEditForm((current) => ({ ...current, active: event.target.checked }))} />
+            {item.moderation_state === 'paused'
+              ? <p className="summary-note">{text('Public display is locked off while this item is Admin-paused.', 'இந்த item Admin-pause நிலையில் இருக்கும் வரை public display off-ஆ lock செய்யப்பட்டிருக்கும்.')}</p>
+              : <Checkbox label={text('Show on public profile', 'Public profile-ல் காட்டவும்')} checked={editForm.active} onChange={(event) => setEditForm((current) => ({ ...current, active: event.target.checked }))} />}
             <div className="button-row"><Button type="submit" loading={saving}>{text('Save media details', 'Media details save')}</Button><Button type="button" variant="secondary" onClick={() => setEditingId(null)} disabled={saving}>{text('Cancel', 'Cancel')}</Button></div>
           </form> : null}
         </div>
