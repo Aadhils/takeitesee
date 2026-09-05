@@ -1,0 +1,17 @@
+Multi-workspace profile switcher contract
+
+1. One authenticated TakeItEsee account can surface Customer plus every server-authorized Professional, Business, Admin and Super Admin workspace available to that user.
+2. /account is the central My profiles & workspaces surface. The Provider shell also exposes a compact Switch profile control and a link back to My profiles.
+3. The workspace cookie is an HttpOnly, SameSite=Lax UX preference only. It is never trusted as an authorization role or ownership claim.
+4. Every switch request re-derives authenticated roles server-side. Professional and Business switches also re-check the exact owned provider identity before the preference is persisted.
+5. A user owning both Professional and Business identities has exactly one active provider context at a time. Without an explicit provider preference, Business is the deterministic compatibility fallback.
+6. requireProvider scopes only the Professional/Business provider-role pair to the selected provider identity while preserving Customer/Admin roles in the authenticated session.
+7. Requestless server auth helpers read the same server cookie store, so provider repositories cannot silently fall back to a different identity.
+8. Provider shell/context, dashboard repositories, profile read/edit, services/bookings/reviews/verification routes that already branch on provider role inherit the active provider selection.
+9. Job marketplace, interview and employment-offer APIs explicitly resolve the same active provider identity instead of using legacy Business-first selection.
+10. Provider Setup readiness, launch requests and trust presentation are scoped to services owned by the active provider identity. Cross-workspace launch-request withdrawal is rejected.
+11. Single-provider accounts retain existing behavior and do not require an explicit switch preference.
+12. Customer bookings/account behavior and Admin/Super Admin authorization remain unchanged.
+13. No job, interview, offer, booking or service lifecycle state machine is changed by this UX work.
+14. Finance/Cashfree/payment/refund/payout/settlement/recovery activation remains HOLD and finance RPC behavior is not changed.
+15. Recurrence/recovery lifecycle remains FROZEN. Supabase Pro leaked-password protection remains HOLD.
