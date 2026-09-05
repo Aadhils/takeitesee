@@ -1,0 +1,10 @@
+Provider application reviewer context contract
+
+1. Admin provider-application review must identify the applicant with available account name and email, while retaining a shortened account id for audit disambiguation.
+2. Reviewer context must show any existing Professional and Business identities owned by the applicant, including display name and current verified/not-verified state.
+3. A pending request for the missing provider type while the opposite provider identity already exists must be labelled as a secondary profile request.
+4. A first-provider application must clearly state that no existing Professional or Business identity is present.
+5. If the requested provider identity already exists while an application is still pending, the UI must warn the reviewer and disable approval; the database review RPC remains the final duplicate-ownership guard.
+6. Reject remains available for stale/conflicting pending applications and continues to require a clear reason.
+7. Reviewer enrichment is read-only. It must not change provider onboarding approval/rejection semantics, verification state, existing provider identities, jobs, services, finance, or recurrence behavior.
+8. Provider application review remains protected by the existing Admin authorization boundary; no reviewer context becomes public or applicant-visible through this change.
