@@ -1,0 +1,14 @@
+1. The authenticated /account surface summarizes readiness only for provider identities actually owned by the signed-in account.
+2. Professional and Business readiness are resolved independently with get_provider_setup_readiness_for_type(requested_provider_type); a dual-provider account never inherits readiness from the other workspace.
+3. Readiness summary reuses the existing provider setup gates: profile complete, verified, normal trust state, first service created, first service scoped, and marketplace live.
+4. Marketplace-live summary is trust-aware: a suspended or reverification-required provider is not presented as marketplace-ready even if an active service exists.
+5. The central account summary shows progress, active/scoped service counts, pending launch-request count, trust restriction when present, and the next incomplete setup action.
+6. Continue next step first persists the exact Professional or Business workspace through the existing /api/account/workspaces authorization boundary, then navigates to the corresponding setup/profile/verification/services target.
+7. The workspace preference remains UX state only; no role, provider ownership, verification, trust, service scope, or marketplace authorization is granted by the readiness UI.
+8. Customer-only accounts and accounts without an owned provider identity do not receive a fabricated provider readiness card.
+9. Existing /provider/setup remains the authoritative detailed readiness workflow and is not replaced or semantically changed.
+10. No provider onboarding approval, verification, trust, service launch, booking, job, application, interview, offer, messaging, or moderation state machine changes are introduced.
+11. No database migration or new write RPC is introduced; readiness is read-only and reuses existing owner-scoped data/RPCs.
+12. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remains HOLD.
+13. Recurrence/recovery remains FROZEN.
+14. Supabase Pro leaked-password protection remains HOLD.
