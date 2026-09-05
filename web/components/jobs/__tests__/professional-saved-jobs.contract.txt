@@ -1,0 +1,12 @@
+Professional saved jobs contract
+
+1. Only an authenticated user who owns a Professional identity may read, save, or remove Professional saved jobs.
+2. Saving a job does not require Professional verification; the existing verified-Professional gate for submitting a job application remains unchanged.
+3. A newly saved job must currently be an open, moderation-clear, non-expired opportunity from a verified Business that is not owned by the saving user.
+4. Saving the same job more than once is idempotent and cannot create duplicate saved rows.
+5. If a saved job later closes, is paused, or expires, the private saved record may remain and the Professional workspace must present it as unavailable rather than as an actionable public job.
+6. Permanently deleting a zero-application job cascades its saved-job relation so no orphan bookmark remains.
+7. Row-level security permits only the owning Professional to read or delete their saved-job rows; anon has no table privileges.
+8. Public /jobs exposes Save job / Saved controls only when the current signed-in account has a Professional identity; guests and non-Professional accounts retain the existing public job experience.
+9. The Professional Jobs workspace includes a Saved jobs tab that lists available and unavailable saved opportunities and supports removing them.
+10. Saved-job actions do not change job publication, moderation, application, interview, offer, messaging, finance, recurrence, or recovery state.
