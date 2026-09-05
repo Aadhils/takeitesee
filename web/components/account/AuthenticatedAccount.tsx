@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card } from '../ui/primitives';
 import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
+import { ProviderReadinessSummary } from './ProviderReadinessSummary';
 import { getSupabaseBrowserUser, isSupabaseConfigured, localDevelopmentAuthAdapter, signOutWithSupabase } from '../../services/auth-adapter';
 import { getBookingsForCustomer, getBookingsThroughConfiguredRepository } from '../../services/booking-repository';
 import type { User } from '../../types/auth-domain';
@@ -92,6 +93,7 @@ export default function AuthenticatedAccount() {
       </Card>
 
       <WorkspaceSwitcher currentWorkspace="customer" />
+      <ProviderReadinessSummary />
 
       <nav className="account-primary-nav" aria-label="Account shortcuts">
         <Link href="/bookings" className="button button-primary">{t('account.myBookings')}</Link>
