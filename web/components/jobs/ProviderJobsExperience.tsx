@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react';
 import styles from './JobMarketplace.module.css';
 import { EmployerHiringWorkspace } from './EmployerHiringWorkspace';
-import { JobOfferWorkspace } from './JobOfferWorkspace';
-import { ProviderJobMarketplace } from './ProviderJobMarketplace';
+import { ProfessionalJobsWorkspace } from './ProfessionalJobsWorkspace';
 
 type ModeResponse={mode?:'business'|'professional';error?:string};
 
@@ -31,5 +30,5 @@ export function ProviderJobsExperience(){
   if(error) return <div className={`${styles.alert} ${styles.error}`}>{error}</div>;
   if(!mode) return <div className={styles.empty}>Loading jobs workspace…</div>;
   if(mode==='business') return <EmployerHiringWorkspace/>;
-  return <><ProviderJobMarketplace/><JobOfferWorkspace/></>;
+  return <ProfessionalJobsWorkspace/>;
 }
