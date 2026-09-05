@@ -5,8 +5,9 @@ import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTrans
 import { JobOfferWorkspace } from './JobOfferWorkspace';
 import styles from './JobMarketplace.module.css';
 import { ProviderJobMarketplace } from './ProviderJobMarketplace';
+import { SavedJobsWorkspace } from './SavedJobsWorkspace';
 
-type ProfessionalJobsTab = 'applications' | 'offers';
+type ProfessionalJobsTab = 'applications' | 'saved' | 'offers';
 
 export function ProfessionalJobsWorkspace() {
   const { locale } = useIdentityWorkspaceTranslations();
@@ -32,6 +33,17 @@ export function ProfessionalJobsWorkspace() {
           {ta ? 'Applications & Interviews' : 'Applications & interviews'}
         </button>
         <button
+          id="professional-jobs-saved-tab"
+          className={`${styles.tabButton} ${activeTab === 'saved' ? styles.tabActive : ''}`}
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'saved'}
+          aria-controls="professional-jobs-saved-panel"
+          onClick={() => setActiveTab('saved')}
+        >
+          {ta ? 'Saved Jobs' : 'Saved jobs'}
+        </button>
+        <button
           id="professional-jobs-offers-tab"
           className={`${styles.tabButton} ${activeTab === 'offers' ? styles.tabActive : ''}`}
           type="button"
@@ -51,6 +63,15 @@ export function ProfessionalJobsWorkspace() {
         hidden={activeTab !== 'applications'}
       >
         <ProviderJobMarketplace />
+      </div>
+
+      <div
+        id="professional-jobs-saved-panel"
+        role="tabpanel"
+        aria-labelledby="professional-jobs-saved-tab"
+        hidden={activeTab !== 'saved'}
+      >
+        <SavedJobsWorkspace />
       </div>
 
       <div
