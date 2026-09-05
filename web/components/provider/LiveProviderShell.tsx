@@ -38,6 +38,7 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
       { href: '/provider/reviews', label: t('provider.reviews') },
     ];
     if (provider?.provider_type === 'professional') {
+      links.push({ href: '/provider/public-readiness', label: tamil ? 'Public profile தயார்நிலை' : 'Public profile readiness' });
       links.push({ href: '/provider/portfolio', label: tamil ? 'வேலை Portfolio' : 'Portfolio' });
       links.push({ href: '/provider/resume', label: 'Resume & Career' });
       links.push({ href: '/provider/jobs', label: tamil ? 'Jobs & Applications' : 'Jobs & Applications' });
