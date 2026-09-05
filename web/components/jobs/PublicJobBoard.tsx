@@ -68,14 +68,9 @@ export function PublicJobBoard() {
       if (locationValue && !normalized(job.location).includes(locationValue) && !normalized(job.business?.location).includes(locationValue)) return false;
       if (skillValue && !(job.required_skills ?? []).some((skill) => normalized(skill) === skillValue)) return false;
       if (!keywordValue) return true;
-      const haystack = [
-        job.title,
-        job.description,
-        job.business?.name,
-        job.location,
-        job.business?.location,
-        ...(job.required_skills ?? []),
-      ].map((value) => normalized(value)).join(' ');
+      const haystack = [job.title, job.description, job.business?.name, job.location, job.business?.location, ...(job.required_skills ?? [])]
+        .map((value) => normalized(value))
+        .join(' ');
       return haystack.includes(keywordValue);
     });
   }, [jobs, keyword, employmentType, workplaceType, locationFilter, skillFilter]);
@@ -134,19 +129,19 @@ export function PublicJobBoard() {
     {loading ? <div className={styles.empty}>{ta ? 'வேலை வாய்ப்புகள் ஏற்றப்படுகின்றன…' : 'Loading opportunities…'}</div> : null}
     {!loading && !jobs.length ? <div className={styles.empty}>{ta ? 'தற்போது open job வாய்ப்புகள் இல்லை.' : 'No open job opportunities right now.'}</div> : null}
 
-    {!loading && jobs.length ? <section className={styles.discoveryPanel} aria-label="Job discovery filters">
-      <div className={styles.discoveryHeading}>
-        <div><span className={styles.eyebrow}>{ta ? 'Job discovery' : 'Job discovery'}</span><h2>{ta ? 'உங்களுக்கு பொருத்தமான jobs தேடுங்கள்' : 'Find the right opportunity'}</h2><p className={styles.muted}>{ta ? 'Keyword, job type, workplace, location மற்றும் skill மூலம் filter செய்யலாம்.' : 'Narrow open jobs by keyword, job type, workplace, location and skill.'}</p></div>
-        <div className={styles.resultCount}><strong>{filteredJobs.length}</strong><span>{ta ? ` / ${jobs.length} jobs` : `of ${jobs.length} jobs`}</span></div>
+    {!loading && jobs.length ? <section className={`${styles.card} ${styles.section}`} aria-label="Job discovery filters">
+      <div className={styles.sectionHeading}>
+        <div><span className={styles.eyebrow}>Job discovery</span><h2>{ta ? 'உங்களுக்கு பொருத்தமான jobs தேடுங்கள்' : 'Find the right opportunity'}</h2><p className={styles.muted}>{ta ? 'Keyword, job type, workplace, location மற்றும் skill மூலம் filter செய்யலாம்.' : 'Narrow open jobs by keyword, job type, workplace, location and skill.'}</p></div>
+        <div className={styles.jobMetric}><strong>{filteredJobs.length}</strong><span>{ta ? `/ ${jobs.length} jobs` : `of ${jobs.length} jobs`}</span></div>
       </div>
-      <div className={styles.discoveryGrid}>
-        <label className={`${styles.label} ${styles.discoveryKeyword}`}>{ta ? 'Keyword' : 'Keyword'}<input className={styles.input} type="search" value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder={ta ? 'Title, company, skill…' : 'Title, company, skill…'} /></label>
-        <label className={styles.label}>{ta ? 'Employment' : 'Employment'}<select className={styles.select} value={employmentType} onChange={(event) => setEmploymentType(event.target.value)}><option value="">{ta ? 'அனைத்தும்' : 'All types'}</option>{employmentTypes.map((type) => <option key={type} value={type}>{label(type)}</option>)}</select></label>
-        <label className={styles.label}>{ta ? 'Workplace' : 'Workplace'}<select className={styles.select} value={workplaceType} onChange={(event) => setWorkplaceType(event.target.value)}><option value="">{ta ? 'அனைத்தும்' : 'All workplaces'}</option>{workplaceTypes.map((type) => <option key={type} value={type}>{label(type)}</option>)}</select></label>
-        <label className={styles.label}>{ta ? 'Location' : 'Location'}<input className={styles.input} value={locationFilter} onChange={(event) => setLocationFilter(event.target.value)} placeholder={ta ? 'City or area' : 'City or area'} /></label>
-        <label className={styles.label}>{ta ? 'Skill' : 'Skill'}<select className={styles.select} value={skillFilter} onChange={(event) => setSkillFilter(event.target.value)}><option value="">{ta ? 'அனைத்து skills' : 'All skills'}</option>{skills.map((skill) => <option key={skill} value={skill}>{skill}</option>)}</select></label>
+      <div className={styles.formGrid}>
+        <label className={`${styles.label} ${styles.wide}`}>Keyword<input className={styles.input} type="search" value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="Title, company, skill…" /></label>
+        <label className={styles.label}>Employment<select className={styles.select} value={employmentType} onChange={(event) => setEmploymentType(event.target.value)}><option value="">{ta ? 'அனைத்தும்' : 'All types'}</option>{employmentTypes.map((type) => <option key={type} value={type}>{label(type)}</option>)}</select></label>
+        <label className={styles.label}>Workplace<select className={styles.select} value={workplaceType} onChange={(event) => setWorkplaceType(event.target.value)}><option value="">{ta ? 'அனைத்தும்' : 'All workplaces'}</option>{workplaceTypes.map((type) => <option key={type} value={type}>{label(type)}</option>)}</select></label>
+        <label className={styles.label}>Location<input className={styles.input} value={locationFilter} onChange={(event) => setLocationFilter(event.target.value)} placeholder={ta ? 'City or area' : 'City or area'} /></label>
+        <label className={styles.label}>Skill<select className={styles.select} value={skillFilter} onChange={(event) => setSkillFilter(event.target.value)}><option value="">{ta ? 'அனைத்து skills' : 'All skills'}</option>{skills.map((skill) => <option key={skill} value={skill}>{skill}</option>)}</select></label>
       </div>
-      {hasFilters ? <div className={styles.filterSummary}><span>{ta ? `${filteredJobs.length} matching jobs` : `${filteredJobs.length} matching ${filteredJobs.length === 1 ? 'job' : 'jobs'}`}</span><button className={`${styles.button} ${styles.secondary}`} type="button" onClick={clearFilters}>{ta ? 'Filters clear செய்ய' : 'Clear filters'}</button></div> : null}
+      {hasFilters ? <div className={styles.row}><span className={styles.muted}>{ta ? `${filteredJobs.length} matching jobs` : `${filteredJobs.length} matching ${filteredJobs.length === 1 ? 'job' : 'jobs'}`}</span><button className={`${styles.button} ${styles.secondary}`} type="button" onClick={clearFilters}>{ta ? 'Filters clear செய்ய' : 'Clear filters'}</button></div> : null}
     </section> : null}
 
     {!loading && jobs.length > 0 && filteredJobs.length === 0 ? <div className={`${styles.empty} ${styles.emptyState}`}><span className={styles.emptyIcon}>⌕</span><strong>{ta ? 'Matching jobs இல்லை' : 'No jobs match these filters'}</strong><span>{ta ? 'ஒரு filter-ஐ மாற்றி அல்லது clear செய்து மீண்டும் பார்க்கவும்.' : 'Try broadening or clearing one of your filters.'}</span><button className={`${styles.button} ${styles.secondary}`} type="button" onClick={clearFilters}>{ta ? 'அனைத்து filters clear செய்ய' : 'Clear all filters'}</button></div> : null}
