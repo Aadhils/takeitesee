@@ -6,35 +6,13 @@ import { Alert, Badge, Button, Card, Input } from '../ui/primitives';
 import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 
 type ProviderType = 'professional' | 'business';
-type ProviderSummary = {
-  id: string;
-  provider_type: ProviderType;
-  display_name: string;
-  location: string;
-  verified: boolean;
-};
-
+type ProviderSummary = { id: string; provider_type: ProviderType; display_name: string; location: string; verified: boolean };
 type ProviderApplication = {
-  id: string;
-  provider_type: ProviderType;
-  display_name: string;
-  description?: string | null;
-  location: string;
-  status: 'pending' | 'approved' | 'rejected' | 'withdrawn';
-  review_note?: string | null;
-  reviewed_at?: string | null;
-  result_provider_id?: string | null;
-  created_at: string;
-  updated_at: string;
+  id: string; provider_type: ProviderType; display_name: string; description?: string | null; location: string;
+  status: 'pending' | 'approved' | 'rejected' | 'withdrawn'; review_note?: string | null; reviewed_at?: string | null;
+  result_provider_id?: string | null; created_at: string; updated_at: string;
 };
-
-type OnboardingPayload = {
-  provider?: ProviderSummary | null;
-  providers?: ProviderSummary[];
-  available_provider_types?: ProviderType[];
-  applications: ProviderApplication[];
-  error?: string;
-};
+type OnboardingPayload = { provider?: ProviderSummary | null; providers?: ProviderSummary[]; available_provider_types?: ProviderType[]; applications: ProviderApplication[]; error?: string };
 
 function statusTone(status: ProviderApplication['status']) {
   if (status === 'approved') return 'success' as const;
@@ -48,88 +26,61 @@ export function ProviderOnboarding() {
   const tamil = locale.toLowerCase().startsWith('ta');
   const [payload, setPayload] = useState<OnboardingPayload | null>(null);
   const [form, setForm] = useState({ provider_type: 'professional' as ProviderType, display_name: '', description: '', location: '' });
+  const [acknowledged, setAcknowledged] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setError('');
+    setLoading(true); setError('');
     try {
       const response = await fetch('/api/provider/onboarding', { cache: 'no-store' });
       const body = await response.json() as OnboardingPayload;
       if (!response.ok) throw new Error(body.error ?? t('onboarding.loadFallback'));
       setPayload(body);
-
       const available = body.available_provider_types ?? [];
       if (available.length) {
         const requested = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('type') : null;
-        const preferred = (requested === 'professional' || requested === 'business') && available.includes(requested)
-          ? requested
-          : available[0];
+        const preferred = (requested === 'professional' || requested === 'business') && available.includes(requested) ? requested : available[0];
         setForm((current) => ({ ...current, provider_type: preferred }));
       }
-    } catch (cause) {
-      setPayload(null);
-      setError(cause instanceof Error ? cause.message : t('onboarding.loadFallback'));
-    } finally {
-      setLoading(false);
-    }
+    } catch (cause) { setPayload(null); setError(cause instanceof Error ? cause.message : t('onboarding.loadFallback')); }
+    finally { setLoading(false); }
   }, [t]);
 
   useEffect(() => { void load(); }, [load]);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (busy) return;
-    setBusy(true);
-    setError('');
+    if (busy || !acknowledged) return;
+    setBusy(true); setError('');
     try {
-      const response = await fetch('/api/provider/onboarding', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      });
+      const response = await fetch('/api/provider/onboarding', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
       const body = await response.json() as { application?: ProviderApplication; error?: string };
       if (!response.ok || !body.application) throw new Error(body.error ?? t('onboarding.submitFallback'));
       setForm((current) => ({ provider_type: current.provider_type, display_name: '', description: '', location: '' }));
+      setAcknowledged(false);
       await load();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t('onboarding.submitFallback'));
-    } finally {
-      setBusy(false);
-    }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : t('onboarding.submitFallback')); }
+    finally { setBusy(false); }
   };
 
   const withdraw = async (applicationId: string) => {
     if (busy) return;
-    setBusy(true);
-    setError('');
+    setBusy(true); setError('');
     try {
-      const response = await fetch('/api/provider/onboarding', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ application_id: applicationId, action: 'withdraw' }),
-      });
+      const response = await fetch('/api/provider/onboarding', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ application_id: applicationId, action: 'withdraw' }) });
       const body = await response.json() as { application?: ProviderApplication; error?: string };
       if (!response.ok || !body.application) throw new Error(body.error ?? t('onboarding.withdrawFallback'));
+      setAcknowledged(false);
       await load();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t('onboarding.withdrawFallback'));
-    } finally {
-      setBusy(false);
-    }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : t('onboarding.withdrawFallback')); }
+    finally { setBusy(false); }
   };
 
-  const statusLabel = (status: ProviderApplication['status']) => {
-    if (status === 'approved') return t('status.approved');
-    if (status === 'rejected') return t('status.rejected');
-    if (status === 'withdrawn') return t('status.withdrawn');
-    return t('status.pending');
-  };
+  const statusLabel = (status: ProviderApplication['status']) => status === 'approved' ? t('status.approved') : status === 'rejected' ? t('status.rejected') : status === 'withdrawn' ? t('status.withdrawn') : t('status.pending');
 
   if (loading) return <div className="auth-page provider-onboarding-page"><section className="page-intro"><span className="eyebrow">{t('onboarding.title')}</span><h1>{t('onboarding.loading')}</h1></section></div>;
-
   if (!payload && error) {
     const authError = /authentication required/i.test(error);
     return <div className="auth-page provider-onboarding-page">
@@ -140,82 +91,60 @@ export function ProviderOnboarding() {
   }
 
   const providers = payload?.providers ?? (payload?.provider ? [payload.provider] : []);
+  const provider = providers[0] ?? null;
   const availableTypes = payload?.available_provider_types ?? [];
   const latest = payload?.applications[0] ?? null;
   const pending = payload?.applications.find((application) => application.status === 'pending') ?? null;
   const previous = latest && latest.status !== 'approved' && latest.status !== 'pending' ? latest : null;
-  const hasExistingProvider = providers.length > 0;
-  const canAddProvider = availableTypes.length > 0;
+  const canApply = !provider && !pending && availableTypes.length > 0;
+  const opposite = provider?.provider_type === 'professional' ? 'Business' : 'Professional';
 
   return <div className="auth-page provider-onboarding-page">
     <section className="page-intro">
       <span className="eyebrow">{t('onboarding.title')}</span>
-      <h1>{hasExistingProvider
-        ? canAddProvider
-          ? (tamil ? 'மற்றொரு provider profile சேர்க்கவும்.' : 'Add another provider profile.')
-          : (tamil ? 'உங்கள் provider profiles.' : 'Your provider profiles.')
-        : t('onboarding.applyTitle')}</h1>
-      <p>{hasExistingProvider
-        ? (tamil ? 'உங்கள் existing provider profile மாற்றமின்றி இருக்கும். Professional மற்றும் Business profile-களை இதே login-ல் தனித்தனி workspace-களாக பயன்படுத்தலாம்.' : 'Your existing provider profile stays unchanged. Professional and Business profiles can live as separate workspaces under this same login.')
-        : t('onboarding.applyIntro')}</p>
+      <h1>{provider ? (tamil ? `உங்கள் ${provider.provider_type === 'professional' ? 'Professional' : 'Business'} provider identity.` : `Your ${provider.provider_type === 'professional' ? 'Professional' : 'Business'} provider identity.`) : pending ? (tamil ? 'Provider application review-ல் உள்ளது.' : 'Provider application under review.') : (tamil ? 'உங்கள் Provider identity-ஐ தேர்வு செய்யுங்கள்.' : 'Choose your Provider identity.')}</h1>
+      <p>{provider
+        ? (tamil ? `இந்த account ${provider.provider_type === 'professional' ? 'Professional' : 'Business'} provider-ஆக பதிவு செய்யப்பட்டுள்ளது. ${opposite} identity-க்கு தனி TakeItEsee account தேவை.` : `This account is registered as a ${provider.provider_type === 'professional' ? 'Professional' : 'Business'} provider. A separate TakeItEsee account is required for a ${opposite} identity.`)
+        : pending
+          ? (tamil ? 'நீங்கள் ஒரு provider type தேர்வு செய்து விட்டீர்கள். Approval முன் மாற்ற வேண்டுமெனில் இந்த application-ஐ withdraw செய்யலாம்.' : 'You have selected one provider type. Withdraw this application before approval if you need to change that choice.')
+          : (tamil ? 'Professional அல்லது Business — இந்த account-க்கு ஒரு Provider identity மட்டும் தேர்வு செய்யலாம்.' : 'Choose either Professional or Business. This account can register only one Provider identity.')}</p>
     </section>
 
     {error ? <Alert title={t('onboarding.attention')} tone="warning">{error}</Alert> : null}
 
-    {providers.length ? <div className="section-stack">
-      {providers.map((provider) => <Card key={provider.id}>
-        <div className="section-heading">
-          <div><span className="eyebrow">{provider.provider_type === 'business' ? t('onboarding.businessProvider') : t('onboarding.professionalProvider')}</span><h2>{provider.display_name}</h2></div>
-          <Badge tone={provider.verified ? 'success' : 'warning'}>{provider.verified ? t('onboarding.verified') : t('onboarding.verificationPending')}</Badge>
-        </div>
-        <p>{provider.location || t('onboarding.locationUnset')}</p>
-        <p className="summary-note">{t('onboarding.approvalHelp')}</p>
-      </Card>)}
+    {provider ? <div className="section-stack">
       <Card>
-        <div className="button-row">
-          <Link href="/account#workspaces" className="button button-secondary">{tamil ? 'Profiles & switching நிர்வகிக்க' : 'Manage profiles & switching'}</Link>
-          <Link href="/provider" className="button button-primary">{t('onboarding.openWorkspace')}</Link>
-        </div>
+        <div className="section-heading"><div><span className="eyebrow">{provider.provider_type === 'business' ? t('onboarding.businessProvider') : t('onboarding.professionalProvider')}</span><h2>{provider.display_name}</h2></div><Badge tone={provider.verified ? 'success' : 'warning'}>{provider.verified ? t('onboarding.verified') : t('onboarding.verificationPending')}</Badge></div>
+        <p>{provider.location || t('onboarding.locationUnset')}</p>
+        <Alert title={tamil ? 'ஒரு account · ஒரு Provider identity' : 'One account · one Provider identity'} tone="info">{tamil ? `இந்த provider identity active ஆன பிறகு ${opposite} profile-ஐ இதே account-ல் சேர்க்க முடியாது. ${opposite} provider ஆக செயல்பட தனி account பயன்படுத்தவும்.` : `After this Provider identity is active, the same account cannot add a ${opposite} profile. Use a separate account to operate as a ${opposite} provider.`}</Alert>
       </Card>
+      <Card><div className="button-row"><Link href="/account#workspaces" className="button button-secondary">{tamil ? 'Profiles & workspaces' : 'Profiles & workspaces'}</Link><Link href="/provider" className="button button-primary">{t('onboarding.openWorkspace')}</Link></div></Card>
     </div> : null}
 
-    {pending ? <Card>
+    {pending && !provider ? <Card>
       <div className="section-heading"><div><span className="eyebrow">{t('onboarding.applicationStatus')}</span><h2>{pending.display_name}</h2></div><Badge tone="warning">{t('onboarding.pendingReview')}</Badge></div>
       <p>{pending.provider_type === 'business' ? t('onboarding.businessProvider') : t('onboarding.professionalProvider')} · {pending.location}</p>
       {pending.description ? <p>{pending.description}</p> : null}
-      <p className="summary-note">{hasExistingProvider
-        ? (tamil ? 'இந்த additional profile review ஆகும் வரை உங்கள் existing provider workspace தொடர்ந்து active-ஆ இருக்கும்.' : 'Your existing provider workspace remains active while this additional profile is reviewed.')
-        : t('onboarding.pendingHelp')}</p>
+      <p className="summary-note">{tamil ? `இந்த ${pending.provider_type === 'professional' ? 'Professional' : 'Business'} தேர்வு review pending நிலையில் உள்ளது; மற்ற provider type தற்போது lock செய்யப்பட்டுள்ளது.` : `Your ${pending.provider_type === 'professional' ? 'Professional' : 'Business'} choice is pending review; the other provider type is currently locked.`}</p>
       <Button type="button" variant="quiet" disabled={busy} onClick={() => void withdraw(pending.id)}>{busy ? t('onboarding.updating') : t('onboarding.withdraw')}</Button>
     </Card> : null}
 
-    {!pending && canAddProvider ? <>
-      {previous ? <Card>
-        <div className="section-heading"><div><span className="eyebrow">{t('onboarding.previous')}</span><h2>{previous.display_name}</h2></div><Badge tone={statusTone(previous.status)}>{statusLabel(previous.status)}</Badge></div>
-        {previous.review_note ? <p><strong>{t('onboarding.platformNote')}:</strong> {previous.review_note}</p> : null}
-        <p className="summary-note">{previous.status === 'rejected' ? t('onboarding.rejectedHelp') : t('onboarding.newHelp')}</p>
-      </Card> : null}
+    {canApply ? <>
+      {previous ? <Card><div className="section-heading"><div><span className="eyebrow">{t('onboarding.previous')}</span><h2>{previous.display_name}</h2></div><Badge tone={statusTone(previous.status)}>{statusLabel(previous.status)}</Badge></div>{previous.review_note ? <p><strong>{t('onboarding.platformNote')}:</strong> {previous.review_note}</p> : null}<p className="summary-note">{previous.status === 'rejected' ? t('onboarding.rejectedHelp') : t('onboarding.newHelp')}</p></Card> : null}
 
       <Card className="auth-card">
-        <h2>{hasExistingProvider ? (tamil ? 'Additional provider profile application' : 'Additional provider profile application') : t('onboarding.application')}</h2>
+        <h2>{tamil ? 'Provider identity application' : 'Provider identity application'}</h2>
+        <Alert title={tamil ? 'தேர்வை கவனமாக செய்யுங்கள்' : 'Choose carefully'} tone="warning">{tamil ? 'Approval கிடைத்த பிறகு இந்த account தேர்வு செய்த Provider identity-க்கு lock ஆகும். மற்ற Provider type-க்கு தனி TakeItEsee account தேவை.' : 'After approval, this account is locked to the selected Provider identity. The other Provider type requires a separate TakeItEsee account.'}</Alert>
         <form onSubmit={submit} style={{ display: 'grid', gap: '.9rem' }}>
-          <label className="field"><span className="field-label">{t('onboarding.providerType')}</span><select className="field-control" value={form.provider_type} onChange={(event) => setForm({ ...form, provider_type: event.target.value as ProviderType })}>{availableTypes.map((providerType) => <option value={providerType} key={providerType}>{providerType === 'professional' ? t('onboarding.professionalIndividual') : t('onboarding.businessCompany')}</option>)}</select></label>
+          <label className="field"><span className="field-label">{t('onboarding.providerType')}</span><select className="field-control" value={form.provider_type} onChange={(event) => { setForm({ ...form, provider_type: event.target.value as ProviderType }); setAcknowledged(false); }}>{availableTypes.map((providerType) => <option value={providerType} key={providerType}>{providerType === 'professional' ? t('onboarding.professionalIndividual') : t('onboarding.businessCompany')}</option>)}</select></label>
           <Input label={form.provider_type === 'business' ? t('onboarding.businessName') : t('onboarding.professionalName')} required maxLength={120} value={form.display_name} onChange={(event) => setForm({ ...form, display_name: event.target.value })} />
           <Input label={form.provider_type === 'business' ? t('onboarding.businessArea') : t('onboarding.primaryArea')} required maxLength={160} value={form.location} onChange={(event) => setForm({ ...form, location: event.target.value })} />
           <label className="field"><span className="field-label">{t('onboarding.aboutOptional')}</span><textarea className="field-control" rows={5} maxLength={1200} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder={t('onboarding.aboutPlaceholder')} /></label>
-          <Alert title={t('onboarding.approvalRequired')} tone="info">{hasExistingProvider
-            ? (tamil ? 'Approval கிடைத்தால் missing provider profile மட்டும் இந்த account-க்கு சேர்க்கப்படும். Existing profile மற்றும் அதன் verification/state மாற்றப்படாது.' : 'Approval adds only the missing provider profile to this account. Your existing profile, verification and operational state stay unchanged.')
-            : t('onboarding.approvalWarning')}</Alert>
-          <Button type="submit" loading={busy}>{t('onboarding.submit')}</Button>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '.65rem', lineHeight: 1.5 }}><input type="checkbox" checked={acknowledged} onChange={(event) => setAcknowledged(event.target.checked)} style={{ marginTop: '.25rem' }} /><span>{tamil ? `இந்த account-ல் ${form.provider_type === 'professional' ? 'Professional' : 'Business'} Provider identity மட்டும் register செய்யப்படும்; மற்ற type-க்கு தனி account தேவை என்பதை புரிந்துகொண்டேன்.` : `I understand this account will register only the ${form.provider_type === 'professional' ? 'Professional' : 'Business'} Provider identity and the other type requires a separate account.`}</span></label>
+          <Button type="submit" loading={busy} disabled={!acknowledged || busy}>{t('onboarding.submit')}</Button>
         </form>
       </Card>
     </> : null}
-
-    {!pending && !canAddProvider && providers.length === 2 ? <Card>
-      <h2>{tamil ? 'Professional + Business profiles active' : 'Professional + Business profiles active'}</h2>
-      <p>{tamil ? 'இந்த login-ல் இரு provider identities-மும் உள்ளன. Account workspace switcher மூலம் தேவையான profile-க்கு மாறலாம்.' : 'Both provider identities are connected to this login. Use the account workspace switcher to move between them.'}</p>
-      <Link href="/account#workspaces" className="button button-primary">{tamil ? 'Profiles & workspaces திற' : 'Open profiles & workspaces'}</Link>
-    </Card> : null}
 
     <Card><p>{t('onboarding.customerStillActive')}</p><Link href="/account" className="text-link">{t('onboarding.backAccount')}</Link></Card>
   </div>;
