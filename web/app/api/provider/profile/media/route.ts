@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 const BUCKET = 'professional-portfolio-media';
 const SIGNED_URL_TTL_SECONDS = 15 * 60;
-const MEDIA_SELECT = 'id,professional_id,professional_role_id,media_type,object_path,original_filename,mime_type,size_bytes,caption,alt_text,active,display_order,created_at,updated_at';
+const MEDIA_SELECT = 'id,professional_id,professional_role_id,media_type,object_path,original_filename,mime_type,size_bytes,caption,alt_text,active,moderation_state,moderation_updated_at,display_order,created_at,updated_at';
 
 type MediaInput = {
   id?: unknown;
@@ -33,6 +33,8 @@ type MediaRow = {
   caption: string | null;
   alt_text: string | null;
   active: boolean;
+  moderation_state: 'clear' | 'paused';
+  moderation_updated_at: string | null;
   display_order: number;
   created_at: string;
   updated_at: string;

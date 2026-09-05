@@ -26,21 +26,40 @@ async function addPortfolioPreviews(rows: ModerationQueueRow[]) {
     const service = createSupabaseServiceClient();
     const { data: mediaRows, error } = await service
       .from('professional_portfolio_media')
-      .select('id,object_path,media_type')
+      .select('id,object_path,media_type,active,moderation_state,moderation_updated_at')
       .in('id', targetIds);
     if (error || !mediaRows?.length) return rows;
 
-    const previews = new Map<string, { media_type: string; signed_url: string }>();
+    const previews = new Map<string, {
+      media_type: string;
+      signed_url: string | null;
+      active: boolean;
+      moderation_state: string;
+      moderation_updated_at: string | null;
+    }>();
     await Promise.all(mediaRows.map(async (media) => {
       const { data, error: signedError } = await service.storage
         .from(portfolioBucket)
         .createSignedUrl(String(media.object_path), portfolioPreviewTtlSeconds);
-      if (!signedError && data?.signedUrl) previews.set(String(media.id), { media_type: String(media.media_type), signed_url: data.signedUrl });
+      previews.set(String(media.id), {
+        media_type: String(media.media_type),
+        signed_url: !signedError && data?.signedUrl ? data.signedUrl : null,
+        active: Boolean(media.active),
+        moderation_state: String(media.moderation_state || 'clear'),
+        moderation_updated_at: media.moderation_updated_at ? String(media.moderation_updated_at) : null,
+      });
     }));
 
     return rows.map((row) => {
       const preview = row.target_id ? previews.get(String(row.target_id)) : undefined;
-      return preview ? { ...row, portfolio_media_type: preview.media_type, portfolio_preview_url: preview.signed_url } : row;
+      return preview ? {
+        ...row,
+        portfolio_media_type: preview.media_type,
+        portfolio_preview_url: preview.signed_url,
+        portfolio_active: preview.active,
+        portfolio_moderation_state: preview.moderation_state,
+        portfolio_moderation_updated_at: preview.moderation_updated_at,
+      } : row;
     });
   } catch {
     return rows;
@@ -64,13 +83,32 @@ export async function GET(request: Request) {
 export async function PATCH(request: Request) {
   try {
     await productionAuthProvider.requireAdmin(request);
-    const body = await request.json() as { report_id?: string; status?: 'open'|'reviewing'|'actioned'|'dismissed'; note?: string };
+    const body = await request.json() as {
+      report_id?: string;
+      status?: 'open'|'reviewing'|'actioned'|'dismissed';
+      note?: string;
+      media_action?: 'pause'|'restore';
+    };
     if (!body.report_id) return NextResponse.json({ error: 'Report ID is required.' }, { status: 400 });
-    if (!body.status || !['open','reviewing','actioned','dismissed'].includes(body.status)) return NextResponse.json({ error: 'Choose a valid moderation status.' }, { status: 400 });
     const note = String(body.note ?? '').trim();
     if (note.length > 2000) return NextResponse.json({ error: 'Moderation note must be 2000 characters or fewer.' }, { status: 400 });
-    if (['actioned','dismissed'].includes(body.status) && note.length < 3) return NextResponse.json({ error: 'A moderation note is required to close a report.' }, { status: 400 });
+
     const supabase = await createSupabaseServerClient();
+
+    if (body.media_action) {
+      if (!['pause','restore'].includes(body.media_action)) return NextResponse.json({ error: 'Choose a valid portfolio moderation action.' }, { status: 400 });
+      if (note.length < 3) return NextResponse.json({ error: 'A moderation note is required to change portfolio visibility.' }, { status: 400 });
+      const { data, error } = await supabase.rpc('admin_set_professional_portfolio_media_moderation', {
+        target_report_id: body.report_id,
+        requested_state: body.media_action === 'pause' ? 'paused' : 'clear',
+        requested_note: note,
+      }).maybeSingle();
+      if (error || !data) throw new Error(error?.message ?? 'Portfolio moderation action could not be applied.');
+      return NextResponse.json({ media: data });
+    }
+
+    if (!body.status || !['open','reviewing','actioned','dismissed'].includes(body.status)) return NextResponse.json({ error: 'Choose a valid moderation status.' }, { status: 400 });
+    if (['actioned','dismissed'].includes(body.status) && note.length < 3) return NextResponse.json({ error: 'A moderation note is required to close a report.' }, { status: 400 });
     const { data, error } = await supabase.rpc('admin_update_marketplace_moderation_report', {
       target_report_id: body.report_id,
       requested_status: body.status,
