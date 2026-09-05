@@ -1,0 +1,12 @@
+Customer Saved Services contract
+
+1. Only an authenticated user with their own customer profile can read, save, or remove saved-service rows.
+2. RLS is owner-scoped by customer_profiles.user_id = auth.uid(); anon receives no table privileges.
+3. The composite (customer_id, service_id) primary key prevents duplicate saved-service rows.
+4. A new save is accepted only when the service is currently active and its owning Professional/Business is verified; the API re-checks this on every POST.
+5. Saving does not create, modify, cancel, reschedule, or pay for a booking.
+6. If a previously saved service later becomes non-public/inactive, the saved relation may remain as private history and the Saved services workspace presents it as unavailable until removed.
+7. Permanent customer-profile or service deletion cascades the saved relation through foreign keys.
+8. Public service detail exposes Save/Saved only through the authenticated saved-services API; guests receive a sign-in-to-save action.
+9. /saved-services is linked from the customer account navigation and lists available saved services with Open service and Unsave actions.
+10. No Jobs/Hiring, Requirements/recurrence, provider verification/trust, messaging, moderation, finance, Cashfree, refund, payout, settlement, reconciliation, or recovery semantics are changed.
