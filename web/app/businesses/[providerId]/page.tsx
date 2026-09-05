@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import PublicProviderProfile from '../../../components/detail/PublicProviderProfile';
+import ProviderProfileShareAction from '../../../components/detail/ProviderProfileShareAction';
 
 const siteUrl = 'https://www.takeitesee.com';
 
@@ -131,6 +132,9 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, '\\u003c') }}
     /> : null}
+    <div className="container" style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '1rem' }}>
+      <ProviderProfileShareAction providerId={providerId} providerName={business.name || ''} kind="business" />
+    </div>
     <PublicProviderProfile
       kind="business"
       provider={{
