@@ -1,0 +1,12 @@
+Booking calendar export contract
+
+1. A customer booking detail route exposes an Add to calendar (.ics) action in English and Tamil workspace modes.
+2. Calendar export is served only from authenticated GET /api/bookings/[bookingId]/calendar and reuses the existing customer-owned booking lookup; no client-supplied customer/provider identity is trusted.
+3. The calendar file uses a stable booking-derived UID so importing an updated or cancelled copy refers to the same booking event.
+4. Booking date + start time are converted from the stored IANA timezone to UTC; duration determines DTEND and may cross a date boundary.
+5. Calendar summary includes service + provider display context; description includes booking reference/status and the authenticated TakeItEsee booking URL; location is included.
+6. pending/rescheduled bookings export as TENTATIVE, cancelled bookings as CANCELLED, and other supported booking states as CONFIRMED.
+7. Calendar text is escaped and long content lines are folded; response uses text/calendar, attachment disposition, nosniff, and private no-store caching.
+8. Calendar export does not expose customer contact data, customer notes, quoted price, payment status, or finance details.
+9. Existing booking create/reschedule/cancel/closeout/review/payment state machines are unchanged; the export is read-only and adds no database migration.
+10. Jobs, requirements, finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery and recurring-requirement semantics are outside this slice and unchanged.
