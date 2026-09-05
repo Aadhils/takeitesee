@@ -1,12 +1,12 @@
-Secondary provider profile onboarding contract
+Secondary provider profile onboarding contract — SUPERSEDED
 
-1. One authenticated TakeItEsee login may own at most one Professional profile and at most one Business profile; creating a second login is not required to use both provider identities.
-2. Provider onboarding may submit an application only for a provider type the authenticated user does not already own. Re-applying for an already-owned Professional or Business type must be rejected.
-3. The existing one-pending-provider-application-per-user invariant remains authoritative. A second provider application cannot be submitted while another provider application is pending.
-4. Approving a secondary provider application creates only the requested missing provider record. It must not delete, replace, re-verify, suspend, or otherwise mutate the user's existing provider profile.
-5. The legacy users.role value may move from customer to the first approved provider type for backward compatibility, but approving an additional provider profile must not overwrite an existing provider/admin/super-admin stored role. Runtime provider roles continue to be re-derived from owned provider records.
-6. Rejection and applicant withdrawal keep their existing lifecycle, audit event and notification behavior. Provider verification remains a separate platform review after onboarding approval.
-7. /account must surface existing workspaces plus the missing Professional/Business profile onboarding entry. While an application is pending, the account surface must link to that pending application instead of advertising another submission that the database will reject.
-8. /provider/onboarding must show all currently owned provider profiles and allow applying only for missing provider types. Existing provider workspace access remains active while an additional profile is awaiting review.
-9. Admin/Super Admin review authorization remains unchanged; applicants still cannot review their own provider applications.
-10. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery behavior is unchanged and remains on HOLD. Recurrence/recovery remains FROZEN. Supabase Pro leaked-password protection remains on HOLD.
+The dual-provider same-login behavior introduced by the earlier secondary-profile work is no longer authoritative.
+
+Authoritative product rule from migration 20260905230426 and the single-provider identity contract:
+- one TakeItEsee account always retains its Customer identity;
+- the account may optionally own ONE Provider identity: Professional OR Business, never both;
+- after one Provider identity is approved, the opposite Provider type requires a separate TakeItEsee account;
+- a pending Provider application reserves the choice until it is withdrawn, rejected, or approved;
+- database ownership triggers, onboarding submission, Admin approval, account UI, and onboarding UI must all enforce the same invariant.
+
+See: web/components/account/__tests__/single-provider-identity.contract.txt
