@@ -1,0 +1,31 @@
+Provider application withdrawal notification deep-link contract
+
+Scope
+- Covers only the provider_application_withdrawn notification emitted by public.withdraw_provider_application(uuid).
+- The notification target is /provider/onboarding.
+
+Behavior
+- A provider applicant may still withdraw only their own pending application.
+- The application still transitions from pending to withdrawn exactly as before.
+- The provider_application_events withdrawn audit event remains unchanged.
+- The notification event_type, title, and body remain unchanged.
+- The only notification behavior change is target_path='/provider/onboarding'.
+
+Security boundaries
+- public.withdraw_provider_application(uuid) remains SECURITY DEFINER.
+- search_path remains empty.
+- authenticated and service_role EXECUTE remain allowed.
+- anon and PUBLIC EXECUTE remain revoked.
+- No RLS, ownership, provider identity, review, or authorization behavior changes.
+
+UI destination
+- /provider/onboarding is the existing provider onboarding surface.
+- The current onboarding API invokes withdraw_provider_application for the withdrawal action.
+
+Intentional exclusions
+- Provider application submit/review behavior is unchanged.
+- Provider verification and trust-state behavior is unchanged.
+- The legacy six-argument submit_provider_verification overload is not changed; it is not authenticated-callable.
+- Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD.
+- Recurrence/recovery remains FROZEN.
+- Supabase leaked-password protection remains HOLD.
