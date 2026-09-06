@@ -1,0 +1,41 @@
+Provider type-specific route boundary contract
+
+Authoritative identity rule
+- One account keeps Customer plus ONE Provider identity: Professional OR Business, never both.
+- Shared Provider routes may serve both Provider types when their product behavior is intentionally common or type-aware.
+- Type-specific routes must not render the opposite Provider module merely because the URL was manually addressed.
+
+Read-side guard
+- Type-specific Provider child pages use getProviderSessionOrNull().
+- The helper is non-throwing so the parent /provider layout remains the authoritative guest/non-provider redirect boundary.
+- The helper re-derives Provider roles from the authenticated server session and preserves the legacy active-workspace preference defensively if both Provider roles are ever present.
+- No cookie or page guard grants Provider authorization; existing API/RPC/RLS/ownership checks remain authoritative.
+
+Professional-only routes
+- /provider/public-readiness requires the active Professional role; Business redirects to /provider.
+- /provider/portfolio requires the active Professional role; Business redirects to /provider.
+- /provider/resume requires the active Professional role; Business redirects to /provider.
+- /provider/resume/export requires the active Professional role; Business redirects to /provider.
+
+Business-only routes
+- /provider/jobs/applicants requires the active Business owner role; Professional redirects to /provider/jobs, which renders the Professional jobs workspace.
+
+Shared routes intentionally remain shared/type-aware
+- /provider
+- /provider/setup
+- /provider/leads
+- /provider/messages
+- /provider/bookings
+- /provider/schedule
+- /provider/services
+- /provider/verification
+- /provider/earnings
+- /provider/reviews
+- /provider/profile
+- /provider/jobs (Business employer workflow vs Professional jobs workflow is selected by the existing live job-marketplace mode)
+
+Scope boundaries
+- No database migration, RLS, Provider identity, onboarding, verification, trust, service, booking, job application/interview/offer, moderation, or notification state-machine change.
+- Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remains HOLD.
+- Recurrence/recovery remains FROZEN.
+- Supabase leaked-password protection remains HOLD.
