@@ -1,0 +1,11 @@
+Provider public column privacy contract
+
+- anonymous Provider reads expose marketplace-facing identity/disclosure fields only
+- professional_profiles.user_id is not selectable by anon
+- businesses.owner_user_id is not selectable by anon
+- provider created_at / updated_at audit timestamps are not selectable by anon
+- disclosure-complete Business rows remain publicly readable through approved columns
+- disclosure-incomplete Professional rows remain blocked by public disclosure RLS
+- launch-ready public services remain readable
+- authenticated Provider-owner and Admin/Super Admin access is unchanged
+- no Provider verification, trust, service, booking, job, moderation, notification, recurrence, or finance state is changed
