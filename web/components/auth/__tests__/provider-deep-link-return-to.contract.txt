@@ -1,0 +1,10 @@
+Provider deep-link sign-in return contract
+
+1. A guest opening /provider or any /provider/... route must be redirected to login with a returnTo value derived from the exact requested Provider pathname and query string.
+2. Proxy must derive the Provider return target from request.nextUrl and overwrite the internal x-takeitesee-provider-return-to request header; an incoming client-supplied value must not be trusted.
+3. Non-Provider requests must not forward a client-supplied x-takeitesee-provider-return-to value upstream.
+4. Provider layout must accept only same-origin /provider or /provider/... return targets and fall back to /provider for missing, malformed, external, or non-Provider values.
+5. Existing login safeReturnTo validation remains authoritative before browser navigation after successful sign-in or signup.
+6. Signed-in Provider authorization remains unchanged: Professional and Business Provider roles may enter the Provider layout, while non-Provider accounts continue to redirect to /account.
+7. Supabase session refresh and response cookie propagation in proxy must remain intact when the upstream Provider return header is added.
+8. No database, API, RLS, Provider identity, job lifecycle, booking, moderation, recurrence/recovery, finance, Cashfree, payout, settlement, or leaked-password-protection behavior changes.
