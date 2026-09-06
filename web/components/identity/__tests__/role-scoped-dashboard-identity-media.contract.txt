@@ -4,12 +4,13 @@ Role-scoped dashboard identity media contract
 2. One Provider Identity remains authoritative: one account may be Customer plus Professional OR Business, never both Provider types.
 3. Identity objects live in the private identity-media bucket. There is no anonymous/public raw storage read policy.
 4. Owner uploads use the exact path <auth-user-id>/<customer|professional|business>/<entity-id>/<avatar|banner>/<uuid-file-name> and storage RLS validates Provider ownership.
-5. The identity-media API authenticates the requested Customer or Provider workspace before service-role metadata reads, updates, signed URLs, replacement cleanup or removal.
-6. Customer context resolves only customer_profiles; Professional context resolves only the signed-in professional_profiles row; Business context resolves only the signed-in user's businesses row.
-7. Supported dashboard identity files are JPEG, PNG and WebP, capped at 6 MB. Unsupported file types and oversized files are rejected before upload.
-8. Missing media keeps the current initials and role-specific gradient fallback so dashboards remain usable without uploads.
-9. Normal /account, Professional /provider and Business /provider dashboards receive the social-style identity header. Provider inner pages remain unchanged in this slice.
-10. Public Professional/Business profile synchronization is intentionally excluded from Phase A and must be handled separately before public media presentation is claimed.
-11. No booking, job, verification, service activation, moderation, Provider identity, auth or public marketplace state machine is changed by this feature.
-12. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD; recurrence/recovery remains FROZEN; leaked-password protection remains HOLD.
-13. Production acceptance must not create a synthetic user/provider or upload media into another real user's identity. Signed-in visual acceptance uses genuine user sessions only.
+5. The identity-media API authenticates the requested Customer or Provider workspace before creating the session-scoped Supabase client; it must not require SUPABASE_SERVICE_ROLE_KEY in the dashboard request path.
+6. Signed URLs, object existence checks, replacement cleanup and removal use the authenticated owner's storage policies. Metadata save/remove uses the auth.uid()-scoped set_my_identity_media_path RPC, which repeats role/entity/path validation server-side.
+7. Customer context resolves only customer_profiles; Professional context resolves only the signed-in professional_profiles row; Business context resolves only the signed-in user's businesses row.
+8. Supported dashboard identity files are JPEG, PNG and WebP, capped at 6 MB. Unsupported file types and oversized files are rejected before upload.
+9. Missing media keeps the current initials and role-specific gradient fallback so dashboards remain usable without uploads.
+10. Normal /account, Professional /provider and Business /provider dashboards receive the social-style identity header. Provider inner pages remain unchanged in this slice.
+11. Public Professional/Business profile synchronization is intentionally excluded from Phase A and must be handled separately before public media presentation is claimed.
+12. No booking, job, verification, service activation, moderation, Provider identity, auth or public marketplace state machine is changed by this feature.
+13. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD; recurrence/recovery remains FROZEN; leaked-password protection remains HOLD.
+14. Production acceptance must not create a synthetic user/provider or upload media into another real user's identity. Signed-in visual acceptance uses genuine user sessions only.

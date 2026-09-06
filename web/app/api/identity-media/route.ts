@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { productionAuthProvider } from '../../../server/auth/session';
-import { createSupabaseServiceClient } from '../../../lib/supabase/service';
+import { createSupabaseServerClient } from '../../../lib/supabase/server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -12,7 +12,7 @@ const noStoreHeaders = { 'Cache-Control': 'no-store, max-age=0' };
 type IdentityContext = 'customer' | 'provider';
 type IdentityScope = 'customer' | 'professional' | 'business';
 type MediaKind = 'avatar' | 'banner';
-type IdentityRow = { avatar_object_path: string | null; banner_object_path: string | null };
+type ServerSupabase = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 type ResolvedIdentity = {
   context: IdentityContext;
   scope: IdentityScope;
@@ -20,10 +20,13 @@ type ResolvedIdentity = {
   entityId: string;
   avatarPath: string | null;
   bannerPath: string | null;
-  table: 'customer_profiles' | 'professional_profiles' | 'businesses';
-  ownerColumn: 'user_id' | 'id';
-  ownerValue: string;
-  customerProfileExists?: boolean;
+};
+
+type PersistedIdentity = {
+  scope?: IdentityScope;
+  entity_id?: string;
+  avatar_object_path?: string | null;
+  banner_object_path?: string | null;
 };
 
 function requestedContext(request: Request): IdentityContext {
@@ -37,34 +40,35 @@ function requestedKind(value: unknown): MediaKind {
   throw new Error('Choose avatar or banner media.');
 }
 
-async function resolveIdentity(request: Request, context: IdentityContext): Promise<ResolvedIdentity> {
-  const service = createSupabaseServiceClient();
-
+async function resolveIdentity(request: Request, context: IdentityContext): Promise<{ identity: ResolvedIdentity; supabase: ServerSupabase }> {
   if (context === 'customer') {
     const session = await productionAuthProvider.requireCustomer(request);
-    const { data, error } = await service
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase
       .from('customer_profiles')
-      .select('id,avatar_object_path,banner_object_path')
+      .select('avatar_object_path,banner_object_path')
       .eq('user_id', session.user_id)
       .maybeSingle();
     if (error) throw new Error(error.message);
+    if (!data) throw new Error('Customer profile is required.');
     return {
-      context,
-      scope: 'customer',
-      userId: session.user_id,
-      entityId: session.user_id,
-      avatarPath: data?.avatar_object_path ?? null,
-      bannerPath: data?.banner_object_path ?? null,
-      table: 'customer_profiles',
-      ownerColumn: 'user_id',
-      ownerValue: session.user_id,
-      customerProfileExists: Boolean(data),
+      supabase,
+      identity: {
+        context,
+        scope: 'customer',
+        userId: session.user_id,
+        entityId: session.user_id,
+        avatarPath: data.avatar_object_path ?? null,
+        bannerPath: data.banner_object_path ?? null,
+      },
     };
   }
 
   const session = await productionAuthProvider.requireProvider(request);
+  const supabase = await createSupabaseServerClient();
+
   if (session.roles.includes('professional')) {
-    const { data, error } = await service
+    const { data, error } = await supabase
       .from('professional_profiles')
       .select('id,avatar_object_path,banner_object_path')
       .eq('user_id', session.user_id)
@@ -72,19 +76,19 @@ async function resolveIdentity(request: Request, context: IdentityContext): Prom
     if (error) throw new Error(error.message);
     if (!data) throw new Error('Professional profile is required.');
     return {
-      context,
-      scope: 'professional',
-      userId: session.user_id,
-      entityId: data.id,
-      avatarPath: data.avatar_object_path ?? null,
-      bannerPath: data.banner_object_path ?? null,
-      table: 'professional_profiles',
-      ownerColumn: 'id',
-      ownerValue: data.id,
+      supabase,
+      identity: {
+        context,
+        scope: 'professional',
+        userId: session.user_id,
+        entityId: data.id,
+        avatarPath: data.avatar_object_path ?? null,
+        bannerPath: data.banner_object_path ?? null,
+      },
     };
   }
 
-  const { data, error } = await service
+  const { data, error } = await supabase
     .from('businesses')
     .select('id,avatar_object_path,banner_object_path')
     .eq('owner_user_id', session.user_id)
@@ -93,15 +97,15 @@ async function resolveIdentity(request: Request, context: IdentityContext): Prom
   if (error) throw new Error(error.message);
   if (!data) throw new Error('Business profile is required.');
   return {
-    context,
-    scope: 'business',
-    userId: session.user_id,
-    entityId: data.id,
-    avatarPath: data.avatar_object_path ?? null,
-    bannerPath: data.banner_object_path ?? null,
-    table: 'businesses',
-    ownerColumn: 'id',
-    ownerValue: data.id,
+    supabase,
+    identity: {
+      context,
+      scope: 'business',
+      userId: session.user_id,
+      entityId: data.id,
+      avatarPath: data.avatar_object_path ?? null,
+      bannerPath: data.banner_object_path ?? null,
+    },
   };
 }
 
@@ -109,17 +113,16 @@ function uploadPrefix(identity: ResolvedIdentity) {
   return `${identity.userId}/${identity.scope}/${identity.entityId}`;
 }
 
-async function signedUrl(path: string | null) {
+async function signedUrl(supabase: ServerSupabase, path: string | null) {
   if (!path) return null;
-  const service = createSupabaseServiceClient();
-  const { data, error } = await service.storage.from(BUCKET).createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
+  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
   return error ? null : data?.signedUrl ?? null;
 }
 
-async function responseIdentity(identity: ResolvedIdentity) {
+async function responseIdentity(supabase: ServerSupabase, identity: ResolvedIdentity) {
   const [avatarUrl, bannerUrl] = await Promise.all([
-    signedUrl(identity.avatarPath),
-    signedUrl(identity.bannerPath),
+    signedUrl(supabase, identity.avatarPath),
+    signedUrl(supabase, identity.bannerPath),
   ]);
   return {
     scope: identity.scope,
@@ -142,53 +145,33 @@ function validateObjectPath(identity: ResolvedIdentity, kind: MediaKind, objectP
   return { objectPath, folder, fileName };
 }
 
-async function assertUploadedObject(folder: string, fileName: string) {
-  const service = createSupabaseServiceClient();
-  const { data, error } = await service.storage.from(BUCKET).list(folder, { limit: 100, search: fileName });
+async function assertUploadedObject(supabase: ServerSupabase, folder: string, fileName: string) {
+  const { data, error } = await supabase.storage.from(BUCKET).list(folder, { limit: 100, search: fileName });
   if (error) throw new Error(error.message);
   if (!(data ?? []).some((item) => item.name === fileName)) throw new Error('Uploaded identity media was not found.');
 }
 
-async function persistPath(identity: ResolvedIdentity, kind: MediaKind, objectPath: string | null) {
-  const service = createSupabaseServiceClient();
-  const column = kind === 'avatar' ? 'avatar_object_path' : 'banner_object_path';
-  const updatedAt = new Date().toISOString();
-
-  let data: IdentityRow | null = null;
-  let error: { message: string } | null = null;
-  if (identity.table === 'customer_profiles' && !identity.customerProfileExists) {
-    const result = await service
-      .from('customer_profiles')
-      .upsert({ user_id: identity.userId, [column]: objectPath, updated_at: updatedAt }, { onConflict: 'user_id' })
-      .select('avatar_object_path,banner_object_path')
-      .maybeSingle();
-    data = result.data as IdentityRow | null;
-    error = result.error;
-  } else {
-    const result = await service
-      .from(identity.table)
-      .update({ [column]: objectPath, updated_at: updatedAt })
-      .eq(identity.ownerColumn, identity.ownerValue)
-      .select('avatar_object_path,banner_object_path')
-      .maybeSingle();
-    data = result.data as IdentityRow | null;
-    error = result.error;
-  }
-
+async function persistPath(supabase: ServerSupabase, identity: ResolvedIdentity, kind: MediaKind, objectPath: string | null) {
+  const { data, error } = await supabase.rpc('set_my_identity_media_path', {
+    target_context: identity.context,
+    target_kind: kind,
+    target_path: objectPath,
+  });
   if (error) throw new Error(error.message);
-  if (!data) throw new Error('Identity media could not be saved.');
+
+  const persisted = (data ?? {}) as PersistedIdentity;
+  if (!persisted.entity_id || persisted.scope !== identity.scope) throw new Error('Identity media could not be saved.');
   return {
     ...identity,
-    avatarPath: data.avatar_object_path ?? null,
-    bannerPath: data.banner_object_path ?? null,
-    customerProfileExists: identity.table === 'customer_profiles' ? true : identity.customerProfileExists,
+    entityId: persisted.entity_id,
+    avatarPath: persisted.avatar_object_path ?? null,
+    bannerPath: persisted.banner_object_path ?? null,
   };
 }
 
-async function removeObject(path: string | null) {
+async function removeObject(supabase: ServerSupabase, path: string | null) {
   if (!path) return;
-  const service = createSupabaseServiceClient();
-  await service.storage.from(BUCKET).remove([path]);
+  await supabase.storage.from(BUCKET).remove([path]);
 }
 
 function jsonError(error: unknown, status = 400) {
@@ -200,8 +183,8 @@ function jsonError(error: unknown, status = 400) {
 
 export async function GET(request: Request) {
   try {
-    const identity = await resolveIdentity(request, requestedContext(request));
-    return NextResponse.json({ identity: await responseIdentity(identity) }, { headers: noStoreHeaders });
+    const { identity, supabase } = await resolveIdentity(request, requestedContext(request));
+    return NextResponse.json({ identity: await responseIdentity(supabase, identity) }, { headers: noStoreHeaders });
   } catch (error) {
     return jsonError(error, 401);
   }
@@ -212,15 +195,15 @@ export async function PATCH(request: Request) {
     const context = requestedContext(request);
     const input = await request.json() as { kind?: unknown; object_path?: unknown };
     const kind = requestedKind(input.kind);
-    const identity = await resolveIdentity(request, context);
+    const { identity, supabase } = await resolveIdentity(request, context);
     const { objectPath, folder, fileName } = validateObjectPath(identity, kind, input.object_path);
-    await assertUploadedObject(folder, fileName);
+    await assertUploadedObject(supabase, folder, fileName);
 
     const oldPath = kind === 'avatar' ? identity.avatarPath : identity.bannerPath;
-    const updated = await persistPath(identity, kind, objectPath);
-    if (oldPath && oldPath !== objectPath) await removeObject(oldPath);
+    const updated = await persistPath(supabase, identity, kind, objectPath);
+    if (oldPath && oldPath !== objectPath) await removeObject(supabase, oldPath);
 
-    return NextResponse.json({ identity: await responseIdentity(updated) }, { headers: noStoreHeaders });
+    return NextResponse.json({ identity: await responseIdentity(supabase, updated) }, { headers: noStoreHeaders });
   } catch (error) {
     return jsonError(error);
   }
@@ -231,11 +214,11 @@ export async function DELETE(request: Request) {
     const context = requestedContext(request);
     const input = await request.json() as { kind?: unknown };
     const kind = requestedKind(input.kind);
-    const identity = await resolveIdentity(request, context);
+    const { identity, supabase } = await resolveIdentity(request, context);
     const oldPath = kind === 'avatar' ? identity.avatarPath : identity.bannerPath;
-    const updated = await persistPath(identity, kind, null);
-    await removeObject(oldPath);
-    return NextResponse.json({ identity: await responseIdentity(updated) }, { headers: noStoreHeaders });
+    const updated = await persistPath(supabase, identity, kind, null);
+    await removeObject(supabase, oldPath);
+    return NextResponse.json({ identity: await responseIdentity(supabase, updated) }, { headers: noStoreHeaders });
   } catch (error) {
     return jsonError(error);
   }
