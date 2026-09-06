@@ -1,0 +1,7 @@
+Account overview workspace shortcuts contract
+
+1. Authenticated account overview exposes direct links to /requirements and /messages.
+2. English labels are Requirements and Messages; Tamil labels are தேவைகள் and செய்திகள்.
+3. Existing Bookings, Notifications, Saved services, Reviews, Platform support, Profile, Settings and Sign out actions remain available.
+4. No booking, requirement, message, provider, finance, database, RLS or recurrence/recovery behavior is changed by this slice.
+5. Signed-in visual acceptance requires authenticated browser evidence and must not be inferred from source or CI alone.
