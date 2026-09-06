@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import ProviderApplicationsManager from '../../../components/admin/ProviderApplicationsManager';
-import { productionAuthProvider } from '../../../server/auth/session';
+import { getSuperAdminSessionOrNull } from '../../../server/auth/session';
 
 export default async function ProviderApplicationsPage() {
-  await productionAuthProvider.requireAdmin();
+  if (!await getSuperAdminSessionOrNull()) return null;
   return <main className="container section-stack">
     <section className="page-intro">
       <span className="eyebrow">Provider supply control</span>
