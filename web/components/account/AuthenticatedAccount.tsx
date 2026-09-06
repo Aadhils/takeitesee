@@ -104,6 +104,7 @@ export default function AuthenticatedAccount() {
         <Link href="/messages" className="button button-secondary">{tamil ? 'செய்திகள்' : 'Messages'}</Link>
         <Link href="/reviews" className="button button-secondary">{tamil ? 'மதிப்புரைகள்' : 'Reviews'}</Link>
         <Link href="/account/support" className="button button-secondary">{tamil ? 'Platform உதவி' : 'Platform support'}</Link>
+        <Link href="/account/reports" className="button button-secondary">{tamil ? 'Safety reports' : 'Safety reports'}</Link>
         <Link href="/account/profile" className="button button-secondary">{t('account.profile')}</Link>
         <Link href="/account/settings" className="button button-secondary">{t('account.settings')}</Link>
         <Button type="button" variant="quiet" className="account-sign-out" onClick={signOut}>{t('account.signOut')}</Button>
