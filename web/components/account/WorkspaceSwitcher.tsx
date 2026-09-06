@@ -10,6 +10,17 @@ type WorkspaceOption = { id: WorkspaceKind; label: string; display_name: string;
 type AddableProfileOption = { id: 'professional' | 'business'; label: string; display_name: string; description: string; target: string; pending: boolean };
 type WorkspacePayload = { active?: WorkspaceKind; workspaces?: WorkspaceOption[]; addable_profiles?: AddableProfileOption[]; error?: string };
 
+function providerRoleSummary(kind: 'professional' | 'business', tamil: boolean) {
+  if (kind === 'professional') {
+    return tamil
+      ? 'Professional · தனிநபராக services வழங்குங்கள் + Job Seeker ஆக jobs தேடி, save செய்து, apply செய்து interviews மற்றும் offers-ஐ manage செய்யுங்கள்.'
+      : 'Professional · Offer services independently + work as a job seeker: find, save and apply to jobs, then manage interviews and offers.';
+  }
+  return tamil
+    ? 'Business · Business services நடத்துங்கள் + Employer ஆக jobs post செய்து, applicants review செய்து, interviews மற்றும் offers மூலம் hire செய்யுங்கள்.'
+    : 'Business · Run your business services + work as an employer: post jobs, review applicants, schedule interviews and hire through offers.';
+}
+
 export function WorkspaceSwitcher({ currentWorkspace, compact = false }: { currentWorkspace?: WorkspaceKind; compact?: boolean }) {
   const { locale } = useIdentityWorkspaceTranslations();
   const tamil = locale.toLowerCase().startsWith('ta');
@@ -61,8 +72,9 @@ export function WorkspaceSwitcher({ currentWorkspace, compact = false }: { curre
     </div>
     {error ? <div className={styles.error} role="alert">{error}</div> : null}
     <div className={styles.grid}>
-      {workspaces.map((workspace) => { const selected = workspace.id === active; return <article className={`${styles.card} ${selected ? styles.cardActive : ''}`} key={workspace.id}>
+      {workspaces.map((workspace) => { const selected = workspace.id === active; const roleSummary = workspace.id === 'professional' || workspace.id === 'business' ? providerRoleSummary(workspace.id, tamil) : null; return <article className={`${styles.card} ${selected ? styles.cardActive : ''}`} key={workspace.id}>
         <div className={styles.row}><div><div className={styles.role}>{workspace.label}</div><div className={styles.name}>{workspace.display_name}</div></div>{selected ? <span className={`${styles.badge} ${styles.activeBadge}`}>{tamil ? 'தற்போது' : 'Current'}</span> : workspace.verified ? <span className={styles.badge}>Verified</span> : null}</div>
+        {roleSummary ? <div className={styles.description}>{roleSummary}</div> : null}
         <div className={styles.description}>{workspace.description}</div>
         <button className={styles.button} type="button" disabled={selected || switching !== null} onClick={() => void switchWorkspace(workspace.id)}>{selected ? (tamil ? 'இந்த workspace-ல் உள்ளீர்கள்' : 'You are here') : switching === workspace.id ? (tamil ? 'மாற்றப்படுகிறது…' : 'Switching…') : (tamil ? 'இந்த workspace திற' : 'Open workspace')}</button>
       </article>; })}
@@ -75,6 +87,7 @@ export function WorkspaceSwitcher({ currentWorkspace, compact = false }: { curre
       </div>
       <div className={styles.grid}>{choices.map((profile) => <article className={`${styles.card} ${styles.addCard}`} key={`add-${profile.id}`}>
         <div className={styles.row}><div><div className={styles.role}>{profile.label}</div><div className={styles.name}>{profile.display_name}</div></div><span className={`${styles.badge} ${styles.availableBadge}`}>{tamil ? 'தேர்வு செய்யலாம்' : 'Choose'}</span></div>
+        <div className={styles.description}>{providerRoleSummary(profile.id, tamil)}</div>
         <div className={styles.description}>{profile.description}</div>
         <Link className={styles.button} href={profile.target}>{profile.id === 'professional' ? (tamil ? 'Professional தேர்வு செய்' : 'Choose Professional') : (tamil ? 'Business தேர்வு செய்' : 'Choose Business')}</Link>
       </article>)}</div>
@@ -82,7 +95,7 @@ export function WorkspaceSwitcher({ currentWorkspace, compact = false }: { curre
 
     {pendingProfile ? <div className={styles.addSection}>
       <div className={styles.subheading}><h3>{tamil ? 'Provider application review-ல் உள்ளது' : 'Provider application under review'}</h3><p>{tamil ? `நீங்கள் ${pendingProfile.label} identity தேர்வு செய்துள்ளீர்கள். Review pending இருக்கும் வரை மற்ற provider type lock செய்யப்பட்டுள்ளது. Approval முன் தேர்வை மாற்ற வேண்டுமெனில் application-ஐ withdraw செய்யலாம்.` : `You selected the ${pendingProfile.label} identity. The other provider type is locked while review is pending. Withdraw before approval if you need to change your choice.`}</p></div>
-      <div className={styles.grid}><article className={`${styles.card} ${styles.addCard}`}><div className={styles.row}><div><div className={styles.role}>{pendingProfile.label}</div><div className={styles.name}>{pendingProfile.display_name}</div></div><span className={`${styles.badge} ${styles.pendingBadge}`}>{tamil ? 'Review pending' : 'Pending review'}</span></div><div className={styles.description}>{pendingProfile.description}</div><Link className={styles.button} href={pendingProfile.target}>{tamil ? 'Application நிலையை பார்க்க' : 'View application'}</Link></article></div>
+      <div className={styles.grid}><article className={`${styles.card} ${styles.addCard}`}><div className={styles.row}><div><div className={styles.role}>{pendingProfile.label}</div><div className={styles.name}>{pendingProfile.display_name}</div></div><span className={`${styles.badge} ${styles.pendingBadge}`}>{tamil ? 'Review pending' : 'Pending review'}</span></div><div className={styles.description}>{providerRoleSummary(pendingProfile.id, tamil)}</div><div className={styles.description}>{pendingProfile.description}</div><Link className={styles.button} href={pendingProfile.target}>{tamil ? 'Application நிலையை பார்க்க' : 'View application'}</Link></article></div>
     </div> : null}
 
     {providerWorkspace ? <div className={styles.addSection}>

@@ -1,0 +1,12 @@
+TakeItEsee Jobs role clarity contract
+
+1. Professional remains an independent Provider identity and is the Job Seeker/Candidate side of the Jobs module.
+2. Business remains a service-business Provider identity and is the Employer/Hiring side of the Jobs module.
+3. The public /jobs hero must explicitly explain the two-sided connection: Professional job seekers discover/apply and Business employers post/hire.
+4. The public /jobs hero must expose Professional Find jobs, My applications, and Business Post a job actions without changing job authorization.
+5. The Professional jobs workspace must clearly identify itself as Professional · Job seeker and link to public jobs plus Resume & Career.
+6. The Business jobs workspace must clearly identify itself as Business · Employer and explain job posting, applicant review, interviews, and offers.
+7. /account workspace and Provider-choice cards must explain both each identity's service role and its Jobs role before or after Provider selection.
+8. Professional/Business single-identity exclusivity remains unchanged: one account can own only one Provider identity.
+9. No job posting/application/interview/offer state machine, API, database, RLS, Provider authorization, Finance, recurrence/recovery, or Supabase Auth policy is changed by this UX-only work.
+10. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD; recurrence/recovery remains FROZEN; leaked-password protection remains HOLD.

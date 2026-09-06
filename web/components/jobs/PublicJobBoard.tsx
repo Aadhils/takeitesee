@@ -161,9 +161,14 @@ export function PublicJobBoard() {
 
   return <div className={styles.page}>
     <section className={styles.hero}>
-      <h1>{ta ? 'வேலை வாய்ப்புகள்' : 'Job opportunities'}</h1>
-      <p className={styles.muted}>{ta ? 'TakeItEsee verified business-கள் வெளியிடும் full-time, part-time, contract, freelance மற்றும் internship வாய்ப்புகள்.' : 'Explore full-time, part-time, contract, freelance and internship opportunities from verified TakeItEsee businesses.'}</p>
-      <div className={styles.actions}><Link className={`${styles.button} ${styles.secondary}`} href="/provider/jobs/applications">{ta ? 'என் விண்ணப்பங்கள்' : 'My applications'}</Link></div>
+      <span className={styles.eyebrow}>{ta ? 'Professional Job Seeker ↔ Business Employer' : 'Professional job seeker ↔ Business employer'}</span>
+      <h1>{ta ? 'TakeItEsee வேலை வாய்ப்புகள்' : 'Jobs on TakeItEsee'}</h1>
+      <p className={styles.muted}>{ta ? 'Professional account job seeker side: jobs தேடி, save செய்து, apply செய்யலாம். Business account employer side: jobs create செய்து applicants, interviews மற்றும் offers மூலம் hire செய்யலாம்.' : 'Professional accounts are the job-seeker side: find, save and apply to jobs. Business accounts are the employer side: create jobs, review applicants, run interviews and hire through offers.'}</p>
+      <div className={styles.actions}>
+        <Link className={styles.button} href="#open-jobs">{ta ? 'Professional · Jobs தேடு' : 'Professional · Find jobs'}</Link>
+        <Link className={`${styles.button} ${styles.secondary}`} href="/provider/jobs/applications">{ta ? 'என் விண்ணப்பங்கள்' : 'My applications'}</Link>
+        <Link className={`${styles.button} ${styles.secondary}`} href="/provider/jobs">{ta ? 'Business · Job post செய்' : 'Business · Post a job'}</Link>
+      </div>
     </section>
 
     {message ? <div className={`${styles.alert} ${message.tone === 'error' ? styles.error : styles.success}`}>{message.text}</div> : null}
@@ -187,7 +192,7 @@ export function PublicJobBoard() {
 
     {!loading && jobs.length > 0 && filteredJobs.length === 0 ? <div className={`${styles.empty} ${styles.emptyState}`}><span className={styles.emptyIcon}>⌕</span><strong>{ta ? 'Matching jobs இல்லை' : 'No jobs match these filters'}</strong><span>{ta ? 'ஒரு filter-ஐ மாற்றி அல்லது clear செய்து மீண்டும் பார்க்கவும்.' : 'Try broadening or clearing one of your filters.'}</span><button className={`${styles.button} ${styles.secondary}`} type="button" onClick={clearFilters}>{ta ? 'அனைத்து filters clear செய்ய' : 'Clear all filters'}</button></div> : null}
 
-    <section className={styles.grid}>
+    <section className={styles.grid} id="open-jobs">
       {filteredJobs.map((job) => <article className={styles.card} id={`job-${job.id}`} key={job.id}>
         <div className={styles.row}><div><h3>{job.title}</h3><div className={styles.muted}>{job.business?.name ?? 'Verified business'}</div></div>{job.business?.verified ? <span className={styles.pill}>Verified business</span> : null}</div>
         <div className={styles.meta}>
