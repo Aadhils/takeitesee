@@ -14,9 +14,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <>
       {confirmationFailed ? (
         <div className="auth-page">
-          <div className="card auth-card" role="alert">
+          <div className="card auth-card">
             <span className="badge badge-info">Email confirmation</span>
-            <p className="field-error">
+            <p className="field-error" role="alert">
               This email confirmation link is invalid or has expired. Request a fresh confirmation email below.
             </p>
             <p>
