@@ -1,0 +1,9 @@
+Scoped Admin service launch review contract
+
+- Delegated Admin users with an active Admin scope can reach /admin/service-launches through the shared Admin navigation.
+- The review queue remains sourced from get_service_launch_review_queue(), so visible requests stay restricted by the existing service-launch RLS/RPC authorization boundary.
+- GET /api/super-admin/service-launches enriches each visible row with can_manage derived from the signed-in Admin membership/scopes; Super Admin rows are manageable.
+- A view-only scoped request must remain visible when authorized but its review note field and approve/changes/reject actions must be disabled.
+- PATCH review authority remains server-authoritative in review_service_launch_request(), which requires Super Admin or admin_can_manage for the exact requested application/location/category/service scope.
+- The existing /super-admin/service-launches experience remains supported.
+- No database migration, RLS change, finance/payment behavior, recurrence/recovery behavior, Provider identity rule, or service activation state-machine rule changes in this slice.
