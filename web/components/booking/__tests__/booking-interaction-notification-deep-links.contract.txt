@@ -1,0 +1,41 @@
+Booking interaction notification deep-link contract
+
+Purpose
+- Keep post-booking interaction notifications actionable without rewriting attendance, support, or review state machines.
+- Fill target_path only when the emitting notification did not already provide one.
+
+Covered event mappings
+- completion_confirmed -> /provider/bookings/<booking-id>
+- provider_no_show -> /provider/bookings/<booking-id>
+- customer_no_show -> /bookings/<booking-id>
+- review_response -> /bookings/<booking-id>
+- review_submitted -> /provider/reviews
+- support_opened -> customer recipient: /bookings/<booking-id>
+- support_opened -> provider recipient: /provider/bookings/<booking-id>
+- support_updated -> customer recipient: /bookings/<booking-id>
+- support_updated -> provider recipient: /provider/bookings/<booking-id>
+
+Destination evidence
+- Customer booking detail contains completion confirmation, provider no-show reporting, support workflow, closeout state, provider review response, and customer review surfaces.
+- Provider booking detail contains customer no-show reporting and booking closeout/support state.
+- /provider/reviews contains the provider review response/edit controls.
+
+Trigger boundaries
+- Trigger: notifications_assign_booking_interaction_target
+- Table: public.notifications
+- Timing: BEFORE INSERT
+- Existing non-null target_path must be preserved exactly.
+- Rows without booking_id are unchanged.
+- Unlisted event types are unchanged.
+
+Security boundaries
+- Resolver function is SECURITY DEFINER with empty search_path.
+- Direct EXECUTE is revoked from PUBLIC, anon, and authenticated.
+- service_role retains EXECUTE for administrative ownership consistency; trigger firing does not expose a client RPC surface.
+- No RLS, booking ownership, attendance, support, review, Provider identity, or API authorization changes.
+
+Intentional exclusions
+- closeout_closed remains unchanged because its emitters are coupled to payment-settlement gating; Finance/settlement is HOLD.
+- Cashfree/payment/refund/payout/settlement/reconciliation/finance recovery remain HOLD.
+- Recurrence/recovery remains FROZEN.
+- Supabase leaked-password protection remains HOLD.
