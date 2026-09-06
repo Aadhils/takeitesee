@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import PublicProviderProfile from '../../../components/detail/PublicProviderProfile';
+import ProviderProfileShareAction from '../../../components/detail/ProviderProfileShareAction';
 import { PortfolioMediaSafetyPanel } from '../../../components/safety/PortfolioMediaSafetyPanel';
 import { createSupabaseServiceClient } from '../../../lib/supabase/service';
 
@@ -231,6 +232,9 @@ export default async function ProfessionalProfilePage({ params }: { params: Prom
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, '\\u003c') }}
     /> : null}
+    <div className="container" style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '1rem' }}>
+      <ProviderProfileShareAction providerId={providerId} providerName={displayName} kind="professional" />
+    </div>
     <PublicProviderProfile
       kind="professional"
       provider={{
