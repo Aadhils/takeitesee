@@ -1,0 +1,13 @@
+Professional directory discovery parity contract
+
+1. Public Professional eligibility is aligned across readiness, directory discovery, and the individual Professional profile: profile basics complete, verified identity, complete marketplace disclosure, and at least one public content signal.
+2. Profile basics require headline/name >= 2 characters, description >= 20 characters, and service area >= 2 characters.
+3. Marketplace disclosure requires legal name, principal address, public contact email/phone, grievance officer name/designation, and grievance email/phone.
+4. A public content signal is any of: at least one active service, at least one active Professional role, or an explicitly published public career profile.
+5. `/professionals` is no longer built only from active service rows. Role-only and career-only Professionals can be discovered when all identity/disclosure/basic gates are complete.
+6. Directory cards show only signals already public under existing RLS: active service count/pricing/categories, active Professional role count/titles, and published career-profile status.
+7. Professionals with incomplete disclosure or incomplete profile basics remain excluded even if RLS exposes their verified identity or public role/career rows.
+8. The individual `/professionals/{id}` route applies the same basics gate before rendering, closing the previous readiness/detail source-of-truth mismatch.
+9. Business directory and service category discovery semantics remain unchanged.
+10. No database migration, RLS policy change, auth change, provider state mutation, booking/job/moderation/notification change, or finance behavior change is introduced.
+11. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remains HOLD. Recurrence/recovery remains FROZEN. Supabase Pro leaked-password protection remains HOLD.

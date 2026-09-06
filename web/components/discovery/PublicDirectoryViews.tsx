@@ -13,6 +13,9 @@ type DirectoryEntry = {
   categories: string[];
   starting_price: number | null;
   currency: string;
+  role_count?: number;
+  talents?: string[];
+  career_published?: boolean;
 };
 
 type CategoryEntry = {
@@ -103,49 +106,56 @@ export function PublicProfessionalsDirectory({ professionals }: { professionals:
         <span className="eyebrow">{text('Professional directory', 'நிபுணர் அடைவு')}</span>
         <h1>{text('Verified independent professionals.', 'சரிபார்க்கப்பட்ட சுயாதீன நிபுணர்கள்.')}</h1>
         <p>{text(
-          'Browse professionals that currently have at least one active service published on the TakeItEsee marketplace.',
-          'TakeItEsee marketplace-ல் தற்போது குறைந்தது ஒரு active service வெளியிட்டுள்ள நிபுணர்களை பார்க்கவும்.',
+          'Browse verified professionals with active services, public talents, or a published career profile on TakeItEsee.',
+          'TakeItEsee-ல் active services, public talents அல்லது published career profile உள்ள சரிபார்க்கப்பட்ட நிபுணர்களை பார்க்கவும்.',
         )}</p>
       </section>
 
       {professionals === null ? (
         <Alert title={text('Professional directory temporarily unavailable', 'நிபுணர் அடைவு தற்காலிகமாக கிடைக்கவில்லை')} tone="warning">
           {text(
-            'The live provider catalog could not be loaded. Explore remains the best place to browse currently published services.',
-            'Live provider catalog-ஐ ஏற்ற முடியவில்லை. தற்போது வெளியிடப்பட்ட சேவைகளை பார்க்க Explore பயன்படுத்தவும்.',
+            'The live professional catalog could not be loaded. Explore remains available for published services.',
+            'Live professional catalog-ஐ ஏற்ற முடியவில்லை. Published services-ஐ Explore-ல் தொடர்ந்து பார்க்கலாம்.',
           )}
         </Alert>
       ) : professionals.length ? (
         <>
           <div className="results-heading"><div><span className="eyebrow">{text('Live marketplace', 'Live marketplace')}</span><h2>{text(`${professionals.length} verified ${professionals.length === 1 ? 'professional' : 'professionals'}`, `${professionals.length} சரிபார்க்கப்பட்ட நிபுணர்கள்`)}</h2></div></div>
           <div className="service-grid">
-            {professionals.map((professional) => (
-              <Card className="discovery-card provider-card" key={professional.id}>
+            {professionals.map((professional) => {
+              const roleCount = professional.role_count ?? 0;
+              const talents = professional.talents ?? [];
+              const specialties = Array.from(new Set([...talents, ...professional.categories])).slice(0, 3);
+              return <Card className="discovery-card provider-card" key={professional.id}>
                 <div className="provider-avatar" aria-hidden="true">{professional.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase()}</div>
                 <div className="discovery-card-content">
                   <div className="card-meta">
                     <Badge tone="success">{text('Verified professional', 'சரிபார்க்கப்பட்ட நிபுணர்')}</Badge>
-                    <Badge tone="info">{text(`${professional.service_count} active ${professional.service_count === 1 ? 'service' : 'services'}`, `${professional.service_count} active சேவைகள்`)}</Badge>
+                    {professional.service_count > 0 ? <Badge tone="info">{text(`${professional.service_count} active ${professional.service_count === 1 ? 'service' : 'services'}`, `${professional.service_count} active சேவைகள்`)}</Badge> : null}
+                    {roleCount > 0 ? <Badge tone="info">{text(`${roleCount} public ${roleCount === 1 ? 'talent' : 'talents'}`, `${roleCount} public talents`)}</Badge> : null}
+                    {professional.career_published ? <Badge tone="success">{text('Career profile', 'Career profile')}</Badge> : null}
                   </div>
                   <h2><Link href={`/professionals/${professional.id}`}>{professional.name}</Link></h2>
-                  <p className="card-description">{professional.description || text('Verified professional with active services on TakeItEsee.', 'TakeItEsee-ல் active சேவைகள் உள்ள சரிபார்க்கப்பட்ட நிபுணர்.')}</p>
-                  <p className="card-location"><span aria-hidden="true">⌖</span> {professional.location || text('Service area shown on individual listings', 'ஒவ்வொரு listing-லும் service area காட்டப்படும்')}</p>
-                  {professional.categories.length ? <p className="card-specialty">{professional.categories.slice(0, 3).join(' · ')}</p> : null}
+                  <p className="card-description">{professional.description || text('Verified professional on TakeItEsee.', 'TakeItEsee-ல் சரிபார்க்கப்பட்ட நிபுணர்.')}</p>
+                  <p className="card-location"><span aria-hidden="true">⌖</span> {professional.location || text('Availability shown on the profile', 'Availability profile-ல் காட்டப்படும்')}</p>
+                  {specialties.length ? <p className="card-specialty">{specialties.join(' · ')}</p> : null}
                   <div className="card-footer">
-                    <div>{professional.starting_price !== null ? <span className="price">{text(`From ${money(professional.starting_price, professional.currency)}`, `${money(professional.starting_price, professional.currency)} முதல்`)}</span> : <span>{text('See service pricing', 'சேவை விலையை பார்க்கவும்')}</span>}</div>
+                    <div>{professional.starting_price !== null
+                      ? <span className="price">{text(`Services from ${money(professional.starting_price, professional.currency)}`, `Services ${money(professional.starting_price, professional.currency)} முதல்`)}</span>
+                      : <span>{text('Talents & career details on profile', 'Talents & career details profile-ல்')}</span>}</div>
                     <Link href={`/professionals/${professional.id}`} className="button button-secondary">{text('View profile', 'Profile-ஐ பார்க்க')}</Link>
                   </div>
                 </div>
-              </Card>
-            ))}
+              </Card>;
+            })}
           </div>
         </>
       ) : (
         <Card>
-          <h2>{text('No verified professionals are publishing services right now.', 'இப்போது சரிபார்க்கப்பட்ட எந்த நிபுணரும் சேவைகளை வெளியிடவில்லை.')}</h2>
+          <h2>{text('No public-ready professionals yet.', 'இன்னும் public-ready professionals இல்லை.')}</h2>
           <p>{text(
-            'New professionals will appear here automatically after verification and after at least one service becomes active.',
-            'Verification முடிந்து குறைந்தது ஒரு சேவை active ஆனதும் புதிய நிபுணர்கள் இங்கே தானாக தோன்றுவர்.',
+            'Professionals appear here after verification, complete marketplace disclosure, complete profile basics, and at least one active service, public talent, or published career profile.',
+            'Verification, complete marketplace disclosure, profile basics மற்றும் குறைந்தது ஒரு active service, public talent அல்லது published career profile முடிந்ததும் professionals இங்கே தோன்றுவர்.',
           )}</p>
           <div className="button-row"><Link href="/explore" className="button button-primary">{text('Explore live services', 'Live சேவைகளை பார்க்க')}</Link></div>
         </Card>

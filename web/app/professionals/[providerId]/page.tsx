@@ -30,6 +30,12 @@ function hasMarketplaceDisclosure(provider: any) {
   );
 }
 
+function hasProfessionalBasics(provider: any) {
+  return String(provider?.headline || '').trim().length >= 2
+    && String(provider?.description || '').trim().length >= 20
+    && String(provider?.service_area || '').trim().length >= 2;
+}
+
 async function loadSignedPortfolioMedia(providerId: string, roles: any[]) {
   try {
     const service = createSupabaseServiceClient();
@@ -102,7 +108,7 @@ const loadProfessional = cache(async (providerId: string) => {
     .eq('id', providerId)
     .eq('verified', true)
     .maybeSingle();
-  if (error || !provider || !hasMarketplaceDisclosure(provider)) return null;
+  if (error || !provider || !hasMarketplaceDisclosure(provider) || !hasProfessionalBasics(provider)) return null;
 
   const [servicesResult, rolesResult, career] = await Promise.all([
     supabase
