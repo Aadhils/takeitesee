@@ -16,6 +16,7 @@ export default function LocalizedAccountShell({ children, active, customerName, 
     { href: '/saved-services', label: locale === 'ta-IN' ? 'சேமித்த சேவைகள்' : 'Saved services' },
     { href: '/notifications', label: t('account.notifications') },
     { href: '/reviews', label: t('account.reviews') },
+    { href: '/account/support', label: locale === 'ta-IN' ? 'Platform உதவி' : 'Platform support' },
     { href: '/help', label: t('account.help') },
   ];
 
