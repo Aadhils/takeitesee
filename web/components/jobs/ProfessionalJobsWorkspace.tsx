@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
+import { HiringJourneyGuide } from './HiringJourneyGuide';
 import { JobOfferWorkspace } from './JobOfferWorkspace';
 import styles from './JobMarketplace.module.css';
 import { ProviderJobMarketplace } from './ProviderJobMarketplace';
@@ -30,6 +31,8 @@ export function ProfessionalJobsWorkspace() {
           </div>
         </div>
       </section>
+
+      <HiringJourneyGuide role="professional" tamil={ta} />
 
       <div
         className={styles.workspaceTabs}
