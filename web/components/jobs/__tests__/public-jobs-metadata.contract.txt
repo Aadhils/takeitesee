@@ -1,0 +1,8 @@
+Public jobs metadata contract
+
+1. /jobs must use the root metadata title template exactly once so the rendered title is `Jobs & Opportunities | TakeItEsee`, never `... | TakeItEsee | TakeItEsee`.
+2. /jobs must keep the canonical URL `/jobs`.
+3. Open Graph title and description must describe TakeItEsee job opportunities, not inherit the generic homepage title/description.
+4. Twitter card title and description must describe TakeItEsee job opportunities, not inherit the generic homepage title/description.
+5. Open Graph and Twitter must continue to use `/brand/social` for the approved TakeItEsee social preview image.
+6. This metadata-only change must not alter job discovery, applications, employer workflows, Provider identity boundaries, database state, APIs, RLS, Finance/Cashfree HOLD, recurrence/recovery FROZEN, or Supabase leaked-password HOLD.
