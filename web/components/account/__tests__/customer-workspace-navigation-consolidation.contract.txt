@@ -1,0 +1,10 @@
+Customer workspace navigation consolidation contract
+
+1. LocalizedAccountShell is the shared customer navigation source for authenticated account/workspace destinations.
+2. Shared navigation includes Requirements (/requirements) and Messages (/messages) in addition to existing account, saved-service, notification, review, support and help destinations.
+3. CustomerMessagesPage must reuse LocalizedAccountShell with /messages active and must not maintain a private customerLinks/sidebar copy.
+4. Authenticated requirements list must render CustomerRequirementsManager inside LocalizedAccountShell with /requirements active.
+5. Customer requirement detail workspace must render inside LocalizedAccountShell with /requirements active.
+6. Requirement business logic, proposal/job/recovery APIs and recurrence/recovery state-machine behavior are unchanged.
+7. No database migration, RLS/auth model, finance/payment or provider identity behavior changes are part of this slice.
+8. Signed-in visual acceptance requires authenticated browser evidence and must not be inferred from source or CI alone.

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import LocalizedAccountShell from '../../components/account/LocalizedAccountShell';
 import CustomerRequirementsManager from '../../components/requirements/CustomerRequirementsManager';
 import { Card, EmptyState } from '../../components/ui/primitives';
 import { useOperationalTranslations } from '../../components/i18n/OperationalTranslations';
@@ -52,5 +53,7 @@ export default function RequirementsPage() {
     </div>;
   }
 
-  return <CustomerRequirementsManager />;
+  return <LocalizedAccountShell active="/requirements">
+    <CustomerRequirementsManager />
+  </LocalizedAccountShell>;
 }
