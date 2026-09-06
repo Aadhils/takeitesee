@@ -132,6 +132,17 @@ export async function getAdminSessionOrNull(request?: Request) {
   return session;
 }
 
+/**
+ * Read-side Super Admin page guard. Parent `/super-admin` layout owns guest and
+ * delegated-Admin redirects; child pages use this helper only to avoid expected
+ * authorization misses being recorded as runtime errors during parallel rendering.
+ */
+export async function getSuperAdminSessionOrNull(request?: Request) {
+  const session = await productionAuthProvider.getSession(request);
+  if (!session?.roles.includes('super_admin')) return null;
+  return session;
+}
+
 export function assertOwnsCustomerRecord(session: ServerCustomerSession, customerId: EntityId) {
   if (session.user_id !== customerId) throw new Error('Customer ownership check failed.');
 }

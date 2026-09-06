@@ -1,0 +1,9 @@
+Super Admin page auth boundary contract
+
+1. `/super-admin/layout.tsx` remains the authoritative page-route guard: unauthenticated visitors redirect to `/account`; authenticated non-Super-Admin visitors redirect to `/admin`.
+2. Super Admin child pages must not use throw-based `productionAuthProvider.requireAdmin()` during render when the parent layout already owns the redirect boundary.
+3. Read-side child pages use `getSuperAdminSessionOrNull()` and return `null` before operational data loading when no Super Admin session is present.
+4. APIs, RPCs, server actions, and mutation handlers keep their existing throw-based/role-based authorization; this contract does not relax mutation authorization.
+5. The non-finance cleanup covers Applications, Categories, Provider Applications, Provider Verifications, Provider Trust, and Service Launches.
+6. The Finance Super Admin page is intentionally excluded while finance/payment/refund/payout/settlement/reconciliation/recovery work remains on HOLD.
+7. No database, RLS, Provider/service state-machine, recurrence/recovery, or finance behavior is changed by this page-render cleanup.

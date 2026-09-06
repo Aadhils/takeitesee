@@ -1,12 +1,11 @@
 import Link from 'next/link';
 import { LocaleText } from '../../../components/i18n/LocaleText';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
-import { productionAuthProvider } from '../../../server/auth/session';
+import { getSuperAdminSessionOrNull } from '../../../server/auth/session';
 import { createCategory, setCategoryActive } from './actions';
 
 export default async function CategoriesPage() {
-  const session = await productionAuthProvider.requireAdmin();
-  if (!session.roles.includes('super_admin')) throw new Error('Super Admin access required.');
+  if (!await getSuperAdminSessionOrNull()) return null;
 
   const supabase = await createSupabaseServerClient();
   const [{ data: applications, error: appError }, { data: categories, error: categoryError }] = await Promise.all([

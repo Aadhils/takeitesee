@@ -1,10 +1,10 @@
 import ProviderTrustManager from '../../../components/admin/ProviderTrustManager';
-import { productionAuthProvider } from '../../../server/auth/session';
+import { getSuperAdminSessionOrNull } from '../../../server/auth/session';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ProviderTrustPage() {
-  await productionAuthProvider.requireAdmin();
+  if (!await getSuperAdminSessionOrNull()) return null;
   return <main className="container section-stack">
     <section className="page-intro">
       <span className="eyebrow">Trust & safety</span>
