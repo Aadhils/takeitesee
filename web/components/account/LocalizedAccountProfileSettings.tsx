@@ -6,27 +6,7 @@ import { Badge, Button, Card, Checkbox, ErrorState, Input, Select } from '../ui/
 import { getSupabaseBrowserUser, isSupabaseConfigured } from '../../services/auth-adapter';
 import { getAccountSettings, getCustomerProfile, saveAccountSettings, saveCustomerProfile, type AccountSettings, type CustomerProfile } from '../../services/customer-profile';
 import { useRemainingWorkspaceTranslations } from '../i18n/RemainingWorkspaceTranslations';
-
-function LocalizedAccountShell({ children, active, customerName }: { children: React.ReactNode; active: string; customerName?: string }) {
-  const { t } = useRemainingWorkspaceTranslations();
-  const name = customerName || t('account.yourAccount');
-  const initials = name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
-  const links = [
-    { href: '/account', label: t('account.overview') },
-    { href: '/account/profile', label: t('account.profile') },
-    { href: '/account/settings', label: t('account.settings') },
-    { href: '/notifications', label: t('account.notifications') },
-    { href: '/reviews', label: t('account.reviews') },
-    { href: '/help', label: t('account.help') },
-  ];
-  return <div className="account-layout">
-    <aside className="account-sidebar">
-      <div className="account-sidebar-heading"><div className="provider-avatar account-avatar" aria-hidden="true">{initials || '?'}</div><div><strong>{name}</strong><span>{t('account.customer')}</span></div></div>
-      <nav aria-label={t('account.nav')}>{links.map((link) => <Link href={link.href} className={active === link.href ? 'account-nav-active' : ''} aria-current={active === link.href ? 'page' : undefined} key={link.href}>{link.label}</Link>)}</nav>
-    </aside>
-    <main className="account-content">{children}</main>
-  </div>;
-}
+import LocalizedAccountShell from './LocalizedAccountShell';
 
 export function LocalizedProfilePage() {
   const { t, locale } = useRemainingWorkspaceTranslations();

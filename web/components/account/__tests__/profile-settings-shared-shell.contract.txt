@@ -1,0 +1,12 @@
+Profile and settings shared account shell contract
+
+1. `LocalizedAccountProfileSettings.tsx` must use the shared `LocalizedAccountShell` component instead of defining a private duplicate account sidebar.
+2. `/account/profile` keeps its active navigation state and existing profile load/edit/save behavior.
+3. `/account/settings` keeps its active navigation state and existing settings load/edit/save behavior.
+4. Profile and Settings inherit the shared customer destinations, including Saved services, Notifications, Reviews, Platform support and Help center.
+5. This change does not mutate bookings, reviews, saved services, support requests, provider identities, services, jobs, notifications or finance state.
+6. No database migration, RLS or auth-model change is introduced.
+7. One account = Customer + one Provider identity remains unchanged.
+8. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remains HOLD.
+9. Recurrence/recovery remains FROZEN.
+10. Supabase Pro leaked-password protection remains HOLD.
