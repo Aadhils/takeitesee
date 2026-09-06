@@ -1,0 +1,22 @@
+Legacy Provider verification notification target backfill contract
+
+- Canonical production migration: 20260906121414_legacy_provider_verification_notification_target_backfill.
+- Scope is historical notification navigation metadata only.
+- provider_verification_submitted legacy rows with no target, booking, or conversation context are backfilled to /provider/verification.
+- provider_verification_approved legacy rows with no target, booking, or conversation context are backfilled to /provider/verification.
+- The backfill does not overwrite an existing target_path.
+- The backfill does not modify rows that already have booking_id or conversation_id fallback context.
+- Current Provider verification emitters remain governed by 20260906094748_provider_verification_notification_deep_links.
+- Verification request state, evidence, review, trust state, disclosure remediation, Provider identity, RLS, and function privileges are unchanged.
+- Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD.
+- Recurrence/recovery remains FROZEN.
+- Supabase leaked-password protection remains HOLD.
+
+Production audit evidence before applying the migration:
+- exactly 2 legacy non-actionable rows existed: one provider_verification_submitted and one provider_verification_approved;
+- both recipients had an existing Provider identity;
+- rollback-only dry-run updated exactly 2 rows and then restored them.
+
+Production verification after applying the migration:
+- corrected rows targeting /provider/verification: 2;
+- remaining non-actionable rows for these two event types: 0.
