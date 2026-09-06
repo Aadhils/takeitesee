@@ -5,7 +5,8 @@ import { createSupabaseServerClient } from '../../../lib/supabase/server';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const BUCKET = 'identity-media';
+const PRIVATE_BUCKET = 'identity-media';
+const PROVIDER_BUCKET = 'provider-identity-media';
 const SIGNED_URL_TTL_SECONDS = 60 * 60;
 const noStoreHeaders = { 'Cache-Control': 'no-store, max-age=0' };
 
@@ -109,24 +110,35 @@ async function resolveIdentity(request: Request, context: IdentityContext): Prom
   };
 }
 
-function uploadPrefix(identity: ResolvedIdentity) {
-  return `${identity.userId}/${identity.scope}/${identity.entityId}`;
+function bucketFor(identity: ResolvedIdentity) {
+  return identity.scope === 'customer' ? PRIVATE_BUCKET : PROVIDER_BUCKET;
 }
 
-async function signedUrl(supabase: ServerSupabase, path: string | null) {
+function uploadPrefix(identity: ResolvedIdentity) {
+  if (identity.scope === 'customer') return `${identity.userId}/customer/${identity.userId}`;
+  return `${identity.scope}/${identity.entityId}`;
+}
+
+async function mediaUrl(supabase: ServerSupabase, identity: ResolvedIdentity, path: string | null) {
   if (!path) return null;
-  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
+  const bucket = bucketFor(identity);
+  if (identity.scope !== 'customer') {
+    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+    return data.publicUrl || null;
+  }
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
   return error ? null : data?.signedUrl ?? null;
 }
 
 async function responseIdentity(supabase: ServerSupabase, identity: ResolvedIdentity) {
   const [avatarUrl, bannerUrl] = await Promise.all([
-    signedUrl(supabase, identity.avatarPath),
-    signedUrl(supabase, identity.bannerPath),
+    mediaUrl(supabase, identity, identity.avatarPath),
+    mediaUrl(supabase, identity, identity.bannerPath),
   ]);
   return {
     scope: identity.scope,
     entity_id: identity.entityId,
+    bucket: bucketFor(identity),
     upload_prefix: uploadPrefix(identity),
     avatar_url: avatarUrl,
     banner_url: bannerUrl,
@@ -145,8 +157,8 @@ function validateObjectPath(identity: ResolvedIdentity, kind: MediaKind, objectP
   return { objectPath, folder, fileName };
 }
 
-async function assertUploadedObject(supabase: ServerSupabase, folder: string, fileName: string) {
-  const { data, error } = await supabase.storage.from(BUCKET).list(folder, { limit: 100, search: fileName });
+async function assertUploadedObject(supabase: ServerSupabase, identity: ResolvedIdentity, folder: string, fileName: string) {
+  const { data, error } = await supabase.storage.from(bucketFor(identity)).list(folder, { limit: 100, search: fileName });
   if (error) throw new Error(error.message);
   if (!(data ?? []).some((item) => item.name === fileName)) throw new Error('Uploaded identity media was not found.');
 }
@@ -169,9 +181,9 @@ async function persistPath(supabase: ServerSupabase, identity: ResolvedIdentity,
   };
 }
 
-async function removeObject(supabase: ServerSupabase, path: string | null) {
+async function removeObject(supabase: ServerSupabase, identity: ResolvedIdentity, path: string | null) {
   if (!path) return;
-  await supabase.storage.from(BUCKET).remove([path]);
+  await supabase.storage.from(bucketFor(identity)).remove([path]);
 }
 
 function jsonError(error: unknown, status = 400) {
@@ -197,11 +209,11 @@ export async function PATCH(request: Request) {
     const kind = requestedKind(input.kind);
     const { identity, supabase } = await resolveIdentity(request, context);
     const { objectPath, folder, fileName } = validateObjectPath(identity, kind, input.object_path);
-    await assertUploadedObject(supabase, folder, fileName);
+    await assertUploadedObject(supabase, identity, folder, fileName);
 
     const oldPath = kind === 'avatar' ? identity.avatarPath : identity.bannerPath;
     const updated = await persistPath(supabase, identity, kind, objectPath);
-    if (oldPath && oldPath !== objectPath) await removeObject(supabase, oldPath);
+    if (oldPath && oldPath !== objectPath) await removeObject(supabase, identity, oldPath);
 
     return NextResponse.json({ identity: await responseIdentity(supabase, updated) }, { headers: noStoreHeaders });
   } catch (error) {
@@ -217,7 +229,7 @@ export async function DELETE(request: Request) {
     const { identity, supabase } = await resolveIdentity(request, context);
     const oldPath = kind === 'avatar' ? identity.avatarPath : identity.bannerPath;
     const updated = await persistPath(supabase, identity, kind, null);
-    await removeObject(supabase, oldPath);
+    await removeObject(supabase, identity, oldPath);
     return NextResponse.json({ identity: await responseIdentity(supabase, updated) }, { headers: noStoreHeaders });
   } catch (error) {
     return jsonError(error);
