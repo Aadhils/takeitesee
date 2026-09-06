@@ -14,6 +14,7 @@ const links = [
   { href: '/admin/providers', en: 'Providers', ta: 'வழங்குநர்கள்' },
   { href: '/admin/customers', en: 'Customers', ta: 'வாடிக்கையாளர்கள்' },
   { href: '/admin/services', en: 'Services', ta: 'சேவைகள்' },
+  { href: '/admin/service-launches', en: 'Launch reviews', ta: 'Launch reviews' },
   { href: '/admin/reviews', en: 'Reviews', ta: 'மதிப்புரைகள்' },
   { href: '/admin/reports', en: 'Reports', ta: 'அறிக்கைகள்' },
   { href: '/admin/settings', en: 'Settings', ta: 'அமைப்புகள்' },
