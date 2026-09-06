@@ -11,6 +11,7 @@ type MediaKind = 'avatar' | 'banner';
 type IdentityMedia = {
   scope: IdentityScope;
   entity_id: string;
+  bucket: string;
   upload_prefix: string;
   avatar_url: string | null;
   banner_url: string | null;
@@ -18,7 +19,6 @@ type IdentityMedia = {
   has_banner: boolean;
 };
 
-const BUCKET = 'identity-media';
 const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const maxBytes = 6 * 1024 * 1024;
 
@@ -105,7 +105,7 @@ export default function RoleIdentityMediaHeader({
     const objectPath = `${identity.upload_prefix}/${kind}/${crypto.randomUUID()}.${extensionFor(file)}`;
 
     try {
-      const { error: uploadError } = await supabase.storage.from(BUCKET).upload(objectPath, file, {
+      const { error: uploadError } = await supabase.storage.from(identity.bucket).upload(objectPath, file, {
         contentType: file.type,
         cacheControl: '3600',
         upsert: false,
@@ -119,7 +119,7 @@ export default function RoleIdentityMediaHeader({
       });
       const body = await response.json() as { identity?: IdentityMedia; error?: string };
       if (!response.ok || !body.identity) {
-        await supabase.storage.from(BUCKET).remove([objectPath]);
+        await supabase.storage.from(identity.bucket).remove([objectPath]);
         throw new Error(body.error ?? 'Identity media could not be saved.');
       }
       setIdentity(body.identity);

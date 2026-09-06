@@ -1,0 +1,15 @@
+Provider public identity media contract
+
+1. Customer avatar/banner media remains private in the identity-media bucket and is never exposed by this public Provider feature.
+2. Professional and Business avatar/banner media uses the public provider-identity-media bucket because these images are marketplace identity assets.
+3. Provider public object paths contain only provider type, provider id, media kind and random file id; auth user UUIDs are never embedded in public Provider media paths.
+4. Professional path shape is professional/<professional-id>/<avatar|banner>/<uuid>.<jpg|png|webp>.
+5. Business path shape is business/<business-id>/<avatar|banner>/<uuid>.<jpg|png|webp>.
+6. Authenticated storage INSERT/SELECT/DELETE policies require ownership of the matching Professional or Business profile. Public serving does not grant write access.
+7. set_my_identity_media_path revalidates exact Customer-private or Provider-public path ownership before persisting metadata; anon EXECUTE remains denied.
+8. Public Professional and Business detail routes render the same role-scoped avatar/banner source of truth used by the Provider dashboard.
+9. Public identity media presentation never falls back to a private Customer path. Invalid or mismatched Provider paths are ignored and role-specific initials/gradient branding is shown instead.
+10. Existing public services, talents, portfolio, career, disclosure, grievance, verification and booking behavior remains unchanged.
+11. One Provider Identity remains authoritative: Customer + Professional OR Customer + Business, never both Provider identities.
+12. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD; recurrence/recovery remains FROZEN; leaked-password protection remains HOLD.
+13. Production acceptance does not create synthetic media. Real image visual acceptance occurs only through genuine signed-in Provider sessions.
