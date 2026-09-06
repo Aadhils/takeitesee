@@ -1,0 +1,349 @@
+.shell {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+  border-radius: 24px;
+  background: var(--color-surface);
+  box-shadow: 0 16px 44px rgba(23, 32, 54, .08);
+}
+
+.banner {
+  position: relative;
+  min-height: 190px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 15% 15%, rgba(255,255,255,.24), transparent 28%),
+    linear-gradient(125deg, #263c8c 0%, #6b4fb7 55%, #9d5fc3 100%);
+}
+
+.bannerCustomer {
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255,255,255,.28), transparent 30%),
+    linear-gradient(125deg, #335ca8 0%, #5c72bb 48%, #7d68b8 100%);
+}
+
+.bannerProfessional {
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255,255,255,.26), transparent 30%),
+    linear-gradient(125deg, #214a83 0%, #4f55a4 46%, #8058b0 100%);
+}
+
+.bannerBusiness {
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255,255,255,.24), transparent 30%),
+    linear-gradient(125deg, #172b59 0%, #443d85 52%, #68468c 100%);
+}
+
+.bannerImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bannerShade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(9, 17, 37, .05), rgba(9, 17, 37, .28));
+  pointer-events: none;
+}
+
+.bannerActions {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  z-index: 2;
+}
+
+.mediaButton,
+.mediaButtonDanger {
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255,255,255,.58);
+  border-radius: 999px;
+  background: rgba(18, 25, 48, .66);
+  color: #fff;
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+}
+
+.mediaButton:hover,
+.mediaButton:focus-visible,
+.mediaButtonDanger:hover,
+.mediaButtonDanger:focus-visible {
+  background: rgba(18, 25, 48, .84);
+  outline: 2px solid rgba(255,255,255,.85);
+  outline-offset: 2px;
+}
+
+.mediaButton:disabled,
+.mediaButtonDanger:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.mediaButtonDanger {
+  border-color: rgba(255, 224, 224, .75);
+}
+
+.content {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 18px;
+  padding: 0 24px 22px;
+}
+
+.avatarWrap {
+  position: relative;
+  width: 118px;
+  height: 118px;
+  margin-top: -55px;
+  z-index: 3;
+}
+
+.avatar,
+.avatarFallback {
+  width: 118px;
+  height: 118px;
+  border: 5px solid var(--color-surface);
+  border-radius: 32px 32px 32px 10px;
+  box-shadow: 0 12px 30px rgba(18, 24, 45, .18);
+}
+
+.avatar {
+  display: block;
+  object-fit: cover;
+  background: var(--color-surface-soft);
+}
+
+.avatarFallback {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--color-primary), #6d55b4);
+  color: #fff;
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+
+.avatarEdit {
+  position: absolute;
+  right: -7px;
+  bottom: -7px;
+  min-width: 38px;
+  min-height: 38px;
+  padding: 8px;
+  border: 3px solid var(--color-surface);
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: #fff;
+  font: inherit;
+  font-size: .75rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 7px 18px rgba(22, 33, 70, .2);
+}
+
+.identity {
+  min-width: 0;
+  padding-top: 14px;
+}
+
+.identityTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+}
+
+.identity h2 {
+  margin: 0;
+  font-size: clamp(1.3rem, 2vw, 1.75rem);
+  line-height: 1.15;
+}
+
+.scopePill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  color: var(--color-primary);
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.subtitle {
+  margin: 7px 0 0;
+  font-size: .9rem;
+  font-weight: 650;
+}
+
+.meta {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+  font-size: .82rem;
+  overflow-wrap: anywhere;
+}
+
+.avatarControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 14px;
+}
+
+.secondaryButton,
+.removeButton {
+  min-height: 38px;
+  padding: 8px 11px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: .75rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.secondaryButton:hover,
+.secondaryButton:focus-visible {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.removeButton {
+  color: var(--color-danger);
+}
+
+.secondaryButton:disabled,
+.removeButton:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
+.hint {
+  grid-column: 2 / -1;
+  margin: -7px 0 0;
+  color: var(--color-text-muted);
+  font-size: .72rem;
+}
+
+.status {
+  grid-column: 1 / -1;
+  margin: 0 24px 18px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  color: var(--color-text);
+  font-size: .8rem;
+}
+
+.error {
+  background: color-mix(in srgb, var(--color-danger) 9%, transparent);
+  color: var(--color-danger);
+}
+
+.hiddenInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+@media (max-width: 720px) {
+  .banner {
+    min-height: 145px;
+  }
+
+  .bannerActions {
+    top: 10px;
+    right: 10px;
+  }
+
+  .mediaButton,
+  .mediaButtonDanger {
+    min-height: 34px;
+    padding: 6px 9px;
+    font-size: .7rem;
+  }
+
+  .content {
+    grid-template-columns: 84px minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
+    padding: 0 16px 16px;
+  }
+
+  .avatarWrap,
+  .avatar,
+  .avatarFallback {
+    width: 84px;
+    height: 84px;
+  }
+
+  .avatarWrap {
+    margin-top: -38px;
+  }
+
+  .avatar,
+  .avatarFallback {
+    border-width: 4px;
+    border-radius: 24px 24px 24px 8px;
+  }
+
+  .avatarFallback {
+    font-size: 1.25rem;
+  }
+
+  .avatarEdit {
+    right: -5px;
+    bottom: -5px;
+    min-width: 33px;
+    min-height: 33px;
+    border-width: 2px;
+    font-size: .68rem;
+  }
+
+  .identity {
+    padding-top: 10px;
+  }
+
+  .identity h2 {
+    font-size: 1.15rem;
+  }
+
+  .avatarControls,
+  .hint {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    padding-top: 0;
+  }
+
+  .hint {
+    margin-top: 0;
+  }
+
+  .status {
+    margin: 0 16px 14px;
+  }
+}

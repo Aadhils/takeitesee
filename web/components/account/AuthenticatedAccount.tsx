@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Card } from '../ui/primitives';
+import { Button, Card } from '../ui/primitives';
 import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
+import RoleIdentityMediaHeader from '../identity/RoleIdentityMediaHeader';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { ProviderReadinessSummary } from './ProviderReadinessSummary';
 import { getSupabaseBrowserUser, isSupabaseConfigured, localDevelopmentAuthAdapter, signOutWithSupabase } from '../../services/auth-adapter';
@@ -87,11 +88,15 @@ export default function AuthenticatedAccount() {
       <h1>{t('account.welcome')}, {user.name.split(' ')[0]}.</h1>
       <p>{isSupabaseConfigured() ? t('account.productionSession') : t('account.localSession')}</p>
 
-      <Card className="profile-summary">
+      {isSupabaseConfigured() ? <RoleIdentityMediaHeader
+        context="customer"
+        displayName={user.name}
+        subtitle={tamil ? 'Personal customer account' : 'Personal customer account'}
+        meta={[user.email, user.phone].filter(Boolean).join(' · ')}
+      /> : <Card className="profile-summary">
         <div className="provider-avatar provider-avatar-large" aria-hidden="true">{user.name.split(' ').map((part) => part[0]).join('')}</div>
         <div><span className="eyebrow">{t('account.signedInCustomer')}</span><h2>{user.name}</h2><p>{user.email}</p>{user.phone ? <span className="card-location">{user.phone}</span> : null}</div>
-        <Badge tone="info">{t('account.customer')}</Badge>
-      </Card>
+      </Card>}
 
       <WorkspaceSwitcher currentWorkspace="customer" />
       <ProviderReadinessSummary />
