@@ -1,0 +1,7 @@
+Production acceptance notes
+
+- Supabase production migration version: 20260906002649 (professional_disclosure_remediation).
+- The migration changes only submit_provider_verification eligibility for verified providers with incomplete marketplace disclosure.
+- A correction remains a pending provider_verification_request until normal admin review; the existing approval trigger is the only path that copies disclosure fields to the public provider record.
+- Current legacy Test Professional is intentionally not mutated for acceptance. It has no owning user_id, so authenticated UI interaction cannot be represented by that seed record.
+- Signed-in visual/interaction acceptance requires a real owned Professional account and is not claimed by this contract.
