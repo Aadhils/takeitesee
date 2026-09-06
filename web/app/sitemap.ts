@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { createClient } from '@supabase/supabase-js';
+import { loadPublicProfessionals } from '../server/marketplace/public-directory';
 
 const siteUrl = 'https://www.takeitesee.com';
 const pageSize = 1000;
@@ -50,11 +51,13 @@ async function loadPublicServiceRows() {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const rows = await loadPublicServiceRows();
+  const [rows, publicProfessionals] = await Promise.all([
+    loadPublicServiceRows(),
+    loadPublicProfessionals(),
+  ]);
   if (!rows) return staticEntries;
 
   const serviceEntries: MetadataRoute.Sitemap = [];
-  const professionalIds = new Set<string>();
   const businessIds = new Set<string>();
 
   for (const row of rows) {
@@ -68,11 +71,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
 
     if (row.provider_type === 'business' && row.business_id) businessIds.add(String(row.business_id));
-    if (row.provider_type === 'professional' && row.professional_id) professionalIds.add(String(row.professional_id));
   }
 
-  const professionalEntries: MetadataRoute.Sitemap = Array.from(professionalIds).map((id) => ({
-    url: `${siteUrl}/professionals/${encodeURIComponent(id)}`,
+  const professionalEntries: MetadataRoute.Sitemap = (publicProfessionals ?? []).map((professional) => ({
+    url: `${siteUrl}/professionals/${encodeURIComponent(professional.id)}`,
     changeFrequency: 'weekly',
     priority: 0.7,
   }));
