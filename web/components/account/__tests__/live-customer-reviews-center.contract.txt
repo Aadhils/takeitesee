@@ -1,0 +1,17 @@
+Live customer reviews center contract
+
+1. /reviews must use authenticated live booking and review data rather than discovery fixtures or presentation-only review cards.
+2. An unauthenticated visitor must receive a sign-in/create-account state and must not see private booking or review data.
+3. GET /api/reviews without bookingId must return only reviews authored by the authenticated customer, ordered newest first.
+4. Existing GET /api/reviews?bookingId=... behavior must remain compatible for live booking detail review reads.
+5. The reviews center must show completed bookings from the configured live customer booking repository and associate submitted reviews by booking_id.
+6. A completed booking without a submitted review must not be labelled review-eligible by the center. It must link to the live booking detail to check server-authoritative review-window eligibility and deadline.
+7. Submitted rating/comment and any provider response may be displayed, but customer-authored review text must not be altered.
+8. Review creation remains exclusively server-authoritative through POST /api/reviews, completed-booking ownership checks and the closeout review-window gate.
+9. This slice is read-side UI/API expansion only: no review, booking, Provider, service, job, messaging, notification or support state is mutated by loading /reviews.
+10. No database migration or RLS/auth model change is introduced.
+11. One account = Customer + one Provider identity remains authoritative.
+12. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remains HOLD.
+13. Recurrence/recovery remains FROZEN.
+14. Supabase Pro leaked-password protection remains HOLD.
+15. Signed-in visual/interaction acceptance must not be claimed without authenticated evidence; code, CI, unauthenticated privacy state and runtime verification may be completed independently.
