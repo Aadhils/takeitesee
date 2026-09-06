@@ -1,0 +1,9 @@
+Provider application notification deep-link contract
+
+1. Provider onboarding notifications remain user-scoped through the existing notifications ownership model.
+2. `provider_application_submitted` notifications target `/provider/onboarding` so applicants can review or withdraw the pending application.
+3. `provider_application_rejected` notifications target `/provider/onboarding` so applicants can read the review reason and submit a corrected application when eligible.
+4. `provider_application_approved` notifications target `/provider` because the approved Provider workspace is active immediately after the existing review transaction completes.
+5. The one-account-one-provider identity rule, advisory locking, Provider creation, role updates, application review states, and event audit trail remain unchanged.
+6. `submit_provider_application` and `review_provider_application` remain `SECURITY DEFINER` with an empty `search_path`, deny `anon`/`PUBLIC` execution, and grant execution only to `authenticated` callers subject to their existing in-function authorization checks.
+7. No Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery behavior is changed. Recurrence/recovery remains frozen.
