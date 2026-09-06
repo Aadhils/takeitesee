@@ -1,0 +1,10 @@
+Email confirmation resend recovery contract
+
+1. A signup that creates a user without a session must keep the existing confirmation-pending state and offer a resend action for the signup email.
+2. An invalid or expired /auth/confirm link must keep routing to /login?confirmation=failed and that state must offer a resend action instead of telling the user to create another account.
+3. Resend must call Supabase Auth resend with type='signup' and the normalized email address.
+4. Resend must not use a password, create another account, mutate profile/provider data, or bypass the existing /auth/confirm OTP verification route.
+5. User-visible resend success/failure copy must not reveal whether an account exists or whether the address is already confirmed.
+6. Successful resend requests must enforce a client cooldown; failed requests must also introduce a shorter retry delay to reduce rapid repeat attempts.
+7. Existing signup legal-consent metadata, safe returnTo handling, login behavior, password recovery, and account security flows remain unchanged.
+8. No database, RLS, Provider identity, booking, moderation, recurrence/recovery, or finance behavior changes.
