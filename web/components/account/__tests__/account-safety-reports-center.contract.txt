@@ -1,0 +1,11 @@
+Account safety reports center contract
+
+1. `/account/reports` is a signed-in account surface for the current user's own marketplace moderation reports across requirement, job-application, Professional portfolio and public job-posting contexts.
+2. `GET /api/account/reports` requires the existing authenticated Customer/account session and calls `get_my_marketplace_moderation_reports()`; it does not trust a client-supplied reporter user id.
+3. `get_my_marketplace_moderation_reports()` filters strictly by `reporter_user_id = auth.uid()` and returns only reporter-safe report fields plus redacted event history.
+4. Reporter output must never include `admin_note`, `handled_by`, event `note`, event `actor_user_id`, or other internal moderator/staff identifiers.
+5. Authenticated direct SELECT on `marketplace_moderation_reports` and `marketplace_moderation_report_events` is revoked; Admin operational queues continue through their existing scoped RPCs.
+6. `moderation_report_updated` notifications with no explicit target resolve to `/account/reports`; an existing non-null target is never overwritten.
+7. Account shortcuts expose `Safety reports`, and guest `/account/reports` offers the existing secure sign-in flow without exposing report data.
+8. No moderation decision/enforcement state machine, Admin scope, Provider identity, booking, recurrence, finance, Cashfree, payment, refund, payout, settlement or recovery behavior changes.
+9. Production acceptance must not fabricate a moderation report. With zero real reports, owner API/UI may legitimately return an empty list while privilege and route boundaries are verified separately.
