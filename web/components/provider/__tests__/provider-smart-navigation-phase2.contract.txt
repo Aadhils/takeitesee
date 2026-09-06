@@ -1,0 +1,15 @@
+Provider smart navigation Phase 2 contract
+
+1. The Provider sidebar keeps every existing destination available; Phase 2 reorganizes navigation only and must not remove capabilities.
+2. Dashboard stays immediately visible under Overview.
+3. Customer work groups Leads, Messages, Bookings and Schedule.
+4. Services & trust groups Setup, Services, Verification and Reviews.
+5. Professional identity gets a Presence & career group containing Public profile readiness, Portfolio, Resume & Career, Jobs & Applications and Profile.
+6. Business identity gets a Hiring & business group containing Employer Jobs and Profile.
+7. Earnings remains reachable as its own low-frequency navigation group; no finance behavior is activated or changed.
+8. On desktop, task groups may collapse to reduce visual overload; the group containing the active route is open.
+9. On mobile/tablet, group summaries are hidden and all links remain flattened into the existing horizontal-scroll navigation pattern.
+10. Pending booking count remains attached to Bookings and the current-route active state remains visible.
+11. Provider context, trust banners, workspace switching, guest sign-in handoff and Professional/Business route authorization remain unchanged.
+12. No API, database, RLS, booking lifecycle, Jobs lifecycle, messaging, moderation or one-provider-identity behavior changes.
+13. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD. Recurrence/recovery remains FROZEN. Supabase leaked-password protection remains HOLD.
