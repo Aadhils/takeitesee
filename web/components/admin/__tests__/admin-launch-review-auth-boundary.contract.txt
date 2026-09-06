@@ -1,0 +1,7 @@
+Admin service-launch auth boundary contract
+
+- /admin/service-launches relies on the shared /admin layout for page-level Admin/Super Admin authentication and redirects unauthenticated users through that parent boundary.
+- The page must not repeat productionAuthProvider.requireAdmin(), because a duplicate page-level throw can create a runtime error log after the parent layout has already handled guest authorization.
+- /api/super-admin/service-launches remains independently authenticated and server-authoritative for queue reads and review mutations.
+- Scoped row visibility and exact-scope manage authority remain enforced by the existing service-launch RPC/RLS boundaries.
+- No database, RLS, finance/payment, recurrence/recovery, provider identity, or service activation behavior changes in this hotfix.
