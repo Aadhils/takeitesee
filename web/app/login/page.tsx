@@ -1,4 +1,5 @@
 import { LoginForm } from '../../components/auth/AuthForms';
+import { EmailConfirmationResend } from '../../components/auth/EmailConfirmationResend';
 
 type LoginSearchParams = {
   returnTo?: string;
@@ -16,11 +17,12 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <div className="card auth-card" role="alert">
             <span className="badge badge-info">Email confirmation</span>
             <p className="field-error">
-              This email confirmation link is invalid or has expired. Open the latest confirmation email, or return to signup and try again.
+              This email confirmation link is invalid or has expired. Request a fresh confirmation email below.
             </p>
             <p>
-              இந்த email confirmation link செல்லுபடியாகவில்லை அல்லது காலாவதியாகிவிட்டது. சமீபத்திய confirmation email-ஐ திறக்கவும், அல்லது signup-க்கு திரும்பி மீண்டும் முயற்சிக்கவும்.
+              இந்த email confirmation link செல்லுபடியாகவில்லை அல்லது காலாவதியாகிவிட்டது. கீழே புதிய confirmation email request செய்யவும்.
             </p>
+            <EmailConfirmationResend />
           </div>
         </div>
       ) : null}
