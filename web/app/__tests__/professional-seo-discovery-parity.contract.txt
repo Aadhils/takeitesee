@@ -1,0 +1,10 @@
+Professional SEO discovery parity contract
+
+1. `/professionals` metadata describes the full Professional discovery model: active services, public talents, and published career profiles.
+2. Professional sitemap entries use the same `loadPublicProfessionals()` public-readiness source of truth as the Professional directory.
+3. Role-only and career-only public-ready Professionals can therefore enter the sitemap even when they have no active service.
+4. Verified Professionals that fail profile basics or marketplace disclosure remain excluded from Professional sitemap URLs.
+5. The existing service sitemap and Business sitemap behavior remain unchanged in this slice.
+6. If Professional directory loading is unavailable, the sitemap still serves static/service/business entries and omits dynamic Professional detail URLs rather than failing the entire sitemap.
+7. No database migration, RLS change, auth change, provider mutation, booking/job/moderation/notification change, or finance behavior change is introduced.
+8. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remains HOLD. Recurrence/recovery remains FROZEN. Supabase Pro leaked-password protection remains HOLD.
