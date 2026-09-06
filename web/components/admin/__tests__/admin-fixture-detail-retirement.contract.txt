@@ -1,0 +1,8 @@
+Admin legacy fixture detail retirement contract
+
+- /admin/providers/[providerId] must not render data from web/data/admin-fixtures.ts or AdminPresentation detail components.
+- /admin/services/[serviceId] must not render data from web/data/admin-fixtures.ts or AdminPresentation detail components.
+- /admin/reviews/[reviewId] must not render data from web/data/admin-fixtures.ts or AdminPresentation detail components.
+- Each legacy dynamic detail route must redirect to its corresponding live scoped Admin list.
+- Parent /admin layout remains the authoritative admin/super-admin authentication boundary.
+- No database, RLS, finance, payment, recurrence, recovery, provider or customer state-machine behavior changes in this slice.
