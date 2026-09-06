@@ -1,0 +1,14 @@
+Provider requirement helper private-surface repair contract
+
+1. provider_service_matches_requirement must resolve provider verification, profile completeness, trust, and launchable service scope through private helpers only.
+2. public.provider_owner_is_verified(text,uuid,uuid) must remain absent from the exposed public RPC surface.
+3. provider_service_matches_requirement(uuid,uuid,uuid) must not be executable by PUBLIC, anon, or authenticated; service_role execution remains available for trusted server-side/internal use.
+4. platform_launch_readiness().public_marketplace_helpers_available must remain true after this repair.
+5. A no-match provider_service_matches_requirement call must return false instead of failing because an obsolete public provider helper is missing.
+6. Existing anonymous marketplace service/profile discovery behavior must remain unchanged.
+7. No customer requirement or provider proposal rows may be created or mutated solely to manufacture acceptance evidence.
+8. Provider requirement/proposal eligibility logic remains scoped to an owned active service matching the open requirement's launchable category/location.
+9. One account = Customer + exactly one Provider identity (Professional OR Business) remains authoritative.
+10. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remains HOLD and is not changed by this repair.
+11. Recurrence/recovery remains FROZEN and is not changed by this repair.
+12. Supabase Pro leaked-password protection remains HOLD.
