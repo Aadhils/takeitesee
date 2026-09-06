@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 import styles from './JobMarketplace.module.css';
 import { EmployerHiringWorkspace } from './EmployerHiringWorkspace';
+import { HiringJourneyGuide } from './HiringJourneyGuide';
 import { ProfessionalJobsWorkspace } from './ProfessionalJobsWorkspace';
 import { SafeJobDeletionPanel } from './SafeJobDeletionPanel';
 
@@ -45,6 +46,7 @@ export function ProviderJobsExperience(){
         <Link className={`${styles.button} ${styles.secondary}`} href="/jobs">{ta?'Public jobs பார்க்க':'View public jobs'}</Link>
       </div>
     </section>
+    <HiringJourneyGuide role="business" tamil={ta} />
     <EmployerHiringWorkspace/>
     <section className={`${styles.card} ${styles.section}`}>
       <div className={styles.sectionHeading}>
