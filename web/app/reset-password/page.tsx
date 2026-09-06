@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { ResetPasswordForm } from '../../components/auth/AuthForms';
+import { PasswordRecoveryBoundary } from '../../components/auth/PasswordRecoveryBoundary';
 
 export const metadata: Metadata = {
   title: 'Reset password',
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function ResetPasswordPage() {
-  return <ResetPasswordForm />;
+  return <PasswordRecoveryBoundary />;
 }
