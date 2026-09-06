@@ -1,0 +1,13 @@
+AUTHENTICATED PROVIDER BASE READ ISOLATION CONTRACT
+
+1. Authenticated non-owner users MUST NOT read Provider identity base rows from `professional_profiles` or `businesses` merely because the Provider is public-ready.
+2. `professionals_authenticated_read` allows only the owning Professional user or Super Admin.
+3. `businesses_authenticated_read` allows only the owning Business user or Super Admin.
+4. Anonymous public marketplace reads remain governed by the existing verified + complete marketplace-disclosure policies.
+5. Authenticated customer presentation of a public Provider MUST use `get_public_provider_identity(text, uuid)` rather than Provider ownership columns.
+6. The safe identity RPC exposes only provider type, provider id, display name, location, and verified state, and only for verified + disclosure-complete Providers.
+7. Customer Saved Services and Customer Booking display-name reads MUST remain functional through the safe identity projection introduced before this enforcement.
+8. Provider owners retain direct access to their own base row and ownership identifier.
+9. Super Admin retains direct Provider base-row visibility for platform operations.
+10. This migration changes read visibility only; no Provider verification, disclosure, service, booking, job, moderation, notification, or identity state is mutated.
+11. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remains HOLD; recurrence/recovery remains FROZEN; Supabase Pro leaked-password protection remains HOLD.
