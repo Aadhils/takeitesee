@@ -1,12 +1,9 @@
 import ServiceLaunchReviewManager from '../../../components/admin/ServiceLaunchReviewManager';
 import { AdminLiveHeading, AdminLiveShell, AdminLiveText } from '../../../components/admin/AdminLiveChrome';
-import { productionAuthProvider } from '../../../server/auth/session';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminServiceLaunchReviewsPage() {
-  await productionAuthProvider.requireAdmin();
-
+export default function AdminServiceLaunchReviewsPage() {
   return <AdminLiveShell active="/admin/service-launches">
     <AdminLiveHeading
       eyebrow={<AdminLiveText en="Scoped catalog approvals" ta="Scope செய்யப்பட்ட catalog approvals" />}
