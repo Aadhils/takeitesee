@@ -10,8 +10,19 @@ export async function GET(request: Request) {
     const session = await productionAuthProvider.requireCustomer(request);
     const url = new URL(request.url);
     const bookingId = url.searchParams.get('bookingId');
-    if (!bookingId) return NextResponse.json({ error: 'Booking is required.' }, { status: 400 });
     const supabase = await createSupabaseServerClient();
+
+    if (!bookingId) {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('id,booking_id,service_id,rating,comment,status,provider_response,provider_responded_at,created_at')
+        .eq('customer_id', session.user_id)
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) throw new Error(error.message);
+      return NextResponse.json({ reviews: data ?? [] });
+    }
+
     const { data, error } = await supabase.from('reviews').select('*').eq('booking_id', bookingId).eq('customer_id', session.user_id).maybeSingle();
     if (error) throw new Error(error.message);
     return NextResponse.json({ review: data ?? null });
