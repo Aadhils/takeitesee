@@ -1,0 +1,15 @@
+Professional public profile sharing contract
+
+1. Public-ready Professional detail pages must expose the shared ProviderProfileShareAction.
+2. The Professional share action must use kind="professional" so canonical share URLs resolve to /professionals/{providerId}.
+3. The share label and status copy continue to come from the reusable English/Tamil ProviderProfileShareAction implementation.
+4. Native Web Share remains preferred when available; clipboard and hidden-textarea fallback behavior remains unchanged.
+5. Cancelling a native share (AbortError) must not trigger copy or error messaging.
+6. Business public profile sharing behavior remains unchanged.
+7. Professional public-readiness, verification, disclosure, basics, services, roles, career, portfolio, SEO, and sitemap gates remain unchanged.
+8. No database, RLS, authentication, Provider identity, service, booking, job, moderation, notification, or finance state changes are introduced.
+9. One account = Customer + one Provider identity remains authoritative.
+10. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remains HOLD.
+11. Recurrence/recovery remains FROZEN.
+12. Supabase Pro leaked-password protection remains HOLD.
+13. Production acceptance must not claim a live Professional share-button interaction until a genuine public-ready Professional profile exists; code/CI/runtime acceptance is valid meanwhile.
