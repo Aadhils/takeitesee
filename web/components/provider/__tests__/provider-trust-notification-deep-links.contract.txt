@@ -1,0 +1,13 @@
+Provider trust-state notification deep-link contract
+
+- Canonical migration: 20260906101312_provider_trust_notification_deep_links.
+- provider_reverification_required targets /provider/verification.
+- provider_suspended targets /provider/setup.
+- provider_restored targets /provider/setup.
+- set_provider_trust_state remains SECURITY DEFINER with empty search_path.
+- anon and PUBLIC EXECUTE remain denied; authenticated EXECUTE remains preserved subject to existing admin authorization checks.
+- Trust-state transition rules, verification invalidation, service pausing, trust event history, and admin permission checks are unchanged.
+- No frontend route, RLS, provider identity, service state-machine, or finance/recovery behavior changes.
+- Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remains HOLD.
+- recurrence/recovery remains FROZEN.
+- Supabase leaked-password protection remains HOLD.
