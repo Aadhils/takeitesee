@@ -1,0 +1,9 @@
+Account support shared shell contract
+
+1. Authenticated /account/support renders inside LocalizedAccountShell with /account/support active.
+2. The unauthenticated support fallback remains outside the authenticated shell and preserves sign-in returnTo=/account/support.
+3. The Grievance Officer email fallback remains mailto:uandv.com@gmail.com.
+4. Support request loading, submission, history, request types and /api/account/support-requests behavior remain unchanged.
+5. The Account privacy link remains available from the support form.
+6. No database, RLS, auth model, booking, provider, finance or recurrence/recovery behavior is changed.
+7. Signed-in visual acceptance requires authenticated browser evidence and must not be inferred from source or CI alone.
