@@ -1,0 +1,9 @@
+Synthetic production acceptance fixture quarantine contract
+
+1. The known synthetic Business `2dede740-9d64-4b93-95b9-746105a73234` (`Takeitesee Test Business`, description `Synthetic business record for testing only.`) must not remain verified after production acceptance closes.
+2. Any active service owned by that exact synthetic Business must be changed to `active=false` and `status=paused`; service rows, Business rows, existing bookings, and audit/history are preserved rather than deleted.
+3. Once quarantined, the fixture must not qualify for the existing public marketplace filters, sitemap service/business entries, or public service/business detail availability.
+4. Public discovery and sitemap code must continue to use normal active/verified/disclosure eligibility. Do not hard-code the synthetic ids into application filtering as a substitute for correcting production fixture state.
+5. Production acceptance may temporarily activate a synthetic fixture only when needed for a controlled smoke test. Before final GO closure, that fixture must be re-quarantined and its absence from public discovery/sitemap must be verified.
+6. The migration is guarded by the exact synthetic Business id, name, and description so unrelated real providers and services are not modified.
+7. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD. Recurrence/recovery remains FROZEN. Supabase leaked-password protection remains HOLD.
