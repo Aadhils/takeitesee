@@ -1,0 +1,12 @@
+Two-sided hiring journey clarity contract
+
+1. Professional Jobs workspace explains the candidate journey as Apply -> Employer review -> Shortlist & message -> Interview -> Offer decision -> Hired.
+2. Business Jobs workspace explains the employer journey as Post job -> Review applicants -> Shortlist & message -> Interview -> Send offer -> Accepted -> Hired.
+3. Both guides explicitly state that a Professional application becomes Hired only after the Professional accepts a formal employment offer.
+4. The guide is explanatory UI only; existing application status pills, stage-transition buttons, private messaging, interview scheduling/responding, and JobOfferWorkspace remain authoritative.
+5. Professional remains an independent service Provider plus the Job Seeker/Candidate side of Jobs; Business remains a service-business Provider plus the Employer/Hiring side of Jobs.
+6. One account still owns only one Provider identity: Professional OR Business.
+7. No database, API, RLS, job application/interview/offer state-machine, authorization, booking, messaging, moderation, or Supabase Auth changes are introduced.
+8. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD.
+9. Recurrence/recovery remains FROZEN.
+10. Supabase leaked-password protection remains HOLD.
