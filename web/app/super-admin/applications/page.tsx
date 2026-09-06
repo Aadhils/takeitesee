@@ -1,13 +1,12 @@
 import Link from 'next/link';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
-import { productionAuthProvider } from '../../../server/auth/session';
+import { getSuperAdminSessionOrNull } from '../../../server/auth/session';
 import { createApplication, setApplicationStatus } from './actions';
 
 const statuses = ['draft', 'active', 'paused', 'retired'] as const;
 
 export default async function ApplicationsPage() {
-  const session = await productionAuthProvider.requireAdmin();
-  if (!session.roles.includes('super_admin')) return null;
+  if (!await getSuperAdminSessionOrNull()) return null;
 
   const supabase = await createSupabaseServerClient();
   const { data: applications, error } = await supabase
