@@ -1,0 +1,14 @@
+Professional disclosure remediation contract
+
+1. A verified provider with incomplete marketplace disclosure is shown an explicit remediation state in the Verification workspace.
+2. The workspace identifies missing legal, public-contact, and grievance disclosure fields and prefills any existing disclosure values.
+3. A verified provider with complete marketplace disclosure remains in the normal approved state and cannot submit a redundant verification request.
+4. A verified provider with incomplete marketplace disclosure may submit one correction request through the existing provider verification workflow.
+5. Existing verified status is preserved while the correction request is pending, changes-requested, rejected, or withdrawn.
+6. Submitted disclosure values do not mutate the public provider profile until an admin approves the request.
+7. Approval continues to require at least one private verification document and uses the existing admin review flow.
+8. Pending correction requests remain visible even when the provider is already verified, including private-document upload/removal controls.
+9. Public marketplace eligibility remains blocked by the existing disclosure gate until all required disclosure fields are copied after approval.
+10. Professional/Business one-provider identity rules, trust-state rules, booking/job/moderation/notification state machines, and recurrence/recovery behavior remain unchanged.
+11. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remains HOLD.
+12. Supabase Pro leaked-password protection remains HOLD.

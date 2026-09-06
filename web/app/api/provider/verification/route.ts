@@ -5,21 +5,86 @@ import { createSupabaseServerClient } from '../../../../lib/supabase/server';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+type DisclosureRow = {
+  legal_name?: string | null;
+  principal_address?: string | null;
+  public_contact_email?: string | null;
+  public_contact_phone?: string | null;
+  website_url?: string | null;
+  grievance_officer_name?: string | null;
+  grievance_officer_designation?: string | null;
+  grievance_email?: string | null;
+  grievance_phone?: string | null;
+};
+
+function disclosureState(provider: DisclosureRow) {
+  const required: Array<[keyof DisclosureRow, string]> = [
+    ['legal_name', 'legal_name'],
+    ['principal_address', 'principal_address'],
+    ['public_contact_email', 'public_contact_email'],
+    ['public_contact_phone', 'public_contact_phone'],
+    ['grievance_officer_name', 'grievance_officer_name'],
+    ['grievance_officer_designation', 'grievance_officer_designation'],
+    ['grievance_email', 'grievance_email'],
+    ['grievance_phone', 'grievance_phone'],
+  ];
+  const missing = required.filter(([key]) => !provider[key]?.trim()).map(([, value]) => value);
+  return {
+    marketplace_disclosure_complete: missing.length === 0,
+    missing_disclosure_fields: missing,
+    disclosure: {
+      legal_name: provider.legal_name || '',
+      address: provider.principal_address || '',
+      public_contact_email: provider.public_contact_email || '',
+      contact_phone: provider.public_contact_phone || '',
+      website_url: provider.website_url || '',
+      grievance_officer_name: provider.grievance_officer_name || '',
+      grievance_officer_designation: provider.grievance_officer_designation || '',
+      grievance_email: provider.grievance_email || '',
+      grievance_phone: provider.grievance_phone || '',
+    },
+  };
+}
+
 export async function GET(request: Request) {
   try {
     const session = await productionAuthProvider.requireProvider(request);
     const supabase = await createSupabaseServerClient();
-    let provider: { id: string; provider_type: 'professional' | 'business'; display_name: string; verified: boolean } | null = null;
+    let provider: {
+      id: string;
+      provider_type: 'professional' | 'business';
+      display_name: string;
+      verified: boolean;
+      marketplace_disclosure_complete: boolean;
+      missing_disclosure_fields: string[];
+      disclosure: ReturnType<typeof disclosureState>['disclosure'];
+    } | null = null;
 
     if (session.roles.includes('professional')) {
-      const { data, error } = await supabase.from('professional_profiles').select('id,headline,verified').eq('user_id', session.user_id).limit(1).maybeSingle();
+      const { data, error } = await supabase
+        .from('professional_profiles')
+        .select('id,headline,verified,legal_name,principal_address,public_contact_email,public_contact_phone,website_url,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone')
+        .eq('user_id', session.user_id)
+        .limit(1)
+        .maybeSingle();
       if (error) throw new Error(error.message);
-      if (data) provider = { id: data.id, provider_type: 'professional', display_name: data.headline || 'Professional provider', verified: Boolean(data.verified) };
+      if (data) {
+        const state = disclosureState(data);
+        provider = { id: data.id, provider_type: 'professional', display_name: data.headline || 'Professional provider', verified: Boolean(data.verified), ...state };
+      }
     }
     if (!provider && session.roles.includes('business_owner')) {
-      const { data, error } = await supabase.from('businesses').select('id,name,verified').eq('owner_user_id', session.user_id).limit(1).maybeSingle();
+      const { data, error } = await supabase
+        .from('businesses')
+        .select('id,name,verified,legal_name,principal_address,public_contact_email,public_contact_phone,website_url,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone')
+        .eq('owner_user_id', session.user_id)
+        .limit(1)
+        .maybeSingle();
       if (error) throw new Error(error.message);
-      if (data) provider = { id: data.id, provider_type: 'business', display_name: data.name, verified: Boolean(data.verified) };
+      if (data) {
+        const state = disclosureState(data);
+        provider = { id: data.id, provider_type: 'business', display_name: data.name, verified: Boolean(data.verified), ...state };
+      }
     }
     if (!provider) throw new Error('Provider profile is required.');
 
