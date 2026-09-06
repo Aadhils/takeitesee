@@ -2,14 +2,24 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 const PROVIDER_RETURN_TO_HEADER = 'x-takeitesee-provider-return-to';
+const ADMIN_RETURN_TO_HEADER = 'x-takeitesee-admin-return-to';
+const SUPER_ADMIN_RETURN_TO_HEADER = 'x-takeitesee-super-admin-return-to';
 
 function upstreamRequestHeaders(request: NextRequest) {
   const headers = new Headers(request.headers);
   const pathname = request.nextUrl.pathname;
+  const returnTo = `${pathname}${request.nextUrl.search}`;
+
+  headers.delete(PROVIDER_RETURN_TO_HEADER);
+  headers.delete(ADMIN_RETURN_TO_HEADER);
+  headers.delete(SUPER_ADMIN_RETURN_TO_HEADER);
+
   if (pathname === '/provider' || pathname.startsWith('/provider/')) {
-    headers.set(PROVIDER_RETURN_TO_HEADER, `${pathname}${request.nextUrl.search}`);
-  } else {
-    headers.delete(PROVIDER_RETURN_TO_HEADER);
+    headers.set(PROVIDER_RETURN_TO_HEADER, returnTo);
+  } else if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+    headers.set(ADMIN_RETURN_TO_HEADER, returnTo);
+  } else if (pathname === '/super-admin' || pathname.startsWith('/super-admin/')) {
+    headers.set(SUPER_ADMIN_RETURN_TO_HEADER, returnTo);
   }
   return headers;
 }
