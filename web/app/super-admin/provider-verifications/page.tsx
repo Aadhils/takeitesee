@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import ProviderVerificationReviewManager from '../../../components/admin/ProviderVerificationReviewManager';
-import { productionAuthProvider } from '../../../server/auth/session';
+import { getSuperAdminSessionOrNull } from '../../../server/auth/session';
 
 export default async function ProviderVerificationsPage() {
-  await productionAuthProvider.requireAdmin();
+  if (!await getSuperAdminSessionOrNull()) return null;
   return <main className="container section-stack">
     <section className="page-intro">
       <span className="eyebrow">Provider trust control</span>
