@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { AdminLiveEmptyState, AdminLiveHeading, AdminLiveShell, AdminLiveStatusText, AdminLiveText } from '../../../components/admin/AdminLiveChrome';
 import { Badge, Card } from '../../../components/ui/primitives';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
-import { productionAuthProvider } from '../../../server/auth/session';
+import { getAdminSessionOrNull } from '../../../server/auth/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +12,7 @@ function toneForPayment(status: string): 'neutral' | 'success' | 'warning' | 'da
 function formatAmount(value: number | string, currency: string) { return new Intl.NumberFormat('en-IN', { style: 'currency', currency: currency || 'INR', maximumFractionDigits: 0 }).format(Number(value || 0)); }
 
 export default async function AdminBookingsRoute() {
-  await productionAuthProvider.requireAdmin();
+  if (!await getAdminSessionOrNull()) return null;
   const supabase = await createSupabaseServerClient();
   const { data: mappedScopes, error: scopeError } = await supabase.from('service_ecosystem_scope').select('service_id').eq('enabled', true);
   if (scopeError) throw new Error(scopeError.message);

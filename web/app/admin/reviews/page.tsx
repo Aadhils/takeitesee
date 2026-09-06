@@ -1,7 +1,7 @@
 import { AdminLiveEmptyState, AdminLiveHeading, AdminLiveShell, AdminLiveStatusText, AdminLiveText } from '../../../components/admin/AdminLiveChrome';
 import { Badge, Card } from '../../../components/ui/primitives';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
-import { productionAuthProvider } from '../../../server/auth/session';
+import { getAdminSessionOrNull } from '../../../server/auth/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +12,7 @@ function statusTone(status: string): 'neutral' | 'success' | 'warning' | 'danger
 function formatDate(value: string) { return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(new Date(value)); }
 
 export default async function AdminReviewsRoute() {
-  await productionAuthProvider.requireAdmin(); const supabase = await createSupabaseServerClient();
+  if (!await getAdminSessionOrNull()) return null; const supabase = await createSupabaseServerClient();
   const { data: mappedScopes, error: scopeError } = await supabase.from('service_ecosystem_scope').select('service_id').eq('enabled', true); if (scopeError) throw new Error(scopeError.message);
   const serviceIds = Array.from(new Set((mappedScopes ?? []).map((row) => String(row.service_id)))); let reviews: LiveReview[] = []; let services: ServiceRow[] = [];
   if (serviceIds.length) { const [{ data: reviewData, error: reviewError }, { data: serviceData, error: serviceError }] = await Promise.all([supabase.from('reviews').select('id,customer_id,service_id,rating,comment,status,created_at').in('service_id', serviceIds).order('created_at', { ascending: false }).limit(200), supabase.from('services').select('id,name').in('id', serviceIds)]); if (reviewError) throw new Error(reviewError.message); if (serviceError) throw new Error(serviceError.message); reviews = (reviewData ?? []) as LiveReview[]; services = (serviceData ?? []) as ServiceRow[]; }

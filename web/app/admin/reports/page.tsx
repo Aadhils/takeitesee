@@ -1,7 +1,7 @@
 import { AdminLiveEmptyState, AdminLiveHeading, AdminLiveMetricCard, AdminLiveShell, AdminLiveText } from '../../../components/admin/AdminLiveChrome';
 import { Card } from '../../../components/ui/primitives';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
-import { productionAuthProvider } from '../../../server/auth/session';
+import { getAdminSessionOrNull } from '../../../server/auth/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +14,7 @@ function monthKey(date: Date) { return `${date.getUTCFullYear()}-${String(date.g
 function monthLabel(date: Date) { return new Intl.DateTimeFormat('en-IN', { month: 'short', year: '2-digit', timeZone: 'UTC' }).format(date); }
 
 export default async function AdminReportsRoute() {
-  await productionAuthProvider.requireAdmin(); const supabase = await createSupabaseServerClient();
+  if (!await getAdminSessionOrNull()) return null; const supabase = await createSupabaseServerClient();
   const { data: mappedScopeData, error: scopeError } = await supabase.from('service_ecosystem_scope').select('service_id,category_id').eq('enabled', true); if (scopeError) throw new Error(scopeError.message);
   const mappedScopes = (mappedScopeData ?? []) as ScopedServiceMapping[]; const serviceIds = Array.from(new Set(mappedScopes.map((row) => String(row.service_id)))); const categoryIds = Array.from(new Set(mappedScopes.map((row) => row.category_id).filter(Boolean))) as string[];
   let bookings: LiveBooking[] = []; let services: LiveService[] = []; let platformCategories: PlatformCategory[] = [];

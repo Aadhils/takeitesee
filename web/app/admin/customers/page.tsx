@@ -1,7 +1,7 @@
 import { AdminLiveEmptyState, AdminLiveHeading, AdminLiveShell, AdminLiveText } from '../../../components/admin/AdminLiveChrome';
 import { Badge, Card } from '../../../components/ui/primitives';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
-import { productionAuthProvider } from '../../../server/auth/session';
+import { getAdminSessionOrNull } from '../../../server/auth/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +11,7 @@ type CustomerSummary = CustomerUser & { bookings: number; completed: number; can
 function formatDate(value: string | null) { if (!value) return '—'; return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(new Date(value)); }
 
 export default async function AdminCustomersRoute() {
-  await productionAuthProvider.requireAdmin(); const supabase = await createSupabaseServerClient();
+  if (!await getAdminSessionOrNull()) return null; const supabase = await createSupabaseServerClient();
   const { data: mappedScopes, error: scopeError } = await supabase.from('service_ecosystem_scope').select('service_id').eq('enabled', true); if (scopeError) throw new Error(scopeError.message);
   const serviceIds = Array.from(new Set((mappedScopes ?? []).map((row) => String(row.service_id)))); let scopedBookings: ScopedBooking[] = [];
   if (serviceIds.length) { const { data, error } = await supabase.from('bookings').select('id,customer_id,status,created_at').in('service_id', serviceIds).order('created_at', { ascending: false }).limit(500); if (error) throw new Error(error.message); scopedBookings = (data ?? []) as ScopedBooking[]; }

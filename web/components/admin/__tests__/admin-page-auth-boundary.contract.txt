@@ -1,0 +1,9 @@
+Admin page auth boundary contract
+
+1. `/admin/layout.tsx` is the authoritative page-route guard for the delegated Admin workspace and redirects unauthenticated/non-Admin visitors to `/account`.
+2. Child Admin data pages must not use throw-based `requireAdmin()` during render. They use `getAdminSessionOrNull()` and return `null` before operational Supabase queries when no Admin/Super Admin session exists.
+3. Booking and marketplace-issue dynamic detail pages follow the same non-throwing child-render contract so guest deep-link probes do not create expected-auth runtime error noise.
+4. `/admin/settings` retains the returned Admin session because it needs the authenticated user id for membership and audit reads.
+5. `productionAuthProvider.requireAdmin()` remains authoritative for APIs, server actions, and mutation boundaries. This page-render cleanup does not weaken API/RPC/RLS authorization.
+6. Existing scoped Supabase/RLS visibility, Admin scope management, Provider identity, booking, issue, service, review, report and settings behavior remains unchanged for authorized Admin users.
+7. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remains HOLD. Recurrence/recovery remains FROZEN. Supabase Pro leaked-password protection remains HOLD.

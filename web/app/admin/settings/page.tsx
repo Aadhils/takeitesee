@@ -1,6 +1,6 @@
 import AdminLiveSettings from '../../../components/admin/AdminLiveSettings';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
-import { productionAuthProvider } from '../../../server/auth/session';
+import { getAdminSessionOrNull } from '../../../server/auth/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,7 +73,8 @@ function scopeCanManage(scope: ScopeMapping, adminScopes: AdminScope[], isSuperA
 
 export default async function AdminSettingsRoute({ searchParams }: { searchParams: Promise<{ saved?: string; error?: string }> }) {
   const params = await searchParams;
-  const session = await productionAuthProvider.requireAdmin();
+  const session = await getAdminSessionOrNull();
+  if (!session) return null;
   const supabase = await createSupabaseServerClient();
 
   const { data: membership } = await supabase

@@ -1,7 +1,7 @@
 import { AdminLiveEmptyState, AdminLiveHeading, AdminLiveShell, AdminLiveText } from '../../../components/admin/AdminLiveChrome';
 import { Badge, Card } from '../../../components/ui/primitives';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
-import { productionAuthProvider } from '../../../server/auth/session';
+import { getAdminSessionOrNull } from '../../../server/auth/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +11,7 @@ type Professional = { id: string; headline: string | null; description: string |
 type ProviderView = { key: string; name: string; type: 'Business' | 'Professional'; description: string; location: string; verified: boolean; services: string[]; };
 
 export default async function AdminProvidersRoute() {
-  await productionAuthProvider.requireAdmin();
+  if (!await getAdminSessionOrNull()) return null;
   const supabase = await createSupabaseServerClient();
   const { data: mappedScopes, error: scopeError } = await supabase.from('service_ecosystem_scope').select('service_id').eq('enabled', true);
   if (scopeError) throw new Error(scopeError.message);

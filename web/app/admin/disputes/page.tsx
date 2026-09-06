@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { AdminLiveEmptyState, AdminLiveHeading, AdminLiveShell, AdminLiveStatusText, AdminLiveText } from '../../../components/admin/AdminLiveChrome';
 import { Badge, Card } from '../../../components/ui/primitives';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
-import { productionAuthProvider } from '../../../server/auth/session';
+import { getAdminSessionOrNull } from '../../../server/auth/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +14,7 @@ function priorityTone(priority: string): 'neutral' | 'success' | 'warning' | 'da
 function formatDate(value: string) { return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(new Date(value)); }
 
 export default async function AdminDisputesRoute() {
-  await productionAuthProvider.requireAdmin();
+  if (!await getAdminSessionOrNull()) return null;
   const supabase = await createSupabaseServerClient();
   const { data: mappedScopes, error: scopeError } = await supabase.from('service_ecosystem_scope').select('service_id').eq('enabled', true);
   if (scopeError) throw new Error(scopeError.message);

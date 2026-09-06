@@ -1,7 +1,7 @@
 import { AdminLiveEmptyState, AdminLiveHeading, AdminLiveShell, AdminLiveStatusText, AdminLiveText } from '../../../components/admin/AdminLiveChrome';
 import { Badge, Card } from '../../../components/ui/primitives';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
-import { productionAuthProvider } from '../../../server/auth/session';
+import { getAdminSessionOrNull } from '../../../server/auth/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,7 +9,7 @@ type LiveService = { id: string; name: string; description: string | null; locat
 function formatAmount(value: number | string, currency: string) { return new Intl.NumberFormat('en-IN', { style: 'currency', currency: currency || 'INR', maximumFractionDigits: 0 }).format(Number(value || 0)); }
 
 export default async function AdminServicesRoute() {
-  await productionAuthProvider.requireAdmin(); const supabase = await createSupabaseServerClient();
+  if (!await getAdminSessionOrNull()) return null; const supabase = await createSupabaseServerClient();
   const { data: mappedScopes, error: scopeError } = await supabase.from('service_ecosystem_scope').select('service_id,enabled').eq('enabled', true); if (scopeError) throw new Error(scopeError.message);
   const serviceIds = Array.from(new Set((mappedScopes ?? []).map((row) => String(row.service_id)))); let services: LiveService[] = [];
   if (serviceIds.length) { const { data, error } = await supabase.from('services').select('id,name,description,location,duration_minutes,base_price,currency,active,status,provider_type').in('id', serviceIds).order('created_at', { ascending: false }); if (error) throw new Error(error.message); services = (data ?? []) as LiveService[]; }
