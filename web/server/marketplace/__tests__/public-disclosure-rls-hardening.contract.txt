@@ -1,0 +1,13 @@
+Public disclosure RLS hardening contract
+
+1. Anonymous Provider identity reads require verified=true AND complete marketplace disclosure for both Professional and Business providers.
+2. Authenticated non-owner Provider identity reads use the same public gate; the Provider owner and Super Admin retain their existing private access paths.
+3. Anonymous and authenticated non-owner public service reads require Provider verification, profile completeness, marketplace disclosure completeness, approved ecosystem scope and marketplace-allowed trust state.
+4. Professional active-role public reads require a verified, disclosure-complete Professional.
+5. Professional public career-profile reads require public_resume_enabled plus a verified, disclosure-complete Professional.
+6. Professional public certifications, education, experiences and skills require a published career profile plus a verified, disclosure-complete Professional.
+7. Owner-only mutation/read policies for Professional roles/career content remain unchanged.
+8. No portfolio-storage visibility, booking, job, moderation, notification, Provider identity-state or service state-machine mutation behavior changes in this slice.
+9. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remains HOLD.
+10. Recurrence/recovery remains frozen; Supabase Pro leaked-password protection remains HOLD.
+11. Canonical production evidence target: legacy verified-but-disclosure-incomplete Professional is not visible to anon; verified disclosure-complete Business and its active service remain visible.
