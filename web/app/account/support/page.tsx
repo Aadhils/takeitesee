@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
+import LocalizedAccountShell from '../../../components/account/LocalizedAccountShell';
 import { Badge, Button, Card, Input, Select, Textarea } from '../../../components/ui/primitives';
 import { useOperationalTranslations } from '../../../components/i18n/OperationalTranslations';
 import { getCurrentCustomerAsync } from '../../../services/auth-adapter';
@@ -97,25 +98,27 @@ export default function AccountSupportPage() {
     <div className="button-row"><Link href="/login?returnTo=%2Faccount%2Fsupport" className="button button-primary">Sign in</Link><a href="mailto:uandv.com@gmail.com" className="button button-secondary">{tamil ? 'Grievance Officer-க்கு email' : 'Email Grievance Officer'}</a></div>
   </Card></main>;
 
-  return <main className="container section-stack">
-    <section className="page-intro"><span className="eyebrow">{tamil ? 'Platform support' : 'Platform support'}</span><h1>{tamil ? 'Support & grievance requests' : 'Support & grievance requests'}</h1><p>{tamil ? 'Booking-க்கு அப்பாற்பட்ட TakeItEsee platform issue, account help, safety concern அல்லது provider conduct concern-ஐ submit செய்து status track செய்யவும்.' : 'Submit and track TakeItEsee platform issues, account help, safety concerns, or provider-conduct concerns that are not booking-specific.'}</p></section>
-    <Card>
-      <h2>{tamil ? 'புதிய support request' : 'New support request'}</h2>
-      <p>{tamil ? 'Booking-specific issue என்றால் அந்த booking detail-ல் உள்ள Get help flow-ஐ பயன்படுத்தவும். Privacy access/correction/deletion review request என்றால் Account privacy workflow-ஐ பயன்படுத்தவும்.' : 'For booking-specific issues, use Get help from that booking. For privacy access, correction, or deletion review, use the Account privacy workflow.'}</p>
-      <form className="section-stack" onSubmit={submit}>
-        <Select label={tamil ? 'Request வகை' : 'Request type'} value={requestType} onChange={(event) => setRequestType(event.target.value as SupportRequest['request_type'])}>
-          <option value="platform_grievance">{typeLabel('platform_grievance')}</option><option value="account_help">{typeLabel('account_help')}</option><option value="safety">{typeLabel('safety')}</option><option value="provider_conduct">{typeLabel('provider_conduct')}</option><option value="other">{typeLabel('other')}</option>
-        </Select>
-        <Input label={tamil ? 'Subject' : 'Subject'} required minLength={5} maxLength={160} value={subject} onChange={(event) => setSubject(event.target.value)} />
-        <Textarea label={tamil ? 'விவரம்' : 'Details'} required maxLength={4000} value={details} onChange={(event) => setDetails(event.target.value)} hint={tamil ? '10–4000 characters. Sensitive payment details அல்லது passwords பகிர வேண்டாம்.' : '10–4000 characters. Do not include passwords or sensitive payment details.'} />
-        {error ? <p className="field-error" role="alert">{error}</p> : null}{success ? <div className="alert alert-success" role="status"><strong>{success}</strong></div> : null}
-        <div className="button-row"><Button type="submit" loading={submitting}>{tamil ? 'Request submit செய்' : 'Submit request'}</Button><Link href="/account/privacy" className="button button-secondary">{tamil ? 'Privacy requests' : 'Privacy requests'}</Link></div>
-      </form>
-    </Card>
-    <section className="section-stack"><div><span className="eyebrow">{tamil ? 'Request history' : 'Request history'}</span><h2>{tamil ? 'உங்கள் support requests' : 'Your support requests'}</h2></div>
-      {loading ? <Card><p>{tamil ? 'Requests load ஆகிறது…' : 'Loading requests…'}</p></Card> : null}
-      {!loading && requests.length === 0 ? <Card><p>{tamil ? 'Support requests இன்னும் இல்லை.' : 'You have not submitted any platform support requests yet.'}</p></Card> : null}
-      {requests.map((item) => <Card key={item.id}><div className="admin-record-top"><div><span className="eyebrow">SR-{item.id.slice(0, 8).toUpperCase()}</span><h3>{item.subject}</h3></div><Badge tone={tone(item.status)}>{item.status.replaceAll('_', ' ')}</Badge></div><p>{item.details}</p><dl className="account-details"><div><dt>{tamil ? 'Type' : 'Type'}</dt><dd>{typeLabel(item.request_type)}</dd></div><div><dt>{tamil ? 'Submitted' : 'Submitted'}</dt><dd>{new Date(item.created_at).toLocaleString(locale)}</dd></div><div><dt>{tamil ? 'Last update' : 'Last update'}</dt><dd>{new Date(item.updated_at).toLocaleString(locale)}</dd></div></dl>{item.review_note ? <div className="settings-note"><strong>{tamil ? 'Review note' : 'Review note'}</strong><p>{item.review_note}</p></div> : null}</Card>)}
-    </section>
-  </main>;
+  return <LocalizedAccountShell active="/account/support">
+    <div className="section-stack">
+      <section className="page-intro"><span className="eyebrow">{tamil ? 'Platform support' : 'Platform support'}</span><h1>{tamil ? 'Support & grievance requests' : 'Support & grievance requests'}</h1><p>{tamil ? 'Booking-க்கு அப்பாற்பட்ட TakeItEsee platform issue, account help, safety concern அல்லது provider conduct concern-ஐ submit செய்து status track செய்யவும்.' : 'Submit and track TakeItEsee platform issues, account help, safety concerns, or provider-conduct concerns that are not booking-specific.'}</p></section>
+      <Card>
+        <h2>{tamil ? 'புதிய support request' : 'New support request'}</h2>
+        <p>{tamil ? 'Booking-specific issue என்றால் அந்த booking detail-ல் உள்ள Get help flow-ஐ பயன்படுத்தவும். Privacy access/correction/deletion review request என்றால் Account privacy workflow-ஐ பயன்படுத்தவும்.' : 'For booking-specific issues, use Get help from that booking. For privacy access, correction, or deletion review, use the Account privacy workflow.'}</p>
+        <form className="section-stack" onSubmit={submit}>
+          <Select label={tamil ? 'Request வகை' : 'Request type'} value={requestType} onChange={(event) => setRequestType(event.target.value as SupportRequest['request_type'])}>
+            <option value="platform_grievance">{typeLabel('platform_grievance')}</option><option value="account_help">{typeLabel('account_help')}</option><option value="safety">{typeLabel('safety')}</option><option value="provider_conduct">{typeLabel('provider_conduct')}</option><option value="other">{typeLabel('other')}</option>
+          </Select>
+          <Input label={tamil ? 'Subject' : 'Subject'} required minLength={5} maxLength={160} value={subject} onChange={(event) => setSubject(event.target.value)} />
+          <Textarea label={tamil ? 'விவரம்' : 'Details'} required maxLength={4000} value={details} onChange={(event) => setDetails(event.target.value)} hint={tamil ? '10–4000 characters. Sensitive payment details அல்லது passwords பகிர வேண்டாம்.' : '10–4000 characters. Do not include passwords or sensitive payment details.'} />
+          {error ? <p className="field-error" role="alert">{error}</p> : null}{success ? <div className="alert alert-success" role="status"><strong>{success}</strong></div> : null}
+          <div className="button-row"><Button type="submit" loading={submitting}>{tamil ? 'Request submit செய்' : 'Submit request'}</Button><Link href="/account/privacy" className="button button-secondary">{tamil ? 'Privacy requests' : 'Privacy requests'}</Link></div>
+        </form>
+      </Card>
+      <section className="section-stack"><div><span className="eyebrow">{tamil ? 'Request history' : 'Request history'}</span><h2>{tamil ? 'உங்கள் support requests' : 'Your support requests'}</h2></div>
+        {loading ? <Card><p>{tamil ? 'Requests load ஆகிறது…' : 'Loading requests…'}</p></Card> : null}
+        {!loading && requests.length === 0 ? <Card><p>{tamil ? 'Support requests இன்னும் இல்லை.' : 'You have not submitted any platform support requests yet.'}</p></Card> : null}
+        {requests.map((item) => <Card key={item.id}><div className="admin-record-top"><div><span className="eyebrow">SR-{item.id.slice(0, 8).toUpperCase()}</span><h3>{item.subject}</h3></div><Badge tone={tone(item.status)}>{item.status.replaceAll('_', ' ')}</Badge></div><p>{item.details}</p><dl className="account-details"><div><dt>{tamil ? 'Type' : 'Type'}</dt><dd>{typeLabel(item.request_type)}</dd></div><div><dt>{tamil ? 'Submitted' : 'Submitted'}</dt><dd>{new Date(item.created_at).toLocaleString(locale)}</dd></div><div><dt>{tamil ? 'Last update' : 'Last update'}</dt><dd>{new Date(item.updated_at).toLocaleString(locale)}</dd></div></dl>{item.review_note ? <div className="settings-note"><strong>{tamil ? 'Review note' : 'Review note'}</strong><p>{item.review_note}</p></div> : null}</Card>)}
+      </section>
+    </div>
+  </LocalizedAccountShell>;
 }
