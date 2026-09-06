@@ -1,0 +1,12 @@
+Legacy non-finance booking notification target backfill contract
+
+1. Only existing notifications with target_path IS NULL and a booking_id are eligible.
+2. Scope is limited to booking_created, booking_accepted, service_completed, completion_confirmed, review_response, and review_submitted.
+3. Customer booking lifecycle/review-response notifications route to /bookings/<booking-id>.
+4. Provider booking lifecycle/completion-confirmed notifications route to /provider/bookings/<booking-id>.
+5. review_submitted routes to /provider/reviews.
+6. When the same user is both booking customer and provider owner for a historical row, customer mapping wins; production audit confirmed the ambiguous legacy booking_created/booking_accepted rows carry customer-side copy.
+7. Existing non-null target_path values are never overwritten.
+8. Current booking emitters and notification resolver functions are unchanged; this migration is historical data repair only.
+9. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery notifications are excluded and remain HOLD.
+10. Recurrence/recovery remains FROZEN and Supabase leaked-password protection remains HOLD.
