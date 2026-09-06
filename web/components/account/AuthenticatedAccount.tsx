@@ -100,6 +100,8 @@ export default function AuthenticatedAccount() {
         <Link href="/bookings" className="button button-primary">{t('account.myBookings')}</Link>
         <Link href="/notifications" className="button button-secondary">{t('account.notifications')}</Link>
         <Link href="/saved-services" className="button button-secondary">{tamil ? 'சேமித்த சேவைகள்' : 'Saved services'}</Link>
+        <Link href="/requirements" className="button button-secondary">{tamil ? 'தேவைகள்' : 'Requirements'}</Link>
+        <Link href="/messages" className="button button-secondary">{tamil ? 'செய்திகள்' : 'Messages'}</Link>
         <Link href="/reviews" className="button button-secondary">{tamil ? 'மதிப்புரைகள்' : 'Reviews'}</Link>
         <Link href="/account/support" className="button button-secondary">{tamil ? 'Platform உதவி' : 'Platform support'}</Link>
         <Link href="/account/profile" className="button button-secondary">{t('account.profile')}</Link>
