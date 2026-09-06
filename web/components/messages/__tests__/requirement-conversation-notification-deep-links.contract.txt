@@ -1,0 +1,35 @@
+Requirement conversation notification deep-link contract
+
+Audit baseline
+- Authoritative base main: d21da45e5dff946875080aef3633d5341d22badf
+- Requirement award creates `requirement_chat_opened` notifications with conversation_id but no target_path.
+- Requirement `message_received` notifications also have conversation_id but no target_path.
+- Existing UI destinations accept a conversation query parameter:
+  - Customer: /messages?conversation=<conversation-id>
+  - Provider: /provider/messages?conversation=<conversation-id>
+
+Expected resolver behavior
+- Only rows with target_path IS NULL are eligible.
+- Only rows with a non-null conversation_id are eligible.
+- Only `requirement_chat_opened` and `message_received` are eligible.
+- The referenced conversation must have conversation_kind='requirement'.
+- If recipient_user_id = conversation.customer_id, target_path is /messages?conversation=<conversation-id>.
+- If recipient_user_id = conversation.provider_user_id, target_path is /provider/messages?conversation=<conversation-id>.
+- Existing non-null target_path values are preserved exactly.
+- Job-application conversation notifications are unchanged.
+- Unlisted event types are unchanged.
+- Unknown/non-participant recipients are unchanged.
+
+Security contract
+- Resolver remains SECURITY DEFINER.
+- Resolver search_path is empty.
+- PUBLIC, anon and authenticated direct EXECUTE are revoked.
+- service_role retains EXECUTE, matching the existing notification resolver pattern.
+- No RLS, ownership, conversation authorization or messaging source function is changed.
+
+Scope boundaries
+- No requirement proposal/award state machine change.
+- No recurring requirement/occurrence/recovery function is changed; recurrence/recovery remains FROZEN.
+- No Cashfree/payment/refund/payout/settlement/reconciliation/finance recovery work; finance remains HOLD.
+- Supabase leaked-password protection remains HOLD.
+- Moderation report status notifications are not assigned an arbitrary target because there is no audited reporter-facing report detail/history destination in current UI.
