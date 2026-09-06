@@ -8,6 +8,7 @@ import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTrans
 import { useLanguage } from '../i18n/LanguageProvider';
 import { createSupabaseBrowserClient } from '../../lib/supabase/browser';
 import { isSupabaseConfigured, localDevelopmentAuthAdapter } from '../../services/auth-adapter';
+import { EmailConfirmationResend } from './EmailConfirmationResend';
 
 const TERMS_VERSION = '2026-09-02';
 const PRIVACY_VERSION = '2026-09-02';
@@ -122,6 +123,7 @@ export function LegalSignupForm({ returnTo }: { returnTo: string | null }) {
           <span className="badge badge-info">{localized.badge}</span>
           <p>{localized.confirmationBody} <strong>{form.email.trim().toLowerCase()}</strong>.</p>
           <p>{localized.confirmationHelp}</p>
+          <EmailConfirmationResend initialEmail={form.email} />
           <Link href={loginHref} className="button button-primary">{localized.confirmationSignIn}</Link>
         </Card>
       </div>
