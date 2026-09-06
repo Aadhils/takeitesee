@@ -1,0 +1,9 @@
+Professional job applications route contract
+
+1. The public /jobs "My applications" CTA points to /provider/jobs/applications, not the generic /provider/jobs workspace.
+2. /provider/jobs/applications requires an authenticated Provider session and is Professional-only.
+3. A Business owner who directly opens /provider/jobs/applications is redirected to /provider/jobs, preserving the Business employer workspace boundary.
+4. The Professional-only route renders ProviderJobMarketplace inside LiveProviderShell with /provider/jobs active navigation, exposing the existing applications/interviews experience without duplicating job state logic.
+5. The generic /provider/jobs route remains type-aware: Professional -> ProfessionalJobsWorkspace; Business -> EmployerHiringWorkspace.
+6. No database, API, RLS, job lifecycle, application state, messaging, interview, offer, moderation, Provider identity, Finance or recurrence/recovery behavior changes.
+7. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD; recurrence/recovery remains FROZEN; Supabase leaked-password protection remains HOLD.
