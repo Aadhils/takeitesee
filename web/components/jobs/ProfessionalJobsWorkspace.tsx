@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 import { JobOfferWorkspace } from './JobOfferWorkspace';
@@ -16,6 +17,20 @@ export function ProfessionalJobsWorkspace() {
 
   return (
     <div className={styles.page}>
+      <section className={`${styles.card} ${styles.section}`}>
+        <div className={styles.sectionHeading}>
+          <div>
+            <span className={styles.eyebrow}>{ta ? 'Professional · Job Seeker' : 'Professional · Job seeker'}</span>
+            <h2>{ta ? 'Jobs தேடி, apply செய்து, career journey-ஐ manage செய்யுங்கள்' : 'Find jobs, apply and manage your career journey'}</h2>
+            <p className={styles.muted}>{ta ? 'Verified Business employer-கள் jobs publish செய்கிறார்கள். உங்கள் TakeItEsee resume/profile மூலம் apply செய்து applications, interviews மற்றும் employment offers-ஐ இங்கே manage செய்யலாம்.' : 'Verified Business employers publish jobs. Apply with your TakeItEsee resume/profile, then manage applications, interviews and employment offers here.'}</p>
+          </div>
+          <div className={styles.actions}>
+            <Link className={styles.button} href="/jobs">{ta ? 'Jobs தேடு' : 'Find jobs'}</Link>
+            <Link className={`${styles.button} ${styles.secondary}`} href="/provider/resume">{ta ? 'என் Resume' : 'My resume'}</Link>
+          </div>
+        </div>
+      </section>
+
       <div
         className={styles.workspaceTabs}
         role="tablist"
