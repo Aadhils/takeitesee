@@ -12,7 +12,8 @@ import type { User } from '../../types/auth-domain';
 import type { CustomerBooking } from '../../types/booking-domain';
 
 export default function AuthenticatedAccount() {
-  const { t } = useIdentityWorkspaceTranslations();
+  const { t, locale } = useIdentityWorkspaceTranslations();
+  const tamil = locale === 'ta-IN';
   const [user, setUser] = useState<User>();
   const [bookings, setBookings] = useState<CustomerBooking[]>([]);
   const [bookingError, setBookingError] = useState('');
@@ -98,6 +99,9 @@ export default function AuthenticatedAccount() {
       <nav className="account-primary-nav" aria-label="Account shortcuts">
         <Link href="/bookings" className="button button-primary">{t('account.myBookings')}</Link>
         <Link href="/notifications" className="button button-secondary">{t('account.notifications')}</Link>
+        <Link href="/saved-services" className="button button-secondary">{tamil ? 'சேமித்த சேவைகள்' : 'Saved services'}</Link>
+        <Link href="/reviews" className="button button-secondary">{tamil ? 'மதிப்புரைகள்' : 'Reviews'}</Link>
+        <Link href="/account/support" className="button button-secondary">{tamil ? 'Platform உதவி' : 'Platform support'}</Link>
         <Link href="/account/profile" className="button button-secondary">{t('account.profile')}</Link>
         <Link href="/account/settings" className="button button-secondary">{t('account.settings')}</Link>
         <Button type="button" variant="quiet" className="account-sign-out" onClick={signOut}>{t('account.signOut')}</Button>
