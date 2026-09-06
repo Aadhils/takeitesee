@@ -1,0 +1,11 @@
+Provider verification notification deep-link contract
+
+- Canonical migration: 20260906094748_provider_verification_notification_deep_links.
+- provider_verification_submitted targets /provider/verification.
+- provider_verification_withdrawn targets /provider/verification.
+- provider_verification_approved targets /provider/verification.
+- provider_verification_changes and provider_verification_rejected target /provider/verification.
+- provider_verification_revoked targets /provider/verification.
+- The active 12-argument submit_provider_verification, withdraw_provider_verification, review_provider_verification, and revoke_provider_verification functions remain SECURITY DEFINER with an empty search_path.
+- anon and PUBLIC EXECUTE remain denied while authenticated EXECUTE remains available for the active functions subject to their existing in-function authorization checks.
+- Verification evidence, review, trust-state, service pause/resume, disclosure-remediation, and Provider identity rules are unchanged; Finance and recurrence/recovery remain out of scope.
