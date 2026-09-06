@@ -1,0 +1,459 @@
+.dashboardStack {
+  display: grid;
+  gap: 22px;
+}
+
+.roleStrip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-brand-subtle) 100%);
+  box-shadow: var(--shadow-sm);
+}
+
+.roleIdentity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 14px;
+}
+
+.roleMark,
+.actionIcon,
+.metricIcon,
+.priorityIcon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--color-secondary);
+  color: var(--color-primary-strong);
+}
+
+.roleMark {
+  width: 48px;
+  height: 48px;
+}
+
+.roleMark svg,
+.actionIcon svg,
+.metricIcon svg,
+.priorityIcon svg {
+  width: 21px;
+  height: 21px;
+}
+
+.roleCopy {
+  min-width: 0;
+}
+
+.roleCopy strong,
+.roleCopy span {
+  display: block;
+}
+
+.roleCopy strong {
+  color: var(--color-ink);
+  font-size: 1rem;
+}
+
+.roleCopy span {
+  margin-top: 4px;
+  color: var(--color-ink-muted);
+  font-size: .8rem;
+  line-height: 1.45;
+}
+
+.roleMeta {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.roleLocation {
+  color: var(--color-ink-muted);
+  font-size: .76rem;
+  font-weight: 600;
+}
+
+.professionalRole .roleMark {
+  background: #eef3ff;
+  color: #3b57a6;
+}
+
+.businessRole .roleMark {
+  background: #f2efff;
+  color: var(--color-primary-strong);
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.metricCard {
+  position: relative;
+  display: grid;
+  min-height: 150px;
+  align-content: start;
+  gap: 9px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.metricCard::after {
+  position: absolute;
+  right: -24px;
+  bottom: -38px;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--color-surface-muted);
+  content: '';
+  opacity: .55;
+}
+
+.metricCard:hover {
+  border-color: #c9c0ef;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.metricTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.metricLabel {
+  color: var(--color-ink-muted);
+  font-size: .71rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.metricIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+
+.metricValue {
+  position: relative;
+  z-index: 1;
+  margin-top: 4px;
+  color: var(--color-ink);
+  font-size: clamp(1.65rem, 3vw, 2.15rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -.03em;
+}
+
+.metricDetail {
+  position: relative;
+  z-index: 1;
+  max-width: 25ch;
+  color: var(--color-ink-muted);
+  font-size: .76rem;
+  line-height: 1.45;
+}
+
+.metricLinkHint {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+  color: var(--color-primary);
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.metricWarning {
+  border-color: #ead2a5;
+  background: #fffdf8;
+}
+
+.metricSuccess {
+  border-color: #cce2d5;
+  background: #fbfefc;
+}
+
+.metricInfo {
+  border-color: #cddceb;
+  background: #fbfdff;
+}
+
+.priorityPanel {
+  display: grid;
+  gap: 18px;
+  overflow: hidden;
+  padding: 22px;
+}
+
+.priorityAttention {
+  border-color: #cfc5f3;
+  background: linear-gradient(135deg, #ffffff 0%, var(--color-brand-subtle) 100%);
+}
+
+.priorityClear {
+  border-color: #cce2d5;
+  background: #fbfefc;
+}
+
+.priorityHeader {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.priorityMain {
+  display: flex;
+  min-width: 0;
+  gap: 15px;
+}
+
+.priorityIcon {
+  width: 46px;
+  height: 46px;
+}
+
+.priorityCopy {
+  min-width: 0;
+}
+
+.priorityCopy h2 {
+  margin: 4px 0 7px;
+  font-size: clamp(1.2rem, 2.4vw, 1.55rem);
+  line-height: 1.15;
+}
+
+.priorityCopy p {
+  max-width: 62ch;
+  margin: 0;
+  color: var(--color-ink-muted);
+  line-height: 1.55;
+}
+
+.priorityActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.followUps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 16px;
+}
+
+.followUpLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 13px;
+  background: rgb(255 255 255 / 72%);
+  transition: border-color .18s ease, transform .18s ease;
+}
+
+.followUpLink:hover {
+  border-color: #c8bdf1;
+  transform: translateY(-1px);
+}
+
+.followUpLink strong,
+.followUpLink span {
+  display: block;
+}
+
+.followUpLink strong {
+  font-size: .84rem;
+}
+
+.followUpLink span {
+  margin-top: 3px;
+  color: var(--color-ink-muted);
+  font-size: .72rem;
+  line-height: 1.4;
+}
+
+.followUpArrow {
+  flex: 0 0 auto;
+  color: var(--color-primary);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.primaryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.commandCard,
+.supportCard {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+  padding: 20px;
+}
+
+.actionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.actionCard {
+  display: grid;
+  min-height: 116px;
+  align-content: start;
+  gap: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 13px;
+  background: var(--color-surface-raised);
+  transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.actionCard:hover {
+  border-color: #c6bbef;
+  background: var(--color-brand-subtle);
+  transform: translateY(-1px);
+}
+
+.actionCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.actionIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+
+.actionArrow {
+  color: var(--color-primary);
+  font-weight: 900;
+}
+
+.actionCard strong {
+  color: var(--color-ink);
+  font-size: .86rem;
+}
+
+.actionCard p {
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: .72rem;
+  line-height: 1.45;
+}
+
+.supportGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.identityFacts,
+.bookingList {
+  display: grid;
+  gap: 9px;
+}
+
+.identityFact,
+.bookingItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 10px;
+}
+
+.identityFact:first-child,
+.bookingItem:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.identityFact strong,
+.bookingItem strong {
+  font-size: .82rem;
+}
+
+.identityFact span,
+.bookingItem span {
+  color: var(--color-ink-muted);
+  font-size: .74rem;
+  text-align: right;
+}
+
+.bookingItemCopy {
+  min-width: 0;
+}
+
+.bookingItemCopy strong,
+.bookingItemCopy span {
+  display: block;
+  text-align: left;
+}
+
+.bookingItemCopy span {
+  margin-top: 3px;
+}
+
+.bookingOpen {
+  flex: 0 0 auto;
+  color: var(--color-primary);
+  font-size: .74rem;
+  font-weight: 800;
+}
+
+@media (max-width: 1100px) {
+  .metricsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 780px) {
+  .dashboardStack { gap: 16px; }
+  .roleStrip { align-items: flex-start; flex-direction: column; padding: 16px; }
+  .roleMeta { width: 100%; justify-content: space-between; }
+  .primaryGrid, .supportGrid { grid-template-columns: 1fr; }
+  .priorityHeader { flex-direction: column; }
+  .priorityActions { width: 100%; }
+  .priorityActions :global(.button) { flex: 1 1 auto; }
+  .followUps { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+  .metricsGrid { grid-template-columns: 1fr; }
+  .metricCard { min-height: 132px; }
+  .actionGrid { grid-template-columns: 1fr; }
+  .actionCard { min-height: 96px; }
+  .priorityPanel, .commandCard, .supportCard { padding: 16px; }
+  .priorityMain { align-items: flex-start; }
+  .priorityIcon { width: 40px; height: 40px; }
+  .identityFact { align-items: flex-start; flex-direction: column; gap: 3px; }
+  .identityFact span { text-align: left; }
+}
