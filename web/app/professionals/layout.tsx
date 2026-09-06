@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
-const description = 'Discover verified professionals with active services on the TakeItEsee marketplace.';
+const description = 'Discover verified professionals with active services, public talents, and published career profiles on TakeItEsee.';
 
 export const metadata: Metadata = {
   title: 'Verified Professionals',
