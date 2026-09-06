@@ -1,0 +1,14 @@
+Provider smart dashboard Phase 1 contract
+
+1. `/provider` must render its core dashboard from provider profile + provider bookings only; `/api/provider/earnings` is not a dashboard dependency.
+2. A finance/earnings failure must never blank the Provider dashboard. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD and are not changed by this slice.
+3. Provider profile and bookings are loaded independently. Booking activity failure may degrade booking counters/upcoming work, but profile identity, services, next steps and quick links remain available.
+4. Professional dashboard language remains explicit: Independent provider + Job seeker. Quick access includes Find jobs, My applications, Resume & Career and Portfolio.
+5. Business dashboard language remains explicit: Service business + Employer. Quick access includes Employer jobs, Applicant finder, Business services and Business profile.
+6. Dashboard summary surfaces Needs action, Upcoming work, Active services and Profile readiness instead of finance balances.
+7. Smart next steps prioritize verification, public profile readiness, service activation, booking actions and the role-specific career/hiring journey.
+8. Existing booking state/attendance/closeout rules remain authoritative; this work does not create or mutate a new lifecycle.
+9. Existing Provider authorization, one-provider-identity rule (Professional OR Business), APIs, database schema and RLS remain unchanged.
+10. The developer-facing production/Supabase connection card is intentionally removed from the user dashboard.
+11. Sidebar/navigation grouping is intentionally deferred to a separate focused phase after this dashboard is production-verified.
+12. Recurrence/recovery remains FROZEN. Supabase leaked-password protection remains HOLD.
