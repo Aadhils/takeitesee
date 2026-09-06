@@ -2,6 +2,7 @@ import type { EntityId } from '../../types/entities';
 import type { ProductionBooking, ProductionBookingStatus, ServerCustomerSession } from '../../types/production-domain';
 import { assertProductionBackendConfigured } from '../config';
 import { createSupabaseServerClient } from '../../lib/supabase/server';
+import { loadPublicProviderIdentity } from '../marketplace/public-provider-identity';
 import { assertBookingAvailability } from './availability';
 import { normalizeBookingTime } from './time';
 
@@ -46,7 +47,17 @@ export function validateCreateBookingInput(input: CreateBookingInput) {
   if (!input.idempotency_key?.trim()) throw new Error('Idempotency key is required.');
 }
 
-const bookingSelect = '*, businesses(name), professional_profiles(headline)';
+const bookingSelect = '*';
+
+async function mapBookingWithProvider(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  row: Record<string, unknown>,
+) {
+  const providerType = row.provider_type as 'professional' | 'business';
+  const providerId = providerType === 'business' ? row.business_id : row.professional_id;
+  const identity = await loadPublicProviderIdentity(supabase, providerType, providerId ? String(providerId) : null);
+  return mapBooking(row, identity?.display_name || undefined);
+}
 
 export const productionBookingRepository: ProductionBookingRepository = {
   async createBooking(session, input) {
@@ -62,7 +73,7 @@ export const productionBookingRepository: ProductionBookingRepository = {
       .eq('idempotency_key', input.idempotency_key)
       .maybeSingle();
     if (existingError) throw new Error(existingError.message);
-    if (existing) return mapBooking(existing as Record<string, unknown>);
+    if (existing) return mapBookingWithProvider(supabase, existing as Record<string, unknown>);
 
     const providerColumn = input.provider_type === 'professional' ? 'professional_id' : 'business_id';
     const { data: service, error: serviceError } = await supabase
@@ -126,7 +137,7 @@ export const productionBookingRepository: ProductionBookingRepository = {
       payment_status: 'unpaid',
     }).select(bookingSelect).single();
     if (error || !data) throw new Error(error?.message ?? 'Booking could not be created.');
-    return mapBooking(data as Record<string, unknown>);
+    return mapBookingWithProvider(supabase, data as Record<string, unknown>);
   },
 
   async getBookingById(session, bookingId) {
@@ -134,7 +145,7 @@ export const productionBookingRepository: ProductionBookingRepository = {
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase.from('bookings').select(bookingSelect).eq('id', bookingId).eq('customer_id', session.user_id).maybeSingle();
     if (error) throw new Error(error.message);
-    return data ? mapBooking(data as Record<string, unknown>) : null;
+    return data ? mapBookingWithProvider(supabase, data as Record<string, unknown>) : null;
   },
 
   async getCustomerBookings(session) {
@@ -142,7 +153,7 @@ export const productionBookingRepository: ProductionBookingRepository = {
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase.from('bookings').select(bookingSelect).eq('customer_id', session.user_id).order('created_at', { ascending: false });
     if (error) throw new Error(error.message);
-    return (data ?? []).map((row) => mapBooking(row as Record<string, unknown>));
+    return Promise.all((data ?? []).map((row) => mapBookingWithProvider(supabase, row as Record<string, unknown>)));
   },
 
   async updateBookingStatus(session, bookingId, status, reason) {
@@ -151,7 +162,7 @@ export const productionBookingRepository: ProductionBookingRepository = {
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase.rpc('cancel_owned_booking', { target_booking_id: bookingId, cancel_reason: reason ?? null }).maybeSingle();
     if (error || !data) throw new Error(error?.message ?? 'Booking could not be updated.');
-    return mapBooking(data as Record<string, unknown>);
+    return mapBookingWithProvider(supabase, data as Record<string, unknown>);
   },
 
   async rescheduleBooking(session, bookingId, input) {
@@ -200,7 +211,7 @@ export const productionBookingRepository: ProductionBookingRepository = {
     }).maybeSingle();
     if (error || !data) throw new Error(error?.message ?? 'Booking could not be rescheduled.');
     const refreshed = await this.getBookingById(session, bookingId);
-    return refreshed ?? mapBooking(data as Record<string, unknown>);
+    return refreshed ?? mapBookingWithProvider(supabase, data as Record<string, unknown>);
   },
 };
 
@@ -208,14 +219,8 @@ function createBookingReference(date: string) {
   return `TIS-${date.replace(/-/g, '').slice(0, 8)}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
 }
 
-function relatedName(value: unknown, key: 'name' | 'headline') {
-  const row = Array.isArray(value) ? value[0] : value;
-  return row && typeof row === 'object' && key in row ? String((row as Record<string, unknown>)[key] ?? '') : '';
-}
-
-function mapBooking(row: Record<string, unknown>): ProductionBooking {
+function mapBooking(row: Record<string, unknown>, providerName?: string): ProductionBooking {
   const providerType = row.provider_type as 'professional' | 'business';
-  const providerName = providerType === 'business' ? relatedName(row.businesses, 'name') : relatedName(row.professional_profiles, 'headline');
   return {
     id: row.id as EntityId,
     booking_reference: row.booking_reference as string,
@@ -224,7 +229,7 @@ function mapBooking(row: Record<string, unknown>): ProductionBooking {
     provider: providerType === 'professional'
       ? { provider_type: providerType, provider_id: row.professional_id as EntityId, professional_id: row.professional_id as EntityId }
       : { provider_type: providerType, provider_id: row.business_id as EntityId, business_id: row.business_id as EntityId },
-    provider_name: providerName || undefined,
+    provider_name: providerName,
     service_name: row.service_name_snapshot as string,
     booking_date: row.booking_date as string,
     start_time: row.start_time as string,

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '../../../../lib/supabase/server';
 import { productionAuthProvider } from '../../../../server/auth/session';
+import { loadPublicProviderIdentity, type PublicProviderIdentity } from '../../../../server/marketplace/public-provider-identity';
 
 export const runtime = 'nodejs';
 
@@ -20,14 +21,7 @@ type ServiceRow = {
   category: string | null;
   active: boolean;
   status: string;
-  professional_profiles?: { headline?: string | null; service_area?: string | null; verified?: boolean | null } | Array<{ headline?: string | null; service_area?: string | null; verified?: boolean | null }> | null;
-  businesses?: { name?: string | null; location?: string | null; verified?: boolean | null } | Array<{ name?: string | null; location?: string | null; verified?: boolean | null }> | null;
 };
-
-function relation<T>(value: T | T[] | null | undefined): T | null {
-  if (Array.isArray(value)) return value[0] ?? null;
-  return value ?? null;
-}
 
 async function customerContext(request: Request) {
   const session = await productionAuthProvider.getSession(request);
@@ -45,14 +39,12 @@ async function customerContext(request: Request) {
   return { session, supabase, customer };
 }
 
-function presentation(service: ServiceRow) {
-  const professional = relation(service.professional_profiles);
-  const business = relation(service.businesses);
-  const provider = service.provider_type === 'business' ? business : professional;
-  const verified = provider?.verified === true;
-  const available = service.active === true && service.status === 'active' && verified;
-  const providerName = service.provider_type === 'business' ? business?.name : professional?.headline;
-  const providerLocation = service.provider_type === 'business' ? business?.location : professional?.service_area;
+function providerId(service: ServiceRow) {
+  return service.provider_type === 'business' ? service.business_id : service.professional_id;
+}
+
+function presentation(service: ServiceRow, provider: PublicProviderIdentity | null) {
+  const available = service.active === true && service.status === 'active' && provider?.verified === true;
   return {
     available,
     service: available ? {
@@ -60,17 +52,31 @@ function presentation(service: ServiceRow) {
       name: service.name,
       description: service.description,
       category: service.category,
-      location: service.location ?? providerLocation ?? null,
+      location: service.location ?? provider?.location ?? null,
       duration_minutes: service.duration_minutes,
       base_price: Number(service.base_price),
       currency: service.currency,
       provider_type: service.provider_type,
-      provider_name: providerName || 'Verified provider',
+      provider_name: provider?.display_name || 'Verified provider',
     } : null,
   };
 }
 
-const serviceSelect = 'id,provider_type,professional_id,business_id,name,description,location,duration_minutes,base_price,currency,category,active,status,professional_profiles(headline,service_area,verified),businesses(name,location,verified)';
+const serviceSelect = 'id,provider_type,professional_id,business_id,name,description,location,duration_minutes,base_price,currency,category,active,status';
+
+async function providerIdentities(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, services: ServiceRow[]) {
+  const unique = new Map<string, { type: ProviderType; id: string }>();
+  for (const service of services) {
+    const id = providerId(service);
+    if (id) unique.set(`${service.provider_type}:${id}`, { type: service.provider_type, id });
+  }
+
+  const entries = await Promise.all(Array.from(unique.entries()).map(async ([key, value]) => {
+    const identity = await loadPublicProviderIdentity(supabase, value.type, value.id);
+    return [key, identity] as const;
+  }));
+  return new Map(entries);
+}
 
 export async function GET(request: Request) {
   try {
@@ -107,11 +113,14 @@ export async function GET(request: Request) {
       services = (data ?? []) as unknown as ServiceRow[];
     }
 
+    const identities = await providerIdentities(context.supabase, services);
     const byId = new Map(services.map((service) => [service.id, service]));
     const saved_services = rows.map((row) => {
       const service = byId.get(row.service_id);
       if (!service) return { service_id: row.service_id, saved_at: row.saved_at, available: false, service: null };
-      const view = presentation(service);
+      const id = providerId(service);
+      const identity = id ? identities.get(`${service.provider_type}:${id}`) ?? null : null;
+      const view = presentation(service, identity);
       return { service_id: row.service_id, saved_at: row.saved_at, ...view };
     });
 
@@ -138,7 +147,10 @@ export async function POST(request: Request) {
     if (error) throw new Error(error.message);
     if (!data) return NextResponse.json({ error: 'This service is not available to save.' }, { status: 409 });
 
-    const view = presentation(data as unknown as ServiceRow);
+    const service = data as unknown as ServiceRow;
+    const id = providerId(service);
+    const identity = await loadPublicProviderIdentity(context.supabase, service.provider_type, id);
+    const view = presentation(service, identity);
     if (!view.available) return NextResponse.json({ error: 'This service is not currently available to save.' }, { status: 409 });
 
     const { data: saved, error: saveError } = await context.supabase

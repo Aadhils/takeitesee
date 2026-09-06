@@ -1,0 +1,12 @@
+AUTHENTICATED PROVIDER SAFE IDENTITY CONTRACT
+
+1. Public/customer presentation code MUST NOT require Provider ownership columns (`professional_profiles.user_id`, `businesses.owner_user_id`).
+2. `get_public_provider_identity(text, uuid)` returns only provider type, provider id, display name, location, and verified state.
+3. The RPC returns a row only for verified Providers whose marketplace legal/public-contact/grievance disclosure is complete.
+4. The RPC is SECURITY DEFINER with an empty search_path and is executable by anon, authenticated, and service_role only through its explicit grant.
+5. Saved Services resolves Provider name/location/verification through the safe identity RPC rather than nested Provider base-table reads.
+6. Customer Booking reads resolve Provider display name through the safe identity RPC rather than nested Provider base-table reads.
+7. Booking audit API backfills Provider display name through the safe identity RPC when the base-table nested relation is unavailable.
+8. This foundation does not yet remove authenticated public-row visibility from Provider base tables; that isolation is a separate rollout step after the application consumers are production-ready.
+9. Provider-owner and Super Admin private reads remain unchanged.
+10. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remains HOLD; recurrence/recovery remains FROZEN.
