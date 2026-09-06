@@ -121,6 +121,17 @@ export const productionAuthProvider: ServerAuthProvider = {
   },
 };
 
+/**
+ * Read-side Admin page guard. Parent `/admin` layout owns redirect behavior, while
+ * child pages use this non-throwing helper to avoid emitting expected guest auth
+ * failures as runtime errors before the parent redirect wins the render race.
+ */
+export async function getAdminSessionOrNull(request?: Request) {
+  const session = await productionAuthProvider.getSession(request);
+  if (!session || (!session.roles.includes('admin') && !session.roles.includes('super_admin'))) return null;
+  return session;
+}
+
 export function assertOwnsCustomerRecord(session: ServerCustomerSession, customerId: EntityId) {
   if (session.user_id !== customerId) throw new Error('Customer ownership check failed.');
 }
