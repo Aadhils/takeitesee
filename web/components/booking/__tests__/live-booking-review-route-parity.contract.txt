@@ -1,0 +1,14 @@
+Live booking review route parity contract
+
+1. /bookings/{bookingId}/review must not depend on discovery/demo fixture bookings.
+2. The route must redirect to /bookings/{bookingId}, where the live CustomerBookingDetail owns review eligibility, deadline, existing review state, rating/comment submission, and closeout context.
+3. /reviews/{bookingId} and /bookings/{bookingId}/review must converge on the same live booking detail review experience.
+4. Real production booking UUIDs must no longer 404 merely because they are absent from presentation fixtures.
+5. Review submission remains server-authoritative through /api/reviews and the live booking closeout review window.
+6. No review is created or mutated by the redirect itself.
+7. Booking ownership, completion state, review-window rules, provider responses, support/closeout behavior, and review moderation remain unchanged.
+8. No database migration, RLS, authentication, Provider identity, service, job, messaging, notification, or finance state changes are introduced.
+9. One account = Customer + one Provider identity remains authoritative.
+10. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remains HOLD.
+11. Recurrence/recovery remains FROZEN.
+12. Supabase Pro leaked-password protection remains HOLD.
