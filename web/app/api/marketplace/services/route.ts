@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { hasMarketplaceDisclosure } from '../../../../server/marketplace/public-directory';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +12,7 @@ export async function GET() {
   const supabase = createClient(url, key, { auth: { persistSession: false } });
   const { data: rows, error } = await supabase
     .from('services')
-    .select('id,provider_type,professional_id,business_id,name,description,location,duration_minutes,base_price,currency,category,status,active,professional_profiles(headline,service_area,verified),businesses(name,location,verified)')
+    .select('id,provider_type,professional_id,business_id,name,description,location,duration_minutes,base_price,currency,category,status,active,professional_profiles(headline,service_area,verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone),businesses(name,location,verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone)')
     .eq('active', true)
     .eq('status', 'active')
     .order('updated_at', { ascending: false });
@@ -26,7 +27,7 @@ export async function GET() {
   const services = (rows ?? []).filter((row: any) => {
     const provider = row.provider_type === 'business' ? row.businesses : row.professional_profiles;
     const providerId = row.provider_type === 'business' ? row.business_id : row.professional_id;
-    return provider?.verified === true && Boolean(providerId);
+    return provider?.verified === true && hasMarketplaceDisclosure(provider) && Boolean(providerId);
   }).map((row: any) => {
     const provider = row.provider_type === 'business' ? row.businesses : row.professional_profiles;
     const providerId = row.provider_type === 'business' ? row.business_id : row.professional_id;

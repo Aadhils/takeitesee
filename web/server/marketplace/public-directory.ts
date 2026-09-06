@@ -42,7 +42,7 @@ function finalize(entries: Map<string, PublicDirectoryEntry & { category_set: Se
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-function hasMarketplaceDisclosure(provider: any) {
+export function hasMarketplaceDisclosure(provider: any) {
   return Boolean(
     provider?.legal_name?.trim()
     && provider?.principal_address?.trim()
@@ -67,7 +67,7 @@ export async function loadPublicCategories(): Promise<PublicCategoryEntry[] | nu
 
   const { data: rows, error } = await supabase
     .from('services')
-    .select('category,provider_type,professional_profiles(verified),businesses(verified)')
+    .select('category,provider_type,professional_profiles(verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone),businesses(verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone)')
     .eq('status', 'active')
     .eq('active', true)
     .order('category');
@@ -81,7 +81,7 @@ export async function loadPublicCategories(): Promise<PublicCategoryEntry[] | nu
       ? relation(typedRow.businesses)
       : relation(typedRow.professional_profiles);
     const name = String(typedRow.category || '').trim();
-    if (!provider?.verified || !name) continue;
+    if (!provider?.verified || !hasMarketplaceDisclosure(provider) || !name) continue;
 
     const slug = categorySlug(name);
     if (!slug) continue;
@@ -99,7 +99,7 @@ export async function loadPublicBusinesses(): Promise<PublicDirectoryEntry[] | n
 
   const { data: rows, error } = await supabase
     .from('services')
-    .select('id,base_price,currency,category,business_id,businesses(id,name,description,location,verified)')
+    .select('id,base_price,currency,category,business_id,businesses(id,name,description,location,verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone)')
     .eq('provider_type', 'business')
     .eq('status', 'active')
     .eq('active', true)
@@ -110,7 +110,7 @@ export async function loadPublicBusinesses(): Promise<PublicDirectoryEntry[] | n
   const entries = new Map<string, PublicDirectoryEntry & { category_set: Set<string> }>();
   for (const row of rows ?? []) {
     const business: any = relation((row as any).businesses);
-    if (!business?.verified || !business.id) continue;
+    if (!business?.verified || !business.id || !hasMarketplaceDisclosure(business)) continue;
 
     const id = String(business.id);
     const price = Number((row as any).base_price || 0);

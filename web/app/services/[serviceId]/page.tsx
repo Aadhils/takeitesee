@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import LiveServiceDetail from '../../../components/detail/LiveServiceDetail';
+import { hasMarketplaceDisclosure } from '../../../server/marketplace/public-directory';
 
 const siteUrl = 'https://www.takeitesee.com';
 const exploreContextKeys = ['q', 'location', 'category', 'price', 'rating', 'provider', 'sort'] as const;
@@ -43,7 +44,7 @@ const loadPublicService = cache(async (serviceId: string) => {
 
   const { data: row, error } = await supabase
     .from('services')
-    .select('id,provider_type,professional_id,business_id,name,description,location,duration_minutes,base_price,currency,category,status,active,professional_profiles(headline,description,service_area,verified),businesses(name,description,location,verified)')
+    .select('id,provider_type,professional_id,business_id,name,description,location,duration_minutes,base_price,currency,category,status,active,professional_profiles(headline,description,service_area,verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone),businesses(name,description,location,verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone)')
     .eq('id', serviceId)
     .eq('status', 'active')
     .eq('active', true)
@@ -52,7 +53,7 @@ const loadPublicService = cache(async (serviceId: string) => {
   if (error || !row) return null;
 
   const provider: any = row.provider_type === 'business' ? relation(row.businesses) : relation(row.professional_profiles);
-  if (!provider?.verified) return null;
+  if (!provider?.verified || !hasMarketplaceDisclosure(provider)) return null;
 
   const providerName = row.provider_type === 'business' ? provider.name : provider.headline;
   const providerLocation = row.provider_type === 'business' ? provider.location : provider.service_area;

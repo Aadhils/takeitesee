@@ -1,0 +1,14 @@
+Public provider disclosure gate parity contract
+
+1. Public marketplace service discovery requires the owning provider to be verified and to have complete marketplace disclosure: legal name, principal address, public contact email/phone, grievance officer name/designation, grievance email/phone.
+2. The rule applies equally to Professional and Business providers.
+3. /api/marketplace/services must exclude services whose provider is verified but disclosure-incomplete.
+4. /services/[serviceId] must return the unavailable/not-found path when the owning provider is disclosure-incomplete, even when the service row itself is active.
+5. Public category counts must exclude services owned by disclosure-incomplete providers.
+6. /businesses must exclude disclosure-incomplete Business providers.
+7. sitemap.xml must not publish service or Business detail URLs that fail the disclosure gate.
+8. Existing Professional directory/detail disclosure gating remains unchanged.
+9. No provider verification flag, disclosure data, service status, booking state, job state, moderation state, notification state, or database row is mutated by this read-side gate.
+10. One account = Customer + one Provider identity remains authoritative.
+11. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remains HOLD.
+12. Recurrence/recovery remains CLOSED/FROZEN and Supabase Pro leaked-password protection remains HOLD.
