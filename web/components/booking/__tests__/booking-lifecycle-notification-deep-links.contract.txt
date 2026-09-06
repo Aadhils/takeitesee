@@ -1,0 +1,32 @@
+Booking lifecycle notification deep-link contract
+
+Canonical migration
+- 20260906111421_booking_lifecycle_notification_deep_links.sql
+
+Notification destinations
+- Customer booking lifecycle notifications target /bookings/<booking-id>.
+- Provider booking lifecycle notifications target /provider/bookings/<booking-id>.
+- The destination is derived from the same booking row that emitted the notification; no client-supplied path is trusted.
+
+Covered existing lifecycle events
+- booking_created
+- booking_accepted
+- booking_declined
+- booking_cancelled
+- reschedule_requested
+- reschedule_accepted
+- reschedule_declined
+- service_completed
+
+Preserved behavior and security
+- public.emit_booking_notifications() remains the existing bookings trigger function.
+- bookings_emit_notifications remains attached to public.bookings for INSERT and the existing status/date/time UPDATE events.
+- Existing booking lifecycle event selection, titles and bodies remain unchanged.
+- The function remains SECURITY DEFINER with search_path=public.
+- anon, authenticated and PUBLIC do not receive direct EXECUTE on this trigger function.
+- Booking ownership, status transitions, RLS, API/RPC authorization and provider identity rules are unchanged.
+
+Scope exclusions
+- No payment, Cashfree, refund, payout, settlement, reconciliation or finance recovery behavior changes.
+- Recurrence/recovery remains frozen.
+- Supabase leaked-password protection remains on hold.
