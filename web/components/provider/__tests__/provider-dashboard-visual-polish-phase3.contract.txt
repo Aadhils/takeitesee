@@ -1,0 +1,15 @@
+Provider Dashboard Visual Polish Phase 3 contract
+
+- Provider Dashboard remains role-aware: Professional = independent provider + job seeker; Business = service business + employer.
+- Dashboard data dependencies remain Provider profile + Provider bookings only. Earnings/finance data must not become a dashboard render dependency.
+- Priority panel uses the existing smart next-step logic and promotes only the first suggested action as the primary CTA.
+- Summary metrics are direct links to their relevant operational pages: Bookings, Schedule, Services and profile readiness/setup.
+- Customer-work and role-specific destinations remain unchanged; visual cards do not alter authorization or route boundaries.
+- Professional quick actions keep Find jobs, My applications, Resume & Career and Portfolio.
+- Business quick actions keep Employer jobs, Applicant finder, Business services and Business profile.
+- Booking API failure must not blank Provider identity, services, readiness or quick actions.
+- Visual polish is scoped to ProviderDashboardManager.module.css and must not change shared Provider/global presentation styles.
+- No API, database, RLS, booking/job state machine, messaging, moderation or authentication changes.
+- Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD.
+- Recurrence/recovery remains FROZEN.
+- Supabase leaked-password protection remains HOLD.
