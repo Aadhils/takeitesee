@@ -1,0 +1,14 @@
+Customer account navigation parity contract
+
+1. The authenticated `/account` overview exposes direct links to the existing live customer destinations:
+   - `/saved-services`
+   - `/reviews`
+   - `/account/support`
+2. Existing Bookings, Notifications, Profile, Settings and sign-out actions remain available.
+3. `LocalizedAccountShell` exposes `/account/support` alongside Saved services, Notifications, Reviews and Help center.
+4. English and Tamil labels are provided for the newly surfaced destinations.
+5. This change does not create or mutate bookings, reviews, saved services, support requests, provider identities, services, jobs, notifications or finance state.
+6. One account = Customer + one Provider identity remains unchanged.
+7. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remains HOLD.
+8. Recurrence/recovery remains FROZEN.
+9. Supabase Pro leaked-password protection remains HOLD.
