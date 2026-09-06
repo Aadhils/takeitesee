@@ -1,0 +1,11 @@
+Service launch notification deep-link contract
+
+- Canonical migration: 20260906095738_service_launch_notification_deep_links.
+- service_launch_submitted targets /provider/setup from both supported submit functions.
+- service_launch_withdrawn targets /provider/setup.
+- service_launch_approved targets /provider/setup.
+- service_launch_changes and service_launch_rejected target /provider/setup.
+- submit_service_launch_request, submit_service_launch_request_for_type, withdraw_service_launch_request, and review_service_launch_request remain SECURITY DEFINER with empty search_path.
+- anon and PUBLIC EXECUTE remain denied while authenticated EXECUTE remains preserved subject to existing in-function authorization.
+- Service ownership, provider completeness, application/category/location validation, ecosystem scope approval, service activation readiness, and review rules are unchanged.
+- Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remains HOLD and recurrence/recovery remains FROZEN.
