@@ -163,7 +163,7 @@ export function PublicJobBoard() {
     <section className={styles.hero}>
       <h1>{ta ? 'வேலை வாய்ப்புகள்' : 'Job opportunities'}</h1>
       <p className={styles.muted}>{ta ? 'TakeItEsee verified business-கள் வெளியிடும் full-time, part-time, contract, freelance மற்றும் internship வாய்ப்புகள்.' : 'Explore full-time, part-time, contract, freelance and internship opportunities from verified TakeItEsee businesses.'}</p>
-      <div className={styles.actions}><Link className={`${styles.button} ${styles.secondary}`} href="/provider/jobs">{ta ? 'என் விண்ணப்பங்கள்' : 'My applications'}</Link></div>
+      <div className={styles.actions}><Link className={`${styles.button} ${styles.secondary}`} href="/provider/jobs/applications">{ta ? 'என் விண்ணப்பங்கள்' : 'My applications'}</Link></div>
     </section>
 
     {message ? <div className={`${styles.alert} ${message.tone === 'error' ? styles.error : styles.success}`}>{message.text}</div> : null}
