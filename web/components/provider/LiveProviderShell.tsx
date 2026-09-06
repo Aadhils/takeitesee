@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert } from '../ui/primitives';
 import { WorkspaceSwitcher } from '../account/WorkspaceSwitcher';
+import RoleIdentityMediaHeader from '../identity/RoleIdentityMediaHeader';
 import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 
 type TrustStatus = 'normal' | 'reverification_required' | 'suspended';
@@ -166,6 +167,14 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
       <Link href="/" className="provider-exit-link">{t('provider.viewMarketplace')}</Link>
     </aside>
     <main className="provider-content">
+      {active === '/provider' && provider ? <RoleIdentityMediaHeader
+        context="provider"
+        displayName={provider.display_name}
+        subtitle={provider.provider_type === 'business'
+          ? (tamil ? 'Business · Service business + Employer' : 'Business · Service business + Employer')
+          : (tamil ? 'Professional · Independent provider + Job seeker' : 'Professional · Independent provider + Job seeker')}
+        meta={provider.location || (tamil ? 'Service area இன்னும் சேர்க்கப்படவில்லை' : 'Service area not set')}
+      /> : null}
       {provider?.trust_status === 'suspended' ? <Alert title={t('provider.suspended')} tone="danger">{t('provider.suspendedBody')} {provider.trust_reason || t('provider.contactSupport')}</Alert> : null}
       {provider?.trust_status === 'reverification_required' ? <Alert title={t('provider.reverify')} tone="warning">{t('provider.reverifyBody')} {provider.trust_reason || ''} <Link href="/provider/verification">{t('provider.openVerification')}</Link></Alert> : null}
       {children}
