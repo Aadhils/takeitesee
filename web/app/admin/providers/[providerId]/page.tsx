@@ -1,9 +1,5 @@
-import { notFound } from 'next/navigation';
-import { AdminProviderDetail } from '../../../../components/admin/AdminPresentation';
-import { adminProviders } from '../../../../data/admin-fixtures';
+import { redirect } from 'next/navigation';
 
-export default async function AdminProviderDetailRoute({ params }: { params: Promise<{ providerId: string }> }) {
-  const { providerId } = await params;
-  if (!adminProviders.some((provider) => provider.id === providerId)) notFound();
-  return <AdminProviderDetail providerId={providerId} />;
+export default function AdminProviderDetailRoute() {
+  redirect('/admin/providers');
 }
