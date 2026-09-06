@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { createClient } from '@supabase/supabase-js';
-import { loadPublicProfessionals } from '../server/marketplace/public-directory';
+import { hasMarketplaceDisclosure, loadPublicProfessionals } from '../server/marketplace/public-directory';
 
 const siteUrl = 'https://www.takeitesee.com';
 const pageSize = 1000;
@@ -36,7 +36,7 @@ async function loadPublicServiceRows() {
   for (let start = 0; start < maxServiceRows; start += pageSize) {
     const { data, error } = await supabase
       .from('services')
-      .select('id,provider_type,professional_id,business_id,professional_profiles(verified),businesses(verified)')
+      .select('id,provider_type,professional_id,business_id,professional_profiles(verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone),businesses(verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone)')
       .eq('status', 'active')
       .eq('active', true)
       .order('id')
@@ -62,7 +62,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   for (const row of rows) {
     const provider = row.provider_type === 'business' ? relation(row.businesses) : relation(row.professional_profiles);
-    if (!provider?.verified) continue;
+    if (!provider?.verified || !hasMarketplaceDisclosure(provider)) continue;
 
     serviceEntries.push({
       url: `${siteUrl}/services/${encodeURIComponent(row.id)}`,
