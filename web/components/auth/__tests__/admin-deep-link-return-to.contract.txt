@@ -1,0 +1,12 @@
+Admin and Super Admin deep-link sign-in return contract
+
+1. An unauthenticated request to /admin or any /admin/... child route must be sent to /login with the exact requested Admin pathname and query encoded in returnTo instead of being sent to generic /account.
+2. An unauthenticated request to /super-admin or any /super-admin/... child route must be sent to /login with the exact requested Super Admin pathname and query encoded in returnTo instead of being sent to generic /account.
+3. The Proxy must derive these returnTo values from request.nextUrl, overwrite the internal Admin/Super Admin request headers for matching routes, and delete those headers for non-matching routes so client-supplied values are not trusted.
+4. Admin layout returnTo validation must accept only same-origin /admin paths; invalid, missing, cross-origin, or non-Admin values fall back to /admin.
+5. Super Admin layout returnTo validation must accept only same-origin /super-admin paths; invalid, missing, cross-origin, or non-Super-Admin values fall back to /super-admin.
+6. A signed-in user without admin or super_admin authorization must keep the existing Admin fallback to /account.
+7. A signed-in user without super_admin authorization must keep the existing Super Admin fallback to /admin.
+8. Provider deep-link return behavior, Supabase session refresh cookie propagation, login safeReturnTo validation, and all existing Admin/Super Admin role and scoped-access authorization remain unchanged.
+9. No database, API, RLS, Provider identity, jobs, bookings, moderation state machine, recurrence/recovery, or finance behavior changes.
+10. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD; recurrence/recovery remains FROZEN; leaked-password protection remains HOLD.

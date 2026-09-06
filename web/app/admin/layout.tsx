@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
@@ -8,11 +9,31 @@ import { createSupabaseServerClient } from '../../lib/supabase/server';
 import { productionAuthProvider } from '../../server/auth/session';
 import './admin-live.css';
 
+const ADMIN_RETURN_TO_HEADER = 'x-takeitesee-admin-return-to';
+
 export const metadata: Metadata = { robots: { index: false, follow: false } };
+
+function adminReturnTo(value: string | null) {
+  if (!value) return '/admin';
+  try {
+    const base = new URL('https://takeitesee.local');
+    const target = new URL(value, base);
+    const adminPath = target.pathname === '/admin' || target.pathname.startsWith('/admin/');
+    if (target.origin !== base.origin || !adminPath) return '/admin';
+    return `${target.pathname}${target.search}`;
+  } catch {
+    return '/admin';
+  }
+}
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const session = await productionAuthProvider.getSession();
-  if (!session || (!session.roles.includes('admin') && !session.roles.includes('super_admin'))) redirect('/account');
+  if (!session) {
+    const requestHeaders = await headers();
+    const returnTo = adminReturnTo(requestHeaders.get(ADMIN_RETURN_TO_HEADER));
+    redirect(`/login?returnTo=${encodeURIComponent(returnTo)}`);
+  }
+  if (!session.roles.includes('admin') && !session.roles.includes('super_admin')) redirect('/account');
 
   const access: AdminAccessSummary = { isSuperAdmin: session.roles.includes('super_admin'), scopeTypes: [], scopeCount: 0, canManage: false };
   try {
