@@ -91,12 +91,14 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
   const displayName = provider?.display_name ?? t('provider.workspace');
   const avatar = provider?.initials ?? 'P';
   const pending = provider?.pending_booking_count ?? 0;
+  const providerKind = provider ? (provider.provider_type === 'business' ? t('profile.business') : t('profile.professional')) : null;
+  const workspaceIdentity = providerKind ? `${providerKind} · ${workspaceState(provider)}` : workspaceState(provider);
 
   return <div className="provider-layout">
     <aside className="provider-sidebar">
       <div className="provider-sidebar-heading">
         <div className="provider-avatar provider-avatar-large" aria-hidden="true">{avatar}</div>
-        <div><strong>{displayName}</strong><span>{workspaceState(provider)}</span></div>
+        <div><strong>{displayName}</strong><span>{workspaceIdentity}</span></div>
       </div>
       <WorkspaceSwitcher currentWorkspace={provider?.provider_type} compact />
       <nav aria-label={t('provider.nav')}>
