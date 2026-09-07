@@ -46,10 +46,10 @@ export async function POST(request: Request) {
   const landingPath = `/@${encodeURIComponent(destination)}`;
 
   const { error } = await supabase.rpc('record_public_referral_attribution', {
-    raw_referrer: referrer,
-    raw_destination: destination,
-    attribution_id: attributionId,
-    landing_path: landingPath,
+    p_raw_referrer: referrer,
+    p_raw_destination: destination,
+    p_attribution_id: attributionId,
+    p_landing_path: landingPath,
   });
 
   if (error) {
