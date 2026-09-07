@@ -13,6 +13,15 @@
 .account-primary-nav .button { flex:0 0 auto; min-height:40px; padding:9px 13px; white-space:nowrap; }
 .account-primary-nav .account-sign-out { margin-left:auto; }
 
+/* Customer marketplace shell: persistent, social-style primary navigation. */
+.customer-social-dashboard { position:relative; }
+.customer-dashboard-nav { position:sticky; top:88px; z-index:16; display:flex; align-items:center; justify-content:center; gap:6px; width:min(100%, 720px); margin:0 auto 22px; padding:7px; border:1px solid var(--color-border); border-radius:18px; background:rgb(255 255 255 / 94%); box-shadow:0 10px 30px rgb(29 28 54 / 8%); backdrop-filter:blur(14px); }
+.customer-dashboard-nav-item { display:flex; flex:1 1 0; min-width:0; min-height:48px; align-items:center; justify-content:center; gap:7px; padding:8px 10px; border-radius:13px; color:var(--color-ink-muted); font-size:.82rem; font-weight:700; transition:background .18s ease,color .18s ease,transform .18s ease; }
+.customer-dashboard-nav-item > span:first-child { font-size:1.05rem; line-height:1; }
+.customer-dashboard-nav-item:hover { background:var(--color-surface-raised); color:var(--color-primary); }
+.customer-dashboard-nav-item.is-active { background:var(--color-selected); color:var(--color-primary); }
+.account-secondary-actions { margin-top:18px; }
+
 /* Final homepage calibration: brand first, supporting copy second, search third. */
 .hero-grid { min-height: 500px; padding-top: clamp(28px, 4vw, 54px); }
 .hero-logo-wrap { margin-bottom: 6px; }
@@ -21,7 +30,6 @@
 .hero-brand-slogan strong { color:var(--color-primary); }
 .hero-copy h1 { max-width: 680px; margin: 14px auto 10px; font-size:clamp(1.9rem, 3.45vw, 3rem); line-height:1.08; }
 .hero-lede { max-width:56ch; margin-inline:auto; font-size:clamp(.9rem, 1.2vw, .98rem); line-height:1.5; }
-
 .hero-search-panel { width:min(100%, 900px); grid-template-columns:minmax(0, 1fr) 148px; grid-template-areas:'service action' 'location action'; gap:0 16px; margin:22px auto 0; padding:11px 13px; border:1px solid var(--color-border); border-radius:20px; background:var(--color-surface); box-shadow:0 13px 34px rgb(28 35 82 / 8%); }
 .hero-search-panel::before { display:none; }
 .hero-search-panel .search-field { min-width:0; min-height:48px; padding:0 7px; border:0; border-radius:0; background:transparent; }
@@ -39,8 +47,6 @@
 .voice-search-button:disabled { cursor:not-allowed; opacity:.45; }
 .voice-search-button-mobile { display:none; }
 .voice-search-status { width:min(100%, 874px); margin:7px auto 0; color:var(--color-ink-muted); font-size:.76rem; text-align:left; }
-
-/* Keep the trust strip visually secondary to the brand/search task. */
 .hero-copy + .trust-strip, .hero-trust-strip, .trust-strip { margin-top:16px; }
 
 @media (max-width:760px) {
@@ -49,13 +55,16 @@
   .dashboard-stat-grid > .card { min-height:132px; }
   .account-primary-nav { margin-top:12px; padding:5px; }
   .account-primary-nav .account-sign-out { margin-left:0; }
-
+  .customer-social-dashboard { padding-bottom:82px; }
+  .customer-dashboard-nav { position:fixed; top:auto; right:10px; bottom:max(10px, env(safe-area-inset-bottom)); left:10px; z-index:40; width:auto; margin:0; padding:6px; border-radius:20px; box-shadow:0 14px 38px rgb(29 28 54 / 18%); }
+  .customer-dashboard-nav-item { min-height:52px; flex-direction:column; gap:3px; padding:6px 3px; font-size:.64rem; line-height:1.05; }
+  .customer-dashboard-nav-item > span:first-child { font-size:1.12rem; }
+  .account-secondary-actions { margin-bottom:8px; }
   .hero-grid { min-height:auto; padding-top:30px; }
   .hero-logo { width:184px; }
   .hero-brand-slogan { margin-top:4px; font-size:1rem; }
   .hero-copy h1 { max-width:540px; margin:13px auto 9px; font-size:clamp(1.72rem, 7.7vw, 2.25rem); line-height:1.1; }
   .hero-lede { max-width:48ch; padding:0 12px; font-size:.88rem; line-height:1.48; }
-
   .hero-search-panel { width:min(100%, 520px); grid-template-columns:1fr; grid-template-areas:'service' 'location' 'voice' 'action'; gap:0; margin-top:19px; padding:8px; border-radius:18px; box-shadow:0 11px 28px rgb(28 35 82 / 8%); }
   .hero-search-panel .search-field { min-height:46px; padding:0 6px; }
   .hero-search-panel .search-field-service { border-bottom:1px solid var(--color-border); padding-right:6px; }
@@ -71,6 +80,8 @@
 @media (max-width:390px) {
   .card { padding:16px; }
   .account-primary-nav .button { padding:8px 11px; font-size:.78rem; }
+  .customer-dashboard-nav { right:6px; left:6px; }
+  .customer-dashboard-nav-item { font-size:.6rem; }
   .hero-grid { padding-top:24px; }
   .hero-logo { width:170px; }
   .hero-copy h1 { font-size:1.72rem; }
