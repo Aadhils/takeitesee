@@ -15,6 +15,33 @@ async function requireSuperAdmin() {
   return session;
 }
 
+export async function grantExistingAdminAccess(formData: FormData) {
+  await requireSuperAdmin();
+  const email = value(formData, 'email').toLowerCase();
+  const applicationId = value(formData, 'application_id');
+  const canManage = formData.get('permission') === 'manage';
+
+  if (!email || !applicationId) redirect('/super-admin/admins?error=grant_input');
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('super_admin_grant_existing_admin', {
+    p_email: email,
+    p_application_id: applicationId,
+    p_can_manage: canManage,
+  });
+
+  if (error) {
+    if (error.code === '42501') redirect('/super-admin/admins?error=protected');
+    if (error.code === 'P0002') redirect('/super-admin/admins?error=account_or_application_not_found');
+    redirect('/super-admin/admins?error=admin_grant_failed');
+  }
+
+  revalidatePath('/super-admin/admins');
+  revalidatePath('/super-admin/audit');
+  revalidatePath('/admin');
+  redirect('/super-admin/admins?updated=granted');
+}
+
 export async function updateDelegatedAdminScope(formData: FormData) {
   await requireSuperAdmin();
   const scopeId = value(formData, 'scope_id');
