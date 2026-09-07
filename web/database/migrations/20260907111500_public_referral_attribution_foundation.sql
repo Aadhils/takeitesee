@@ -24,10 +24,10 @@ revoke all on table public.referral_attribution_events from public, anon, authen
 grant all on table public.referral_attribution_events to service_role;
 
 create or replace function public.record_public_referral_attribution(
-  raw_referrer text,
-  raw_destination text,
-  attribution_id uuid,
-  landing_path text
+  p_raw_referrer text,
+  p_raw_destination text,
+  p_attribution_id uuid,
+  p_landing_path text
 )
 returns uuid
 language plpgsql
@@ -35,19 +35,19 @@ security definer
 set search_path = public, pg_temp
 as $$
 declare
-  ref_handle text := public.normalize_identity_handle(raw_referrer);
-  dest_handle text := public.normalize_identity_handle(raw_destination);
+  ref_handle text := public.normalize_identity_handle(p_raw_referrer);
+  dest_handle text := public.normalize_identity_handle(p_raw_destination);
   ref_row public.identity_handles%rowtype;
   dest_row public.identity_handles%rowtype;
   first_referrer_identity_type text;
   first_referrer_identity_id uuid;
   event_id uuid;
 begin
-  if attribution_id is null then
+  if p_attribution_id is null then
     raise exception 'Attribution id is required.' using errcode = '22023';
   end if;
 
-  if landing_path is null or char_length(landing_path) < 2 or char_length(landing_path) > 500 or landing_path not like '/@%' then
+  if p_landing_path is null or char_length(p_landing_path) < 2 or char_length(p_landing_path) > 500 or p_landing_path not like '/@%' then
     raise exception 'Invalid landing path.' using errcode = '22023';
   end if;
 
@@ -74,7 +74,7 @@ begin
   select e.referrer_identity_type, e.referrer_identity_id
     into first_referrer_identity_type, first_referrer_identity_id
   from public.referral_attribution_events e
-  where e.attribution_id = record_public_referral_attribution.attribution_id
+  where e.attribution_id = p_attribution_id
   order by e.created_at asc, e.id asc
   limit 1;
 
@@ -82,7 +82,7 @@ begin
      and (first_referrer_identity_type <> ref_row.identity_type or first_referrer_identity_id <> ref_row.identity_id) then
     select e.id into event_id
     from public.referral_attribution_events e
-    where e.attribution_id = record_public_referral_attribution.attribution_id
+    where e.attribution_id = p_attribution_id
     order by e.created_at asc, e.id asc
     limit 1;
     return event_id;
@@ -98,14 +98,14 @@ begin
     destination_identity_id,
     landing_path
   ) values (
-    attribution_id,
+    p_attribution_id,
     ref_row.handle,
     ref_row.identity_type,
     ref_row.identity_id,
     dest_row.handle,
     dest_row.identity_type,
     dest_row.identity_id,
-    landing_path
+    p_landing_path
   )
   on conflict (attribution_id, destination_identity_type, destination_identity_id)
   do update set landing_path = excluded.landing_path
