@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Badge, Button, Card } from '../ui/primitives';
+import { Badge, Button } from '../ui/primitives';
 import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 
 type ProviderType = 'professional' | 'business';
@@ -77,33 +77,30 @@ export function ProviderReadinessSummary() {
 
   if (loading || (!providers.length && !error)) return null;
 
-  return <section className="section-stack" aria-labelledby="provider-readiness-title">
-    <div>
-      <span className="eyebrow">{tamil ? 'Provider readiness' : 'Provider readiness'}</span>
-      <h2 id="provider-readiness-title">{tamil ? 'உங்கள் provider profiles launch நிலை' : 'Your provider launch readiness'}</h2>
-      <p>{tamil ? 'Professional மற்றும் Business profile-களில் எது complete, எது next action தேவை என்று ஒரே இடத்தில் பாருங்கள்.' : 'See which Professional or Business profile is marketplace-ready and what each workspace needs next.'}</p>
-    </div>
-    {error ? <p className="field-error" role="alert">{error}</p> : null}
-    <div className="provider-profile-grid">
-      {providers.map((provider) => <Card className="provider-profile-card" key={provider.provider_type}>
-        <div className="section-heading">
-          <div><span className="eyebrow">{providerLabel(provider.provider_type)}</span><h2>{provider.display_name}</h2></div>
-          <Badge tone={provider.marketplace_live ? 'success' : provider.trust_status === 'suspended' ? 'danger' : 'warning'}>
-            {provider.marketplace_live ? (tamil ? 'Marketplace live' : 'Marketplace live') : provider.trust_status === 'suspended' ? (tamil ? 'Suspended' : 'Suspended') : (tamil ? 'Setup in progress' : 'Setup in progress')}
-          </Badge>
+  return <section className="account-readiness" aria-label={tamil ? 'Provider setup நிலை' : 'Provider setup status'}>
+    {error ? <p className="field-error account-readiness-error" role="alert">{error}</p> : null}
+    {providers.map((provider) => <div className="account-readiness-card" key={provider.provider_type}>
+      <div className="account-readiness-main">
+        <div className="account-readiness-copy">
+          <div className="account-readiness-kicker">
+            <span className="eyebrow">{providerLabel(provider.provider_type)} {tamil ? 'setup' : 'setup'}</span>
+            <Badge tone={provider.marketplace_live ? 'success' : provider.trust_status === 'suspended' ? 'danger' : 'warning'}>
+              {provider.marketplace_live ? (tamil ? 'Live' : 'Live') : provider.trust_status === 'suspended' ? (tamil ? 'Suspended' : 'Suspended') : `${provider.progress_percent}%`}
+            </Badge>
+          </div>
+          <strong className="account-readiness-name">{provider.display_name}</strong>
+          <p className="account-readiness-next">{provider.marketplace_live
+            ? (tamil ? 'Marketplace-ல் live. Setup-ஐ review செய்யலாம்.' : 'Marketplace live. Review your setup anytime.')
+            : provider.next_action.label}</p>
         </div>
-        <div style={{ height: 10, borderRadius: 999, background: '#e7eaf0', overflow: 'hidden' }}>
-          <div style={{ width: `${provider.progress_percent}%`, height: '100%', background: 'currentColor' }} />
-        </div>
-        <p><strong>{provider.progress_percent}% {tamil ? 'ready' : 'ready'}</strong> · {provider.next_action.label}</p>
-        <p className="summary-note">
-          {provider.services_active} {tamil ? 'active service' : 'active service'}{provider.services_active === 1 ? '' : 's'} · {provider.services_scoped} {tamil ? 'scoped' : 'scoped'} · {provider.pending_launch_requests} {tamil ? 'pending launch request' : 'pending launch request'}{provider.pending_launch_requests === 1 ? '' : 's'}
-        </p>
-        {provider.trust_status !== 'normal' ? <p className="summary-note"><strong>{tamil ? 'Trust state' : 'Trust state'}:</strong> {provider.trust_status.replaceAll('_', ' ')}{provider.trust_reason ? ` · ${provider.trust_reason}` : ''}</p> : null}
-        <Button type="button" loading={opening === provider.provider_type} disabled={opening !== null && opening !== provider.provider_type} onClick={() => void openNext(provider)}>
-          {provider.marketplace_live ? (tamil ? 'Setup review செய்ய' : 'Review setup') : (tamil ? 'Next step தொடர' : 'Continue next step')}
+        <Button type="button" className="account-readiness-cta" loading={opening === provider.provider_type} disabled={opening !== null && opening !== provider.provider_type} onClick={() => void openNext(provider)}>
+          {provider.marketplace_live ? (tamil ? 'Review' : 'Review') : (tamil ? 'Continue' : 'Continue')}
         </Button>
-      </Card>)}
-    </div>
+      </div>
+      <div className="account-readiness-progress" aria-label={`${provider.progress_percent}% ready`}>
+        <span style={{ width: `${provider.progress_percent}%` }} />
+      </div>
+      {provider.trust_status !== 'normal' ? <p className="account-readiness-trust"><strong>{tamil ? 'Trust state' : 'Trust state'}:</strong> {provider.trust_status.replaceAll('_', ' ')}{provider.trust_reason ? ` · ${provider.trust_reason}` : ''}</p> : null}
+    </div>)}
   </section>;
 }

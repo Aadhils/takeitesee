@@ -9,9 +9,33 @@
 .dashboard-stat-grid { gap: 16px; }
 .dashboard-stat-grid > .card { min-height: 148px; align-content: start; }
 
-.account-primary-nav { display:flex; align-items:center; gap:8px; overflow-x:auto; margin:14px 0 22px; padding:6px; border:1px solid var(--color-border); border-radius:14px; background:var(--color-surface); box-shadow:var(--shadow-sm); scrollbar-width:thin; }
-.account-primary-nav .button { flex:0 0 auto; min-height:40px; padding:9px 13px; white-space:nowrap; }
-.account-primary-nav .account-sign-out { margin-left:auto; }
+/* Customer account: keep Provider setup visible without turning the account page into a second Provider dashboard. */
+.account-readiness { margin:-6px 10px 12px; position:relative; z-index:3; }
+.account-readiness-card { padding:12px 14px 10px; border:1px solid var(--color-border); border-radius:14px; background:rgb(255 255 255 / 97%); box-shadow:0 8px 24px rgb(28 35 82 / 8%); }
+.account-readiness-card + .account-readiness-card { margin-top:8px; }
+.account-readiness-main { display:flex; align-items:center; gap:12px; }
+.account-readiness-copy { min-width:0; flex:1 1 auto; }
+.account-readiness-kicker { display:flex; align-items:center; gap:8px; margin-bottom:3px; }
+.account-readiness-kicker .eyebrow { margin:0; }
+.account-readiness-name { display:block; overflow:hidden; color:var(--color-ink); font-size:.94rem; text-overflow:ellipsis; white-space:nowrap; }
+.account-readiness-next { margin:2px 0 0; color:var(--color-ink-muted); font-size:.78rem; line-height:1.35; }
+.account-readiness-cta { flex:0 0 auto; min-height:38px; padding:8px 13px; }
+.account-readiness-progress { height:5px; margin-top:9px; overflow:hidden; border-radius:999px; background:#e7eaf0; }
+.account-readiness-progress span { display:block; height:100%; border-radius:inherit; background:var(--color-primary); }
+.account-readiness-trust { margin:7px 0 0; color:var(--color-ink-muted); font-size:.75rem; }
+.account-readiness-error { margin:0 0 8px; }
+
+/* The secondary account tools no longer use a horizontal scrolling rail. */
+.account-secondary-actions { position:relative; display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; margin:14px 0 22px; }
+.account-action-chip, .account-more-actions > summary { min-height:42px; display:flex; align-items:center; justify-content:center; padding:9px 12px; border:1px solid var(--color-border); border-radius:12px; background:var(--color-surface); color:var(--color-ink); font-size:.82rem; font-weight:750; line-height:1.15; text-align:center; text-decoration:none; box-shadow:var(--shadow-sm); cursor:pointer; }
+.account-action-chip:hover, .account-more-actions > summary:hover { border-color:rgb(76 79 227 / 24%); background:var(--color-selected); color:var(--color-primary); }
+.account-more-actions { position:relative; min-width:0; }
+.account-more-actions > summary { list-style:none; }
+.account-more-actions > summary::-webkit-details-marker { display:none; }
+.account-more-actions[open] > summary { border-color:rgb(76 79 227 / 28%); background:var(--color-selected); color:var(--color-primary); }
+.account-more-menu { position:absolute; right:0; top:calc(100% + 8px); z-index:30; width:min(240px, calc(100vw - 32px)); display:grid; gap:4px; padding:7px; border:1px solid var(--color-border); border-radius:14px; background:var(--color-surface); box-shadow:0 16px 36px rgb(28 35 82 / 16%); }
+.account-more-menu a, .account-more-menu .account-sign-out { width:100%; min-height:40px; display:flex; align-items:center; justify-content:flex-start; padding:9px 11px; border:0; border-radius:9px; background:transparent; color:var(--color-ink); font-size:.82rem; font-weight:700; text-decoration:none; box-shadow:none; }
+.account-more-menu a:hover, .account-more-menu .account-sign-out:hover { background:var(--color-selected); color:var(--color-primary); }
 
 /* Customer identity-first controls. The global AppShell remains the only fixed mobile navigation. */
 .account-identity-actions { position:sticky; top:88px; z-index:15; display:flex; align-items:center; gap:7px; overflow-x:auto; margin:12px 0 18px; padding:6px; border:1px solid var(--color-border); border-radius:14px; background:rgb(255 255 255 / 94%); box-shadow:var(--shadow-sm); backdrop-filter:blur(12px); scrollbar-width:none; }
@@ -53,10 +77,17 @@
   .card { padding:18px; }
   .dashboard-stat-grid { gap:12px; }
   .dashboard-stat-grid > .card { min-height:132px; }
-  .account-primary-nav { margin-top:12px; padding:5px; }
-  .account-primary-nav .account-sign-out { margin-left:0; }
-  .account-identity-actions { position:static; margin-top:10px; padding:5px; }
-  .account-identity-actions a { min-height:36px; padding:7px 11px; font-size:.76rem; }
+  .account-readiness { margin:-6px 6px 10px; }
+  .account-readiness-card { padding:11px 12px 9px; border-radius:13px; }
+  .account-readiness-main { gap:9px; }
+  .account-readiness-name { font-size:.88rem; }
+  .account-readiness-next { max-width:38ch; font-size:.73rem; }
+  .account-readiness-cta { min-height:36px; padding:7px 11px; font-size:.76rem; }
+  .account-secondary-actions { grid-template-columns:repeat(4, minmax(0, 1fr)); gap:6px; margin:12px 0 18px; }
+  .account-action-chip, .account-more-actions > summary { min-height:40px; padding:7px 5px; font-size:.72rem; }
+  .account-more-menu { position:fixed; left:16px; right:16px; top:auto; bottom:78px; width:auto; padding:8px; border-radius:16px; }
+  .account-identity-actions { position:static; display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); overflow:visible; margin-top:10px; padding:5px; }
+  .account-identity-actions a { min-width:0; min-height:36px; padding:7px 4px; font-size:.72rem; white-space:normal; text-align:center; }
 
   .hero-grid { min-height:auto; padding-top:30px; }
   .hero-logo { width:184px; }
@@ -78,7 +109,9 @@
 
 @media (max-width:390px) {
   .card { padding:16px; }
-  .account-primary-nav .button { padding:8px 11px; font-size:.78rem; }
+  .account-readiness-kicker .badge { font-size:.66rem; }
+  .account-readiness-next { font-size:.7rem; }
+  .account-action-chip, .account-more-actions > summary { font-size:.68rem; }
   .hero-grid { padding-top:24px; }
   .hero-logo { width:170px; }
   .hero-copy h1 { font-size:1.72rem; }
