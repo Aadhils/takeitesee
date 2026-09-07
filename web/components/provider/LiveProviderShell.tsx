@@ -46,7 +46,7 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
         links: [
           { href: '/provider/setup', label: t('provider.setup') },
           { href: '/provider/services', label: t('provider.services') },
-          { href: '/provider/handle', label: tamil ? 'Public @handle' : 'Public @handle' },
+          { href: '/provider/handle', label: 'Public @handle' },
           { href: '/provider/verification', label: t('provider.verification') },
           { href: '/provider/reviews', label: t('provider.reviews') },
         ],
@@ -142,8 +142,21 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
     {link.href === '/provider/bookings' && pending > 0 ? <span className="provider-nav-count">{pending}</span> : null}
   </Link>;
 
-  return <div className="provider-layout">
-    <aside className="provider-sidebar">
+  const mobilePrimaryLinks = [
+    { href: '/provider', label: t('provider.dashboard'), icon: '⌂' },
+    { href: '/provider/leads', label: t('provider.leads'), icon: '◇' },
+    { href: '/provider/bookings', label: t('provider.bookings'), icon: '▣' },
+    { href: '/provider/messages', label: t('provider.messages'), icon: '✉' },
+    { href: '/provider/profile', label: t('provider.profile'), icon: '◯' },
+  ];
+
+  const mobilePrimaryHrefs = new Set(mobilePrimaryLinks.map((link) => link.href));
+  const mobileMoreLinks = providerNavGroups.flatMap((group) => group.links).filter((link, index, links) =>
+    !mobilePrimaryHrefs.has(link.href) && links.findIndex((candidate) => candidate.href === link.href) === index
+  );
+
+  return <div className="provider-layout provider-social-layout">
+    <aside className="provider-sidebar provider-desktop-sidebar">
       <div className="provider-sidebar-heading">
         <div className="provider-avatar provider-avatar-large" aria-hidden="true">{avatar}</div>
         <div><strong>{displayName}</strong><span>{workspaceIdentity}</span></div>
@@ -172,15 +185,48 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
         context="provider"
         displayName={provider.display_name}
         subtitle={provider.provider_type === 'business'
-          ? (tamil ? 'Business · Service business + Employer' : 'Business · Service business + Employer')
-          : (tamil ? 'Professional · Independent provider + Job seeker' : 'Professional · Independent provider + Job seeker')}
+          ? 'Business · Service business + Employer'
+          : 'Professional · Independent provider + Job seeker'}
         meta={provider.location || (tamil ? 'Service area இன்னும் சேர்க்கப்படவில்லை' : 'Service area not set')}
       /> : null}
+
+      <section className="provider-mobile-social-shell" aria-label={tamil ? 'Provider விரைவு வழிசெலுத்தல்' : 'Provider quick navigation'}>
+        <div className="provider-mobile-identity-line">
+          <div className="provider-mobile-identity-copy">
+            <strong>{displayName}</strong>
+            <span>{workspaceIdentity}</span>
+          </div>
+          <Link href="/account/settings" className="provider-mobile-settings-link" aria-label={tamil ? 'Account அமைப்புகள்' : 'Account settings'}>⚙</Link>
+        </div>
+        <nav className="provider-mobile-primary-nav" aria-label={tamil ? 'Provider முக்கிய வழிசெலுத்தல்' : 'Provider primary navigation'}>
+          {mobilePrimaryLinks.map((link) => <Link
+            href={link.href}
+            className={active === link.href ? 'provider-mobile-nav-active' : ''}
+            aria-current={active === link.href ? 'page' : undefined}
+            key={link.href}
+          >
+            <span aria-hidden="true">{link.icon}</span>
+            <span>{link.label}</span>
+            {link.href === '/provider/bookings' && pending > 0 ? <em>{pending}</em> : null}
+          </Link>)}
+        </nav>
+        <details className="provider-mobile-more-tools">
+          <summary>{tamil ? 'மேலும் கருவிகள்' : 'More tools'}</summary>
+          <div className="provider-mobile-more-grid">
+            {mobileMoreLinks.map((link) => <Link href={link.href} className={active === link.href ? 'provider-mobile-more-active' : ''} key={link.href}>{link.label}</Link>)}
+            <Link href="/account#workspaces">{tamil ? 'என் Profiles' : 'My profiles'}</Link>
+            <Link href="/">{t('provider.viewMarketplace')}</Link>
+            <Link href="/account/settings">{tamil ? 'Account அமைப்புகள்' : 'Account settings'}</Link>
+          </div>
+        </details>
+      </section>
+
       {provider?.trust_status === 'suspended' ? <Alert title={t('provider.suspended')} tone="danger">{t('provider.suspendedBody')} {provider.trust_reason || t('provider.contactSupport')}</Alert> : null}
       {provider?.trust_status === 'reverification_required' ? <Alert title={t('provider.reverify')} tone="warning">{t('provider.reverifyBody')} {provider.trust_reason || ''} <Link href="/provider/verification">{t('provider.openVerification')}</Link></Alert> : null}
       {children}
     </main>
     <style jsx global>{`
+      .provider-mobile-social-shell { display: none; }
       .provider-nav-groups { display: grid; gap: 10px; }
       .provider-nav-overview { display: grid; gap: 4px; }
       .provider-nav-section-title { padding: 0 10px; color: var(--color-ink-muted); font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
@@ -191,12 +237,40 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
       .provider-nav-group[open] summary::after { transform: rotate(90deg); }
       .provider-nav-group summary:hover { color: var(--color-primary-strong); }
       .provider-nav-group-links { display: grid; gap: 4px; margin-top: 2px; }
-      @media (max-width: 980px) {
-        .provider-nav-groups, .provider-nav-overview, .provider-nav-group, .provider-nav-group[open] { display: contents; }
-        .provider-nav-section-title, .provider-nav-group summary { display: none; }
-        .provider-nav-group > .provider-nav-group-links,
-        .provider-nav-group:not([open]) > .provider-nav-group-links,
-        .provider-nav-group[open] > .provider-nav-group-links { display: contents !important; }
+
+      @media (max-width: 900px) {
+        .provider-social-layout { display: block; }
+        .provider-desktop-sidebar { display: none !important; }
+        .provider-content { width: 100%; }
+        .provider-content > .identity-media-header:first-child { margin-top: 0; }
+        .provider-mobile-social-shell { position: sticky; top: 70px; z-index: 18; display: grid; gap: 8px; margin: 10px 0 20px; padding: 8px; border: 1px solid var(--color-border); border-radius: 18px; background: rgb(255 255 255 / 95%); box-shadow: 0 10px 30px rgb(29 28 54 / 9%); backdrop-filter: blur(14px); }
+        .provider-mobile-identity-line { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 2px 5px 0; }
+        .provider-mobile-identity-copy { min-width: 0; display: grid; gap: 1px; }
+        .provider-mobile-identity-copy strong, .provider-mobile-identity-copy span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .provider-mobile-identity-copy strong { color: var(--color-ink); font-size: .82rem; }
+        .provider-mobile-identity-copy span { color: var(--color-ink-muted); font-size: .68rem; }
+        .provider-mobile-settings-link { flex: 0 0 auto; display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid var(--color-border); border-radius: 50%; background: var(--color-surface); color: var(--color-primary-strong); font-size: 1rem; }
+        .provider-mobile-primary-nav { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; }
+        .provider-mobile-primary-nav a { position: relative; display: grid; min-width: 0; min-height: 50px; place-items: center; align-content: center; gap: 3px; padding: 5px 2px; border-radius: 12px; color: var(--color-ink-muted); font-size: .61rem; font-weight: 750; line-height: 1.05; text-align: center; }
+        .provider-mobile-primary-nav a > span:first-child { font-size: 1.05rem; }
+        .provider-mobile-primary-nav a > span:nth-child(2) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .provider-mobile-primary-nav a.provider-mobile-nav-active { background: var(--color-selected); color: var(--color-primary-strong); }
+        .provider-mobile-primary-nav em { position: absolute; top: 3px; right: 7px; display: grid; min-width: 16px; height: 16px; place-items: center; border-radius: 999px; background: var(--color-primary); color: #fff; font-size: .58rem; font-style: normal; }
+        .provider-mobile-more-tools { border-top: 1px solid var(--color-border); }
+        .provider-mobile-more-tools summary { min-height: 32px; padding: 8px 6px 3px; color: var(--color-primary-strong); cursor: pointer; font-size: .72rem; font-weight: 800; list-style: none; }
+        .provider-mobile-more-tools summary::-webkit-details-marker { display: none; }
+        .provider-mobile-more-tools summary::after { content: ' +'; }
+        .provider-mobile-more-tools[open] summary::after { content: ' −'; }
+        .provider-mobile-more-grid { display: flex; gap: 6px; overflow-x: auto; padding: 6px 2px 2px; scrollbar-width: none; }
+        .provider-mobile-more-grid::-webkit-scrollbar { display: none; }
+        .provider-mobile-more-grid a { flex: 0 0 auto; min-height: 34px; display: inline-flex; align-items: center; padding: 7px 10px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); color: var(--color-ink-muted); font-size: .7rem; font-weight: 700; white-space: nowrap; }
+        .provider-mobile-more-grid a.provider-mobile-more-active { border-color: #d8d2ff; background: var(--color-selected); color: var(--color-primary-strong); }
+      }
+
+      @media (max-width: 390px) {
+        .provider-mobile-social-shell { margin-inline: -2px; padding: 7px; border-radius: 16px; }
+        .provider-mobile-primary-nav a { min-height: 48px; font-size: .58rem; }
+        .provider-mobile-primary-nav a > span:first-child { font-size: 1rem; }
       }
     `}</style>
   </div>;
