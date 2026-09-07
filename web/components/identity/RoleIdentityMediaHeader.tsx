@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createSupabaseBrowserClient } from '../../lib/supabase/browser';
+import { ProviderReadinessSummary } from '../account/ProviderReadinessSummary';
 import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 import styles from './RoleIdentityMediaHeader.module.css';
 
@@ -120,6 +121,7 @@ export default function RoleIdentityMediaHeader({ context, displayName, subtitle
         {hasAvatar ? <button type="button" className={styles.removeButton} disabled={Boolean(working)} onClick={() => void remove('avatar')}>{tamil ? 'Photo remove' : 'Remove photo'}</button> : null}
       </div>
     </div>
+    {context === 'provider' ? <ProviderReadinessSummary placement="provider" /> : null}
     {loading ? <p className={styles.status} role="status">{tamil ? 'Profile media load ஆகிறது…' : 'Loading profile media…'}</p> : null}
     {notice ? <p className={styles.status} role="status">{notice}</p> : null}
     {error ? <p className={`${styles.status} ${styles.error}`} role="alert">{error}</p> : null}
