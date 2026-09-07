@@ -1,14 +1,18 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import BusinessPublicProfileContent, {
   loadPublicBusiness,
   publicBusinessSeoText,
   publicSiteUrl,
 } from '../../../components/detail/BusinessPublicProfileContent';
+import { loadCurrentPublicProviderHandle } from '../../../server/identity/public-handle';
 
 export async function generateMetadata({ params }: { params: Promise<{ providerId: string }> }): Promise<Metadata> {
   const { providerId } = await params;
-  const record = await loadPublicBusiness(providerId);
+  const [record, handle] = await Promise.all([
+    loadPublicBusiness(providerId),
+    loadCurrentPublicProviderHandle('business', providerId),
+  ]);
 
   if (!record) {
     return {
@@ -25,7 +29,9 @@ export async function generateMetadata({ params }: { params: Promise<{ providerI
     business.description,
     `Explore services from ${business.name || 'this business'}${location ? ` in ${location}` : ''} on TakeItEsee.`,
   );
-  const canonical = `${publicSiteUrl}/businesses/${encodeURIComponent(providerId)}`;
+  const canonical = handle
+    ? `${publicSiteUrl}/@${encodeURIComponent(handle)}`
+    : `${publicSiteUrl}/businesses/${encodeURIComponent(providerId)}`;
   const indexable = services.length > 0;
 
   return {
@@ -51,8 +57,15 @@ export async function generateMetadata({ params }: { params: Promise<{ providerI
 
 export default async function BusinessProfilePage({ params }: { params: Promise<{ providerId: string }> }) {
   const { providerId } = await params;
-  const record = await loadPublicBusiness(providerId);
+  const [record, handle] = await Promise.all([
+    loadPublicBusiness(providerId),
+    loadCurrentPublicProviderHandle('business', providerId),
+  ]);
   if (!record) notFound();
+
+  if (handle) {
+    permanentRedirect(`/@${encodeURIComponent(handle)}`);
+  }
 
   return <BusinessPublicProfileContent
     providerId={providerId}
