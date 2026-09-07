@@ -2,8 +2,14 @@ import type { Metadata } from 'next';
 import { notFound, permanentRedirect, redirect } from 'next/navigation';
 import { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import PublicProviderIdentityLayout from '../../components/detail/PublicProviderIdentityLayout';
+import BusinessPublicProfileContent, {
+  loadPublicBusiness,
+  publicBusinessSeoText,
+  publicSiteUrl,
+} from '../../components/detail/BusinessPublicProfileContent';
 
-const siteUrl = 'https://www.takeitesee.com';
+const siteUrl = publicSiteUrl;
 
 type HandleResolution = {
   requested_handle: string;
@@ -38,23 +44,59 @@ const resolveHandle = cache(async (rawHandle: string): Promise<HandleResolution 
   return row;
 });
 
+function unavailableMetadata(): Metadata {
+  return {
+    title: { absolute: 'Profile unavailable | TakeItEsee' },
+    robots: { index: false, follow: false },
+  };
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ handle: string }> }): Promise<Metadata> {
   const { handle } = await params;
   const normalized = normalizeRouteHandle(handle);
   const resolved = await resolveHandle(normalized);
 
-  if (!resolved || resolved.identity_type === 'customer') {
+  if (!resolved || resolved.identity_type === 'customer') return unavailableMetadata();
+
+  const canonical = `${siteUrl}/@${encodeURIComponent(resolved.canonical_handle)}`;
+
+  if (resolved.identity_type === 'business') {
+    const record = await loadPublicBusiness(resolved.identity_id);
+    if (!record) return unavailableMetadata();
+
+    const { business, services } = record;
+    const location = business.location || '';
+    const pageTitle = `${business.name || `@${resolved.canonical_handle}`}${location ? ` in ${location}` : ''}`;
+    const socialTitle = `${pageTitle} | TakeItEsee`;
+    const description = publicBusinessSeoText(
+      business.description,
+      `Explore services from ${business.name || `@${resolved.canonical_handle}`}${location ? ` in ${location}` : ''} on TakeItEsee.`,
+    );
+    const indexable = services.length > 0;
+
     return {
-      title: { absolute: 'Profile unavailable | TakeItEsee' },
-      robots: { index: false, follow: false },
+      title: { absolute: socialTitle },
+      description,
+      alternates: indexable ? { canonical } : undefined,
+      robots: { index: indexable, follow: indexable },
+      openGraph: indexable ? {
+        title: socialTitle,
+        description,
+        url: canonical,
+        type: 'website',
+        images: ['/brand/social'],
+      } : undefined,
+      twitter: indexable ? {
+        card: 'summary_large_image',
+        title: socialTitle,
+        description,
+        images: ['/brand/social'],
+      } : undefined,
     };
   }
 
-  const canonical = `${siteUrl}/@${encodeURIComponent(resolved.canonical_handle)}`;
-  const kind = resolved.identity_type === 'professional' ? 'Professional' : 'Business';
-
   return {
-    title: { absolute: `@${resolved.canonical_handle} · ${kind} | TakeItEsee` },
+    title: { absolute: `@${resolved.canonical_handle} · Professional | TakeItEsee` },
     description: `View @${resolved.canonical_handle} on TakeItEsee.`,
     alternates: { canonical },
     robots: { index: true, follow: true },
@@ -86,16 +128,21 @@ export default async function PublicHandlePage({ params }: { params: Promise<{ h
     permanentRedirect(`/@${encodeURIComponent(resolved.canonical_handle)}`);
   }
 
-  // Customer handles are globally reserved now, but Customer identity media and
-  // profile details remain private until an explicit public-Customer contract exists.
+  // Customer handles remain globally reserved, but Customer profile details and media stay private.
   if (resolved.identity_type === 'customer') notFound();
+
+  if (resolved.identity_type === 'business') {
+    const record = await loadPublicBusiness(resolved.identity_id);
+    if (!record) notFound();
+
+    const canonical = `${siteUrl}/@${encodeURIComponent(resolved.canonical_handle)}`;
+    return <PublicProviderIdentityLayout kind="business" providerId={resolved.identity_id}>
+      <BusinessPublicProfileContent providerId={resolved.identity_id} canonicalUrl={canonical} />
+    </PublicProviderIdentityLayout>;
+  }
 
   if (resolved.identity_type === 'professional') {
     redirect(`/professionals/${encodeURIComponent(resolved.identity_id)}`);
-  }
-
-  if (resolved.identity_type === 'business') {
-    redirect(`/businesses/${encodeURIComponent(resolved.identity_id)}`);
   }
 
   notFound();
