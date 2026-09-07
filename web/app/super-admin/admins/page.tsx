@@ -93,12 +93,21 @@ export default async function SuperAdminAdminsPage({ searchParams }: { searchPar
     return 'Assigned scope';
   }
 
+  const activeCount = memberships.filter((membership) => membership.active).length;
+  const revokedCount = memberships.length - activeCount;
+  const protectedIds = new Set(
+    memberships
+      .filter((membership) => scopes.some((scope) => scope.admin_membership_id === membership.id && scope.scope_type === 'platform' && scope.can_manage))
+      .map((membership) => membership.id),
+  );
+  const delegatedCount = memberships.length - protectedIds.size;
+
   return (
     <main className="container section-stack">
       <section className="page-intro">
-        <span className="eyebrow">Access governance</span>
-        <h1>Delegated Admin controls</h1>
-        <p>Change view/manage permissions or revoke delegated Admin access. Changes are enforced from Supabase on the administrator&apos;s next request and written to the audit log.</p>
+        <span className="eyebrow">People & permissions</span>
+        <h1>Admin management</h1>
+        <p>See who has Admin access, their current status and assigned scope at a glance. Open an administrator only when you need to change access or permissions.</p>
         <p><Link href="/super-admin">← Super Admin</Link> · <Link href="/super-admin/audit">Audit log →</Link></p>
       </section>
 
@@ -106,84 +115,97 @@ export default async function SuperAdminAdminsPage({ searchParams }: { searchPar
       {params.error === 'protected' ? <Alert tone="danger" title="Protected authority">Super Admin or self-access cannot be changed from this delegated control screen.</Alert> : null}
       {params.error && params.error !== 'protected' ? <Alert tone="danger" title="Permission change failed">The requested Admin permission change could not be saved.</Alert> : null}
 
-      <section className="card">
-        <div className="detail-list">
-          <div><strong>{memberships.length}</strong><span> admin membership(s)</span></div>
-          <div><strong>Immediate enforcement</strong><span> · server-side session checks</span></div>
-          <div><strong>Audited</strong><span> · every protected change</span></div>
-        </div>
+      <section className="dashboard-grid" aria-label="Admin access summary">
+        <article className="card"><span className="eyebrow">Active Admins</span><h2>{activeCount}</h2></article>
+        <article className="card"><span className="eyebrow">Delegated Admins</span><h2>{delegatedCount}</h2></article>
+        <article className="card"><span className="eyebrow">Revoked</span><h2>{revokedCount}</h2></article>
+        <article className="card"><span className="eyebrow">Assigned scopes</span><h2>{scopes.filter((scope) => scope.can_view || scope.can_manage).length}</h2></article>
       </section>
 
       <section className="section-stack" aria-label="Administrator memberships">
         {memberships.map((membership) => {
           const user = users.get(membership.user_id);
           const memberScopes = scopes.filter((scope) => scope.admin_membership_id === membership.id);
-          const protectedPlatformAdmin = memberScopes.some((scope) => scope.scope_type === 'platform' && scope.can_manage);
+          const protectedPlatformAdmin = protectedIds.has(membership.id);
+          const manageCount = memberScopes.filter((scope) => scope.can_manage).length;
+          const viewCount = memberScopes.filter((scope) => scope.can_view && !scope.can_manage).length;
 
           return (
             <Card key={membership.id}>
               <div className="admin-record-top">
                 <div>
-                  <span className="eyebrow">{protectedPlatformAdmin ? 'Protected Super Admin' : 'Delegated administrator'}</span>
+                  <span className="eyebrow">{protectedPlatformAdmin ? 'Platform authority' : 'Delegated administrator'}</span>
                   <h2>{user?.name || user?.email || 'Administrator'}</h2>
                   <p>{user?.email || membership.user_id}</p>
-                  <p className="muted">Membership created {formatTime(membership.created_at)}</p>
+                  <p className="muted">Added {formatTime(membership.created_at)}</p>
                 </div>
-                <Badge tone={membership.active ? 'success' : 'neutral'}>{membership.active ? 'Active' : 'Revoked'}</Badge>
+                <div className="section-stack">
+                  <Badge tone={membership.active ? 'success' : 'neutral'}>{membership.active ? 'Active' : 'Revoked'}</Badge>
+                  <Badge tone={protectedPlatformAdmin ? 'info' : manageCount > 0 ? 'success' : 'neutral'}>
+                    {protectedPlatformAdmin ? 'Protected' : manageCount > 0 ? `${manageCount} manage` : viewCount > 0 ? `${viewCount} view only` : 'No active scope'}
+                  </Badge>
+                </div>
               </div>
 
-              {!protectedPlatformAdmin ? (
-                <form action={setDelegatedAdminMembershipActive} className="admin-settings-save-row">
-                  <input type="hidden" name="membership_id" value={membership.id} />
-                  <input type="hidden" name="active" value={membership.active ? 'false' : 'true'} />
-                  <div>
-                    <strong>{membership.active ? 'Admin workspace access enabled' : 'Admin workspace access revoked'}</strong>
-                    <span>{membership.active ? 'Revoking removes Admin entry on the next authenticated request.' : 'Reactivation restores only scopes that still have View or Manage enabled.'}</span>
-                  </div>
-                  <button className={membership.active ? 'button' : 'button button-primary'} type="submit">
-                    {membership.active ? 'Revoke admin access' : 'Reactivate admin access'}
-                  </button>
-                </form>
+              <div className="detail-list">
+                <div><strong>{memberScopes.length}</strong><span> scope(s)</span></div>
+                <div><strong>{manageCount}</strong><span> manage permission(s)</span></div>
+                <div><strong>{viewCount}</strong><span> view-only permission(s)</span></div>
+              </div>
+
+              {protectedPlatformAdmin ? (
+                <p className="admin-fixture-note">Platform-wide manage authority is protected to prevent accidental Super Admin lockout.</p>
               ) : (
-                <p className="admin-fixture-note">Platform-wide manage authority is protected here to prevent accidental Super Admin lockout.</p>
-              )}
-
-              <div className="section-stack">
-                {memberScopes.map((scope) => (
-                  <section className="card" key={scope.id}>
-                    <div className="admin-record-top">
+                <details>
+                  <summary className="button button-secondary">Manage access & permissions</summary>
+                  <div className="section-stack">
+                    <form action={setDelegatedAdminMembershipActive} className="admin-settings-save-row">
+                      <input type="hidden" name="membership_id" value={membership.id} />
+                      <input type="hidden" name="active" value={membership.active ? 'false' : 'true'} />
                       <div>
-                        <span className="eyebrow">{scope.scope_type} scope</span>
-                        <h3>{scopeLabel(scope)}</h3>
-                        <p>
-                          {scope.application_id ? applications.get(scope.application_id) ?? 'Application' : 'All applications'}
-                          {scope.location_id ? ` · ${locations.get(scope.location_id) ?? 'Location'}` : ''}
-                        </p>
+                        <strong>{membership.active ? 'Admin workspace access is enabled' : 'Admin workspace access is revoked'}</strong>
+                        <span>{membership.active ? 'Revoke access without deleting the stored scope configuration.' : 'Reactivate the Admin with the currently saved scope configuration.'}</span>
                       </div>
-                      <Badge tone={scope.can_manage ? 'success' : scope.can_view ? 'info' : 'neutral'}>
-                        {scope.can_manage ? 'View + Manage' : scope.can_view ? 'View only' : 'No access'}
-                      </Badge>
-                    </div>
+                      <button className={membership.active ? 'button' : 'button button-primary'} type="submit">
+                        {membership.active ? 'Revoke Admin access' : 'Reactivate Admin'}
+                      </button>
+                    </form>
 
-                    {protectedPlatformAdmin ? null : (
-                      <form action={updateDelegatedAdminScope} className="admin-settings-save-row">
-                        <input type="hidden" name="scope_id" value={scope.id} />
-                        <div className="admin-settings-grid">
-                          <label className="choice-row">
-                            <input className="choice-input" type="checkbox" name="can_view" defaultChecked={scope.can_view} disabled={!membership.active} />
-                            <span><strong>View</strong><span className="choice-description">See records inside this assigned scope.</span></span>
-                          </label>
-                          <label className="choice-row">
-                            <input className="choice-input" type="checkbox" name="can_manage" defaultChecked={scope.can_manage} disabled={!membership.active} />
-                            <span><strong>Manage</strong><span className="choice-description">Perform protected operational changes inside this scope.</span></span>
-                          </label>
+                    {memberScopes.map((scope) => (
+                      <section className="card" key={scope.id}>
+                        <div className="admin-record-top">
+                          <div>
+                            <span className="eyebrow">{scope.scope_type} scope</span>
+                            <h3>{scopeLabel(scope)}</h3>
+                            <p>
+                              {scope.application_id ? applications.get(scope.application_id) ?? 'Application' : 'All applications'}
+                              {scope.location_id ? ` · ${locations.get(scope.location_id) ?? 'Location'}` : ''}
+                            </p>
+                          </div>
+                          <Badge tone={scope.can_manage ? 'success' : scope.can_view ? 'info' : 'neutral'}>
+                            {scope.can_manage ? 'View + Manage' : scope.can_view ? 'View only' : 'No access'}
+                          </Badge>
                         </div>
-                        <button className="button button-primary" type="submit" disabled={!membership.active}>Save permissions</button>
-                      </form>
-                    )}
-                  </section>
-                ))}
-              </div>
+
+                        <form action={updateDelegatedAdminScope} className="admin-settings-save-row">
+                          <input type="hidden" name="scope_id" value={scope.id} />
+                          <div className="admin-settings-grid">
+                            <label className="choice-row">
+                              <input className="choice-input" type="checkbox" name="can_view" defaultChecked={scope.can_view} disabled={!membership.active} />
+                              <span><strong>View</strong><span className="choice-description">See records inside this assigned scope.</span></span>
+                            </label>
+                            <label className="choice-row">
+                              <input className="choice-input" type="checkbox" name="can_manage" defaultChecked={scope.can_manage} disabled={!membership.active} />
+                              <span><strong>Manage</strong><span className="choice-description">Perform protected operational changes inside this scope.</span></span>
+                            </label>
+                          </div>
+                          <button className="button button-primary" type="submit" disabled={!membership.active}>Save permissions</button>
+                        </form>
+                      </section>
+                    ))}
+                  </div>
+                </details>
+              )}
             </Card>
           );
         })}
