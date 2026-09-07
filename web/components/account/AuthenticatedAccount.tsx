@@ -63,6 +63,8 @@ export default function AuthenticatedAccount() {
 
       {isSupabaseConfigured() ? <RoleIdentityMediaHeader context="customer" displayName={user.name} subtitle="Personal customer account" meta={[user.email, user.phone].filter(Boolean).join(' · ')} /> : <Card className="profile-summary"><div className="provider-avatar provider-avatar-large" aria-hidden="true">{user.name.split(' ').map((part) => part[0]).join('')}</div><div><span className="eyebrow">{t('account.signedInCustomer')}</span><h2>{user.name}</h2><p>{user.email}</p>{user.phone ? <span className="card-location">{user.phone}</span> : null}</div></Card>}
 
+      <ProviderReadinessSummary />
+
       <nav className="account-identity-actions" aria-label="Customer quick actions">
         <Link href="/messages">{tamil ? 'செய்திகள்' : 'Messages'}</Link>
         <Link href="/notifications">{t('account.notifications')}</Link>
@@ -71,15 +73,19 @@ export default function AuthenticatedAccount() {
       </nav>
 
       <WorkspaceSwitcher currentWorkspace="customer" />
-      <ProviderReadinessSummary />
 
-      <nav className="account-primary-nav account-secondary-actions" aria-label="More account shortcuts">
-        <Link href="/saved-services" className="button button-secondary">{tamil ? 'சேமித்த சேவைகள்' : 'Saved services'}</Link>
-        <Link href="/requirements" className="button button-secondary">{tamil ? 'தேவைகள்' : 'Requirements'}</Link>
-        <Link href="/reviews" className="button button-secondary">{tamil ? 'மதிப்புரைகள்' : 'Reviews'}</Link>
-        <Link href="/account/support" className="button button-secondary">{tamil ? 'Platform உதவி' : 'Platform support'}</Link>
-        <Link href="/account/reports" className="button button-secondary">Safety reports</Link>
-        <Button type="button" variant="quiet" className="account-sign-out" onClick={signOut}>{t('account.signOut')}</Button>
+      <nav className="account-secondary-actions" aria-label="More account shortcuts">
+        <Link href="/saved-services" className="account-action-chip">{tamil ? 'சேமித்த சேவைகள்' : 'Saved'}</Link>
+        <Link href="/requirements" className="account-action-chip">{tamil ? 'தேவைகள்' : 'Requirements'}</Link>
+        <Link href="/reviews" className="account-action-chip">{tamil ? 'மதிப்புரைகள்' : 'Reviews'}</Link>
+        <details className="account-more-actions">
+          <summary>{tamil ? 'மேலும்' : 'More'}</summary>
+          <div className="account-more-menu">
+            <Link href="/account/support">{tamil ? 'Platform உதவி' : 'Platform support'}</Link>
+            <Link href="/account/reports">{tamil ? 'Safety reports' : 'Safety reports'}</Link>
+            <Button type="button" variant="quiet" className="account-sign-out" onClick={signOut}>{t('account.signOut')}</Button>
+          </div>
+        </details>
       </nav>
 
       <div className="dashboard-stat-grid">
