@@ -64,7 +64,7 @@ function hasProfessionalBasics(provider: any) {
     && String(provider?.service_area || '').trim().length >= 2;
 }
 
-async function loadPublicCategoryRows(supabase: ReturnType<typeof createClient>) {
+async function loadPublicCategoryRows(supabase: any) {
   const rows: any[] = [];
 
   for (let start = 0; start < maxDirectoryServiceRows; start += directoryPageSize) {
@@ -84,7 +84,7 @@ async function loadPublicCategoryRows(supabase: ReturnType<typeof createClient>)
   return rows;
 }
 
-async function loadPublicBusinessRows(supabase: ReturnType<typeof createClient>) {
+async function loadPublicBusinessRows(supabase: any) {
   const rows: any[] = [];
 
   for (let start = 0; start < maxDirectoryServiceRows; start += directoryPageSize) {
