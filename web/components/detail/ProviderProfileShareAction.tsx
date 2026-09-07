@@ -28,15 +28,12 @@ async function copyProfileUrl(value: string) {
   fallbackCopy(value);
 }
 
-export default function ProviderProfileShareAction({
-  providerId,
-  providerName,
-  kind,
-}: {
+export default function ProviderProfileShareAction(props: {
   providerId: string;
   providerName: string;
   kind: ProviderKind;
 }) {
+  const { providerName, kind } = props;
   const { locale } = useLanguage();
   const tamil = locale === 'ta-IN';
   const [status, setStatus] = useState<ShareStatus>('idle');
