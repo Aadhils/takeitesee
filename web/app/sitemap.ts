@@ -5,6 +5,7 @@ import { hasMarketplaceDisclosure, loadPublicProfessionals } from '../server/mar
 const siteUrl = 'https://www.takeitesee.com';
 const pageSize = 1000;
 const maxServiceRows = 15000;
+const maxProviderHandleRows = 15000;
 
 export const dynamic = 'force-dynamic';
 
@@ -59,14 +60,23 @@ async function loadCurrentProviderHandles() {
   const supabase = publicSupabase();
   if (!supabase) return null;
 
-  const { data, error } = await supabase
-    .from('identity_handles')
-    .select('handle,identity_type,identity_id')
-    .eq('is_current', true)
-    .in('identity_type', ['professional', 'business']);
+  const rows: any[] = [];
 
-  if (error) return null;
-  return data ?? [];
+  for (let start = 0; start < maxProviderHandleRows; start += pageSize) {
+    const { data, error } = await supabase
+      .from('identity_handles')
+      .select('handle,identity_type,identity_id')
+      .eq('is_current', true)
+      .in('identity_type', ['professional', 'business'])
+      .order('handle')
+      .range(start, Math.min(start + pageSize - 1, maxProviderHandleRows - 1));
+
+    if (error) return null;
+    rows.push(...(data ?? []));
+    if (!data || data.length < pageSize) break;
+  }
+
+  return rows;
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
