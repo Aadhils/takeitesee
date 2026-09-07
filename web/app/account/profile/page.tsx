@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { LocalizedProfilePage } from '../../../components/account/LocalizedAccountProfileSettings';
+import IdentityHandleManager from '../../../components/identity/IdentityHandleManager';
 import { Card, EmptyState } from '../../../components/ui/primitives';
 import { useOperationalTranslations } from '../../../components/i18n/OperationalTranslations';
 import { getCurrentCustomerAsync } from '../../../services/auth-adapter';
@@ -45,5 +46,8 @@ export default function AccountProfilePage() {
     </Card>;
   }
 
-  return <LocalizedProfilePage />;
+  return <>
+    <LocalizedProfilePage />
+    <IdentityHandleManager context="customer" locale={locale} />
+  </>;
 }

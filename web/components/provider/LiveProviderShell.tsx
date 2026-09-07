@@ -46,6 +46,7 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
         links: [
           { href: '/provider/setup', label: t('provider.setup') },
           { href: '/provider/services', label: t('provider.services') },
+          { href: '/provider/handle', label: tamil ? 'Public @handle' : 'Public @handle' },
           { href: '/provider/verification', label: t('provider.verification') },
           { href: '/provider/reviews', label: t('provider.reviews') },
         ],
