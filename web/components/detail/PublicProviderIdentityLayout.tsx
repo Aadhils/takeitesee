@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import ReferralAttributionCapture from '../identity/ReferralAttributionCapture';
 import PublicProviderIdentityHero from './PublicProviderIdentityHero';
 import styles from './PublicProviderIdentity.module.css';
 
@@ -59,6 +60,7 @@ export default async function PublicProviderIdentityLayout({
   const bannerUrl = bannerPath ? supabase.storage.from(BUCKET).getPublicUrl(bannerPath).data.publicUrl : null;
 
   return <div className={styles.frame}>
+    <ReferralAttributionCapture />
     <PublicProviderIdentityHero
       kind={kind}
       displayName={displayName}
