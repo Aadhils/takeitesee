@@ -1,0 +1,243 @@
+import { cache } from 'react';
+import { createClient } from '@supabase/supabase-js';
+import PublicProviderProfile from './PublicProviderProfile';
+import ProviderProfileShareAction from './ProviderProfileShareAction';
+import { PortfolioMediaSafetyPanel } from '../safety/PortfolioMediaSafetyPanel';
+import { createSupabaseServiceClient } from '../../lib/supabase/service';
+
+export const publicProfessionalSiteUrl = 'https://www.takeitesee.com';
+const portfolioBucket = 'professional-portfolio-media';
+const signedMediaTtlSeconds = 15 * 60;
+
+function publicSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+}
+
+export function publicProfessionalSeoText(value: string | null | undefined, fallback: string, max = 160) {
+  const text = (value || fallback).replace(/\s+/g, ' ').trim();
+  if (text.length <= max) return text;
+  return `${text.slice(0, max - 1).trimEnd()}…`;
+}
+
+function hasMarketplaceDisclosure(provider: any) {
+  return Boolean(
+    provider?.legal_name?.trim() && provider?.principal_address?.trim() && provider?.public_contact_email?.trim() && provider?.public_contact_phone?.trim()
+    && provider?.grievance_officer_name?.trim() && provider?.grievance_officer_designation?.trim() && provider?.grievance_email?.trim() && provider?.grievance_phone?.trim(),
+  );
+}
+
+function hasProfessionalBasics(provider: any) {
+  return String(provider?.headline || '').trim().length >= 2
+    && String(provider?.description || '').trim().length >= 20
+    && String(provider?.service_area || '').trim().length >= 2;
+}
+
+async function loadSignedPortfolioMedia(providerId: string, roles: any[]) {
+  try {
+    const service = createSupabaseServiceClient();
+    const { data: mediaRows, error } = await service
+      .from('professional_portfolio_media')
+      .select('id,professional_role_id,media_type,object_path,caption,alt_text,display_order,created_at')
+      .eq('professional_id', providerId)
+      .eq('active', true)
+      .order('display_order', { ascending: true })
+      .order('created_at', { ascending: false });
+    if (error || !mediaRows?.length) return [];
+
+    const roleTitle = new Map(roles.map((role: any) => [String(role.id), String(role.title || '')]));
+    const visibleRows = mediaRows.filter((row: any) => !row.professional_role_id || roleTitle.has(String(row.professional_role_id)));
+    const signed = await Promise.all(visibleRows.map(async (row: any) => {
+      const { data, error: signedError } = await service.storage.from(portfolioBucket).createSignedUrl(String(row.object_path), signedMediaTtlSeconds);
+      if (signedError || !data?.signedUrl) return null;
+      return {
+        id: String(row.id),
+        media_type: row.media_type === 'video' ? 'video' as const : 'image' as const,
+        signed_url: data.signedUrl,
+        caption: String(row.caption || ''),
+        alt_text: String(row.alt_text || ''),
+        role_title: row.professional_role_id ? roleTitle.get(String(row.professional_role_id)) || null : null,
+      };
+    }));
+    return signed.filter((item): item is NonNullable<typeof item> => Boolean(item));
+  } catch {
+    return [];
+  }
+}
+
+async function loadPublicCareer(supabase: ReturnType<typeof publicSupabase>, providerId: string) {
+  if (!supabase) return null;
+  try {
+    const { data: profile, error } = await supabase
+      .from('professional_career_profiles')
+      .select('professional_id,career_headline,career_summary,preferred_location,open_to_remote,willing_to_relocate,available_from,notice_period_days,availability_note,public_resume_enabled')
+      .eq('professional_id', providerId)
+      .eq('public_resume_enabled', true)
+      .maybeSingle();
+    if (error || !profile) return null;
+
+    const [experiences, education, certifications, skills] = await Promise.all([
+      supabase.from('professional_experiences').select('id,role_title,organization,employment_type,location,start_date,end_date,is_current,description,display_order').eq('professional_id', providerId).order('display_order', { ascending: true }).order('start_date', { ascending: false }),
+      supabase.from('professional_education').select('id,institution,qualification,field_of_study,start_date,end_date,description,display_order').eq('professional_id', providerId).order('display_order', { ascending: true }),
+      supabase.from('professional_certifications').select('id,name,issuing_organization,issue_date,expiry_date,credential_id,credential_url,display_order').eq('professional_id', providerId).order('display_order', { ascending: true }),
+      supabase.from('professional_skills').select('id,name,proficiency,years_experience,display_order').eq('professional_id', providerId).order('display_order', { ascending: true }).order('name'),
+    ]);
+
+    return {
+      profile,
+      experiences: experiences.error ? [] : (experiences.data ?? []),
+      education: education.error ? [] : (education.data ?? []),
+      certifications: certifications.error ? [] : (certifications.data ?? []),
+      skills: skills.error ? [] : (skills.data ?? []),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export const loadPublicProfessional = cache(async (providerId: string) => {
+  const supabase = publicSupabase();
+  if (!supabase) return null;
+
+  const { data: provider, error } = await supabase
+    .from('professional_profiles')
+    .select('id,headline,description,service_area,verified,legal_name,principal_address,public_contact_email,public_contact_phone,website_url,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone')
+    .eq('id', providerId)
+    .eq('verified', true)
+    .maybeSingle();
+  if (error || !provider || !hasMarketplaceDisclosure(provider) || !hasProfessionalBasics(provider)) return null;
+
+  const [servicesResult, rolesResult, career] = await Promise.all([
+    supabase
+      .from('services')
+      .select('id,name,description,base_price,currency,duration_minutes,location')
+      .eq('professional_id', providerId)
+      .eq('provider_type', 'professional')
+      .eq('status', 'active')
+      .eq('active', true)
+      .order('name'),
+    supabase
+      .from('professional_roles')
+      .select('id,title,summary,experience_years,service_bookings_enabled,freelance_enabled,part_time_enabled,full_time_enabled,contract_enabled,display_order,created_at')
+      .eq('professional_id', providerId)
+      .eq('active', true)
+      .order('display_order', { ascending: true })
+      .order('created_at', { ascending: true }),
+    loadPublicCareer(supabase, providerId),
+  ]);
+
+  const services = servicesResult.error ? [] : (servicesResult.data ?? []) as any[];
+  const roles = rolesResult.error ? [] : (rolesResult.data ?? []) as any[];
+  const media = await loadSignedPortfolioMedia(providerId, roles);
+
+  return {
+    provider: provider as any,
+    services,
+    roles,
+    media,
+    career,
+  };
+});
+
+export default async function ProfessionalPublicProfileContent({ providerId, canonicalUrl }: { providerId: string; canonicalUrl: string }) {
+  const record = await loadPublicProfessional(providerId);
+  if (!record) return null;
+
+  const { provider, services, roles, media, career } = record;
+  const displayName = provider.headline || 'Verified professional';
+  const knowsAbout = Array.from(new Set([
+    ...roles.map((role: any) => String(role.title || '')).filter(Boolean),
+    ...(career?.skills ?? []).map((skill: any) => String(skill.name || '')).filter(Boolean),
+  ]));
+  const structuredData = services.length || roles.length || career ? {
+    '@context': 'https://schema.org',
+    '@type': 'ProfessionalService',
+    name: displayName,
+    description: career?.profile?.career_summary || provider.description || undefined,
+    url: canonicalUrl,
+    areaServed: provider.service_area || undefined,
+    email: provider.public_contact_email || undefined,
+    telephone: provider.public_contact_phone || undefined,
+    knowsAbout: knowsAbout.length ? knowsAbout : undefined,
+    hasOfferCatalog: services.length ? {
+      '@type': 'OfferCatalog',
+      name: 'Active services',
+      itemListElement: services.slice(0, 20).map((service: any) => ({
+        '@type': 'Offer',
+        itemOffered: {
+          '@type': 'Service',
+          name: service.name,
+          url: `${publicProfessionalSiteUrl}/services/${encodeURIComponent(service.id)}`,
+        },
+      })),
+    } : undefined,
+  } : null;
+
+  return <>
+    {structuredData ? <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, '\\u003c') }}
+    /> : null}
+    <div className="container" style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '1rem' }}>
+      <ProviderProfileShareAction providerId={providerId} providerName={displayName} kind="professional" />
+    </div>
+    <PublicProviderProfile
+      kind="professional"
+      provider={{
+        name: provider.headline || '',
+        description: provider.description || '',
+        location: provider.service_area || '',
+        legal_name: provider.legal_name || '',
+        principal_address: provider.principal_address || '',
+        public_contact_email: provider.public_contact_email || '',
+        public_contact_phone: provider.public_contact_phone || '',
+        website_url: provider.website_url || null,
+        grievance_officer_name: provider.grievance_officer_name || '',
+        grievance_officer_designation: provider.grievance_officer_designation || '',
+        grievance_email: provider.grievance_email || '',
+        grievance_phone: provider.grievance_phone || '',
+      }}
+      roles={roles.map((role: any) => ({
+        id: String(role.id),
+        title: String(role.title || ''),
+        summary: String(role.summary || ''),
+        experience_years: role.experience_years === null || role.experience_years === undefined ? null : Number(role.experience_years),
+        service_bookings_enabled: Boolean(role.service_bookings_enabled),
+        freelance_enabled: Boolean(role.freelance_enabled),
+        part_time_enabled: Boolean(role.part_time_enabled),
+        full_time_enabled: Boolean(role.full_time_enabled),
+        contract_enabled: Boolean(role.contract_enabled),
+      }))}
+      media={media}
+      career={career ? {
+        profile: {
+          career_headline: String(career.profile.career_headline || ''),
+          career_summary: String(career.profile.career_summary || ''),
+          preferred_location: String(career.profile.preferred_location || ''),
+          open_to_remote: Boolean(career.profile.open_to_remote),
+          willing_to_relocate: Boolean(career.profile.willing_to_relocate),
+          available_from: career.profile.available_from ? String(career.profile.available_from) : null,
+          notice_period_days: career.profile.notice_period_days === null || career.profile.notice_period_days === undefined ? null : Number(career.profile.notice_period_days),
+          availability_note: String(career.profile.availability_note || ''),
+        },
+        experiences: career.experiences.map((item: any) => ({ ...item, id: String(item.id), display_order: Number(item.display_order || 0), is_current: Boolean(item.is_current) })),
+        education: career.education.map((item: any) => ({ ...item, id: String(item.id), display_order: Number(item.display_order || 0) })),
+        certifications: career.certifications.map((item: any) => ({ ...item, id: String(item.id), display_order: Number(item.display_order || 0) })),
+        skills: career.skills.map((item: any) => ({ ...item, id: String(item.id), years_experience: item.years_experience === null || item.years_experience === undefined ? null : Number(item.years_experience), display_order: Number(item.display_order || 0) })),
+      } : null}
+      services={services.map((service: any) => ({
+        id: String(service.id),
+        name: String(service.name || ''),
+        description: String(service.description || ''),
+        base_price: service.base_price,
+        currency: service.currency || 'INR',
+        duration_minutes: service.duration_minutes ? Number(service.duration_minutes) : null,
+      }))}
+    />
+    {media.length ? <div className="container section-stack">
+      <PortfolioMediaSafetyPanel media={media.map((item) => ({ id: item.id, media_type: item.media_type, caption: item.caption }))} />
+    </div> : null}
+  </>;
+}

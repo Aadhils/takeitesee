@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { notFound, permanentRedirect, redirect } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import PublicProviderIdentityLayout from '../../components/detail/PublicProviderIdentityLayout';
@@ -8,6 +8,10 @@ import BusinessPublicProfileContent, {
   publicBusinessSeoText,
   publicSiteUrl,
 } from '../../components/detail/BusinessPublicProfileContent';
+import ProfessionalPublicProfileContent, {
+  loadPublicProfessional,
+  publicProfessionalSeoText,
+} from '../../components/detail/ProfessionalPublicProfileContent';
 
 const siteUrl = publicSiteUrl;
 
@@ -95,24 +99,42 @@ export async function generateMetadata({ params }: { params: Promise<{ handle: s
     };
   }
 
+  const record = await loadPublicProfessional(resolved.identity_id);
+  if (!record) return unavailableMetadata();
+
+  const { provider, services, roles, career } = record;
+  const displayName = provider.headline || `@${resolved.canonical_handle}`;
+  const location = provider.service_area || '';
+  const primaryTalent = roles[0]?.title ? ` · ${String(roles[0].title)}` : '';
+  const pageTitle = `${displayName}${primaryTalent}${location ? ` in ${location}` : ''}`;
+  const socialTitle = `${pageTitle} | TakeItEsee`;
+  const skillNames = career?.skills?.slice(0, 3).map((skill: any) => String(skill.name || '')).filter(Boolean) ?? [];
+  const talentNames = roles.slice(0, Math.max(0, 3 - skillNames.length)).map((role: any) => String(role.title || '')).filter(Boolean);
+  const careerText = [...talentNames, ...skillNames].length ? ` Skills include ${[...talentNames, ...skillNames].join(', ')}.` : '';
+  const description = publicProfessionalSeoText(
+    career?.profile?.career_summary || provider.description,
+    `Explore services, professional talents, career experience and work samples from ${displayName}${location ? ` in ${location}` : ''} on TakeItEsee.${careerText}`,
+  );
+  const indexable = services.length > 0 || roles.length > 0 || Boolean(career);
+
   return {
-    title: { absolute: `@${resolved.canonical_handle} · Professional | TakeItEsee` },
-    description: `View @${resolved.canonical_handle} on TakeItEsee.`,
-    alternates: { canonical },
-    robots: { index: true, follow: true },
-    openGraph: {
-      title: `@${resolved.canonical_handle} | TakeItEsee`,
-      description: `View @${resolved.canonical_handle} on TakeItEsee.`,
+    title: { absolute: socialTitle },
+    description,
+    alternates: indexable ? { canonical } : undefined,
+    robots: { index: indexable, follow: indexable },
+    openGraph: indexable ? {
+      title: socialTitle,
+      description,
       url: canonical,
       type: 'profile',
       images: ['/brand/social'],
-    },
-    twitter: {
+    } : undefined,
+    twitter: indexable ? {
       card: 'summary_large_image',
-      title: `@${resolved.canonical_handle} | TakeItEsee`,
-      description: `View @${resolved.canonical_handle} on TakeItEsee.`,
+      title: socialTitle,
+      description,
       images: ['/brand/social'],
-    },
+    } : undefined,
   };
 }
 
@@ -131,18 +153,24 @@ export default async function PublicHandlePage({ params }: { params: Promise<{ h
   // Customer handles remain globally reserved, but Customer profile details and media stay private.
   if (resolved.identity_type === 'customer') notFound();
 
+  const canonical = `${siteUrl}/@${encodeURIComponent(resolved.canonical_handle)}`;
+
   if (resolved.identity_type === 'business') {
     const record = await loadPublicBusiness(resolved.identity_id);
     if (!record) notFound();
 
-    const canonical = `${siteUrl}/@${encodeURIComponent(resolved.canonical_handle)}`;
     return <PublicProviderIdentityLayout kind="business" providerId={resolved.identity_id}>
       <BusinessPublicProfileContent providerId={resolved.identity_id} canonicalUrl={canonical} />
     </PublicProviderIdentityLayout>;
   }
 
   if (resolved.identity_type === 'professional') {
-    redirect(`/professionals/${encodeURIComponent(resolved.identity_id)}`);
+    const record = await loadPublicProfessional(resolved.identity_id);
+    if (!record) notFound();
+
+    return <PublicProviderIdentityLayout kind="professional" providerId={resolved.identity_id}>
+      <ProfessionalPublicProfileContent providerId={resolved.identity_id} canonicalUrl={canonical} />
+    </PublicProviderIdentityLayout>;
   }
 
   notFound();
