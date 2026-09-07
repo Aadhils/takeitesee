@@ -30,7 +30,7 @@ function providerLabel(type: ProviderType) {
   return type === 'professional' ? 'Professional' : 'Business';
 }
 
-export function ProviderReadinessSummary() {
+export function ProviderReadinessSummary({ placement = 'account' }: { placement?: 'account' | 'provider' }) {
   const { locale } = useIdentityWorkspaceTranslations();
   const tamil = locale.toLowerCase().startsWith('ta');
   const [providers, setProviders] = useState<ProviderReadiness[]>([]);
@@ -61,6 +61,10 @@ export function ProviderReadinessSummary() {
     setOpening(provider.provider_type);
     setError('');
     try {
+      if (placement === 'provider') {
+        window.location.assign(provider.next_action.href);
+        return;
+      }
       const response = await fetch('/api/account/workspaces', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -77,7 +81,7 @@ export function ProviderReadinessSummary() {
 
   if (loading || (!providers.length && !error)) return null;
 
-  return <section className="account-readiness" aria-label={tamil ? 'Provider setup நிலை' : 'Provider setup status'}>
+  return <section className="account-readiness" style={placement === 'provider' ? { margin: '-1px 0 0', position: 'relative', zIndex: 3 } : undefined} aria-label={tamil ? 'Provider setup நிலை' : 'Provider setup status'}>
     {error ? <p className="field-error account-readiness-error" role="alert">{error}</p> : null}
     {providers.map((provider) => <div className="account-readiness-card" key={provider.provider_type}>
       <div className="account-readiness-main">
