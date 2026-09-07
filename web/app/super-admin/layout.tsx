@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
+import { SuperAdminShell } from '../../components/super-admin/SuperAdminShell';
 import { productionAuthProvider } from '../../server/auth/session';
 
 const SUPER_ADMIN_RETURN_TO_HEADER = 'x-takeitesee-super-admin-return-to';
@@ -33,5 +34,5 @@ export default async function SuperAdminLayout({ children }: { children: ReactNo
   }
   if (!session.roles.includes('super_admin')) redirect('/admin');
 
-  return children;
+  return <SuperAdminShell>{children}</SuperAdminShell>;
 }
