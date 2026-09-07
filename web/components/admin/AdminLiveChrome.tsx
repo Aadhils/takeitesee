@@ -14,8 +14,8 @@ const navigationGroups = [
   {
     en: 'Providers', ta: 'Provider',
     links: [
-      { href: '/admin/providers?type=professional', match: '/admin/providers', en: 'Professionals', ta: 'Professional' },
-      { href: '/admin/providers?type=business', match: '/admin/providers', en: 'Businesses', ta: 'Business' },
+      { href: '/admin/providers?type=professional', match: '/admin/providers?type=professional', en: 'Professionals', ta: 'Professional' },
+      { href: '/admin/providers?type=business', match: '/admin/providers?type=business', en: 'Businesses', ta: 'Business' },
       { href: '/admin/provider-applications', en: 'Applications', ta: 'விண்ணப்பங்கள்' },
       { href: '/admin/provider-verifications', en: 'Verification', ta: 'Verification' },
       { href: '/admin/service-launches', en: 'Launch reviews', ta: 'Launch reviews' },
