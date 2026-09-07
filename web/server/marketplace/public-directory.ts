@@ -22,7 +22,7 @@ export type PublicCategoryEntry = {
 };
 
 const directoryPageSize = 1000;
-const maxDirectoryServiceRows = 15000;
+const maxDirectoryRows = 15000;
 
 function publicSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -64,19 +64,14 @@ function hasProfessionalBasics(provider: any) {
     && String(provider?.service_area || '').trim().length >= 2;
 }
 
-async function loadPublicCategoryRows(supabase: any) {
+async function loadPagedRows(loadPage: (start: number, end: number) => PromiseLike<any>) {
   const rows: any[] = [];
 
-  for (let start = 0; start < maxDirectoryServiceRows; start += directoryPageSize) {
-    const { data, error } = await supabase
-      .from('services')
-      .select('id,category,provider_type,professional_profiles(verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone),businesses(verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone)')
-      .eq('status', 'active')
-      .eq('active', true)
-      .order('id')
-      .range(start, Math.min(start + directoryPageSize - 1, maxDirectoryServiceRows - 1));
-
+  for (let start = 0; start < maxDirectoryRows; start += directoryPageSize) {
+    const end = Math.min(start + directoryPageSize - 1, maxDirectoryRows - 1);
+    const { data, error } = await loadPage(start, end);
     if (error) return null;
+
     rows.push(...(data ?? []));
     if (!data || data.length < directoryPageSize) break;
   }
@@ -84,25 +79,25 @@ async function loadPublicCategoryRows(supabase: any) {
   return rows;
 }
 
+async function loadPublicCategoryRows(supabase: any) {
+  return loadPagedRows((start, end) => supabase
+    .from('services')
+    .select('id,category,provider_type,professional_profiles(verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone),businesses(verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone)')
+    .eq('status', 'active')
+    .eq('active', true)
+    .order('id')
+    .range(start, end));
+}
+
 async function loadPublicBusinessRows(supabase: any) {
-  const rows: any[] = [];
-
-  for (let start = 0; start < maxDirectoryServiceRows; start += directoryPageSize) {
-    const { data, error } = await supabase
-      .from('services')
-      .select('id,base_price,currency,category,business_id,businesses(id,name,description,location,verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone)')
-      .eq('provider_type', 'business')
-      .eq('status', 'active')
-      .eq('active', true)
-      .order('id')
-      .range(start, Math.min(start + directoryPageSize - 1, maxDirectoryServiceRows - 1));
-
-    if (error) return null;
-    rows.push(...(data ?? []));
-    if (!data || data.length < directoryPageSize) break;
-  }
-
-  return rows;
+  return loadPagedRows((start, end) => supabase
+    .from('services')
+    .select('id,base_price,currency,category,business_id,businesses(id,name,description,location,verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone)')
+    .eq('provider_type', 'business')
+    .eq('status', 'active')
+    .eq('active', true)
+    .order('id')
+    .range(start, end));
 }
 
 export async function loadPublicCategories(): Promise<PublicCategoryEntry[] | null> {
@@ -173,34 +168,40 @@ export async function loadPublicProfessionals(): Promise<PublicDirectoryEntry[] 
   const supabase = publicSupabase();
   if (!supabase) return null;
 
-  const [profilesResult, servicesResult, rolesResult, careerResult] = await Promise.all([
-    supabase
+  const [profiles, services, roles, careers] = await Promise.all([
+    loadPagedRows((start, end) => supabase
       .from('professional_profiles')
       .select('id,headline,description,service_area,verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone')
       .eq('verified', true)
-      .order('headline'),
-    supabase
+      .order('id')
+      .range(start, end)),
+    loadPagedRows((start, end) => supabase
       .from('services')
       .select('id,base_price,currency,category,professional_id')
       .eq('provider_type', 'professional')
       .eq('status', 'active')
       .eq('active', true)
-      .order('id'),
-    supabase
+      .order('id')
+      .range(start, end)),
+    loadPagedRows((start, end) => supabase
       .from('professional_roles')
       .select('professional_id,title,display_order')
       .eq('active', true)
-      .order('display_order', { ascending: true }),
-    supabase
+      .order('professional_id')
+      .order('display_order', { ascending: true })
+      .range(start, end)),
+    loadPagedRows((start, end) => supabase
       .from('professional_career_profiles')
       .select('professional_id,career_headline,public_resume_enabled')
-      .eq('public_resume_enabled', true),
+      .eq('public_resume_enabled', true)
+      .order('professional_id')
+      .range(start, end)),
   ]);
 
-  if (profilesResult.error || servicesResult.error || rolesResult.error || careerResult.error) return null;
+  if (!profiles || !services || !roles || !careers) return null;
 
   const serviceRows = new Map<string, any[]>();
-  for (const row of servicesResult.data ?? []) {
+  for (const row of services) {
     const id = String((row as any).professional_id || '');
     if (!id) continue;
     const values = serviceRows.get(id) ?? [];
@@ -209,7 +210,7 @@ export async function loadPublicProfessionals(): Promise<PublicDirectoryEntry[] 
   }
 
   const roleRows = new Map<string, any[]>();
-  for (const row of rolesResult.data ?? []) {
+  for (const row of roles) {
     const id = String((row as any).professional_id || '');
     if (!id) continue;
     const values = roleRows.get(id) ?? [];
@@ -218,26 +219,26 @@ export async function loadPublicProfessionals(): Promise<PublicDirectoryEntry[] 
   }
 
   const careerRows = new Map<string, any>();
-  for (const row of careerResult.data ?? []) {
+  for (const row of careers) {
     const id = String((row as any).professional_id || '');
     if (id) careerRows.set(id, row);
   }
 
   const entries: PublicDirectoryEntry[] = [];
-  for (const provider of profilesResult.data ?? []) {
+  for (const provider of profiles) {
     const professional: any = provider;
     if (!professional?.id || !professional.verified || !hasMarketplaceDisclosure(professional) || !hasProfessionalBasics(professional)) continue;
 
     const id = String(professional.id);
-    const services = serviceRows.get(id) ?? [];
-    const roles = roleRows.get(id) ?? [];
+    const professionalServices = serviceRows.get(id) ?? [];
+    const professionalRoles = roleRows.get(id) ?? [];
     const career = careerRows.get(id);
-    if (!services.length && !roles.length && !career) continue;
+    if (!professionalServices.length && !professionalRoles.length && !career) continue;
 
     const categories = new Set<string>();
     let startingPrice: number | null = null;
     let currency = 'INR';
-    for (const service of services) {
+    for (const service of professionalServices) {
       const price = Number(service.base_price || 0);
       if (service.category) categories.add(String(service.category));
       if (price > 0 && (startingPrice === null || price < startingPrice)) {
@@ -247,7 +248,7 @@ export async function loadPublicProfessionals(): Promise<PublicDirectoryEntry[] 
     }
 
     const talents = Array.from(new Set(
-      roles.map((role) => String(role.title || '').trim()).filter(Boolean),
+      professionalRoles.map((role) => String(role.title || '').trim()).filter(Boolean),
     ));
 
     entries.push({
@@ -255,11 +256,11 @@ export async function loadPublicProfessionals(): Promise<PublicDirectoryEntry[] 
       name: professional.headline || 'Verified professional',
       description: professional.description || '',
       location: professional.service_area || '',
-      service_count: services.length,
+      service_count: professionalServices.length,
       categories: Array.from(categories).sort(),
       starting_price: startingPrice,
       currency,
-      role_count: roles.length,
+      role_count: professionalRoles.length,
       talents,
       career_published: Boolean(career),
     });
