@@ -49,8 +49,9 @@ export default function ProviderProfileShareAction({
 
   const share = async () => {
     setStatus('idle');
-    const segment = kind === 'business' ? 'businesses' : 'professionals';
-    const url = new URL(`/${segment}/${providerId}`, window.location.origin).toString();
+    // Share the public URL the visitor is actually viewing. This keeps canonical
+    // @handle routes intact instead of leaking the underlying UUID provider route.
+    const url = new URL(window.location.href).toString();
     const fallbackName = kind === 'business' ? 'Verified business' : 'Verified professional';
     const name = providerName || fallbackName;
     const shareData = {
