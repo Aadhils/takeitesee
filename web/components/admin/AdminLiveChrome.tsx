@@ -8,13 +8,15 @@ import { useAdminAccess } from './AdminAccessContext';
 
 const links = [
   { href: '/admin', en: 'Dashboard', ta: 'டாஷ்போர்டு' },
+  { href: '/admin/provider-applications', en: 'Provider applications', ta: 'Provider விண்ணப்பங்கள்' },
+  { href: '/admin/provider-verifications', en: 'Provider verification', ta: 'Provider verification' },
+  { href: '/admin/providers', en: 'Providers', ta: 'வழங்குநர்கள்' },
+  { href: '/admin/service-launches', en: 'Launch reviews', ta: 'Launch reviews' },
   { href: '/admin/bookings', en: 'Bookings', ta: 'புக்கிங்ஸ்' },
   { href: '/admin/moderation', en: 'Moderation', ta: 'Moderation' },
   { href: '/admin/disputes', en: 'Issues', ta: 'சிக்கல்கள்' },
-  { href: '/admin/providers', en: 'Providers', ta: 'வழங்குநர்கள்' },
   { href: '/admin/customers', en: 'Customers', ta: 'வாடிக்கையாளர்கள்' },
   { href: '/admin/services', en: 'Services', ta: 'சேவைகள்' },
-  { href: '/admin/service-launches', en: 'Launch reviews', ta: 'Launch reviews' },
   { href: '/admin/reviews', en: 'Reviews', ta: 'மதிப்புரைகள்' },
   { href: '/admin/reports', en: 'Reports', ta: 'அறிக்கைகள்' },
   { href: '/admin/settings', en: 'Settings', ta: 'அமைப்புகள்' },
