@@ -1,14 +1,18 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import ProfessionalPublicProfileContent, {
   loadPublicProfessional,
   publicProfessionalSeoText,
   publicProfessionalSiteUrl,
 } from '../../../components/detail/ProfessionalPublicProfileContent';
+import { loadCurrentPublicProviderHandle } from '../../../server/identity/public-handle';
 
 export async function generateMetadata({ params }: { params: Promise<{ providerId: string }> }): Promise<Metadata> {
   const { providerId } = await params;
-  const record = await loadPublicProfessional(providerId);
+  const [record, handle] = await Promise.all([
+    loadPublicProfessional(providerId),
+    loadCurrentPublicProviderHandle('professional', providerId),
+  ]);
 
   if (!record) {
     return {
@@ -30,7 +34,9 @@ export async function generateMetadata({ params }: { params: Promise<{ providerI
     career?.profile?.career_summary || provider.description,
     `Explore services, professional talents, career experience and work samples from ${displayName}${location ? ` in ${location}` : ''} on TakeItEsee.${careerText}`,
   );
-  const canonical = `${publicProfessionalSiteUrl}/professionals/${encodeURIComponent(providerId)}`;
+  const canonical = handle
+    ? `${publicProfessionalSiteUrl}/@${encodeURIComponent(handle)}`
+    : `${publicProfessionalSiteUrl}/professionals/${encodeURIComponent(providerId)}`;
   const indexable = services.length > 0 || roles.length > 0 || Boolean(career);
 
   return {
@@ -56,8 +62,15 @@ export async function generateMetadata({ params }: { params: Promise<{ providerI
 
 export default async function ProfessionalProfilePage({ params }: { params: Promise<{ providerId: string }> }) {
   const { providerId } = await params;
-  const record = await loadPublicProfessional(providerId);
+  const [record, handle] = await Promise.all([
+    loadPublicProfessional(providerId),
+    loadCurrentPublicProviderHandle('professional', providerId),
+  ]);
   if (!record) notFound();
+
+  if (handle) {
+    permanentRedirect(`/@${encodeURIComponent(handle)}`);
+  }
 
   return <ProfessionalPublicProfileContent
     providerId={providerId}
