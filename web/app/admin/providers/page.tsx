@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { AdminLiveEmptyState, AdminLiveHeading, AdminLiveShell, AdminLiveText } from '../../../components/admin/AdminLiveChrome';
 import { Badge, Card } from '../../../components/ui/primitives';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
@@ -10,8 +11,13 @@ type Business = { id: string; name: string; description: string | null; location
 type Professional = { id: string; headline: string | null; description: string | null; service_area: string | null; verified: boolean; };
 type ProviderView = { key: string; name: string; type: 'Business' | 'Professional'; description: string; location: string; verified: boolean; services: string[]; };
 
-export default async function AdminProvidersRoute() {
+type ProviderTypeFilter = 'all' | 'professional' | 'business';
+
+export default async function AdminProvidersRoute({ searchParams }: { searchParams: Promise<{ type?: string }> }) {
   if (!await getAdminSessionOrNull()) return null;
+  const params = await searchParams;
+  const requestedType = params.type?.toLowerCase();
+  const providerType: ProviderTypeFilter = requestedType === 'professional' || requestedType === 'business' ? requestedType : 'all';
   const supabase = await createSupabaseServerClient();
   const { data: mappedScopes, error: scopeError } = await supabase.from('service_ecosystem_scope').select('service_id').eq('enabled', true);
   if (scopeError) throw new Error(scopeError.message);
@@ -29,9 +35,17 @@ export default async function AdminProvidersRoute() {
     if (service.provider_type === 'professional' && service.professional_id) { const professional = professionalMap.get(service.professional_id); const key = `professional:${service.professional_id}`; const existing = providerMap.get(key); if (existing) existing.services.push(service.name); else providerMap.set(key, { key, name: professional?.headline || 'Professional provider', type: 'Professional', description: professional?.description || 'Professional provider in this administrator scope.', location: professional?.service_area || 'Service area not set', verified: Boolean(professional?.verified), services: [service.name] }); }
   }
   const providers = Array.from(providerMap.values());
+  const filteredProviders = providers.filter((provider) => providerType === 'all' || provider.type.toLowerCase() === providerType);
+  const title = providerType === 'professional' ? 'Professional providers' : providerType === 'business' ? 'Business providers' : 'All providers';
+  const emptyTitle = providerType === 'professional' ? 'No scoped Professionals' : providerType === 'business' ? 'No scoped Businesses' : 'No scoped providers';
 
   return <AdminLiveShell active="/admin/providers">
-    <AdminLiveHeading eyebrow={<AdminLiveText en="Scoped trust and supply" ta="Scope செய்யப்பட்ட trust & supply" />} title={<AdminLiveText en="Live provider directory" ta="நேரடி provider directory" />} description={<AdminLiveText en="Providers are derived from active services visible inside this administrator’s assigned Supabase scope." ta="இந்த admin-ன் assigned Supabase scope-ல் காணப்படும் active services-லிருந்து providers உருவாக்கப்படுகின்றனர்." />} />
-    {providers.length ? <div className="admin-record-grid">{providers.map((provider) => <Card className="admin-provider-card" key={provider.key}><div className="admin-record-top"><div><span className="eyebrow">{provider.type === 'Business' ? <AdminLiveText en="Business" ta="வணிகம்" /> : <AdminLiveText en="Professional" ta="நிபுணர்" />}</span><h2>{provider.name}</h2></div><Badge tone={provider.verified ? 'success' : 'warning'}>{provider.verified ? <AdminLiveText en="Verified" ta="சரிபார்க்கப்பட்டது" /> : <AdminLiveText en="Verification pending" ta="Verification நிலுவையில்" />}</Badge></div><p>{provider.description}</p><div className="admin-provider-meta"><span><strong>{provider.services.length}</strong> <AdminLiveText en={provider.services.length === 1 ? 'scoped service' : 'scoped services'} ta="scoped சேவைகள்" /></span><span><strong>{provider.location}</strong></span></div><div className="admin-tag-list">{provider.services.map((service) => <Badge tone="neutral" key={service}>{service}</Badge>)}</div></Card>)}</div> : <Card><AdminLiveEmptyState titleEn="No scoped providers" titleTa="Scoped providers இல்லை"><AdminLiveText en="Providers will appear when mapped active services are available inside this administrator scope." ta="இந்த admin scope-இல் mapped active services கிடைக்கும் போது providers இங்கே தோன்றுவர்." /></AdminLiveEmptyState></Card>}
+    <AdminLiveHeading eyebrow={<AdminLiveText en="Provider workspace" ta="Provider workspace" />} title={title} description={<AdminLiveText en="Review Professional and Business supply inside this administrator’s assigned Supabase scope." ta="இந்த admin-ன் assigned Supabase scope-ல் Professional மற்றும் Business providers-ஐ review செய்யவும்." />} />
+    <div className="admin-tab-row" role="navigation" aria-label="Provider type">
+      <Link href="/admin/providers" className={providerType === 'all' ? 'button button-primary' : 'button button-secondary'}>All</Link>
+      <Link href="/admin/providers?type=professional" className={providerType === 'professional' ? 'button button-primary' : 'button button-secondary'}>Professional</Link>
+      <Link href="/admin/providers?type=business" className={providerType === 'business' ? 'button button-primary' : 'button button-secondary'}>Business</Link>
+    </div>
+    {filteredProviders.length ? <div className="admin-record-grid">{filteredProviders.map((provider) => <Card className="admin-provider-card" key={provider.key}><div className="admin-record-top"><div><span className="eyebrow">{provider.type === 'Business' ? <AdminLiveText en="Business" ta="வணிகம்" /> : <AdminLiveText en="Professional" ta="நிபுணர்" />}</span><h2>{provider.name}</h2></div><Badge tone={provider.verified ? 'success' : 'warning'}>{provider.verified ? <AdminLiveText en="Verified" ta="சரிபார்க்கப்பட்டது" /> : <AdminLiveText en="Verification pending" ta="Verification நிலுவையில்" />}</Badge></div><p>{provider.description}</p><div className="admin-provider-meta"><span><strong>{provider.services.length}</strong> <AdminLiveText en={provider.services.length === 1 ? 'scoped service' : 'scoped services'} ta="scoped சேவைகள்" /></span><span><strong>{provider.location}</strong></span></div><div className="admin-tag-list">{provider.services.map((service) => <Badge tone="neutral" key={service}>{service}</Badge>)}</div></Card>)}</div> : <Card><AdminLiveEmptyState titleEn={emptyTitle} titleTa={emptyTitle}><AdminLiveText en="Providers will appear when mapped active services are available inside this administrator scope." ta="இந்த admin scope-இல் mapped active services கிடைக்கும் போது providers இங்கே தோன்றுவர்." /></AdminLiveEmptyState></Card>}
   </AdminLiveShell>;
 }
