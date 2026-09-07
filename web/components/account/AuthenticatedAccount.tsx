@@ -57,31 +57,28 @@ export default function AuthenticatedAccount() {
 
   return (
     <div className="account-page-heading customer-social-dashboard">
-      <nav className="customer-dashboard-nav" aria-label="Customer marketplace navigation">
-        <Link href="/account" className="customer-dashboard-nav-item is-active"><span aria-hidden="true">⌂</span><span>{tamil ? 'முகப்பு' : 'Home'}</span></Link>
-        <Link href="/explore" className="customer-dashboard-nav-item"><span aria-hidden="true">⌕</span><span>{tamil ? 'தேடு' : 'Explore'}</span></Link>
-        <Link href="/bookings" className="customer-dashboard-nav-item"><span aria-hidden="true">▣</span><span>{tamil ? 'புக்கிங்' : 'Bookings'}</span></Link>
-        <Link href="/messages" className="customer-dashboard-nav-item"><span aria-hidden="true">✉</span><span>{tamil ? 'செய்திகள்' : 'Messages'}</span></Link>
-        <Link href="/account/settings" className="customer-dashboard-nav-item"><span aria-hidden="true">⚙</span><span>{tamil ? 'அமைப்புகள்' : 'Settings'}</span></Link>
-      </nav>
-
       <span className="eyebrow">{t('auth.account')}</span>
       <h1>{t('account.welcome')}, {user.name.split(' ')[0]}.</h1>
       <p>{isSupabaseConfigured() ? t('account.productionSession') : t('account.localSession')}</p>
 
       {isSupabaseConfigured() ? <RoleIdentityMediaHeader context="customer" displayName={user.name} subtitle="Personal customer account" meta={[user.email, user.phone].filter(Boolean).join(' · ')} /> : <Card className="profile-summary"><div className="provider-avatar provider-avatar-large" aria-hidden="true">{user.name.split(' ').map((part) => part[0]).join('')}</div><div><span className="eyebrow">{t('account.signedInCustomer')}</span><h2>{user.name}</h2><p>{user.email}</p>{user.phone ? <span className="card-location">{user.phone}</span> : null}</div></Card>}
 
+      <nav className="account-identity-actions" aria-label="Customer quick actions">
+        <Link href="/messages">{tamil ? 'செய்திகள்' : 'Messages'}</Link>
+        <Link href="/notifications">{t('account.notifications')}</Link>
+        <Link href="/account/profile">{t('account.profile')}</Link>
+        <Link href="/account/settings">{t('account.settings')}</Link>
+      </nav>
+
       <WorkspaceSwitcher currentWorkspace="customer" />
       <ProviderReadinessSummary />
 
       <nav className="account-primary-nav account-secondary-actions" aria-label="More account shortcuts">
-        <Link href="/notifications" className="button button-secondary">{t('account.notifications')}</Link>
         <Link href="/saved-services" className="button button-secondary">{tamil ? 'சேமித்த சேவைகள்' : 'Saved services'}</Link>
         <Link href="/requirements" className="button button-secondary">{tamil ? 'தேவைகள்' : 'Requirements'}</Link>
         <Link href="/reviews" className="button button-secondary">{tamil ? 'மதிப்புரைகள்' : 'Reviews'}</Link>
         <Link href="/account/support" className="button button-secondary">{tamil ? 'Platform உதவி' : 'Platform support'}</Link>
         <Link href="/account/reports" className="button button-secondary">Safety reports</Link>
-        <Link href="/account/profile" className="button button-secondary">{t('account.profile')}</Link>
         <Button type="button" variant="quiet" className="account-sign-out" onClick={signOut}>{t('account.signOut')}</Button>
       </nav>
 
