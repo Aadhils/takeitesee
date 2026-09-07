@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Alert, Badge, Card } from '../../../components/ui/primitives';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
-import { setDelegatedAdminMembershipActive, updateDelegatedAdminScope } from './actions';
+import { grantExistingAdminAccess, setDelegatedAdminMembershipActive, updateDelegatedAdminScope } from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,13 +39,18 @@ export default async function SuperAdminAdminsPage({ searchParams }: { searchPar
   const params = await searchParams;
   const supabase = await createSupabaseServerClient();
 
-  const { data: membershipsData, error: membershipsError } = await supabase
-    .from('admin_memberships')
-    .select('id,user_id,active,created_at,updated_at')
-    .order('created_at', { ascending: true });
+  const [{ data: membershipsData, error: membershipsError }, { data: allApplicationsData, error: allApplicationsError }] = await Promise.all([
+    supabase
+      .from('admin_memberships')
+      .select('id,user_id,active,created_at,updated_at')
+      .order('created_at', { ascending: true }),
+    supabase.from('platform_applications').select('id,name').order('name', { ascending: true }),
+  ]);
   if (membershipsError) throw new Error(membershipsError.message);
+  if (allApplicationsError) throw new Error(allApplicationsError.message);
 
   const memberships = (membershipsData ?? []) as MembershipRow[];
+  const grantApplications = (allApplicationsData ?? []) as NamedRow[];
   const membershipIds = memberships.map((row) => row.id);
   const userIds = memberships.map((row) => row.user_id);
 
@@ -62,24 +67,22 @@ export default async function SuperAdminAdminsPage({ searchParams }: { searchPar
   if (scopesResult.error) throw new Error(scopesResult.error.message);
 
   const scopes = (scopesResult.data ?? []) as ScopeRow[];
-  const applicationIds = Array.from(new Set(scopes.map((row) => row.application_id).filter((id): id is string => Boolean(id))));
   const locationIds = Array.from(new Set(scopes.map((row) => row.location_id).filter((id): id is string => Boolean(id))));
   const categoryIds = Array.from(new Set(scopes.map((row) => row.category_id).filter((id): id is string => Boolean(id))));
   const serviceIds = Array.from(new Set(scopes.map((row) => row.service_id).filter((id): id is string => Boolean(id))));
 
-  const [applicationsResult, locationsResult, categoriesResult, servicesResult] = await Promise.all([
-    applicationIds.length ? supabase.from('platform_applications').select('id,name').in('id', applicationIds) : Promise.resolve({ data: [] as NamedRow[], error: null }),
+  const [locationsResult, categoriesResult, servicesResult] = await Promise.all([
     locationIds.length ? supabase.from('platform_locations').select('id,name').in('id', locationIds) : Promise.resolve({ data: [] as NamedRow[], error: null }),
     categoryIds.length ? supabase.from('platform_categories').select('id,name').in('id', categoryIds) : Promise.resolve({ data: [] as NamedRow[], error: null }),
     serviceIds.length ? supabase.from('services').select('id,name').in('id', serviceIds) : Promise.resolve({ data: [] as NamedRow[], error: null }),
   ]);
 
-  for (const result of [applicationsResult, locationsResult, categoriesResult, servicesResult]) {
+  for (const result of [locationsResult, categoriesResult, servicesResult]) {
     if (result.error) throw new Error(result.error.message);
   }
 
   const users = new Map(((usersResult.data ?? []) as UserRow[]).map((row) => [row.id, row]));
-  const applications = new Map(((applicationsResult.data ?? []) as NamedRow[]).map((row) => [row.id, row.name]));
+  const applications = new Map(grantApplications.map((row) => [row.id, row.name]));
   const locations = new Map(((locationsResult.data ?? []) as NamedRow[]).map((row) => [row.id, row.name]));
   const categories = new Map(((categoriesResult.data ?? []) as NamedRow[]).map((row) => [row.id, row.name]));
   const services = new Map(((servicesResult.data ?? []) as NamedRow[]).map((row) => [row.id, row.name]));
@@ -111,9 +114,49 @@ export default async function SuperAdminAdminsPage({ searchParams }: { searchPar
         <p><Link href="/super-admin">← Super Admin</Link> · <Link href="/super-admin/audit">Audit log →</Link></p>
       </section>
 
-      {params.updated ? <Alert tone="success" title="Admin permissions updated">The change is live and has been written to the Super Admin audit log.</Alert> : null}
+      {params.updated ? <Alert tone="success" title={params.updated === 'granted' ? 'Admin access granted' : 'Admin permissions updated'}>{params.updated === 'granted' ? 'The existing TakeItEsee account now has the selected Admin application scope.' : 'The change is live and has been written to the Super Admin audit log.'}</Alert> : null}
       {params.error === 'protected' ? <Alert tone="danger" title="Protected authority">Super Admin or self-access cannot be changed from this delegated control screen.</Alert> : null}
-      {params.error && params.error !== 'protected' ? <Alert tone="danger" title="Permission change failed">The requested Admin permission change could not be saved.</Alert> : null}
+      {params.error === 'account_or_application_not_found' ? <Alert tone="danger" title="Account or application not found">Use the email of an existing TakeItEsee account and select an available application.</Alert> : null}
+      {params.error === 'grant_input' ? <Alert tone="danger" title="Admin details required">Enter the account email and choose an application before granting access.</Alert> : null}
+      {params.error && !['protected', 'account_or_application_not_found', 'grant_input'].includes(params.error) ? <Alert tone="danger" title="Permission change failed">The requested Admin permission change could not be saved.</Alert> : null}
+
+      <Card>
+        <div className="admin-record-top">
+          <div>
+            <span className="eyebrow">Grant delegated access</span>
+            <h2>Add existing Admin</h2>
+            <p>Grant application-scoped Admin access to someone who already has a TakeItEsee account. This does not create or invite a new account.</p>
+          </div>
+          <Badge tone="info">Super Admin only</Badge>
+        </div>
+        <form action={grantExistingAdminAccess} className="admin-settings-grid">
+          <label className="field">
+            <span className="field-label">Account email</span>
+            <input className="field-control" type="email" name="email" autoComplete="email" required placeholder="admin@example.com" />
+            <span className="field-hint">The email must already belong to a TakeItEsee account.</span>
+          </label>
+          <label className="field">
+            <span className="field-label">Application scope</span>
+            <select className="field-control" name="application_id" required defaultValue="">
+              <option value="" disabled>Select application</option>
+              {grantApplications.map((application) => <option key={application.id} value={application.id}>{application.name}</option>)}
+            </select>
+            <span className="field-hint">Access is limited to this application; platform-wide Super Admin authority is never granted here.</span>
+          </label>
+          <label className="field">
+            <span className="field-label">Permission</span>
+            <select className="field-control" name="permission" defaultValue="view">
+              <option value="view">View only</option>
+              <option value="manage">View + Manage</option>
+            </select>
+            <span className="field-hint">You can change the saved permission later from the Admin record.</span>
+          </label>
+          <div className="admin-settings-save-row">
+            <div><strong>Existing-account grant</strong><span>No invitation email or new authentication user is created.</span></div>
+            <button className="button button-primary" type="submit" disabled={grantApplications.length === 0}>Grant Admin access</button>
+          </div>
+        </form>
+      </Card>
 
       <section className="dashboard-grid" aria-label="Admin access summary">
         <article className="card"><span className="eyebrow">Active Admins</span><h2>{activeCount}</h2></article>
