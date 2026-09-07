@@ -4,6 +4,7 @@ import { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import PublicProviderProfile from '../../../components/detail/PublicProviderProfile';
 import ProviderProfileShareAction from '../../../components/detail/ProviderProfileShareAction';
+import BusinessStorefrontQuickBook from '../../../components/detail/BusinessStorefrontQuickBook';
 
 const siteUrl = 'https://www.takeitesee.com';
 
@@ -127,6 +128,16 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
     },
   } : null;
 
+  const storefrontServices = services.map((service: any) => ({
+    id: String(service.id),
+    name: String(service.name || ''),
+    description: String(service.description || ''),
+    base_price: service.base_price,
+    currency: service.currency || 'INR',
+    duration_minutes: service.duration_minutes ? Number(service.duration_minutes) : null,
+    location: service.location ? String(service.location) : null,
+  }));
+
   return <>
     {structuredData ? <script
       type="application/ld+json"
@@ -135,6 +146,11 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
     <div className="container" style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '1rem' }}>
       <ProviderProfileShareAction providerId={providerId} providerName={business.name || ''} kind="business" />
     </div>
+    <BusinessStorefrontQuickBook
+      businessName={business.name || 'Verified business'}
+      businessLocation={business.location || ''}
+      services={storefrontServices}
+    />
     <PublicProviderProfile
       kind="business"
       provider={{
@@ -151,13 +167,13 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
         grievance_email: business.grievance_email || '',
         grievance_phone: business.grievance_phone || '',
       }}
-      services={services.map((service: any) => ({
-        id: String(service.id),
-        name: String(service.name || ''),
-        description: String(service.description || ''),
+      services={storefrontServices.map((service) => ({
+        id: service.id,
+        name: service.name,
+        description: service.description,
         base_price: service.base_price,
-        currency: service.currency || 'INR',
-        duration_minutes: service.duration_minutes ? Number(service.duration_minutes) : null,
+        currency: service.currency,
+        duration_minutes: service.duration_minutes,
       }))}
     />
   </>;
