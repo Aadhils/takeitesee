@@ -25,27 +25,13 @@ export default function AuthenticatedAccount() {
       let currentUser: User | undefined;
       if (isSupabaseConfigured()) {
         const current = await getSupabaseBrowserUser();
-        if (current) {
-          currentUser = {
-            id: current.id,
-            name: current.user_metadata?.name ?? current.email ?? 'Account',
-            email: current.email ?? '',
-            phone: current.user_metadata?.phone,
-            role: 'customer',
-            createdAt: current.created_at,
-            updatedAt: current.updated_at ?? current.created_at,
-          };
-        }
-      } else {
-        currentUser = localDevelopmentAuthAdapter.getCurrentUser();
-      }
+        if (current) currentUser = { id: current.id, name: current.user_metadata?.name ?? current.email ?? 'Account', email: current.email ?? '', phone: current.user_metadata?.phone, role: 'customer', createdAt: current.created_at, updatedAt: current.updated_at ?? current.created_at };
+      } else currentUser = localDevelopmentAuthAdapter.getCurrentUser();
       if (cancelled) return;
       setUser(currentUser);
       if (!currentUser) return;
       try {
-        const liveBookings = isSupabaseConfigured()
-          ? await getBookingsThroughConfiguredRepository(currentUser.id)
-          : getBookingsForCustomer(currentUser.id);
+        const liveBookings = isSupabaseConfigured() ? await getBookingsThroughConfiguredRepository(currentUser.id) : getBookingsForCustomer(currentUser.id);
         if (!cancelled) setBookings(liveBookings);
       } catch (error) {
         if (!cancelled) setBookingError(error instanceof Error ? error.message : t('account.loadBookingFallback'));
@@ -62,56 +48,37 @@ export default function AuthenticatedAccount() {
     total: bookings.length,
   }), [bookings]);
 
-  if (!user) {
-    return (
-      <div className="account-page-heading">
-        <span className="eyebrow">{t('auth.account')}</span>
-        <h1>{t('account.yourAccount')}</h1>
-        <p>{t('account.signInIntro')}</p>
-        <div className="account-actions">
-          <Link href="/login" className="button button-primary">{t('auth.signIn')}</Link>
-          <Link href="/signup" className="button button-secondary">{t('auth.createAccount')}</Link>
-        </div>
-      </div>
-    );
-  }
+  if (!user) return <div className="account-page-heading"><span className="eyebrow">{t('auth.account')}</span><h1>{t('account.yourAccount')}</h1><p>{t('account.signInIntro')}</p><div className="account-actions"><Link href="/login" className="button button-primary">{t('auth.signIn')}</Link><Link href="/signup" className="button button-secondary">{t('auth.createAccount')}</Link></div></div>;
 
   const signOut = async () => {
-    if (isSupabaseConfigured()) await signOutWithSupabase();
-    else localDevelopmentAuthAdapter.signOut();
+    if (isSupabaseConfigured()) await signOutWithSupabase(); else localDevelopmentAuthAdapter.signOut();
     setUser(undefined);
   };
 
   return (
-    <div className="account-page-heading">
+    <div className="account-page-heading customer-social-dashboard">
       <span className="eyebrow">{t('auth.account')}</span>
       <h1>{t('account.welcome')}, {user.name.split(' ')[0]}.</h1>
       <p>{isSupabaseConfigured() ? t('account.productionSession') : t('account.localSession')}</p>
 
-      {isSupabaseConfigured() ? <RoleIdentityMediaHeader
-        context="customer"
-        displayName={user.name}
-        subtitle={tamil ? 'Personal customer account' : 'Personal customer account'}
-        meta={[user.email, user.phone].filter(Boolean).join(' · ')}
-      /> : <Card className="profile-summary">
-        <div className="provider-avatar provider-avatar-large" aria-hidden="true">{user.name.split(' ').map((part) => part[0]).join('')}</div>
-        <div><span className="eyebrow">{t('account.signedInCustomer')}</span><h2>{user.name}</h2><p>{user.email}</p>{user.phone ? <span className="card-location">{user.phone}</span> : null}</div>
-      </Card>}
+      {isSupabaseConfigured() ? <RoleIdentityMediaHeader context="customer" displayName={user.name} subtitle="Personal customer account" meta={[user.email, user.phone].filter(Boolean).join(' · ')} /> : <Card className="profile-summary"><div className="provider-avatar provider-avatar-large" aria-hidden="true">{user.name.split(' ').map((part) => part[0]).join('')}</div><div><span className="eyebrow">{t('account.signedInCustomer')}</span><h2>{user.name}</h2><p>{user.email}</p>{user.phone ? <span className="card-location">{user.phone}</span> : null}</div></Card>}
+
+      <nav className="account-identity-actions" aria-label="Customer quick actions">
+        <Link href="/messages">{tamil ? 'செய்திகள்' : 'Messages'}</Link>
+        <Link href="/notifications">{t('account.notifications')}</Link>
+        <Link href="/account/profile">{t('account.profile')}</Link>
+        <Link href="/account/settings">{t('account.settings')}</Link>
+      </nav>
 
       <WorkspaceSwitcher currentWorkspace="customer" />
       <ProviderReadinessSummary />
 
-      <nav className="account-primary-nav" aria-label="Account shortcuts">
-        <Link href="/bookings" className="button button-primary">{t('account.myBookings')}</Link>
-        <Link href="/notifications" className="button button-secondary">{t('account.notifications')}</Link>
+      <nav className="account-primary-nav account-secondary-actions" aria-label="More account shortcuts">
         <Link href="/saved-services" className="button button-secondary">{tamil ? 'சேமித்த சேவைகள்' : 'Saved services'}</Link>
         <Link href="/requirements" className="button button-secondary">{tamil ? 'தேவைகள்' : 'Requirements'}</Link>
-        <Link href="/messages" className="button button-secondary">{tamil ? 'செய்திகள்' : 'Messages'}</Link>
         <Link href="/reviews" className="button button-secondary">{tamil ? 'மதிப்புரைகள்' : 'Reviews'}</Link>
         <Link href="/account/support" className="button button-secondary">{tamil ? 'Platform உதவி' : 'Platform support'}</Link>
-        <Link href="/account/reports" className="button button-secondary">{tamil ? 'Safety reports' : 'Safety reports'}</Link>
-        <Link href="/account/profile" className="button button-secondary">{t('account.profile')}</Link>
-        <Link href="/account/settings" className="button button-secondary">{t('account.settings')}</Link>
+        <Link href="/account/reports" className="button button-secondary">Safety reports</Link>
         <Button type="button" variant="quiet" className="account-sign-out" onClick={signOut}>{t('account.signOut')}</Button>
       </nav>
 

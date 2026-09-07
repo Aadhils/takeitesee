@@ -13,6 +13,12 @@
 .account-primary-nav .button { flex:0 0 auto; min-height:40px; padding:9px 13px; white-space:nowrap; }
 .account-primary-nav .account-sign-out { margin-left:auto; }
 
+/* Customer identity-first controls. The global AppShell remains the only fixed mobile navigation. */
+.account-identity-actions { position:sticky; top:88px; z-index:15; display:flex; align-items:center; gap:7px; overflow-x:auto; margin:12px 0 18px; padding:6px; border:1px solid var(--color-border); border-radius:14px; background:rgb(255 255 255 / 94%); box-shadow:var(--shadow-sm); backdrop-filter:blur(12px); scrollbar-width:none; }
+.account-identity-actions::-webkit-scrollbar { display:none; }
+.account-identity-actions a { flex:0 0 auto; min-height:38px; display:inline-flex; align-items:center; justify-content:center; padding:8px 12px; border-radius:10px; color:var(--color-ink-muted); font-size:.8rem; font-weight:750; white-space:nowrap; }
+.account-identity-actions a:hover { background:var(--color-selected); color:var(--color-primary); }
+
 /* Final homepage calibration: brand first, supporting copy second, search third. */
 .hero-grid { min-height: 500px; padding-top: clamp(28px, 4vw, 54px); }
 .hero-logo-wrap { margin-bottom: 6px; }
@@ -49,6 +55,8 @@
   .dashboard-stat-grid > .card { min-height:132px; }
   .account-primary-nav { margin-top:12px; padding:5px; }
   .account-primary-nav .account-sign-out { margin-left:0; }
+  .account-identity-actions { position:static; margin-top:10px; padding:5px; }
+  .account-identity-actions a { min-height:36px; padding:7px 11px; font-size:.76rem; }
 
   .hero-grid { min-height:auto; padding-top:30px; }
   .hero-logo { width:184px; }
