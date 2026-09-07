@@ -38,8 +38,13 @@ export default async function AdminProvidersRoute({ searchParams }: { searchPara
   const filteredProviders = providers.filter((provider) => providerType === 'all' || provider.type.toLowerCase() === providerType);
   const title = providerType === 'professional' ? 'Professional providers' : providerType === 'business' ? 'Business providers' : 'All providers';
   const emptyTitle = providerType === 'professional' ? 'No scoped Professionals' : providerType === 'business' ? 'No scoped Businesses' : 'No scoped providers';
+  const activeProviderNav = providerType === 'professional'
+    ? '/admin/providers?type=professional'
+    : providerType === 'business'
+      ? '/admin/providers?type=business'
+      : '/admin/providers';
 
-  return <AdminLiveShell active="/admin/providers">
+  return <AdminLiveShell active={activeProviderNav}>
     <AdminLiveHeading eyebrow={<AdminLiveText en="Provider workspace" ta="Provider workspace" />} title={title} description={<AdminLiveText en="Review Professional and Business supply inside this administrator’s assigned Supabase scope." ta="இந்த admin-ன் assigned Supabase scope-ல் Professional மற்றும் Business providers-ஐ review செய்யவும்." />} />
     <div className="admin-tab-row" role="navigation" aria-label="Provider type">
       <Link href="/admin/providers" className={providerType === 'all' ? 'button button-primary' : 'button button-secondary'}>All</Link>
