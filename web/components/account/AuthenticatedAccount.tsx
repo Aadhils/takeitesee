@@ -54,6 +54,41 @@ export default function AuthenticatedAccount() {
     setUser(undefined);
   };
 
+  const navigationGroups = [
+    {
+      id: 'activity',
+      eyebrow: tamil ? 'என் செயல்பாடு' : 'My activity',
+      title: tamil ? 'Bookings & conversations' : 'Bookings & conversations',
+      links: [
+        { href: '/bookings', label: tamil ? 'என் Bookings' : 'My bookings' },
+        { href: '/messages', label: tamil ? 'செய்திகள்' : 'Messages' },
+        { href: '/notifications', label: t('account.notifications') },
+        { href: '/reviews', label: tamil ? 'மதிப்புரைகள்' : 'Reviews' },
+      ],
+    },
+    {
+      id: 'discover',
+      eyebrow: tamil ? 'தேடு & திட்டமிடு' : 'Discover & plan',
+      title: tamil ? 'சேவைகள் & தேவைகள்' : 'Services & requirements',
+      links: [
+        { href: '/saved-services', label: tamil ? 'சேமித்த சேவைகள்' : 'Saved services' },
+        { href: '/requirements', label: tamil ? 'என் தேவைகள்' : 'My requirements' },
+        { href: '/explore', label: tamil ? 'சேவைகள் தேடு' : 'Explore services' },
+      ],
+    },
+    {
+      id: 'account',
+      eyebrow: tamil ? 'கணக்கு & உதவி' : 'Account & help',
+      title: tamil ? 'Profile, settings & support' : 'Profile, settings & support',
+      links: [
+        { href: '/account/profile', label: t('account.profile') },
+        { href: '/account/settings', label: t('account.settings') },
+        { href: '/account/support', label: tamil ? 'Platform உதவி' : 'Platform support' },
+        { href: '/account/reports', label: tamil ? 'Safety reports' : 'Safety reports' },
+      ],
+    },
+  ];
+
   return (
     <div className="account-page-heading customer-social-dashboard">
       <span className="eyebrow">{t('auth.account')}</span>
@@ -62,28 +97,19 @@ export default function AuthenticatedAccount() {
 
       {isSupabaseConfigured() ? <RoleIdentityMediaHeader context="customer" displayName={user.name} subtitle="Personal customer account" meta={[user.email, user.phone].filter(Boolean).join(' · ')} /> : <Card className="profile-summary"><div className="provider-avatar provider-avatar-large" aria-hidden="true">{user.name.split(' ').map((part) => part[0]).join('')}</div><div><span className="eyebrow">{t('account.signedInCustomer')}</span><h2>{user.name}</h2><p>{user.email}</p>{user.phone ? <span className="card-location">{user.phone}</span> : null}</div></Card>}
 
-      <nav className="account-identity-actions" aria-label="Customer quick actions">
-        <Link href="/messages">{tamil ? 'செய்திகள்' : 'Messages'}</Link>
-        <Link href="/notifications">{t('account.notifications')}</Link>
-        <Link href="/account/profile">{t('account.profile')}</Link>
-        <Link href="/account/settings">{t('account.settings')}</Link>
-      </nav>
-
       <WorkspaceSwitcher currentWorkspace="customer" />
 
-      <nav className="account-secondary-actions" aria-label="More account shortcuts">
-        <Link href="/saved-services" className="account-action-chip">{tamil ? 'சேமித்த சேவைகள்' : 'Saved'}</Link>
-        <Link href="/requirements" className="account-action-chip">{tamil ? 'தேவைகள்' : 'Requirements'}</Link>
-        <Link href="/reviews" className="account-action-chip">{tamil ? 'மதிப்புரைகள்' : 'Reviews'}</Link>
-        <details className="account-more-actions">
-          <summary>{tamil ? 'மேலும்' : 'More'}</summary>
-          <div className="account-more-menu">
-            <Link href="/account/support">{tamil ? 'Platform உதவி' : 'Platform support'}</Link>
-            <Link href="/account/reports">{tamil ? 'Safety reports' : 'Safety reports'}</Link>
-            <Button type="button" variant="quiet" className="account-sign-out" onClick={signOut}>{t('account.signOut')}</Button>
-          </div>
-        </details>
-      </nav>
+      <section className="dashboard-grid" aria-label={tamil ? 'Customer வழிசெலுத்தல்' : 'Customer navigation'}>
+        {navigationGroups.map((group) => (
+          <Card key={group.id}>
+            <span className="eyebrow">{group.eyebrow}</span>
+            <h2>{group.title}</h2>
+            <nav className="account-secondary-actions" aria-label={group.eyebrow}>
+              {group.links.map((link) => <Link href={link.href} className="account-action-chip" key={link.href}>{link.label}</Link>)}
+            </nav>
+          </Card>
+        ))}
+      </section>
 
       <div className="dashboard-stat-grid">
         <Card><span className="eyebrow">{t('account.upcoming')}</span><h2>{summary.upcoming}</h2><p>{t('account.upcomingDetail')}</p></Card>
@@ -92,6 +118,10 @@ export default function AuthenticatedAccount() {
         <Card><span className="eyebrow">{t('account.total')}</span><h2>{summary.total}</h2><p>{t('account.totalDetail')}</p></Card>
       </div>
       {bookingError ? <p role="alert" style={{ color: '#b42318' }}>{t('account.bookingUnavailable')}: {bookingError}</p> : null}
+
+      <div className="account-actions">
+        <Button type="button" variant="quiet" className="account-sign-out" onClick={signOut}>{t('account.signOut')}</Button>
+      </div>
     </div>
   );
 }
