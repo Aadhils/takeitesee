@@ -4,6 +4,47 @@ import { createSupabaseServerClient } from '../../lib/supabase/server';
 import { productionAuthProvider } from '../../server/auth/session';
 import { LocaleText } from '../../components/i18n/LocaleText';
 
+const metricGridStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+  gap: '14px',
+} as const;
+
+const workspaceGridStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+  gap: '18px',
+  alignItems: 'start',
+} as const;
+
+const actionGridStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+  gap: '12px',
+} as const;
+
+const metricCardStyle = {
+  padding: '18px 20px',
+  minHeight: '112px',
+  display: 'grid',
+  alignContent: 'space-between',
+  gap: '12px',
+} as const;
+
+const panelStyle = {
+  padding: '24px',
+  display: 'grid',
+  gap: '20px',
+} as const;
+
+const actionCardStyle = {
+  padding: '18px',
+  minHeight: '152px',
+  display: 'grid',
+  alignContent: 'start',
+  gap: '8px',
+} as const;
+
 export default async function SuperAdminPage() {
   const session = await productionAuthProvider.getSession();
   if (!session) redirect('/account');
@@ -32,59 +73,67 @@ export default async function SuperAdminPage() {
   ] as const;
 
   return <main className="container section-stack">
-    <section className="page-intro">
+    <section className="page-intro" style={{ maxWidth: '760px' }}>
       <span className="eyebrow"><LocaleText en="Platform authority" ta="Platform authority" /></span>
       <h1>Super Admin</h1>
       <p><LocaleText en="Govern administrators, delegated permissions, auditability, and platform configuration. Day-to-day Provider reviews and marketplace operations belong in the Admin workspace." ta="Admins, delegated permissions, audit மற்றும் platform configuration-ஐ நிர்வகிக்கவும். Provider reviews மற்றும் day-to-day marketplace operations Admin workspace-ல் நடைபெறும்." /></p>
     </section>
 
-    <section className="dashboard-grid" aria-label="Super Admin governance overview">
-      {metrics.map(([en, ta, value]) => <article className="card" key={en}><span className="eyebrow"><LocaleText en={en} ta={ta} /></span><h2>{value}</h2></article>)}
+    <section style={metricGridStyle} aria-label="Super Admin governance overview">
+      {metrics.map(([en, ta, value]) => <article className="card" style={metricCardStyle} key={en}>
+        <span className="eyebrow"><LocaleText en={en} ta={ta} /></span>
+        <h2 style={{ margin: 0, fontSize: '2rem' }}>{value}</h2>
+      </article>)}
     </section>
 
-    <section className="card section-stack">
+    <section style={workspaceGridStyle} aria-label="Super Admin workspaces">
+      <article className="card" style={panelStyle}>
+        <div>
+          <span className="eyebrow"><LocaleText en="Primary responsibility" ta="Primary responsibility" /></span>
+          <h2 style={{ marginBottom: '8px' }}><LocaleText en="Admin governance" ta="Admin governance" /></h2>
+          <p><LocaleText en="Control who has Admin access, what they can view or manage, and keep every protected change accountable." ta="யாருக்கு Admin access வேண்டும், எந்த scopes-ஐ view/manage செய்யலாம் மற்றும் protected changes அனைத்தையும் audit செய்ய இங்கிருந்து கட்டுப்படுத்தவும்." /></p>
+        </div>
+        <div style={actionGridStyle}>
+          <div className="card" style={actionCardStyle}>
+            <span className="eyebrow"><LocaleText en="People & permissions" ta="People & permissions" /></span>
+            <h3 style={{ margin: 0 }}><LocaleText en="Manage delegated Admins" ta="Delegated Admins நிர்வகி" /></h3>
+            <p style={{ margin: 0 }}><LocaleText en="Enable, revoke, and maintain view/manage scopes." ta="Admin access enable/revoke செய்து view/manage scopes maintain செய்யவும்." /></p>
+            <p style={{ margin: 'auto 0 0' }}><Link href="/super-admin/admins"><LocaleText en="Open Admin controls →" ta="Admin controls திற →" /></Link></p>
+          </div>
+          <div className="card" style={actionCardStyle}>
+            <span className="eyebrow"><LocaleText en="Accountability" ta="Accountability" /></span>
+            <h3 style={{ margin: 0 }}><LocaleText en="Review Admin audit" ta="Admin audit review செய்" /></h3>
+            <p style={{ margin: 0 }}><LocaleText en="Review protected administrative changes and platform oversight." ta="Protected administrative changes மற்றும் platform oversight-ஐ review செய்யவும்." /></p>
+            <p style={{ margin: 'auto 0 0' }}><Link href="/super-admin/audit"><LocaleText en="Open audit log →" ta="Audit log திற →" /></Link></p>
+          </div>
+        </div>
+      </article>
+
+      <article className="card" style={panelStyle}>
+        <div>
+          <span className="eyebrow"><LocaleText en="Platform governance" ta="Platform governance" /></span>
+          <h2 style={{ marginBottom: '8px' }}><LocaleText en="Configuration & protected requests" ta="Configuration & protected requests" /></h2>
+          <p><LocaleText en="Manage global marketplace structure and platform-level privacy or support governance." ta="Global marketplace structure மற்றும் platform-level privacy/support governance-ஐ நிர்வகிக்கவும்." /></p>
+        </div>
+        <div style={actionGridStyle}>
+          <div className="card" style={actionCardStyle}><h3 style={{ margin: 0 }}><LocaleText en="Applications" ta="Applications" /></h3><p style={{ margin: 'auto 0 0' }}><Link href="/super-admin/applications"><LocaleText en="Manage applications →" ta="Applications நிர்வகி →" /></Link></p></div>
+          <div className="card" style={actionCardStyle}><h3 style={{ margin: 0 }}><LocaleText en="Locations & markets" ta="Locations & markets" /></h3><p style={{ margin: 'auto 0 0' }}><Link href="/super-admin/locations"><LocaleText en="Manage locations →" ta="Locations நிர்வகி →" /></Link></p></div>
+          <div className="card" style={actionCardStyle}><h3 style={{ margin: 0 }}><LocaleText en="Categories" ta="Categories" /></h3><p style={{ margin: 'auto 0 0' }}><Link href="/super-admin/categories"><LocaleText en="Manage categories →" ta="Categories நிர்வகி →" /></Link></p></div>
+          <div className="card" style={actionCardStyle}><span className="eyebrow"><LocaleText en="Pending" ta="Pending" /> · {privacyRequests.count ?? 0}</span><h3 style={{ margin: 0 }}><LocaleText en="Privacy requests" ta="Privacy requests" /></h3><p style={{ margin: 'auto 0 0' }}><Link href="/super-admin/privacy-requests"><LocaleText en="Review privacy →" ta="Privacy review செய் →" /></Link></p></div>
+          <div className="card" style={actionCardStyle}><span className="eyebrow"><LocaleText en="Pending" ta="Pending" /> · {supportRequests.count ?? 0}</span><h3 style={{ margin: 0 }}><LocaleText en="Platform support" ta="Platform support" /></h3><p style={{ margin: 'auto 0 0' }}><Link href="/super-admin/support-requests"><LocaleText en="Review support →" ta="Support review செய் →" /></Link></p></div>
+        </div>
+      </article>
+    </section>
+
+    <section className="card" style={{ ...panelStyle, gridTemplateColumns: 'minmax(0, 1fr) auto', alignItems: 'center' }}>
       <div>
-        <span className="eyebrow"><LocaleText en="Primary responsibility" ta="Primary responsibility" /></span>
-        <h2><LocaleText en="Admin governance" ta="Admin governance" /></h2>
-        <p><LocaleText en="Create the operating boundary by controlling who has Admin access, which scopes they can view or manage, and reviewing the audit trail for protected changes." ta="யாருக்கு Admin access வேண்டும், எந்த scopes-ஐ view/manage செய்யலாம், protected changes audit trail என்ன என்பதை இங்கிருந்து கட்டுப்படுத்தவும்." /></p>
+        <span className="eyebrow"><LocaleText en="Operations handoff" ta="Operations handoff" /></span>
+        <h2 style={{ marginBottom: '8px' }}><LocaleText en="Provider operations live in Admin" ta="Provider operations Admin-ல்" /></h2>
+        <p style={{ marginBottom: 0 }}><LocaleText en="Provider applications, verification, management, trust, and launch review belong to Admin. Super Admin enters only for oversight or emergency intervention." ta="Provider applications, verification, management, trust மற்றும் launch review Admin பொறுப்பு. Oversight அல்லது emergency intervention தேவைப்பட்டால் மட்டும் Super Admin அங்கு செல்லும்." /></p>
       </div>
-      <div className="dashboard-grid">
-        <article className="card">
-          <span className="eyebrow"><LocaleText en="People & permissions" ta="People & permissions" /></span>
-          <h3><LocaleText en="Manage delegated Admins" ta="Delegated Admins நிர்வகி" /></h3>
-          <p><LocaleText en="Enable or revoke Admin access and maintain view/manage scope permissions." ta="Admin access enable/revoke செய்து view/manage scope permissions-ஐ maintain செய்யவும்." /></p>
-          <p><Link href="/super-admin/admins"><LocaleText en="Open Admin controls →" ta="Admin controls திற →" /></Link></p>
-        </article>
-        <article className="card">
-          <span className="eyebrow"><LocaleText en="Accountability" ta="Accountability" /></span>
-          <h3><LocaleText en="Review Admin audit" ta="Admin audit review செய்" /></h3>
-          <p><LocaleText en="See protected administrative changes and retain platform-level oversight." ta="Protected administrative changes-ஐ பார்த்து platform-level oversight வைத்திருக்கவும்." /></p>
-          <p><Link href="/super-admin/audit"><LocaleText en="Open audit log →" ta="Audit log திற →" /></Link></p>
-        </article>
-      </div>
+      <Link className="button button-secondary" href="/admin"><LocaleText en="Open Admin operations" ta="Admin operations திற" /></Link>
     </section>
 
-    <section className="card section-stack">
-      <div>
-        <span className="eyebrow"><LocaleText en="Platform governance" ta="Platform governance" /></span>
-        <h2><LocaleText en="Configuration & protected requests" ta="Configuration & protected requests" /></h2>
-        <p><LocaleText en="Keep global marketplace structure and platform-level privacy/support governance separate from routine Provider operations." ta="Global marketplace structure மற்றும் platform-level privacy/support governance-ஐ routine Provider operations-லிருந்து தனியாக வைத்திருக்கவும்." /></p>
-      </div>
-      <div className="dashboard-grid">
-        <article className="card"><h3><LocaleText en="Applications" ta="Applications" /></h3><p><Link href="/super-admin/applications"><LocaleText en="Manage platform applications →" ta="Platform applications நிர்வகி →" /></Link></p></article>
-        <article className="card"><h3><LocaleText en="Locations & markets" ta="Locations & markets" /></h3><p><Link href="/super-admin/locations"><LocaleText en="Manage locations →" ta="Locations நிர்வகி →" /></Link></p></article>
-        <article className="card"><h3><LocaleText en="Categories" ta="Categories" /></h3><p><Link href="/super-admin/categories"><LocaleText en="Manage categories →" ta="Categories நிர்வகி →" /></Link></p></article>
-        <article className="card"><h3><LocaleText en="Privacy requests" ta="Privacy requests" /> · {privacyRequests.count ?? 0}</h3><p><Link href="/super-admin/privacy-requests"><LocaleText en="Review privacy governance →" ta="Privacy governance review செய் →" /></Link></p></article>
-        <article className="card"><h3><LocaleText en="Platform support" ta="Platform support" /> · {supportRequests.count ?? 0}</h3><p><Link href="/super-admin/support-requests"><LocaleText en="Review platform support →" ta="Platform support review செய் →" /></Link></p></article>
-      </div>
-    </section>
-
-    <section className="card">
-      <span className="eyebrow"><LocaleText en="Operations handoff" ta="Operations handoff" /></span>
-      <h2><LocaleText en="Provider operations now live in Admin" ta="Provider operations இப்போது Admin-ல்" /></h2>
-      <p><LocaleText en="Provider applications, Provider verification, Provider management, trust work, and service launch review are operational Admin responsibilities. Super Admin keeps platform authority and can enter Admin only when oversight or emergency intervention is needed." ta="Provider applications, verification, Provider management, trust மற்றும் service launch review ஆகியவை Admin operational responsibilities. Super Admin platform authority-ஐ வைத்திருந்து oversight அல்லது emergency intervention தேவைப்பட்டால் மட்டும் Admin workspace-க்கு செல்லலாம்." /></p>
-      <p><Link href="/admin"><LocaleText en="Open Admin operations →" ta="Admin operations திற →" /></Link></p>
-      <p className="muted"><LocaleText en="Signed in as platform authority" ta="Platform authority ஆக signed in" /> {session.user_id.slice(0, 8)}…</p>
-    </section>
+    <p className="muted" style={{ marginTop: '-8px' }}><LocaleText en="Signed in as platform authority" ta="Platform authority ஆக signed in" /> {session.user_id.slice(0, 8)}…</p>
   </main>;
 }
