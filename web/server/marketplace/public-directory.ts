@@ -21,6 +21,9 @@ export type PublicCategoryEntry = {
   service_count: number;
 };
 
+const directoryPageSize = 1000;
+const maxDirectoryServiceRows = 15000;
+
 function publicSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -61,21 +64,56 @@ function hasProfessionalBasics(provider: any) {
     && String(provider?.service_area || '').trim().length >= 2;
 }
 
+async function loadPublicCategoryRows(supabase: any) {
+  const rows: any[] = [];
+
+  for (let start = 0; start < maxDirectoryServiceRows; start += directoryPageSize) {
+    const { data, error } = await supabase
+      .from('services')
+      .select('id,category,provider_type,professional_profiles(verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone),businesses(verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone)')
+      .eq('status', 'active')
+      .eq('active', true)
+      .order('id')
+      .range(start, Math.min(start + directoryPageSize - 1, maxDirectoryServiceRows - 1));
+
+    if (error) return null;
+    rows.push(...(data ?? []));
+    if (!data || data.length < directoryPageSize) break;
+  }
+
+  return rows;
+}
+
+async function loadPublicBusinessRows(supabase: any) {
+  const rows: any[] = [];
+
+  for (let start = 0; start < maxDirectoryServiceRows; start += directoryPageSize) {
+    const { data, error } = await supabase
+      .from('services')
+      .select('id,base_price,currency,category,business_id,businesses(id,name,description,location,verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone)')
+      .eq('provider_type', 'business')
+      .eq('status', 'active')
+      .eq('active', true)
+      .order('id')
+      .range(start, Math.min(start + directoryPageSize - 1, maxDirectoryServiceRows - 1));
+
+    if (error) return null;
+    rows.push(...(data ?? []));
+    if (!data || data.length < directoryPageSize) break;
+  }
+
+  return rows;
+}
+
 export async function loadPublicCategories(): Promise<PublicCategoryEntry[] | null> {
   const supabase = publicSupabase();
   if (!supabase) return null;
 
-  const { data: rows, error } = await supabase
-    .from('services')
-    .select('category,provider_type,professional_profiles(verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone),businesses(verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone)')
-    .eq('status', 'active')
-    .eq('active', true)
-    .order('category');
-
-  if (error) return null;
+  const rows = await loadPublicCategoryRows(supabase);
+  if (!rows) return null;
 
   const categories = new Map<string, PublicCategoryEntry>();
-  for (const row of rows ?? []) {
+  for (const row of rows) {
     const typedRow = row as any;
     const provider = typedRow.provider_type === 'business'
       ? relation(typedRow.businesses)
@@ -97,18 +135,11 @@ export async function loadPublicBusinesses(): Promise<PublicDirectoryEntry[] | n
   const supabase = publicSupabase();
   if (!supabase) return null;
 
-  const { data: rows, error } = await supabase
-    .from('services')
-    .select('id,base_price,currency,category,business_id,businesses(id,name,description,location,verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone)')
-    .eq('provider_type', 'business')
-    .eq('status', 'active')
-    .eq('active', true)
-    .order('id');
-
-  if (error) return null;
+  const rows = await loadPublicBusinessRows(supabase);
+  if (!rows) return null;
 
   const entries = new Map<string, PublicDirectoryEntry & { category_set: Set<string> }>();
-  for (const row of rows ?? []) {
+  for (const row of rows) {
     const business: any = relation((row as any).businesses);
     if (!business?.verified || !business.id || !hasMarketplaceDisclosure(business)) continue;
 
