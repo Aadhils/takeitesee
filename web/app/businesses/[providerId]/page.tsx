@@ -1,63 +1,14 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { cache } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import PublicProviderProfile from '../../../components/detail/PublicProviderProfile';
-import ProviderProfileShareAction from '../../../components/detail/ProviderProfileShareAction';
-import BusinessStorefrontQuickBook from '../../../components/detail/BusinessStorefrontQuickBook';
-
-const siteUrl = 'https://www.takeitesee.com';
-
-function publicSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return null;
-  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
-}
-
-function seoText(value: string | null | undefined, fallback: string, max = 160) {
-  const text = (value || fallback).replace(/\s+/g, ' ').trim();
-  if (text.length <= max) return text;
-  return `${text.slice(0, max - 1).trimEnd()}…`;
-}
-
-function hasMarketplaceDisclosure(provider: any) {
-  return Boolean(
-    provider?.legal_name?.trim() && provider?.principal_address?.trim() && provider?.public_contact_email?.trim() && provider?.public_contact_phone?.trim()
-    && provider?.grievance_officer_name?.trim() && provider?.grievance_officer_designation?.trim() && provider?.grievance_email?.trim() && provider?.grievance_phone?.trim(),
-  );
-}
-
-const loadBusiness = cache(async (providerId: string) => {
-  const supabase = publicSupabase();
-  if (!supabase) return null;
-
-  const { data: business, error } = await supabase
-    .from('businesses')
-    .select('id,name,description,location,verified,legal_name,principal_address,public_contact_email,public_contact_phone,website_url,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone')
-    .eq('id', providerId)
-    .eq('verified', true)
-    .maybeSingle();
-  if (error || !business || !hasMarketplaceDisclosure(business)) return null;
-
-  const { data: services, error: servicesError } = await supabase
-    .from('services')
-    .select('id,name,description,base_price,currency,duration_minutes,location')
-    .eq('business_id', providerId)
-    .eq('provider_type', 'business')
-    .eq('status', 'active')
-    .eq('active', true)
-    .order('name');
-
-  return {
-    business: business as any,
-    services: servicesError ? [] : (services ?? []) as any[],
-  };
-});
+import BusinessPublicProfileContent, {
+  loadPublicBusiness,
+  publicBusinessSeoText,
+  publicSiteUrl,
+} from '../../../components/detail/BusinessPublicProfileContent';
 
 export async function generateMetadata({ params }: { params: Promise<{ providerId: string }> }): Promise<Metadata> {
   const { providerId } = await params;
-  const record = await loadBusiness(providerId);
+  const record = await loadPublicBusiness(providerId);
 
   if (!record) {
     return {
@@ -68,13 +19,13 @@ export async function generateMetadata({ params }: { params: Promise<{ providerI
 
   const { business, services } = record;
   const location = business.location || '';
-  const pageTitle = `${business.name}${location ? ` in ${location}` : ''}`;
+  const pageTitle = `${business.name || 'Verified business'}${location ? ` in ${location}` : ''}`;
   const socialTitle = `${pageTitle} | TakeItEsee`;
-  const description = seoText(
+  const description = publicBusinessSeoText(
     business.description,
-    `Explore services from ${business.name}${location ? ` in ${location}` : ''} on TakeItEsee.`,
+    `Explore services from ${business.name || 'this business'}${location ? ` in ${location}` : ''} on TakeItEsee.`,
   );
-  const canonical = `${siteUrl}/businesses/${encodeURIComponent(providerId)}`;
+  const canonical = `${publicSiteUrl}/businesses/${encodeURIComponent(providerId)}`;
   const indexable = services.length > 0;
 
   return {
@@ -100,81 +51,11 @@ export async function generateMetadata({ params }: { params: Promise<{ providerI
 
 export default async function BusinessProfilePage({ params }: { params: Promise<{ providerId: string }> }) {
   const { providerId } = await params;
-  const record = await loadBusiness(providerId);
+  const record = await loadPublicBusiness(providerId);
   if (!record) notFound();
 
-  const { business, services } = record;
-  const canonical = `${siteUrl}/businesses/${encodeURIComponent(providerId)}`;
-  const structuredData = services.length ? {
-    '@context': 'https://schema.org',
-    '@type': 'LocalBusiness',
-    name: business.name,
-    description: business.description || undefined,
-    url: canonical,
-    areaServed: business.location || undefined,
-    email: business.public_contact_email || undefined,
-    telephone: business.public_contact_phone || undefined,
-    hasOfferCatalog: {
-      '@type': 'OfferCatalog',
-      name: 'Active services',
-      itemListElement: services.slice(0, 20).map((service: any) => ({
-        '@type': 'Offer',
-        itemOffered: {
-          '@type': 'Service',
-          name: service.name,
-          url: `${siteUrl}/services/${encodeURIComponent(service.id)}`,
-        },
-      })),
-    },
-  } : null;
-
-  const storefrontServices = services.map((service: any) => ({
-    id: String(service.id),
-    name: String(service.name || ''),
-    description: String(service.description || ''),
-    base_price: service.base_price,
-    currency: service.currency || 'INR',
-    duration_minutes: service.duration_minutes ? Number(service.duration_minutes) : null,
-    location: service.location ? String(service.location) : null,
-  }));
-
-  return <>
-    {structuredData ? <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, '\\u003c') }}
-    /> : null}
-    <div className="container" style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '1rem' }}>
-      <ProviderProfileShareAction providerId={providerId} providerName={business.name || ''} kind="business" />
-    </div>
-    <BusinessStorefrontQuickBook
-      businessName={business.name || 'Verified business'}
-      businessLocation={business.location || ''}
-      services={storefrontServices}
-    />
-    <PublicProviderProfile
-      kind="business"
-      provider={{
-        name: business.name || '',
-        description: business.description || '',
-        location: business.location || '',
-        legal_name: business.legal_name || '',
-        principal_address: business.principal_address || '',
-        public_contact_email: business.public_contact_email || '',
-        public_contact_phone: business.public_contact_phone || '',
-        website_url: business.website_url || null,
-        grievance_officer_name: business.grievance_officer_name || '',
-        grievance_officer_designation: business.grievance_officer_designation || '',
-        grievance_email: business.grievance_email || '',
-        grievance_phone: business.grievance_phone || '',
-      }}
-      services={storefrontServices.map((service) => ({
-        id: service.id,
-        name: service.name,
-        description: service.description,
-        base_price: service.base_price,
-        currency: service.currency,
-        duration_minutes: service.duration_minutes,
-      }))}
-    />
-  </>;
+  return <BusinessPublicProfileContent
+    providerId={providerId}
+    canonicalUrl={`${publicSiteUrl}/businesses/${encodeURIComponent(providerId)}`}
+  />;
 }
