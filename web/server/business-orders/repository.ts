@@ -118,7 +118,7 @@ export const productionBusinessOrderRepository = {
       .eq('customer_user_id', session.user_id)
       .order('created_at', { ascending: false });
     if (error) throw new Error(error.message);
-    return (data ?? []).map((row) => mapOrder(row as Record<string, unknown>));
+    return (data ?? []).map((row) => mapOrder(row as unknown as Record<string, unknown>));
   },
 
   async create(session: ServerCustomerSession, input: CreateBusinessProductOrderInput): Promise<BusinessProductOrderRecord> {
@@ -133,7 +133,7 @@ export const productionBusinessOrderRepository = {
       target_customer_note: normalizeNote(input.customer_note, 'Order note'),
     }).single();
     if (error || !data) throw new Error(error?.message ?? 'Order request could not be created.');
-    return mapOrder(data as Record<string, unknown>);
+    return mapOrder(data as unknown as Record<string, unknown>);
   },
 
   async cancelCustomer(session: ServerCustomerSession, orderId: string): Promise<BusinessProductOrderRecord> {
@@ -145,7 +145,7 @@ export const productionBusinessOrderRepository = {
       target_customer_user_id: session.user_id,
     }).single();
     if (error || !data) throw new Error(error?.message ?? 'Order request could not be cancelled.');
-    return mapOrder(data as Record<string, unknown>);
+    return mapOrder(data as unknown as Record<string, unknown>);
   },
 
   async listBusiness(session: ServerCustomerSession): Promise<BusinessProductOrderRecord[]> {
@@ -158,7 +158,7 @@ export const productionBusinessOrderRepository = {
       .eq('business_id', identity.business_id)
       .order('created_at', { ascending: false });
     if (error) throw new Error(error.message);
-    return (data ?? []).map((row) => mapOrder(row as Record<string, unknown>));
+    return (data ?? []).map((row) => mapOrder(row as unknown as Record<string, unknown>));
   },
 
   async transitionBusiness(
@@ -179,6 +179,6 @@ export const productionBusinessOrderRepository = {
       target_note: normalizeNote(note, 'Decline reason', action === 'decline'),
     }).single();
     if (error || !data) throw new Error(error?.message ?? 'Order could not be updated.');
-    return mapOrder(data as Record<string, unknown>);
+    return mapOrder(data as unknown as Record<string, unknown>);
   },
 };
