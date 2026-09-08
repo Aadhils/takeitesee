@@ -35,6 +35,7 @@ export interface BusinessProductOrderRecord {
   status_changed_at: string;
   created_at: string;
   updated_at: string;
+  conversation_id: string | null;
   events: BusinessProductOrderEventRecord[];
 }
 
@@ -90,6 +91,7 @@ function mapEvent(row: Record<string, unknown>): BusinessProductOrderEventRecord
 function mapOrder(
   row: Record<string, unknown>,
   events: BusinessProductOrderEventRecord[] = [],
+  conversationId: string | null = null,
 ): BusinessProductOrderRecord {
   return {
     id: String(row.id),
@@ -110,33 +112,53 @@ function mapOrder(
     status_changed_at: String(row.status_changed_at),
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
+    conversation_id: conversationId,
     events,
   };
 }
 
-async function attachOrderEvents(
+async function attachOrderContext(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
   orders: BusinessProductOrderRecord[],
 ): Promise<BusinessProductOrderRecord[]> {
   if (!orders.length) return orders;
 
-  const { data, error } = await supabase
-    .from('business_product_order_events')
-    .select(eventColumns)
-    .in('order_id', orders.map((order) => order.id))
-    .order('created_at', { ascending: true });
-  if (error) throw new Error(error.message);
+  const orderIds = orders.map((order) => order.id);
+  const [eventResult, conversationResult] = await Promise.all([
+    supabase
+      .from('business_product_order_events')
+      .select(eventColumns)
+      .in('order_id', orderIds)
+      .order('created_at', { ascending: true }),
+    supabase
+      .from('marketplace_conversations')
+      .select('id,business_product_order_id')
+      .eq('conversation_kind', 'product_order')
+      .in('business_product_order_id', orderIds),
+  ]);
+
+  if (eventResult.error) throw new Error(eventResult.error.message);
+  if (conversationResult.error) throw new Error(conversationResult.error.message);
 
   const eventsByOrder = new Map<string, BusinessProductOrderEventRecord[]>();
-  for (const row of data ?? []) {
+  for (const row of eventResult.data ?? []) {
     const event = mapEvent(row as unknown as Record<string, unknown>);
     const current = eventsByOrder.get(event.order_id) ?? [];
     current.push(event);
     eventsByOrder.set(event.order_id, current);
   }
 
+  const conversationByOrder = new Map<string, string>();
+  for (const row of conversationResult.data ?? []) {
+    const record = row as unknown as { id?: unknown; business_product_order_id?: unknown };
+    if (record.id && record.business_product_order_id) {
+      conversationByOrder.set(String(record.business_product_order_id), String(record.id));
+    }
+  }
+
   return orders.map((order) => ({
     ...order,
+    conversation_id: conversationByOrder.get(order.id) ?? null,
     events: eventsByOrder.get(order.id) ?? [],
   }));
 }
@@ -181,7 +203,7 @@ export const productionBusinessOrderRepository = {
       .order('created_at', { ascending: false });
     if (error) throw new Error(error.message);
     const orders = (data ?? []).map((row) => mapOrder(row as unknown as Record<string, unknown>));
-    return attachOrderEvents(supabase, orders);
+    return attachOrderContext(supabase, orders);
   },
 
   async create(session: ServerCustomerSession, input: CreateBusinessProductOrderInput): Promise<BusinessProductOrderRecord> {
@@ -222,7 +244,7 @@ export const productionBusinessOrderRepository = {
       .order('created_at', { ascending: false });
     if (error) throw new Error(error.message);
     const orders = (data ?? []).map((row) => mapOrder(row as unknown as Record<string, unknown>));
-    return attachOrderEvents(supabase, orders);
+    return attachOrderContext(supabase, orders);
   },
 
   async transitionBusiness(

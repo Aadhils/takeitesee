@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { Badge, Button, Card, EmptyState, Textarea } from '../ui/primitives';
 import { ProviderHeading } from './ProviderPresentation';
@@ -38,6 +39,7 @@ type ProductOrder = {
   status_changed_at: string;
   created_at: string;
   updated_at: string;
+  conversation_id: string | null;
   events: ProductOrderEvent[];
 };
 
@@ -208,6 +210,12 @@ export default function ProviderOrdersManager() {
                 {event.note ? <p className="muted" style={{ margin: '.2rem 0 0' }}>{event.note}</p> : null}
               </li>)}
             </ol>
+          </div> : null}
+
+          {order.conversation_id ? <div className="button-row">
+            <Link href={`/provider/messages?conversation=${encodeURIComponent(order.conversation_id)}`} className="button button-secondary">
+              {tamil ? 'Customer-க்கு message' : 'Message Customer'}
+            </Link>
           </div> : null}
 
           {(canDecide || canFulfill) ? <Textarea
