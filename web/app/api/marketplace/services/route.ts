@@ -30,9 +30,10 @@ function effectiveWorkMode(row: any): ProviderWorkMode {
     ? row.work_mode as ProviderWorkMode
     : 'offline';
 
-  if ((workMode === 'available' || workMode === 'busy') && row?.mode_expires_at) {
+  if (workMode === 'available' || workMode === 'busy') {
+    if (!row?.mode_expires_at) return 'offline';
     const expiry = new Date(row.mode_expires_at).getTime();
-    if (!Number.isNaN(expiry) && expiry <= Date.now()) return 'offline';
+    if (Number.isNaN(expiry) || expiry <= Date.now()) return 'offline';
   }
 
   return workMode;
