@@ -12,6 +12,8 @@ type PriceFilter = 'any' | 'under-1000' | '1000-5000' | 'over-5000';
 type RatingFilter = 'any' | '4-plus' | '4.5-plus';
 type ProviderFilter = 'any' | 'professional' | 'business';
 type ProviderWorkMode = 'available' | 'busy' | 'offline' | 'paused';
+type GeoStatus = 'not_requested' | 'ready' | 'unavailable';
+type GeoOrigin = { latitude: number; longitude: number };
 
 type Filters = {
   category: string;
@@ -25,6 +27,12 @@ const validSorts = ['relevance', 'rating', 'price', 'price-desc'];
 const priceValues: PriceFilter[] = ['any', 'under-1000', '1000-5000', 'over-5000'];
 const ratingValues: RatingFilter[] = ['any', '4-plus', '4.5-plus'];
 const workModes: ProviderWorkMode[] = ['available', 'busy', 'offline', 'paused'];
+const searchIntentTokens = new Set([
+  'near', 'nearby', 'nearest', 'closest', 'around', 'me', 'my',
+  'available', 'now', 'service', 'services', 'provider', 'providers',
+  'அருகில்', 'அருகிலுள்ள', 'அருகாமை', 'எனக்கு', 'இப்போது', 'சேவை', 'சேவைகள்',
+]);
+const nearbyIntentTokens = new Set(['near', 'nearby', 'nearest', 'closest', 'around', 'அருகில்', 'அருகிலுள்ள', 'அருகாமை']);
 
 function defaultFilters(): Filters {
   return { category: 'all', location: 'Anywhere', price: 'any', rating: 'any', provider: 'any' };
@@ -45,6 +53,14 @@ function labelFromSlug(value: string) {
 
 function normalized(value: unknown) {
   return String(value ?? '').normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+function semanticTokens(query: string) {
+  return normalized(query).split(' ').filter((token) => token && !searchIntentTokens.has(token));
+}
+
+function hasNearbyIntent(query: string) {
+  return normalized(query).split(' ').some((token) => nearbyIntentTokens.has(token));
 }
 
 function buildExploreParams(query: string, filters: Filters, sort: string) {
@@ -71,7 +87,7 @@ function searchText(service: MarketplaceService) {
 }
 
 function matchesSearch(service: MarketplaceService, query: string) {
-  const tokens = normalized(query).split(' ').filter(Boolean);
+  const tokens = semanticTokens(query);
   if (!tokens.length) return true;
   const haystack = searchText(service);
   return tokens.every((token) => haystack.includes(token));
@@ -83,11 +99,32 @@ function availabilityPriority(service: MarketplaceService) {
   return 0;
 }
 
-function relevanceScore(service: MarketplaceService, query: string) {
-  const fullQuery = normalized(query);
-  if (!fullQuery) return availabilityPriority(service) * 10;
+function distancePriority(service: MarketplaceService, query: string) {
+  if (service.distance_meters == null) return 0;
+  const distance = Number(service.distance_meters);
+  if (!Number.isFinite(distance) || distance < 0) return 0;
 
-  const tokens = fullQuery.split(' ').filter(Boolean);
+  let score = distance <= 1000
+    ? 24
+    : distance <= 3000
+      ? 20
+      : distance <= 7000
+        ? 16
+        : distance <= 15000
+          ? 12
+          : distance <= 30000
+            ? 8
+            : distance <= 60000
+              ? 4
+              : 1;
+
+  if (hasNearbyIntent(query)) score = Math.min(30, Math.round(score * 1.25));
+  return score;
+}
+
+function relevanceScore(service: MarketplaceService, query: string) {
+  const tokens = semanticTokens(query);
+  const fullQuery = tokens.join(' ');
   const name = normalized(localized(service.service_name));
   const provider = normalized(service.provider_name);
   const description = normalized(localized(service.description));
@@ -95,26 +132,30 @@ function relevanceScore(service: MarketplaceService, query: string) {
   const category = normalized(labelFromSlug(service.category_slug || service.category_id || 'other'));
   let score = 0;
 
-  if (name === fullQuery) score += 180;
-  else if (name.startsWith(fullQuery)) score += 130;
-  else if (name.includes(fullQuery)) score += 95;
+  if (fullQuery) {
+    if (name === fullQuery) score += 180;
+    else if (name.startsWith(fullQuery)) score += 130;
+    else if (name.includes(fullQuery)) score += 95;
 
-  if (category === fullQuery) score += 90;
-  else if (category.includes(fullQuery)) score += 55;
-  if (provider.includes(fullQuery)) score += 45;
-  if (location.includes(fullQuery)) score += 35;
+    if (category === fullQuery) score += 90;
+    else if (category.includes(fullQuery)) score += 55;
+    if (provider.includes(fullQuery)) score += 45;
+    if (location.includes(fullQuery)) score += 35;
 
-  for (const token of tokens) {
-    if (name.includes(token)) score += 24;
-    if (category.includes(token)) score += 16;
-    if (provider.includes(token)) score += 10;
-    if (location.includes(token)) score += 8;
-    if (description.includes(token)) score += 4;
+    for (const token of tokens) {
+      if (name.includes(token)) score += 24;
+      if (category.includes(token)) score += 16;
+      if (provider.includes(token)) score += 10;
+      if (location.includes(token)) score += 8;
+      if (description.includes(token)) score += 4;
+    }
   }
 
-  // Availability is an operational usefulness signal, not a substitute for service match.
-  // Available receives a meaningful boost; Busy a smaller one; Offline/Paused no boost.
+  // Service/text match remains primary. Live availability and derived distance are
+  // operational usefulness signals, so a merely-near result cannot overwhelm a
+  // clearly better service match.
   score += availabilityPriority(service) * 10;
+  score += distancePriority(service, query);
   score += Math.min(Number(service.rating || 0), 5) * 2;
   score += Math.min(Number(service.review_count || 0), 20) * 0.25;
   return score;
@@ -125,6 +166,7 @@ function normalizeService(service: MarketplaceService) {
   const liveWorkMode = workModes.includes(service.live_work_mode as ProviderWorkMode)
     ? service.live_work_mode as ProviderWorkMode
     : 'offline';
+  const distance = service.distance_meters == null ? null : Number(service.distance_meters);
   return {
     ...service,
     provider_id: service.provider_id || service.business_id || service.professional_id || '',
@@ -138,6 +180,8 @@ function normalizeService(service: MarketplaceService) {
     },
     live_work_mode: liveWorkMode,
     availability: service.availability || 'Offline',
+    distance_meters: Number.isFinite(distance) && distance !== null && distance >= 0 ? distance : null,
+    nearby_match_mode: ['at_provider', 'at_customer', 'remote'].includes(service.nearby_match_mode) ? service.nearby_match_mode : null,
     rating: Number(service.rating || 0),
     review_count: Number(service.review_count || 0),
     verified: Boolean(service.verified),
@@ -150,6 +194,13 @@ function normalizeService(service: MarketplaceService) {
   };
 }
 
+function geolocationMessage(error: GeolocationPositionError) {
+  if (error.code === error.PERMISSION_DENIED) return 'Location permission was not granted. Allow location access to rank useful nearby services.';
+  if (error.code === error.POSITION_UNAVAILABLE) return 'Your current location could not be determined.';
+  if (error.code === error.TIMEOUT) return 'Location lookup timed out. Please try again.';
+  return error.message || 'Unable to read your current location.';
+}
+
 export default function ExplorePage() {
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<Filters>(defaultFilters);
@@ -158,6 +209,10 @@ export default function ExplorePage() {
   const [services, setServices] = useState<MarketplaceService[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [geoOrigin, setGeoOrigin] = useState<GeoOrigin | null>(null);
+  const [geoStatus, setGeoStatus] = useState<GeoStatus>('not_requested');
+  const [geoLocating, setGeoLocating] = useState(false);
+  const [geoError, setGeoError] = useState('');
   const { locale, t } = useLanguage();
 
   useEffect(() => {
@@ -183,11 +238,24 @@ export default function ExplorePage() {
     (async () => {
       setLoading(true);
       setLoadError('');
+      if (geoOrigin) setGeoError('');
       try {
-        const response = await fetch('/api/marketplace/services', { cache: 'no-store' });
+        const response = await fetch('/api/marketplace/services', geoOrigin ? {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ origin: geoOrigin }),
+          cache: 'no-store',
+        } : { cache: 'no-store' });
         if (!response.ok) throw new Error('Marketplace catalog unavailable');
-        const payload = await response.json();
-        if (!cancelled) setServices(Array.isArray(payload.services) ? payload.services.map(normalizeService) : []);
+        const payload = await response.json() as { services?: MarketplaceService[]; geo_status?: GeoStatus };
+        if (!cancelled) {
+          setServices(Array.isArray(payload.services) ? payload.services.map(normalizeService) : []);
+          const nextGeoStatus = payload.geo_status ?? (geoOrigin ? 'unavailable' : 'not_requested');
+          setGeoStatus(nextGeoStatus);
+          if (geoOrigin && nextGeoStatus === 'unavailable') {
+            setGeoError('Precise nearby matching is temporarily unavailable. Showing the normal marketplace ranking instead.');
+          }
+        }
       } catch (error) {
         if (!cancelled) setLoadError(error instanceof Error ? error.message : 'Unable to load services');
       } finally {
@@ -195,7 +263,7 @@ export default function ExplorePage() {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [geoOrigin]);
 
   const categories = useMemo(() => Array.from(new Set(services.map((service) => service.category_slug).filter(Boolean))).sort(), [services]);
 
@@ -225,15 +293,41 @@ export default function ExplorePage() {
           ? a.pricing.base_price.amount - b.pricing.base_price.amount
           : sort === 'price-desc'
             ? b.pricing.base_price.amount - a.pricing.base_price.amount
-            : query.trim()
-              ? relevanceScore(b, query) - relevanceScore(a, query)
-              : availabilityPriority(b) - availabilityPriority(a)
-                || b.rating - a.rating
-                || b.review_count - a.review_count);
+            : relevanceScore(b, query) - relevanceScore(a, query)
+              || b.rating - a.rating
+              || b.review_count - a.review_count);
   }, [services, filters, query, sort]);
 
   const clearAll = () => { setQuery(''); setFilters(defaultFilters()); setSort('relevance'); };
   const update = <K extends keyof Filters>(key: K, value: Filters[K]) => setFilters((current) => ({ ...current, [key]: value }));
+
+  const useCurrentLocation = () => {
+    if (geoLocating) return;
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setGeoError('Location matching is not supported by this browser.');
+      return;
+    }
+    setGeoLocating(true);
+    setGeoError('');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setGeoOrigin({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+        setGeoLocating(false);
+      },
+      (positionError) => {
+        setGeoError(geolocationMessage(positionError));
+        setGeoLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 12_000, maximumAge: 0 },
+    );
+  };
+
+  const clearNearbyLocation = () => {
+    setGeoOrigin(null);
+    setGeoStatus('not_requested');
+    setGeoError('');
+  };
+
   const resultHeading = loading
     ? t('explore.loading')
     : query.trim()
@@ -241,6 +335,8 @@ export default function ExplorePage() {
         ? `“${query.trim()}” ${t('explore.forQuery')} ${filteredServices.length} ${filteredServices.length === 1 ? t('explore.match') : t('explore.matches')}`
         : `${filteredServices.length} ${filteredServices.length === 1 ? t('explore.match') : t('explore.matches')} ${t('explore.forQuery')} “${query.trim()}”`
       : `${filteredServices.length} ${t('explore.servicesToExplore')}`;
+
+  const nearbyReady = Boolean(geoOrigin && geoStatus === 'ready');
 
   return <div className="discovery-page discovery-workspace">
     <section className="page-intro"><span className="eyebrow">{t('explore.eyebrow')}</span><h1>{t('explore.title')}</h1><p>{t('explore.subtitle')}</p></section>
@@ -254,7 +350,17 @@ export default function ExplorePage() {
         <Select label={t('explore.rating')} value={filters.rating} onChange={(e) => update('rating', e.target.value as RatingFilter)}><option value="any">{t('explore.anyRating')}</option><option value="4-plus">{t('explore.rating4')}</option><option value="4.5-plus">{t('explore.rating45')}</option></Select>
         <Select label={t('explore.providerType')} value={filters.provider} onChange={(e) => update('provider', e.target.value as ProviderFilter)}><option value="any">{t('explore.anyProvider')}</option><option value="professional">{t('explore.professional')}</option><option value="business">{t('explore.business')}</option></Select>
       </div>
-      <div className="discovery-search-footer"><Button type="button" variant="quiet" onClick={clearAll}>{t('explore.clearFilters')}</Button><div className="sort-control"><Select label={t('explore.sort')} value={sort} onChange={(e) => setSort(e.target.value)}><option value="relevance">{t('explore.relevance')}</option><option value="rating">{t('explore.highestRated')}</option><option value="price">{t('explore.lowestPrice')}</option><option value="price-desc">{t('explore.highestPrice')}</option></Select></div></div>
+      <div className="discovery-search-footer">
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          <Button type="button" variant="quiet" onClick={clearAll}>{t('explore.clearFilters')}</Button>
+          {geoOrigin
+            ? <Button type="button" variant="secondary" onClick={clearNearbyLocation}>{nearbyReady ? 'Nearby ranking on · Clear' : 'Clear current location'}</Button>
+            : <Button type="button" variant="secondary" loading={geoLocating} onClick={useCurrentLocation}>Use my location</Button>}
+        </div>
+        <div className="sort-control"><Select label={t('explore.sort')} value={sort} onChange={(e) => setSort(e.target.value)}><option value="relevance">{t('explore.relevance')}</option><option value="rating">{t('explore.highestRated')}</option><option value="price">{t('explore.lowestPrice')}</option><option value="price-desc">{t('explore.highestPrice')}</option></Select></div>
+      </div>
+      {nearbyReady ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>Nearby ranking is active for this browser session. Your precise location is used for this marketplace request only and is not added to the page URL or saved as a customer location record.</p> : null}
+      {geoError ? <p role="alert" style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{geoError}</p> : null}
     </section>
 
     <div className="results-heading"><div><span className="eyebrow">{t('explore.marketplace')}</span><h2>{resultHeading}</h2></div></div>
