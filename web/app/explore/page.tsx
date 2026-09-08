@@ -11,6 +11,7 @@ type MarketplaceService = any;
 type PriceFilter = 'any' | 'under-1000' | '1000-5000' | 'over-5000';
 type RatingFilter = 'any' | '4-plus' | '4.5-plus';
 type ProviderFilter = 'any' | 'professional' | 'business';
+type AvailabilityFilter = 'any' | 'available-now';
 type ProviderWorkMode = 'available' | 'busy' | 'offline' | 'paused';
 type GeoStatus = 'not_requested' | 'ready' | 'unavailable';
 type GeoOrigin = { latitude: number; longitude: number };
@@ -22,6 +23,7 @@ type Filters = {
   price: PriceFilter;
   rating: RatingFilter;
   provider: ProviderFilter;
+  availability: AvailabilityFilter;
 };
 
 const validSorts = ['relevance', 'rating', 'price', 'price-desc'];
@@ -33,11 +35,13 @@ const searchIntentTokens = new Set([
   'near', 'nearby', 'nearest', 'closest', 'around', 'me', 'my',
   'available', 'now', 'service', 'services', 'provider', 'providers',
   'அருகில்', 'அருகிலுள்ள', 'அருகாமை', 'எனக்கு', 'இப்போது', 'சேவை', 'சேவைகள்',
+  'கிடைக்கும்', 'கிடைக்கிறார்', 'கிடைக்கிறது',
 ]);
 const nearbyIntentTokens = new Set(['near', 'nearby', 'nearest', 'closest', 'around', 'அருகில்', 'அருகிலுள்ள', 'அருகாமை']);
+const tamilAvailabilityTokens = new Set(['கிடைக்கும்', 'கிடைக்கிறார்', 'கிடைக்கிறது']);
 
 function defaultFilters(): Filters {
-  return { category: 'all', location: 'Anywhere', price: 'any', rating: 'any', provider: 'any' };
+  return { category: 'all', location: 'Anywhere', price: 'any', rating: 'any', provider: 'any', availability: 'any' };
 }
 
 function localized(value: unknown) {
@@ -65,6 +69,13 @@ function hasNearbyIntent(query: string) {
   return normalized(query).split(' ').some((token) => nearbyIntentTokens.has(token));
 }
 
+function hasAvailableNowIntent(query: string) {
+  const tokens = normalized(query).split(' ').filter(Boolean);
+  const englishIntent = tokens.includes('available') && tokens.includes('now');
+  const tamilIntent = tokens.includes('இப்போது') && tokens.some((token) => tamilAvailabilityTokens.has(token));
+  return englishIntent || tamilIntent;
+}
+
 function buildExploreParams(query: string, filters: Filters, sort: string) {
   const params = new URLSearchParams();
   if (query.trim()) params.set('q', query.trim());
@@ -73,6 +84,7 @@ function buildExploreParams(query: string, filters: Filters, sort: string) {
   if (filters.price !== 'any') params.set('price', filters.price);
   if (filters.rating !== 'any') params.set('rating', filters.rating);
   if (filters.provider !== 'any') params.set('provider', filters.provider);
+  if (filters.availability === 'available-now') params.set('availability', 'now');
   if (sort !== 'relevance') params.set('sort', sort);
   return params;
 }
@@ -209,6 +221,7 @@ export default function ExplorePage() {
     const price = priceValues.includes(params.get('price') as PriceFilter) ? params.get('price') as PriceFilter : defaults.price;
     const rating = ratingValues.includes(params.get('rating') as RatingFilter) ? params.get('rating') as RatingFilter : defaults.rating;
     const provider = ['any', 'professional', 'business'].includes(params.get('provider') ?? '') ? params.get('provider') as ProviderFilter : defaults.provider;
+    const availability: AvailabilityFilter = params.get('availability') === 'now' ? 'available-now' : defaults.availability;
     setQuery(params.get('q')?.trim() ?? '');
     setFilters({
       category: params.get('category')?.trim() || defaults.category,
@@ -216,6 +229,7 @@ export default function ExplorePage() {
       price,
       rating,
       provider,
+      availability,
     });
     setSort(validSorts.includes(params.get('sort') ?? '') ? params.get('sort')! : 'relevance');
     setUrlReady(true);
@@ -266,11 +280,15 @@ export default function ExplorePage() {
     window.history.replaceState(null, '', contextQuery ? `/explore?${contextQuery}` : '/explore');
   }, [contextQuery, urlReady]);
 
+  const availableNowFromQuery = useMemo(() => hasAvailableNowIntent(query), [query]);
+  const availableNowActive = filters.availability === 'available-now' || availableNowFromQuery;
+
   const filteredServices = useMemo(() => {
     const locationNeedle = filters.location === 'Anywhere' ? '' : normalized(filters.location);
     return services
       .filter((service) => filters.category === 'all' || service.category_slug === filters.category)
       .filter((service) => matchesSearch(service, query))
+      .filter((service) => !availableNowActive || service.live_work_mode === 'available')
       .filter((service) => !locationNeedle || normalized(`${service.location ?? ''} ${service.service_area ?? ''}`).includes(locationNeedle))
       .filter((service) => filters.price === 'any' || (filters.price === 'under-1000' && service.pricing.base_price.amount < 100000) || (filters.price === '1000-5000' && service.pricing.base_price.amount >= 100000 && service.pricing.base_price.amount <= 500000) || (filters.price === 'over-5000' && service.pricing.base_price.amount > 500000))
       .filter((service) => filters.rating === 'any' || (filters.rating === '4-plus' && service.rating >= 4) || (filters.rating === '4.5-plus' && service.rating >= 4.5))
@@ -284,7 +302,7 @@ export default function ExplorePage() {
             : relevanceScore(b, query) - relevanceScore(a, query)
               || b.rating - a.rating
               || b.review_count - a.review_count);
-  }, [services, filters, query, sort]);
+  }, [services, availableNowActive, filters, query, sort]);
 
   const clearAll = () => { setQuery(''); setFilters(defaultFilters()); setSort('relevance'); };
   const update = <K extends keyof Filters>(key: K, value: Filters[K]) => setFilters((current) => ({ ...current, [key]: value }));
@@ -337,6 +355,7 @@ export default function ExplorePage() {
         <Select label={t('explore.price')} value={filters.price} onChange={(e) => update('price', e.target.value as PriceFilter)}><option value="any">{t('explore.anyPrice')}</option><option value="under-1000">{t('explore.under1000')}</option><option value="1000-5000">{t('explore.range1000to5000')}</option><option value="over-5000">{t('explore.over5000')}</option></Select>
         <Select label={t('explore.rating')} value={filters.rating} onChange={(e) => update('rating', e.target.value as RatingFilter)}><option value="any">{t('explore.anyRating')}</option><option value="4-plus">{t('explore.rating4')}</option><option value="4.5-plus">{t('explore.rating45')}</option></Select>
         <Select label={t('explore.providerType')} value={filters.provider} onChange={(e) => update('provider', e.target.value as ProviderFilter)}><option value="any">{t('explore.anyProvider')}</option><option value="professional">{t('explore.professional')}</option><option value="business">{t('explore.business')}</option></Select>
+        <Select label={locale === 'ta-IN' ? 'நேரடி கிடைப்பாடு' : 'Live availability'} value={filters.availability} onChange={(e) => update('availability', e.target.value as AvailabilityFilter)}><option value="any">{locale === 'ta-IN' ? 'எந்த live நிலையும்' : 'Any live status'}</option><option value="available-now">{locale === 'ta-IN' ? 'இப்போது கிடைப்பவர்கள் மட்டும்' : 'Available now only'}</option></Select>
       </div>
       <div className="discovery-search-footer">
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -347,6 +366,7 @@ export default function ExplorePage() {
         </div>
         <div className="sort-control"><Select label={t('explore.sort')} value={sort} onChange={(e) => setSort(e.target.value)}><option value="relevance">{t('explore.relevance')}</option><option value="rating">{t('explore.highestRated')}</option><option value="price">{t('explore.lowestPrice')}</option><option value="price-desc">{t('explore.highestPrice')}</option></Select></div>
       </div>
+      {availableNowFromQuery ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{locale === 'ta-IN' ? 'உங்கள் தேடலில் “இப்போது கிடைக்கும்” intent கண்டறியப்பட்டது. Available Providers மட்டும் காட்டப்படுகிறார்கள்.' : '“Available now” was detected in your search. Only currently Available Providers are shown.'}</p> : null}
       {nearbyReady ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>Nearby ranking is active for this browser session. Your precise location is used for this marketplace request only; the public response contains only coarse distance bands and is not added to the page URL or saved as a customer location record.</p> : null}
       {geoError ? <p role="alert" style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{geoError}</p> : null}
     </section>
