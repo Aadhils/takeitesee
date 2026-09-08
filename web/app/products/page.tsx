@@ -30,6 +30,10 @@ function normalized(value: unknown) {
   return String(value ?? '').normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, ' ').trim();
 }
 
+function storefrontProductHref(product: Product) {
+  return `/businesses/${encodeURIComponent(product.business_id)}#product-${product.id}`;
+}
+
 export default function ProductsPage() {
   const { locale } = useLanguage();
   const tamil = locale === 'ta-IN';
@@ -162,6 +166,7 @@ export default function ProductsPage() {
         : filteredProducts.length ? <div className="service-grid">{filteredProducts.map((product) => {
           const stockState = stockPresentation(product.stock_mode);
           const shopOpen = product.business_shop_state === 'open';
+          const productHref = storefrontProductHref(product);
           return <Card className="discovery-card service-discovery-card" key={product.id}>
             <div className="service-card-art" aria-hidden="true"><span>{product.name.slice(0, 1)}</span><span className="art-label">{tamil ? 'Product' : 'Product'}</span></div>
             <div className="discovery-card-content">
@@ -170,7 +175,7 @@ export default function ProductsPage() {
                 <Badge tone={shopOpen ? 'success' : 'neutral'}>{shopOpen ? (tamil ? 'Shop Open' : 'Shop Open') : (tamil ? 'Shop Closed' : 'Shop Closed')}</Badge>
                 {product.verified_business ? <Badge tone="info">{tamil ? 'Verified Business' : 'Verified Business'}</Badge> : null}
               </div>
-              <h3>{product.name}</h3>
+              <h3><Link href={productHref}>{product.name}</Link></h3>
               {product.description ? <p className="card-description">{product.description}</p> : null}
               <p className="card-provider"><Link href={`/businesses/${encodeURIComponent(product.business_id)}`}>{product.business_name}</Link>{product.business_location ? <> <span aria-hidden="true">·</span> {product.business_location}</> : null}</p>
               <div className="card-footer">
@@ -178,7 +183,7 @@ export default function ProductsPage() {
                   <span className="price">{money(product)} / {product.unit_label}</span>
                   <small style={{ display: 'block', marginTop: '.35rem' }}>{tamil ? 'Order request மட்டும்; online payment இல்லை.' : 'Order request only; no online payment.'}</small>
                 </div>
-                <Link href={`/businesses/${encodeURIComponent(product.business_id)}`} className="button button-secondary">{product.stock_mode === 'out_of_stock' ? (tamil ? 'Storefront பார்க்க' : 'View storefront') : (tamil ? 'Storefront-ல் order கேள்' : 'Request from storefront')}</Link>
+                <Link href={productHref} className="button button-secondary">{product.stock_mode === 'out_of_stock' ? (tamil ? 'Product பார்க்க' : 'View product') : (tamil ? 'இந்த product order கேள்' : 'Request this product')}</Link>
               </div>
             </div>
           </Card>;

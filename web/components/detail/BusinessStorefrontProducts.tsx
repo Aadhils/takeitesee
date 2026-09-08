@@ -65,7 +65,9 @@ export default function BusinessStorefrontProducts({ products }: { products: Pub
       });
       const payload = await response.json() as { order?: { id: string }; error?: string };
       if (response.status === 401) {
-        const returnTo = typeof window === 'undefined' ? '/' : window.location.pathname;
+        const returnTo = typeof window === 'undefined'
+          ? '/'
+          : `${window.location.pathname}${window.location.search}${window.location.hash}`;
         window.location.assign(`/login?returnTo=${encodeURIComponent(returnTo)}`);
         return;
       }
@@ -104,7 +106,12 @@ export default function BusinessStorefrontProducts({ products }: { products: Pub
         const draft = draftFor(product.id);
         const state = feedback[product.id];
         const available = product.stock_mode !== 'out_of_stock';
-        return <article className="card" key={product.id} style={{ display: 'grid', gap: '.8rem', alignContent: 'start' }}>
+        return <article
+          className="card"
+          id={`product-${product.id}`}
+          key={product.id}
+          style={{ display: 'grid', gap: '.8rem', alignContent: 'start', scrollMarginTop: '7rem' }}
+        >
           <div>
             <span className="eyebrow">{stockLabel(product.stock_mode)}</span>
             <h3 style={{ margin: '.35rem 0' }}>{product.name}</h3>
