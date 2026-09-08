@@ -6,8 +6,37 @@ export const dynamic = 'force-dynamic';
 
 const pageSize = 1000;
 const maxServiceRows = 15000;
+const maxAvailabilityRows = 15000;
 const reviewServiceChunkSize = 200;
 const maxReviewRowsPerChunk = 15000;
+
+type ProviderWorkMode = 'available' | 'busy' | 'offline' | 'paused';
+
+function providerKey(providerType: unknown, professionalId: unknown, businessId: unknown) {
+  if (providerType === 'professional' && professionalId) return `professional:${String(professionalId)}`;
+  if (providerType === 'business' && businessId) return `business:${String(businessId)}`;
+  return '';
+}
+
+function effectiveWorkMode(row: any): ProviderWorkMode {
+  const workMode = ['available', 'busy', 'offline', 'paused'].includes(row?.work_mode)
+    ? row.work_mode as ProviderWorkMode
+    : 'offline';
+
+  if ((workMode === 'available' || workMode === 'busy') && row?.mode_expires_at) {
+    const expiry = new Date(row.mode_expires_at).getTime();
+    if (!Number.isNaN(expiry) && expiry <= Date.now()) return 'offline';
+  }
+
+  return workMode;
+}
+
+function availabilityLabel(workMode: ProviderWorkMode) {
+  if (workMode === 'available') return 'Available now';
+  if (workMode === 'busy') return 'Busy now';
+  if (workMode === 'paused') return 'Paused';
+  return 'Offline';
+}
 
 export async function GET() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -30,6 +59,27 @@ export async function GET() {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     rows.push(...(data ?? []));
     if (!data || data.length < pageSize) break;
+  }
+
+  const liveRows: any[] = [];
+  for (let start = 0; start < maxAvailabilityRows; start += pageSize) {
+    const { data, error } = await supabase
+      .from('provider_live_availability')
+      .select('provider_type,professional_id,business_id,work_mode,mode_expires_at')
+      .order('provider_type', { ascending: true })
+      .order('professional_id', { ascending: true })
+      .order('business_id', { ascending: true })
+      .range(start, Math.min(start + pageSize - 1, maxAvailabilityRows - 1));
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    liveRows.push(...(data ?? []));
+    if (!data || data.length < pageSize) break;
+  }
+
+  const liveModes = new Map<string, ProviderWorkMode>();
+  for (const liveRow of liveRows) {
+    const keyValue = providerKey(liveRow.provider_type, liveRow.professional_id, liveRow.business_id);
+    if (keyValue) liveModes.set(keyValue, effectiveWorkMode(liveRow));
   }
 
   const ids = rows.map((row: any) => row.id);
@@ -65,6 +115,7 @@ export async function GET() {
     const ratings = reviews.get(row.id) ?? [];
     const rating = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
     const category = row.category || 'Other';
+    const liveWorkMode = liveModes.get(providerKey(row.provider_type, row.professional_id, row.business_id)) ?? 'offline';
     return {
       id: row.id,
       service_name: { en: row.name },
@@ -80,7 +131,8 @@ export async function GET() {
       duration_minutes: row.duration_minutes,
       rating,
       review_count: ratings.length,
-      availability: 'Check availability',
+      live_work_mode: liveWorkMode,
+      availability: availabilityLabel(liveWorkMode),
       verified: true
     };
   });
