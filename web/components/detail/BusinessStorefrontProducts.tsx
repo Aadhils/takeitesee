@@ -13,14 +13,14 @@ type PublicProduct = {
 };
 
 export default function BusinessStorefrontProducts({ products }: { products: PublicProduct[] }) {
-  const { language } = useLanguage();
-  const tamil = String(language).toLowerCase().startsWith('ta');
+  const { locale } = useLanguage();
+  const tamil = locale === 'ta-IN';
   if (!products.length) return null;
 
   const money = (product: PublicProduct) => {
     const amount = Number(product.price);
     try {
-      return new Intl.NumberFormat(tamil ? 'ta-IN' : 'en-IN', {
+      return new Intl.NumberFormat(locale, {
         style: 'currency',
         currency: product.currency || 'INR',
         maximumFractionDigits: 2,
@@ -38,8 +38,8 @@ export default function BusinessStorefrontProducts({ products }: { products: Pub
 
   return <section className="container section-stack" aria-label={tamil ? 'Business products' : 'Business products'} style={{ paddingTop: '1rem' }}>
     <div className="page-intro" style={{ marginBottom: 0 }}>
-      <span className="eyebrow">{tamil ? 'Business sales' : 'Business sales'}</span>
-      <h2>{tamil ? 'Products' : 'Products'}</h2>
+      <span className="eyebrow">Business sales</span>
+      <h2>Products</h2>
       <p>{tamil
         ? 'Platform review செய்யப்பட்ட current revision products மட்டும் இங்கே தெரியும். Order request அடுத்த commerce stage-ல் enable செய்யப்படும்; payment/Cashfree இப்போது செயல்படாது.'
         : 'Only platform-reviewed current product revisions appear here. Order requests will be enabled in the next commerce stage; payment and Cashfree are not active.'}</p>
