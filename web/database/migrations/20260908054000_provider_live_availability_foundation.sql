@@ -14,7 +14,12 @@
 
 do $$
 begin
-  if not exists (select 1 from pg_type where typname = 'provider_work_mode') then
+  if not exists (
+    select 1
+    from pg_type t
+    join pg_namespace n on n.oid = t.typnamespace
+    where n.nspname = 'public' and t.typname = 'provider_work_mode'
+  ) then
     create type public.provider_work_mode as enum ('available', 'busy', 'offline', 'paused');
   end if;
 end
@@ -26,7 +31,7 @@ create table if not exists public.provider_live_availability (
   professional_id uuid references public.professional_profiles(id) on delete cascade,
   business_id uuid references public.businesses(id) on delete cascade,
   work_mode public.provider_work_mode not null default 'offline'::public.provider_work_mode,
-  available_until timestamptz,
+  mode_expires_at timestamptz,
   status_changed_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -50,8 +55,8 @@ create index if not exists provider_live_availability_mode_idx
 
 comment on table public.provider_live_availability is
   'Provider-level live work state. Separate from per-service schedule availability and Business shop open/closed state.';
-comment on column public.provider_live_availability.available_until is
-  'Optional expiry hint for Available/Busy state. Consumers must treat an expired live state as Offline.';
+comment on column public.provider_live_availability.mode_expires_at is
+  'Optional expiry for Available/Busy live mode. Consumers must treat an expired live mode as Offline.';
 
 create or replace function public.maintain_provider_live_availability()
 returns trigger
@@ -60,29 +65,27 @@ security invoker
 set search_path = ''
 as $$
 begin
-  if tg_op = 'UPDATE' and (
-    new.provider_type is distinct from old.provider_type
-    or new.professional_id is distinct from old.professional_id
-    or new.business_id is distinct from old.business_id
-  ) then
-    raise exception 'Provider live availability identity is immutable.';
+  if tg_op = 'UPDATE' then
+    if new.provider_type is distinct from old.provider_type
+      or new.professional_id is distinct from old.professional_id
+      or new.business_id is distinct from old.business_id then
+      raise exception 'Provider live availability identity is immutable.';
+    end if;
   end if;
 
   if new.work_mode in ('offline'::public.provider_work_mode, 'paused'::public.provider_work_mode) then
-    new.available_until := null;
-  end if;
-
-  if tg_op = 'INSERT'
-    or new.work_mode is distinct from old.work_mode
-    or new.available_until is distinct from old.available_until then
-    new.status_changed_at := now();
+    new.mode_expires_at := null;
   end if;
 
   if tg_op = 'INSERT' then
+    new.status_changed_at := now();
     new.created_at := coalesce(new.created_at, now());
+  elsif new.work_mode is distinct from old.work_mode
+    or new.mode_expires_at is distinct from old.mode_expires_at then
+    new.status_changed_at := now();
   end if;
-  new.updated_at := now();
 
+  new.updated_at := now();
   return new;
 end;
 $$;
