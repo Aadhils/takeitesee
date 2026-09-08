@@ -36,6 +36,7 @@ type ProductOrder = {
   status_changed_at: string;
   created_at: string;
   updated_at: string;
+  conversation_id: string | null;
   events: ProductOrderEvent[];
 };
 
@@ -226,10 +227,13 @@ export default function CustomerOrdersManager() {
             </ol>
           </div> : null}
 
-          {cancellable ? <div className="button-row">
-            <Button type="button" variant="secondary" loading={busyOrderId === order.id} onClick={() => void cancelOrder(order.id)}>
+          {(order.conversation_id || cancellable) ? <div className="button-row">
+            {order.conversation_id ? <Link href={`/messages?conversation=${encodeURIComponent(order.conversation_id)}`} className="button button-secondary">
+              {tamil ? 'Business-க்கு message' : 'Message Business'}
+            </Link> : null}
+            {cancellable ? <Button type="button" variant="secondary" loading={busyOrderId === order.id} onClick={() => void cancelOrder(order.id)}>
               {tamil ? 'Order request ரத்து செய்' : 'Cancel order request'}
-            </Button>
+            </Button> : null}
           </div> : null}
         </Card></div>;
       })}

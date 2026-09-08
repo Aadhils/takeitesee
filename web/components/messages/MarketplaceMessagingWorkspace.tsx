@@ -5,9 +5,11 @@ import { Alert, Badge, Button, Card } from '../ui/primitives';
 import { MarketplaceReportForm } from '../safety/MarketplaceReportForm';
 import { useOperationalTranslations } from '../i18n/OperationalTranslations';
 
+type ProductOrderStatus = 'requested' | 'accepted' | 'declined' | 'fulfilled' | 'cancelled';
+
 type ConversationSummary = {
   id: string;
-  conversation_kind: 'requirement' | 'job_application';
+  conversation_kind: 'requirement' | 'job_application' | 'product_order';
   requirement_id: string | null;
   requirement_reference: string | null;
   requirement_title: string | null;
@@ -17,9 +19,14 @@ type ConversationSummary = {
   job_title: string | null;
   application_status: string | null;
   business_name: string | null;
+  business_product_order_id: string | null;
+  product_order_status: ProductOrderStatus | null;
+  product_name: string | null;
+  product_order_business_name: string | null;
+  product_order_quantity: number | null;
   conversation_status: 'open' | 'closed';
-  closed_reason: 'fulfilled' | 'cancelled' | 'hired' | 'rejected' | 'withdrawn' | null;
-  participant_role: 'customer' | 'provider' | 'applicant' | 'employer';
+  closed_reason: 'fulfilled' | 'cancelled' | 'declined' | 'hired' | 'rejected' | 'withdrawn' | null;
+  participant_role: 'customer' | 'provider' | 'applicant' | 'employer' | 'business';
   counterpart_name: string;
   proposal_reference: string | null;
   amount_minor: number | null;
@@ -59,10 +66,36 @@ export function MarketplaceMessagingWorkspace({ initialConversationId = '' }: { 
     return new Intl.NumberFormat(locale, { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(minor) / 100);
   };
   const activityLabel = (value: string | null, fallback: string) => new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value || fallback));
-  const contextTitle = (row: ConversationSummary | ConversationDetail) => row.conversation_kind === 'job_application' ? row.job_title || 'Job opportunity' : row.requirement_title || 'Service requirement';
-  const contextFallback = (row: ConversationSummary) => row.conversation_kind === 'job_application'
-    ? `Job application · ${statusLabel(row.application_status)}`
-    : [row.service_name, row.proposal_reference].filter(Boolean).join(' · ');
+  const contextTitle = (row: ConversationSummary | ConversationDetail) => {
+    if (row.conversation_kind === 'product_order') return row.product_name || 'Product order';
+    if (row.conversation_kind === 'job_application') return row.job_title || 'Job opportunity';
+    return row.requirement_title || 'Service requirement';
+  };
+  const contextFallback = (row: ConversationSummary) => {
+    if (row.conversation_kind === 'product_order') {
+      return [row.product_order_business_name, row.product_order_quantity ? `Qty ${row.product_order_quantity}` : null, statusLabel(row.product_order_status)].filter(Boolean).join(' · ');
+    }
+    return row.conversation_kind === 'job_application'
+      ? `Job application · ${statusLabel(row.application_status)}`
+      : [row.service_name, row.proposal_reference].filter(Boolean).join(' · ');
+  };
+  const detailEyebrow = (row: ConversationDetail) => {
+    if (row.conversation_kind === 'product_order') return 'Product order';
+    if (row.conversation_kind === 'job_application') return 'Job application';
+    return row.requirement_reference;
+  };
+  const detailSummary = (row: ConversationDetail) => {
+    if (row.conversation_kind === 'product_order') {
+      return [row.product_order_business_name, row.product_order_quantity ? `Qty ${row.product_order_quantity}` : null, statusLabel(row.product_order_status)].filter(Boolean).join(' · ');
+    }
+    if (row.conversation_kind === 'job_application') return `${row.business_name || 'Employer'} · ${statusLabel(row.application_status)}`;
+    return [row.service_name, money(row.amount_minor, row.currency)].filter(Boolean).join(' · ');
+  };
+  const readOnlyStatus = (row: ConversationDetail) => {
+    if (row.conversation_kind === 'job_application') return statusLabel(row.closed_reason || row.application_status);
+    if (row.conversation_kind === 'product_order') return statusLabel(row.closed_reason || row.product_order_status);
+    return status(row.closed_reason || row.requirement_status || 'closed');
+  };
 
   const loadInbox = useCallback(async (silent = false) => {
     if (!silent) setLoadingInbox(true);
@@ -134,6 +167,7 @@ export function MarketplaceMessagingWorkspace({ initialConversationId = '' }: { 
   const canCompose = detail?.conversation_status === 'open' && (
     (detail.conversation_kind === 'requirement' && detail.requirement_status === 'awarded')
     || (detail.conversation_kind === 'job_application' && ['shortlisted', 'interview'].includes(detail.application_status || ''))
+    || (detail.conversation_kind === 'product_order' && ['requested', 'accepted'].includes(detail.product_order_status || ''))
   ) && !safety.messaging_blocked;
 
   return <div style={{ display: 'grid', gap: '1rem' }}>
@@ -153,7 +187,7 @@ export function MarketplaceMessagingWorkspace({ initialConversationId = '' }: { 
       </Card>
       <Card className="policy-card">
         {!selectedId ? <div><span className="eyebrow">{t('msg.conversation')}</span><h2>{t('msg.select')}</h2><p className="detail-copy">{t('msg.selectHelp')}</p></div> : loadingThread && !detail ? <p>{t('msg.loadingThread')}</p> : detail ? <>
-          <div className="section-heading"><div><span className="eyebrow">{detail.conversation_kind === 'job_application' ? 'Job application' : detail.requirement_reference}</span><h2>{detail.counterpart_name}</h2><p className="summary-note">{detail.conversation_kind === 'job_application' ? `${detail.business_name || 'Employer'} · ${statusLabel(detail.application_status)}` : [detail.service_name, money(detail.amount_minor, detail.currency)].filter(Boolean).join(' · ')}</p></div><Badge tone={detail.conversation_status === 'open' ? 'success' : 'neutral'}>{status(detail.conversation_status)}</Badge></div>
+          <div className="section-heading"><div><span className="eyebrow">{detailEyebrow(detail)}</span><h2>{detail.counterpart_name}</h2><p className="summary-note">{detailSummary(detail)}</p></div><Badge tone={detail.conversation_status === 'open' ? 'success' : 'neutral'}>{status(detail.conversation_status)}</Badge></div>
           <p className="detail-copy">{contextTitle(detail)}</p>
           <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap', alignItems: 'start', marginBottom: '.65rem' }}><Button type="button" variant={safety.blocked_by_me ? 'secondary' : 'danger'} loading={safetyBusy} onClick={() => void toggleBlock()}>{safety.blocked_by_me ? `${t('msg.unblock')} ${detail.counterpart_name}` : `${t('msg.block')} ${detail.counterpart_name}`}</Button><MarketplaceReportForm targetType="conversation" targetId={detail.id} label={t('msg.reportConversation')} /></div>
           {safety.messaging_blocked ? <Alert title={t('msg.blocked')} tone="warning">{t('msg.blockedHelp')}</Alert> : null}
@@ -161,7 +195,7 @@ export function MarketplaceMessagingWorkspace({ initialConversationId = '' }: { 
             {messages.length === 0 ? <p className="summary-note">{t('msg.noMessages')}</p> : null}
             {messages.map((message) => <div key={message.id} style={{ display: 'flex', justifyContent: message.is_mine ? 'flex-end' : 'flex-start' }}><div style={{ maxWidth: '82%', border: '1px solid #e7eaf0', borderRadius: '14px', padding: '.7rem .85rem' }}><strong style={{ display: 'block', fontSize: '.82rem' }}>{message.is_mine ? t('common.you') : message.sender_name}</strong><p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', margin: '.25rem 0' }}>{message.body}</p><small>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(message.created_at))}</small>{!message.is_mine ? <div style={{ marginTop: '.35rem' }}><MarketplaceReportForm targetType="message" targetId={message.id} label={t('msg.reportMessage')} /></div> : null}</div></div>)}
           </div>
-          {canCompose ? <div style={{ display: 'grid', gap: '.65rem', marginTop: '1rem' }}><label className="field"><span className="field-label">{t('msg.message')}</span><textarea className="field-control field-textarea" rows={3} maxLength={2000} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={`${t('msg.message')} ${detail.counterpart_name}`} /></label><div style={{ display: 'flex', justifyContent: 'space-between', gap: '.75rem', alignItems: 'center' }}><span className="summary-note">{draft.length}/2000</span><Button type="button" loading={sending} disabled={!draft.trim()} onClick={() => void send()}>{t('msg.send')}</Button></div></div> : <Alert title={t('msg.readOnly')} tone="info">{t('msg.readOnlyPrefix')} {detail.conversation_kind === 'job_application' ? statusLabel(detail.closed_reason || detail.application_status) : status(detail.closed_reason || detail.requirement_status || 'closed')}. {t('msg.readOnlySuffix')}</Alert>}
+          {canCompose ? <div style={{ display: 'grid', gap: '.65rem', marginTop: '1rem' }}><label className="field"><span className="field-label">{t('msg.message')}</span><textarea className="field-control field-textarea" rows={3} maxLength={2000} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={`${t('msg.message')} ${detail.counterpart_name}`} /></label><div style={{ display: 'flex', justifyContent: 'space-between', gap: '.75rem', alignItems: 'center' }}><span className="summary-note">{draft.length}/2000</span><Button type="button" loading={sending} disabled={!draft.trim()} onClick={() => void send()}>{t('msg.send')}</Button></div></div> : <Alert title={t('msg.readOnly')} tone="info">{t('msg.readOnlyPrefix')} {readOnlyStatus(detail)}. {t('msg.readOnlySuffix')}</Alert>}
         </> : <p>{t('msg.threadUnavailable')}</p>}
       </Card>
     </div>
