@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { createSupabaseServiceClient } from '../../../../lib/supabase/service';
 import { hasMarketplaceDisclosure } from '../../../../server/marketplace/public-directory';
 
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const pageSize = 1000;
@@ -9,8 +11,13 @@ const maxServiceRows = 15000;
 const maxAvailabilityRows = 15000;
 const reviewServiceChunkSize = 200;
 const maxReviewRowsPerChunk = 15000;
+const geoServiceChunkSize = 2000;
 
 type ProviderWorkMode = 'available' | 'busy' | 'offline' | 'paused';
+type NearbyMatchMode = 'at_provider' | 'at_customer';
+type DistanceBand = 'under_1km' | '1_3km' | '3_7km' | '7_15km' | '15_30km' | '30_60km' | 'over_60km';
+type MarketplaceOrigin = { latitude: number; longitude: number };
+type GeoMatch = { distance_band: DistanceBand; distance_priority: number; match_mode: NearbyMatchMode };
 
 function providerKey(providerType: unknown, professionalId: unknown, businessId: unknown) {
   if (providerType === 'professional' && professionalId) return `professional:${String(professionalId)}`;
@@ -38,7 +45,60 @@ function availabilityLabel(workMode: ProviderWorkMode) {
   return 'Offline';
 }
 
-export async function GET() {
+function parseOrigin(value: unknown): MarketplaceOrigin {
+  if (!value || typeof value !== 'object') throw new Error('Location is required.');
+  const record = value as Record<string, unknown>;
+  const latitude = Number(record.latitude);
+  const longitude = Number(record.longitude);
+  if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) throw new Error('Latitude is invalid.');
+  if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) throw new Error('Longitude is invalid.');
+  return { latitude, longitude };
+}
+
+function summarizeDistance(distanceMeters: number): Pick<GeoMatch, 'distance_band' | 'distance_priority'> {
+  if (distanceMeters <= 1000) return { distance_band: 'under_1km', distance_priority: 24 };
+  if (distanceMeters <= 3000) return { distance_band: '1_3km', distance_priority: 20 };
+  if (distanceMeters <= 7000) return { distance_band: '3_7km', distance_priority: 16 };
+  if (distanceMeters <= 15000) return { distance_band: '7_15km', distance_priority: 12 };
+  if (distanceMeters <= 30000) return { distance_band: '15_30km', distance_priority: 8 };
+  if (distanceMeters <= 60000) return { distance_band: '30_60km', distance_priority: 4 };
+  return { distance_band: 'over_60km', distance_priority: 1 };
+}
+
+async function loadGeoMatches(serviceIds: string[], origin: MarketplaceOrigin) {
+  const matches = new Map<string, GeoMatch>();
+  if (!serviceIds.length) return { matches, status: 'ready' as const };
+
+  try {
+    const serviceRole = createSupabaseServiceClient();
+    for (let start = 0; start < serviceIds.length; start += geoServiceChunkSize) {
+      const chunk = serviceIds.slice(start, start + geoServiceChunkSize);
+      const { data, error } = await serviceRole.rpc('get_marketplace_geo_distances', {
+        target_service_ids: chunk,
+        origin_lat: origin.latitude,
+        origin_long: origin.longitude,
+      });
+      if (error) throw new Error(error.message);
+      for (const row of data ?? []) {
+        const distance = Number(row.distance_meters);
+        const mode = row.match_mode as NearbyMatchMode;
+        if (row.service_id && Number.isFinite(distance) && distance >= 0 && ['at_provider', 'at_customer'].includes(mode)) {
+          matches.set(String(row.service_id), {
+            ...summarizeDistance(distance),
+            match_mode: mode,
+          });
+        }
+      }
+    }
+    return { matches, status: 'ready' as const };
+  } catch {
+    // Nearby enrichment is optional. Public catalog eligibility continues to come
+    // only from the anon/RLS path below, so a geo failure never broadens access.
+    return { matches, status: 'unavailable' as const };
+  }
+}
+
+async function buildMarketplaceResponse(origin: MarketplaceOrigin | null) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return NextResponse.json({ error: 'Marketplace database is not configured' }, { status: 500 });
@@ -61,6 +121,12 @@ export async function GET() {
     if (!data || data.length < pageSize) break;
   }
 
+  const publicRows = rows.filter((row: any) => {
+    const provider = row.provider_type === 'business' ? row.businesses : row.professional_profiles;
+    const providerId = row.provider_type === 'business' ? row.business_id : row.professional_id;
+    return provider?.verified === true && hasMarketplaceDisclosure(provider) && Boolean(providerId);
+  });
+
   const liveRows: any[] = [];
   for (let start = 0; start < maxAvailabilityRows; start += pageSize) {
     const { data, error } = await supabase
@@ -82,7 +148,7 @@ export async function GET() {
     if (keyValue) liveModes.set(keyValue, effectiveWorkMode(liveRow));
   }
 
-  const ids = rows.map((row: any) => row.id);
+  const ids = publicRows.map((row: any) => String(row.id));
   const reviewRows: any[] = [];
 
   for (let chunkStart = 0; chunkStart < ids.length; chunkStart += reviewServiceChunkSize) {
@@ -105,17 +171,18 @@ export async function GET() {
   const reviews = new Map<string, number[]>();
   for (const review of reviewRows) reviews.set(review.service_id, [...(reviews.get(review.service_id) ?? []), Number(review.rating)]);
 
-  const services = rows.filter((row: any) => {
-    const provider = row.provider_type === 'business' ? row.businesses : row.professional_profiles;
-    const providerId = row.provider_type === 'business' ? row.business_id : row.professional_id;
-    return provider?.verified === true && hasMarketplaceDisclosure(provider) && Boolean(providerId);
-  }).map((row: any) => {
+  const geo = origin
+    ? await loadGeoMatches(ids, origin)
+    : { matches: new Map<string, GeoMatch>(), status: 'not_requested' as const };
+
+  const services = publicRows.map((row: any) => {
     const provider = row.provider_type === 'business' ? row.businesses : row.professional_profiles;
     const providerId = row.provider_type === 'business' ? row.business_id : row.professional_id;
     const ratings = reviews.get(row.id) ?? [];
     const rating = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
     const category = row.category || 'Other';
     const liveWorkMode = liveModes.get(providerKey(row.provider_type, row.professional_id, row.business_id)) ?? 'offline';
+    const geoMatch = geo.matches.get(String(row.id));
     return {
       id: row.id,
       service_name: { en: row.name },
@@ -133,9 +200,32 @@ export async function GET() {
       review_count: ratings.length,
       live_work_mode: liveWorkMode,
       availability: availabilityLabel(liveWorkMode),
-      verified: true
+      distance_band: geoMatch?.distance_band ?? null,
+      distance_priority: geoMatch?.distance_priority ?? 0,
+      nearby_match_mode: geoMatch?.match_mode ?? null,
+      verified: true,
     };
   });
 
-  return NextResponse.json({ services }, { headers: { 'Cache-Control': 'no-store' } });
+  return NextResponse.json(
+    { services, geo_status: geo.status },
+    { headers: { 'Cache-Control': 'no-store' } },
+  );
+}
+
+export async function GET() {
+  return buildMarketplaceResponse(null);
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json() as { origin?: unknown };
+    const origin = parseOrigin(body.origin);
+    return buildMarketplaceResponse(origin);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Customer location is invalid.' },
+      { status: 400 },
+    );
+  }
 }

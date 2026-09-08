@@ -5,6 +5,9 @@ import { Badge, Button, Card, EmptyState } from '../ui/primitives';
 import { useLanguage } from '../i18n/LanguageProvider';
 
 type LocalizedValue = string | { default_locale?: string; values?: Record<string, string> } | null | undefined;
+type ProviderWorkMode = 'available' | 'busy' | 'offline' | 'paused';
+type NearbyMatchMode = 'at_provider' | 'at_customer';
+type DistanceBand = 'under_1km' | '1_3km' | '3_7km' | '7_15km' | '15_30km' | '30_60km' | 'over_60km';
 
 type LiveMarketplaceService = {
   id: string;
@@ -23,6 +26,11 @@ type LiveMarketplaceService = {
   review_count?: number;
   verified?: boolean;
   location?: string;
+  live_work_mode?: ProviderWorkMode;
+  availability?: string;
+  distance_band?: DistanceBand | null;
+  distance_priority?: number;
+  nearby_match_mode?: NearbyMatchMode | null;
 };
 
 function sourceText(value: LocalizedValue) {
@@ -34,6 +42,30 @@ function sourceText(value: LocalizedValue) {
 
 function labelFromSlug(value: string) {
   return value.split('-').filter(Boolean).map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ') || 'Other';
+}
+
+function availabilityPresentation(mode: ProviderWorkMode | undefined, tamil: boolean) {
+  if (mode === 'available') return { label: tamil ? 'இப்போது கிடைக்கிறார்' : 'Available now', tone: 'success' as const };
+  if (mode === 'busy') return { label: tamil ? 'இப்போது பிஸி' : 'Busy now', tone: 'warning' as const };
+  if (mode === 'paused') return { label: tamil ? 'தற்காலிக இடைநிறுத்தம்' : 'Paused', tone: 'neutral' as const };
+  return { label: tamil ? 'ஆஃப்லைன்' : 'Offline', tone: 'neutral' as const };
+}
+
+function distanceBandLabel(band: DistanceBand | null | undefined, tamil: boolean) {
+  if (band === 'under_1km') return tamil ? '1 கி.மீ-க்குள்' : 'Within 1 km';
+  if (band === '1_3km') return tamil ? '1–3 கி.மீ தொலைவில்' : '1–3 km away';
+  if (band === '3_7km') return tamil ? '3–7 கி.மீ தொலைவில்' : '3–7 km away';
+  if (band === '7_15km') return tamil ? '7–15 கி.மீ தொலைவில்' : '7–15 km away';
+  if (band === '15_30km') return tamil ? '15–30 கி.மீ தொலைவில்' : '15–30 km away';
+  if (band === '30_60km') return tamil ? '30–60 கி.மீ தொலைவில்' : '30–60 km away';
+  if (band === 'over_60km') return tamil ? '60 கி.மீ-க்கு மேல்' : 'Over 60 km away';
+  return '';
+}
+
+function reachLabel(mode: NearbyMatchMode | null | undefined, tamil: boolean) {
+  if (mode === 'at_customer') return tamil ? 'உங்கள் இடத்திற்கு வருவார்' : 'Travels to you';
+  if (mode === 'at_provider') return tamil ? 'சேவை வழங்குநர் இடத்தில்' : 'At provider location';
+  return '';
 }
 
 export function LiveMarketplaceServiceCard({ service, contextQuery = '' }: { service: LiveMarketplaceService; contextQuery?: string }) {
@@ -58,19 +90,22 @@ export function LiveMarketplaceServiceCard({ service, contextQuery = '' }: { ser
   const ratingLabel = tamil
     ? `5-ல் ${rating.toFixed(1)} மதிப்பீடு, ${reviewCount} விமர்சனங்கள்`
     : `${rating.toFixed(1)} out of 5 stars from ${reviewCount} reviews`;
+  const availability = availabilityPresentation(service.live_work_mode, tamil);
+  const nearbyDistance = distanceBandLabel(service.distance_band, tamil);
+  const nearbyReach = reachLabel(service.nearby_match_mode, tamil);
 
   return (
     <Card className="discovery-card service-discovery-card">
       <div className="service-card-art" aria-hidden="true"><span>{serviceName.slice(0, 1)}</span><span className="art-label">{category}</span></div>
       <div className="discovery-card-content">
         <div className="card-meta">
-          <Badge tone="neutral">{tamil ? 'கிடைப்பை சரிபார்க்கவும்' : 'Check availability'}</Badge>
+          <Badge tone={availability.tone}>{availability.label}</Badge>
           {service.verified ? <Badge tone="info">{tamil ? 'சரிபார்க்கப்பட்ட வழங்குநர்' : 'Verified provider'}</Badge> : null}
         </div>
         <h3><Link href={serviceHref}>{serviceName}</Link></h3>
         <p className="card-description">{description}</p>
         <p className="card-provider"><Link href={providerHref}>{service.provider_name || (tamil ? 'சேவை வழங்குநர்' : 'Provider')}</Link> <span aria-hidden="true">·</span> {providerType}</p>
-        {service.location ? <p className="card-location"><span aria-hidden="true">⌖</span> {service.location}</p> : null}
+        {nearbyDistance ? <p className="card-location"><span aria-hidden="true">◎</span> {nearbyDistance}{nearbyReach ? ` · ${nearbyReach}` : ''}</p> : service.location ? <p className="card-location"><span aria-hidden="true">⌖</span> {service.location}</p> : null}
         <div className="card-footer">
           <div>
             <span className="rating" aria-label={ratingLabel}><span aria-hidden="true">★</span> {rating.toFixed(1)} <small>({reviewCount})</small></span>
