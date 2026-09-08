@@ -5,6 +5,7 @@ import BusinessPublicProfileContent, {
   publicBusinessSeoText,
   publicSiteUrl,
 } from '../../../components/detail/BusinessPublicProfileContent';
+import BusinessShopPublicStatus from '../../../components/detail/BusinessShopPublicStatus';
 import { loadCurrentPublicProviderHandle } from '../../../server/identity/public-handle';
 
 export async function generateMetadata({ params }: { params: Promise<{ providerId: string }> }): Promise<Metadata> {
@@ -67,8 +68,11 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
     permanentRedirect(`/@${encodeURIComponent(handle)}`);
   }
 
-  return <BusinessPublicProfileContent
-    providerId={providerId}
-    canonicalUrl={`${publicSiteUrl}/businesses/${encodeURIComponent(providerId)}`}
-  />;
+  return <>
+    <BusinessShopPublicStatus businessId={providerId} />
+    <BusinessPublicProfileContent
+      providerId={providerId}
+      canonicalUrl={`${publicSiteUrl}/businesses/${encodeURIComponent(providerId)}`}
+    />
+  </>;
 }
