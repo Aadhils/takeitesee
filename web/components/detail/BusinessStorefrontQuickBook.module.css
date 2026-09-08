@@ -45,6 +45,17 @@
   font-weight: 750;
 }
 
+.statusNote {
+  margin: -4px 0 0;
+  padding: 11px 13px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+  color: var(--color-ink-muted);
+  font-size: .78rem;
+  line-height: 1.55;
+}
+
 .serviceGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -67,16 +78,39 @@
   gap: 8px;
 }
 
-.serviceLabel {
+.signalRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.signal {
   width: fit-content;
   padding: 5px 8px;
+  border: 1px solid var(--color-border);
   border-radius: 999px;
+  background: var(--color-selected);
+  color: var(--color-primary-strong);
+  font-size: .67rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.positive {
+  border-color: #abefc6;
   background: #ecfdf3;
   color: #067647;
-  font-size: .68rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: .05em;
+}
+
+.warning {
+  border-color: #fedf89;
+  background: #fffaeb;
+  color: #b54708;
+}
+
+.neutral {
+  background: #f8f9fc;
+  color: var(--color-ink-muted);
 }
 
 .serviceCopy h3 {
@@ -125,6 +159,13 @@
   color: var(--color-ink);
   font-weight: 750;
   text-align: right;
+}
+
+.bookingNote {
+  margin: -3px 0 0;
+  color: var(--color-ink-muted);
+  font-size: .76rem;
+  line-height: 1.5;
 }
 
 .actions {

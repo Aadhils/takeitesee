@@ -3,8 +3,13 @@ import { createClient } from '@supabase/supabase-js';
 import PublicProviderProfile from './PublicProviderProfile';
 import ProviderProfileShareAction from './ProviderProfileShareAction';
 import BusinessStorefrontQuickBook from './BusinessStorefrontQuickBook';
+import { createSupabaseServiceClient } from '../../lib/supabase/service';
 
 export const publicSiteUrl = 'https://www.takeitesee.com';
+
+type ProviderWorkMode = 'available' | 'busy' | 'offline' | 'paused';
+type ServiceFulfillmentMode = 'at_provider' | 'at_customer' | 'remote';
+type BookingAvailabilityMode = 'always_available' | 'on_request' | 'scheduled';
 
 type PublicBusiness = {
   id: string;
@@ -38,6 +43,16 @@ export type PublicBusinessRecord = {
   services: PublicBusinessService[];
 };
 
+type StorefrontOperations = {
+  live_work_mode: ProviderWorkMode;
+  service_modes: Map<string, ServiceFulfillmentMode[]>;
+  availability_modes: Map<string, BookingAvailabilityMode>;
+};
+
+const providerWorkModes: ProviderWorkMode[] = ['available', 'busy', 'offline', 'paused'];
+const serviceFulfillmentModes: ServiceFulfillmentMode[] = ['at_provider', 'at_customer', 'remote'];
+const bookingAvailabilityModes: BookingAvailabilityMode[] = ['always_available', 'on_request', 'scheduled'];
+
 function publicSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -50,6 +65,80 @@ function hasMarketplaceDisclosure(provider: PublicBusiness) {
     provider.legal_name?.trim() && provider.principal_address?.trim() && provider.public_contact_email?.trim() && provider.public_contact_phone?.trim()
     && provider.grievance_officer_name?.trim() && provider.grievance_officer_designation?.trim() && provider.grievance_email?.trim() && provider.grievance_phone?.trim(),
   );
+}
+
+function effectiveLiveWorkMode(row: { work_mode?: unknown; mode_expires_at?: unknown } | null | undefined): ProviderWorkMode {
+  const mode = providerWorkModes.includes(row?.work_mode as ProviderWorkMode)
+    ? row?.work_mode as ProviderWorkMode
+    : 'offline';
+  if (mode !== 'available' && mode !== 'busy') return mode;
+  if (typeof row?.mode_expires_at !== 'string' || !row.mode_expires_at) return 'offline';
+  const expiry = new Date(row.mode_expires_at).getTime();
+  return Number.isFinite(expiry) && expiry > Date.now() ? mode : 'offline';
+}
+
+async function loadStorefrontOperations(providerId: string, serviceIds: string[]): Promise<StorefrontOperations> {
+  const fallback: StorefrontOperations = {
+    live_work_mode: 'offline',
+    service_modes: new Map(),
+    availability_modes: new Map(),
+  };
+  if (!serviceIds.length) return fallback;
+
+  const publicClient = publicSupabase();
+  const livePromise = publicClient
+    ? publicClient
+        .from('provider_live_availability')
+        .select('work_mode,mode_expires_at')
+        .eq('provider_type', 'business')
+        .eq('business_id', providerId)
+        .maybeSingle()
+    : Promise.resolve({ data: null, error: null });
+
+  try {
+    const serviceRole = createSupabaseServiceClient();
+    const [{ data: liveRow }, { data: fulfillmentRows, error: fulfillmentError }, { data: availabilityRows, error: availabilityError }] = await Promise.all([
+      livePromise,
+      serviceRole
+        .from('service_fulfillment_modes')
+        .select('service_id,mode')
+        .in('service_id', serviceIds)
+        .eq('active', true),
+      serviceRole
+        .from('service_availability')
+        .select('service_id,mode')
+        .in('service_id', serviceIds),
+    ]);
+
+    const serviceModes = new Map<string, ServiceFulfillmentMode[]>();
+    if (!fulfillmentError) {
+      for (const row of fulfillmentRows ?? []) {
+        const serviceId = String(row.service_id || '');
+        const mode = row.mode as ServiceFulfillmentMode;
+        if (!serviceId || !serviceFulfillmentModes.includes(mode)) continue;
+        const current = serviceModes.get(serviceId) ?? [];
+        if (!current.includes(mode)) serviceModes.set(serviceId, [...current, mode]);
+      }
+    }
+
+    const availabilityModes = new Map<string, BookingAvailabilityMode>();
+    if (!availabilityError) {
+      for (const row of availabilityRows ?? []) {
+        const serviceId = String(row.service_id || '');
+        const mode = row.mode as BookingAvailabilityMode;
+        if (serviceId && bookingAvailabilityModes.includes(mode)) availabilityModes.set(serviceId, mode);
+      }
+    }
+
+    return {
+      live_work_mode: effectiveLiveWorkMode(liveRow),
+      service_modes: serviceModes,
+      availability_modes: availabilityModes,
+    };
+  } catch {
+    const { data: liveRow } = await livePromise;
+    return { ...fallback, live_work_mode: effectiveLiveWorkMode(liveRow) };
+  }
 }
 
 export function publicBusinessSeoText(value: string | null | undefined, fallback: string, max = 160) {
@@ -97,6 +186,7 @@ export default async function BusinessPublicProfileContent({
   if (!record) return null;
 
   const { business, services } = record;
+  const operations = await loadStorefrontOperations(providerId, services.map((service) => String(service.id)));
   const structuredData = services.length ? {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
@@ -128,6 +218,9 @@ export default async function BusinessPublicProfileContent({
     currency: service.currency || 'INR',
     duration_minutes: service.duration_minutes ? Number(service.duration_minutes) : null,
     location: service.location ? String(service.location) : null,
+    live_work_mode: operations.live_work_mode,
+    fulfillment_modes: operations.service_modes.get(String(service.id)) ?? [],
+    availability_mode: operations.availability_modes.get(String(service.id)) ?? 'on_request',
   }));
 
   return <>
