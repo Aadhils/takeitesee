@@ -77,13 +77,20 @@ export function SuperAdminShell({ children }: { children: ReactNode }) {
         .super-admin-content { min-width: 0; }
         @media (max-width: 900px) {
           .super-admin-shell { display: block; }
-          .super-admin-sidebar { position: static; max-height: none; margin-bottom: 18px; }
-          .super-admin-nav { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-          .super-admin-nav-group { padding: 10px; border: 1px solid var(--color-border); border-radius: 14px; }
+          .super-admin-sidebar { position: sticky; top: 64px; z-index: 20; display: block; max-height: none; margin-bottom: 18px; padding: 10px 12px; overflow: visible; border-radius: 16px; }
+          .super-admin-brand { margin-bottom: 8px; }
+          .super-admin-mark { width: 30px; height: 30px; border-radius: 10px; }
+          .super-admin-nav { display: flex; gap: 8px; overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: thin; padding: 2px 0 4px; }
+          .super-admin-nav-group { display: contents; }
+          .super-admin-nav-group > span { display: none; }
+          .super-admin-nav-group a { flex: 0 0 auto; white-space: nowrap; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); font-size: .8rem; }
+          .super-admin-nav-group a:hover, .super-admin-nav-active { border-color: color-mix(in srgb, var(--color-primary) 35%, var(--color-border)); background: var(--color-primary-soft); }
           .super-admin-handoff { display: none; }
         }
         @media (max-width: 620px) {
-          .super-admin-nav { grid-template-columns: 1fr; }
+          .super-admin-sidebar { top: 58px; }
+          .super-admin-brand strong { font-size: .82rem; }
+          .super-admin-brand div > span { font-size: .68rem; }
         }
       `}</style>
     </div>
