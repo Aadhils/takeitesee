@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import ProviderLiveLocationControl from './ProviderLiveLocationControl';
 import styles from './ProviderLiveAvailabilityControl.module.css';
 
 type ProviderWorkMode = 'available' | 'busy' | 'offline' | 'paused';
@@ -122,6 +123,7 @@ export default function ProviderLiveAvailabilityControl() {
 
       {error ? <div className={styles.error} role="alert">{error} <button type="button" onClick={() => void load()}>Retry</button></div> : null}
       <p className={styles.freshness}>Status stays as selected until you change it. Automatic expiry is supported by the foundation and can be added to the later “Available Now” UX.</p>
+      <ProviderLiveLocationControl />
     </div> : null}
 
     <button
