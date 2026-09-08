@@ -1,0 +1,264 @@
+.anchor {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 42;
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+  width: min(390px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.trigger,
+.panel {
+  pointer-events: auto;
+}
+
+.trigger {
+  display: flex;
+  min-width: 174px;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 96%);
+  color: var(--color-ink);
+  box-shadow: 0 12px 34px rgb(29 28 54 / 18%);
+  backdrop-filter: blur(14px);
+  cursor: pointer;
+  text-align: left;
+}
+
+.trigger:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 34%, var(--color-border));
+}
+
+.triggerDot {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-surface-muted);
+  font-size: .9rem;
+  font-weight: 900;
+}
+
+.triggerCopy {
+  min-width: 0;
+  display: grid;
+  flex: 1;
+  gap: 1px;
+}
+
+.triggerCopy small {
+  color: var(--color-ink-muted);
+  font-size: .67rem;
+  font-weight: 700;
+}
+
+.triggerCopy strong {
+  font-size: .88rem;
+}
+
+.chevron {
+  color: var(--color-ink-muted);
+  font-size: .9rem;
+}
+
+.panel {
+  width: 100%;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  background: rgb(255 255 255 / 98%);
+  box-shadow: 0 18px 54px rgb(29 28 54 / 20%);
+  backdrop-filter: blur(16px);
+}
+
+.panelHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panelHeader > div {
+  display: grid;
+  gap: 3px;
+}
+
+.panelHeader strong {
+  font-size: 1rem;
+}
+
+.eyebrow {
+  color: var(--color-primary-strong);
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.closeButton {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-ink-muted);
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+
+.boundaryCopy,
+.freshness {
+  margin: 10px 0 0;
+  color: var(--color-ink-muted);
+  line-height: 1.45;
+}
+
+.boundaryCopy {
+  font-size: .77rem;
+}
+
+.freshness {
+  font-size: .7rem;
+}
+
+.modeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.modeButton {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 11px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  cursor: pointer;
+  text-align: left;
+}
+
+.modeButton:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--color-primary) 38%, var(--color-border));
+  box-shadow: 0 5px 16px rgb(29 28 54 / 8%);
+}
+
+.modeButton:disabled {
+  cursor: wait;
+  opacity: .7;
+}
+
+.modeSelected {
+  border-color: color-mix(in srgb, var(--color-primary) 52%, var(--color-border));
+  background: color-mix(in srgb, var(--color-primary) 6%, white);
+}
+
+.modeSymbol {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-surface-muted);
+  font-size: .78rem;
+  font-weight: 900;
+}
+
+.modeCopy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.modeCopy strong {
+  font-size: .78rem;
+}
+
+.modeCopy small {
+  color: var(--color-ink-muted);
+  font-size: .67rem;
+  line-height: 1.35;
+}
+
+.mode_available {
+  color: #16803a;
+  background: #e8f7ee;
+}
+
+.mode_busy {
+  color: #a15c00;
+  background: #fff2da;
+}
+
+.mode_offline {
+  color: #68707d;
+  background: #eef1f4;
+}
+
+.mode_paused {
+  color: #6f4cb7;
+  background: #f1ebff;
+}
+
+.error {
+  margin-top: 10px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: #fff1f1;
+  color: #9a2c2c;
+  font-size: .73rem;
+}
+
+.error button {
+  margin-left: 5px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-weight: 800;
+  text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+  .anchor {
+    right: 12px;
+    bottom: 18px;
+    width: min(370px, calc(100vw - 24px));
+  }
+
+  .trigger {
+    min-width: 154px;
+    padding: 8px 10px;
+  }
+
+  .panel {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 430px) {
+  .modeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel {
+    max-height: min(70vh, 520px);
+    overflow: auto;
+  }
+}
