@@ -1,0 +1,210 @@
+.wrap {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid #e7eaf0;
+  padding-top: 14px;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid #d8ddea;
+  border-radius: 12px;
+  background: #fff;
+  color: #332b65;
+  padding: 0 14px;
+  cursor: pointer;
+  text-align: left;
+  font-size: .82rem;
+  font-weight: 800;
+}
+
+.toggle small {
+  color: #647084;
+  font-size: .7rem;
+  font-weight: 600;
+}
+
+.panel {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid #e2e6ef;
+  border-radius: 14px;
+  background: #fafbfe;
+}
+
+.intro,
+.note,
+.error,
+.notice {
+  margin: 0;
+  font-size: .75rem;
+  line-height: 1.5;
+}
+
+.intro,
+.note {
+  color: #647084;
+}
+
+.modeList {
+  display: grid;
+  gap: 8px;
+}
+
+.modeRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 10px;
+  border: 1px solid #e2e6ef;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.modeRow input[type='checkbox'] {
+  margin-top: 3px;
+}
+
+.modeCopy {
+  display: grid;
+  gap: 3px;
+}
+
+.modeCopy strong {
+  font-size: .78rem;
+}
+
+.modeCopy span {
+  color: #647084;
+  font-size: .7rem;
+  line-height: 1.4;
+}
+
+.distanceRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 92px;
+  gap: 8px;
+  align-items: end;
+  margin-top: 6px;
+}
+
+.distanceRow label {
+  color: #647084;
+  font-size: .68rem;
+  font-weight: 700;
+}
+
+.distanceInput {
+  width: 100%;
+  min-height: 34px;
+  margin-top: 4px;
+  border: 1px solid #d8ddea;
+  border-radius: 9px;
+  background: #fff;
+  padding: 0 9px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.primary,
+.secondary,
+.remove {
+  min-height: 36px;
+  border-radius: 10px;
+  padding: 0 11px;
+  cursor: pointer;
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.primary {
+  border: 1px solid #4b36c8;
+  background: #4b36c8;
+  color: #fff;
+}
+
+.secondary {
+  border: 1px solid #d8ddea;
+  background: #fff;
+  color: #4b36c8;
+}
+
+.remove {
+  border: 1px solid #e7c9c9;
+  background: #fff;
+  color: #9a2c2c;
+}
+
+.primary:disabled,
+.secondary:disabled,
+.remove:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.locationGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.locationCard {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid #e2e6ef;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.locationCard strong {
+  font-size: .77rem;
+}
+
+.locationCard span {
+  color: #647084;
+  font-size: .69rem;
+  line-height: 1.4;
+}
+
+.statusSet {
+  color: #16803a !important;
+  font-weight: 800;
+}
+
+.error {
+  padding: 8px 9px;
+  border-radius: 9px;
+  background: #fff1f1;
+  color: #9a2c2c;
+}
+
+.notice {
+  padding: 8px 9px;
+  border-radius: 9px;
+  background: #eef7ff;
+  color: #23567c;
+}
+
+@media (max-width: 520px) {
+  .locationGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .distanceRow {
+    grid-template-columns: 1fr;
+  }
+}
