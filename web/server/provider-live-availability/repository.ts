@@ -7,7 +7,7 @@ export type ProviderIdentityType = 'professional' | 'business';
 
 export interface ProviderLiveAvailabilityInput {
   work_mode: ProviderWorkMode;
-  available_until?: string | null;
+  mode_expires_at?: string | null;
 }
 
 export interface ProviderLiveAvailabilityRecord {
@@ -15,7 +15,7 @@ export interface ProviderLiveAvailabilityRecord {
   provider_id: string;
   work_mode: ProviderWorkMode;
   effective_work_mode: ProviderWorkMode;
-  available_until: string | null;
+  mode_expires_at: string | null;
   status_changed_at: string | null;
   updated_at: string | null;
 }
@@ -33,23 +33,23 @@ function normalizeInput(input: ProviderLiveAvailabilityInput) {
   }
 
   if (input.work_mode === 'offline' || input.work_mode === 'paused') {
-    return { work_mode: input.work_mode, available_until: null };
+    return { work_mode: input.work_mode, mode_expires_at: null };
   }
 
-  const availableUntil = input.available_until?.trim() || null;
-  if (availableUntil) {
-    const parsed = new Date(availableUntil);
-    if (Number.isNaN(parsed.getTime())) throw new Error('Availability expiry is invalid.');
-    if (parsed.getTime() <= Date.now()) throw new Error('Availability expiry must be in the future.');
-    return { work_mode: input.work_mode, available_until: parsed.toISOString() };
+  const modeExpiresAt = input.mode_expires_at?.trim() || null;
+  if (modeExpiresAt) {
+    const parsed = new Date(modeExpiresAt);
+    if (Number.isNaN(parsed.getTime())) throw new Error('Live work-mode expiry is invalid.');
+    if (parsed.getTime() <= Date.now()) throw new Error('Live work-mode expiry must be in the future.');
+    return { work_mode: input.work_mode, mode_expires_at: parsed.toISOString() };
   }
 
-  return { work_mode: input.work_mode, available_until: null };
+  return { work_mode: input.work_mode, mode_expires_at: null };
 }
 
-function effectiveWorkMode(workMode: ProviderWorkMode, availableUntil: string | null): ProviderWorkMode {
-  if ((workMode === 'available' || workMode === 'busy') && availableUntil) {
-    const expiry = new Date(availableUntil);
+function effectiveWorkMode(workMode: ProviderWorkMode, modeExpiresAt: string | null): ProviderWorkMode {
+  if ((workMode === 'available' || workMode === 'busy') && modeExpiresAt) {
+    const expiry = new Date(modeExpiresAt);
     if (!Number.isNaN(expiry.getTime()) && expiry.getTime() <= Date.now()) return 'offline';
   }
   return workMode;
@@ -81,7 +81,7 @@ export const productionProviderLiveAvailabilityRepository = {
     const supabase = await createSupabaseServerClient();
     const query = supabase
       .from('provider_live_availability')
-      .select('work_mode,available_until,status_changed_at,updated_at')
+      .select('work_mode,mode_expires_at,status_changed_at,updated_at')
       .eq('provider_type', identity.provider_type);
     const { data, error } = identity.provider_type === 'professional'
       ? await query.eq('professional_id', identity.provider_id).maybeSingle()
@@ -89,13 +89,13 @@ export const productionProviderLiveAvailabilityRepository = {
 
     if (error) throw new Error(error.message);
     const workMode = (data?.work_mode as ProviderWorkMode | undefined) ?? 'offline';
-    const availableUntil = data?.available_until ?? null;
+    const modeExpiresAt = data?.mode_expires_at ?? null;
     return {
       provider_type: identity.provider_type,
       provider_id: identity.provider_id,
       work_mode: workMode,
-      effective_work_mode: effectiveWorkMode(workMode, availableUntil),
-      available_until: availableUntil,
+      effective_work_mode: effectiveWorkMode(workMode, modeExpiresAt),
+      mode_expires_at: modeExpiresAt,
       status_changed_at: data?.status_changed_at ?? null,
       updated_at: data?.updated_at ?? null,
     };
@@ -119,7 +119,7 @@ export const productionProviderLiveAvailabilityRepository = {
     if (existing) {
       const { error } = await supabase
         .from('provider_live_availability')
-        .update({ work_mode: normalized.work_mode, available_until: normalized.available_until })
+        .update({ work_mode: normalized.work_mode, mode_expires_at: normalized.mode_expires_at })
         .eq('id', existing.id);
       if (error) throw new Error(error.message);
     } else {
@@ -128,7 +128,7 @@ export const productionProviderLiveAvailabilityRepository = {
         professional_id: identity.professional_id,
         business_id: identity.business_id,
         work_mode: normalized.work_mode,
-        available_until: normalized.available_until,
+        mode_expires_at: normalized.mode_expires_at,
       });
       if (error) throw new Error(error.message);
     }
