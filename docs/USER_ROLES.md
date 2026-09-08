@@ -1,7 +1,9 @@
 User Roles and Permissions — TakeItEsee
 
 Principles
-- One user account can hold multiple platform roles simultaneously (customer, professional, business owner, admin).
+- Every account retains Customer capability. If the account becomes a Provider, it may own exactly ONE final Provider identity: Professional OR Business, never both.
+- A pending Provider application may be withdrawn before approval, but once a Provider application is approved its Provider type and ownership are final and cannot be switched through normal product flows.
+- Admin / Super Admin authorization is a separate platform-governance capability and does not create a second Provider identity.
 - A professional user has one master `professional_profiles` identity and can have multiple child `professional_roles` / talents under that identity.
 - Role assignments may be scoped (e.g., a user is `manager` for a specific `business`).
 - Permission checks should be RBAC (role-based) with optional ACL for scoped resources.
@@ -17,6 +19,7 @@ Primary roles
 
 2) Customer
 - Basic authenticated user who can post requirements, contact professionals, save favorites, and leave reviews as an author.
+- Customer capability remains available when the same account has one approved Provider identity.
 - Permissions:
   - Create/Update/Delete own requirements
   - View proposals or contact professionals
@@ -25,6 +28,7 @@ Primary roles
 
 3) Professional
 - A user offering services and/or presenting a professional identity for earning and career opportunities.
+- Professional is one of the two mutually exclusive Provider identity types. An approved Professional account cannot also own or later switch to a Business Provider identity through normal product flows.
 - Owns exactly one master `professional_profiles` row for identity, verification, headline, description, and primary service area.
 - May create multiple child `professional_roles` representing distinct talents, for example Web Developer, Designer, Network Technician, Acting Driver, or Tuition Teacher.
 - Each child role can independently express whether the professional is currently open to service bookings, freelance, part-time, full-time, or contract opportunities.
@@ -42,8 +46,9 @@ Primary roles
 - Publishing a career profile does not mean TakeItEsee independently verified employment, education or certification claims unless a separate verification status is explicitly shown.
 
 4) Business
-- Organization account representing a company or group.
-- May have multiple staff members with scoped role assignments (manager, staff).
+- Organization Provider identity representing a company or group.
+- Business is the other mutually exclusive Provider identity type. An approved Business account cannot also own or later switch to a Professional Provider identity through normal product flows.
+- May have multiple staff members with scoped role assignments (manager, staff); staff membership does not give the owner a second Provider identity.
 - Permissions:
   - Manage business profile, services, and staff role assignments
   - View analytics for the business
@@ -52,11 +57,12 @@ Primary roles
 - Employer hiring, job posting and applicant-management workflows are separate future capabilities and are not implied by the professional resume profile.
 
 5) Admin
-- Superuser role for platform operators.
-- Permissions:
-  - Full access to most data for moderation, user management, content takedown
-  - Access to audit logs and operations dashboards
-  - Can assign/revoke roles
+- Platform-operator role for delegated marketplace operations and moderation.
+- Permissions depend on delegated scope and may include:
+  - Moderation, user/provider operations, and content takedown
+  - Operational dashboards and permitted audit visibility
+  - Delegated actions allowed by Admin RBAC/ACL
+- Admin authorization does not weaken Provider identity finality.
 
 Professional identity model
 - `professional_profiles` is the single master identity for one professional user.
@@ -68,18 +74,29 @@ Professional identity model
 - Portfolio/media, resume, future job-opportunity, subscription, analytics, and search-boost features extend this master-identity + child-data model rather than duplicating provider accounts.
 - Public professional discovery must preserve verification, active-state, privacy, marketplace trust and explicit publication boundaries.
 
+Provider identity finality
+- Customer capability is universal; Provider identity is optional.
+- An account may finalize exactly one Provider identity: `professional_profiles` OR an owned `businesses` identity.
+- Approved `provider_applications` are the durable finality record for Provider type and ownership.
+- Deleting or recreating a Provider profile must never become a path to switch Provider type.
+- Professional and Business offerings remain searchable together through the unified marketplace even though their Provider identities are mutually exclusive per account.
+
+Availability model boundaries
+- Provider live work mode (`available`, `busy`, `offline`, `paused`) is Provider-level operational state.
+- `service_availability`, weekly windows, and blackouts remain per-service booking/scheduling state.
+- Future Business shop open/closed or operating-hours state is a separate Business operational signal and must not be treated as identical to service availability or Provider live work mode.
+
 Role assignment model
 - Use `role_assignments` table with columns: `user_id`, `role`, `scope_type`, `scope_id`, `active`, `granted_by`, `granted_at`.
-- Example entries:
-  - (user_1, 'customer', null, null) => basic customer
-  - (user_2, 'professional', null, null) => professional
-  - (user_3, 'business', 'business', business_1_id) => manager for business_1
+- Provider role assignments must never authorize one account to own both Provider identity types.
+- Business staff/manager scope is membership in a Business identity and is distinct from owning a second Provider identity.
 
 Permission evaluation
 - Centralize permission checks in a policy layer or service.
-- Combine role checks and resource-level ACLs. Example: to edit a `business`, require role `business` with scope_id equal to the target business id, OR `admin`.
+- Combine role checks and resource-level ACLs. Example: to edit a `business`, require the appropriate scoped business membership/ownership permission, OR an authorized platform operator capability.
 - Professional role, portfolio and career mutations must resolve ownership through the parent master professional profile; clients must not be allowed to choose another professional identity as the mutation owner.
+- Provider mutations must preserve the approved Professional-or-Business finality invariant.
 
 Impersonation & audit
-- Admin may have an impersonation workflow but require explicit logging and an approval process.
-- Every platform role change must be audited (store in `audits` table).
+- Admin/Super Admin impersonation, if supported, must require explicit logging and an approval process.
+- Every platform role or delegated permission change must be audited.
