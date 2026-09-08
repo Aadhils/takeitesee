@@ -72,6 +72,8 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
         id: 'business-hiring',
         label: tamil ? 'Hiring & Business' : 'Hiring & business',
         links: [
+          { href: '/provider/products', label: tamil ? 'Products' : 'Products' },
+          { href: '/provider/orders', label: tamil ? 'Product orders' : 'Product orders' },
           { href: '/provider/jobs', label: 'Employer Jobs' },
           { href: '/provider/profile', label: t('provider.profile') },
         ],

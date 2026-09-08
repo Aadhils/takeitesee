@@ -58,9 +58,10 @@ export default function AuthenticatedAccount() {
     {
       id: 'activity',
       eyebrow: tamil ? 'என் செயல்பாடு' : 'My activity',
-      title: tamil ? 'Bookings & conversations' : 'Bookings & conversations',
+      title: tamil ? 'Bookings, orders & conversations' : 'Bookings, orders & conversations',
       links: [
         { href: '/bookings', label: tamil ? 'என் Bookings' : 'My bookings' },
+        { href: '/orders', label: tamil ? 'என் Product Orders' : 'My product orders' },
         { href: '/messages', label: tamil ? 'செய்திகள்' : 'Messages' },
         { href: '/notifications', label: t('account.notifications') },
         { href: '/reviews', label: tamil ? 'மதிப்புரைகள்' : 'Reviews' },
