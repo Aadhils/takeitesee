@@ -30,6 +30,7 @@ export interface BusinessProductRecord {
   unit_label: string;
   stock_mode: BusinessProductStockMode;
   status: BusinessProductStatus;
+  primary_image_object_path: string | null;
   review_revision: number;
   launch: BusinessProductLaunchRecord | null;
   created_at: string;
@@ -53,6 +54,7 @@ type BusinessIdentity = { business_id: string };
 
 const statuses: BusinessProductStatus[] = ['draft', 'active', 'paused'];
 const stockModes: BusinessProductStockMode[] = ['in_stock', 'out_of_stock', 'made_to_order'];
+const primaryImageUuidPattern = '[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}';
 
 async function resolveBusinessIdentity(session: ServerCustomerSession): Promise<BusinessIdentity> {
   const supabase = await createSupabaseServerClient();
@@ -97,6 +99,15 @@ function normalizeStockMode(value: unknown): BusinessProductStockMode {
   const mode = String(value ?? 'in_stock') as BusinessProductStockMode;
   if (!stockModes.includes(mode)) throw new Error('Product stock mode is invalid.');
   return mode;
+}
+
+function normalizePrimaryImagePath(value: unknown, businessId: string, productId: string) {
+  if (value === null) return null;
+  const path = String(value ?? '').trim();
+  if (!path) throw new Error('Primary product image path is required.');
+  const pattern = new RegExp(`^business/${businessId}/product/${productId}/primary/${primaryImageUuidPattern}\\.(jpg|jpeg|png|webp)$`, 'i');
+  if (!pattern.test(path)) throw new Error('Primary product image path is invalid for this Business product.');
+  return path;
 }
 
 function createPayload(input: CreateBusinessProductInput) {
@@ -152,6 +163,7 @@ function mapProduct(row: Record<string, unknown>, launch: BusinessProductLaunchR
     unit_label: String(row.unit_label),
     stock_mode: row.stock_mode as BusinessProductStockMode,
     status: row.status as BusinessProductStatus,
+    primary_image_object_path: (row.primary_image_object_path as string | null) ?? null,
     review_revision: Number(row.review_revision ?? 1),
     launch,
     created_at: String(row.created_at),
@@ -164,7 +176,7 @@ function friendlyDatabaseError(message: string) {
   return new Error(message);
 }
 
-const productColumns = 'id,business_id,name,description,sku,price,currency,unit_label,stock_mode,status,review_revision,created_at,updated_at';
+const productColumns = 'id,business_id,name,description,sku,price,currency,unit_label,stock_mode,status,primary_image_object_path,review_revision,created_at,updated_at';
 const launchColumns = 'id,product_id,business_id,product_revision,status,review_note,reviewed_at,created_at,updated_at';
 
 export const productionProviderProductRepository = {
@@ -219,6 +231,24 @@ export const productionProviderProductRepository = {
     const { data, error } = await supabase
       .from('business_products')
       .update(updatePayload(input))
+      .eq('id', productId)
+      .eq('business_id', identity.business_id)
+      .select(productColumns)
+      .maybeSingle();
+    if (error) throw friendlyDatabaseError(error.message);
+    if (!data) throw new Error('Product was not found or is not owned by this Business.');
+    return mapProduct(data as Record<string, unknown>);
+  },
+
+  async setPrimaryImage(session: ServerCustomerSession, productId: string, objectPath: string | null): Promise<BusinessProductRecord> {
+    assertProductionBackendConfigured();
+    if (!productId) throw new Error('Product ID is required.');
+    const identity = await resolveBusinessIdentity(session);
+    const path = normalizePrimaryImagePath(objectPath, identity.business_id, productId);
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from('business_products')
+      .update({ primary_image_object_path: path })
       .eq('id', productId)
       .eq('business_id', identity.business_id)
       .select(productColumns)
