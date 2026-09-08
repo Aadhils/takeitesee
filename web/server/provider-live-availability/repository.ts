@@ -36,21 +36,22 @@ function normalizeInput(input: ProviderLiveAvailabilityInput) {
     return { work_mode: input.work_mode, mode_expires_at: null };
   }
 
-  const modeExpiresAt = input.mode_expires_at?.trim() || null;
-  if (modeExpiresAt) {
-    const parsed = new Date(modeExpiresAt);
-    if (Number.isNaN(parsed.getTime())) throw new Error('Live work-mode expiry is invalid.');
-    if (parsed.getTime() <= Date.now()) throw new Error('Live work-mode expiry must be in the future.');
-    return { work_mode: input.work_mode, mode_expires_at: parsed.toISOString() };
-  }
+  const modeExpiresAt = input.mode_expires_at?.trim() || '';
+  if (!modeExpiresAt) throw new Error('Available and Busy live work modes require an expiry.');
 
-  return { work_mode: input.work_mode, mode_expires_at: null };
+  const parsed = new Date(modeExpiresAt);
+  if (Number.isNaN(parsed.getTime())) throw new Error('Live work-mode expiry is invalid.');
+  const now = Date.now();
+  if (parsed.getTime() <= now) throw new Error('Live work-mode expiry must be in the future.');
+  if (parsed.getTime() > now + (2 * 60 * 60 * 1000)) throw new Error('Live work-mode expiry cannot be more than two hours in the future.');
+  return { work_mode: input.work_mode, mode_expires_at: parsed.toISOString() };
 }
 
 function effectiveWorkMode(workMode: ProviderWorkMode, modeExpiresAt: string | null): ProviderWorkMode {
-  if ((workMode === 'available' || workMode === 'busy') && modeExpiresAt) {
+  if (workMode === 'available' || workMode === 'busy') {
+    if (!modeExpiresAt) return 'offline';
     const expiry = new Date(modeExpiresAt);
-    if (!Number.isNaN(expiry.getTime()) && expiry.getTime() <= Date.now()) return 'offline';
+    if (Number.isNaN(expiry.getTime()) || expiry.getTime() <= Date.now()) return 'offline';
   }
   return workMode;
 }

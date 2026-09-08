@@ -5,6 +5,7 @@ import ProviderLiveLocationControl from './ProviderLiveLocationControl';
 import styles from './ProviderLiveAvailabilityControl.module.css';
 
 type ProviderWorkMode = 'available' | 'busy' | 'offline' | 'paused';
+type LiveDurationMinutes = 15 | 30 | 60;
 
 type ProviderLiveAvailability = {
   provider_type: 'professional' | 'business';
@@ -34,11 +35,30 @@ function modeLabel(mode: ProviderWorkMode) {
   return MODES.find((item) => item.value === mode)?.label ?? 'Offline';
 }
 
+function effectiveMode(availability: ProviderLiveAvailability | null): ProviderWorkMode {
+  if (!availability) return 'offline';
+  if (availability.work_mode === 'available' || availability.work_mode === 'busy') {
+    if (!availability.mode_expires_at) return 'offline';
+    const expiry = new Date(availability.mode_expires_at).getTime();
+    if (Number.isNaN(expiry) || expiry <= Date.now()) return 'offline';
+  }
+  return availability.work_mode;
+}
+
+function expiryLabel(value: string | null) {
+  if (!value) return '';
+  const expiry = new Date(value);
+  if (Number.isNaN(expiry.getTime()) || expiry.getTime() <= Date.now()) return '';
+  return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(expiry);
+}
+
 export default function ProviderLiveAvailabilityControl() {
   const [availability, setAvailability] = useState<ProviderLiveAvailability | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [savingMode, setSavingMode] = useState<ProviderWorkMode | null>(null);
+  const [durationMinutes, setDurationMinutes] = useState<LiveDurationMinutes>(30);
+  const [expiryTick, setExpiryTick] = useState(0);
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
@@ -59,23 +79,39 @@ export default function ProviderLiveAvailabilityControl() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const currentMode = availability?.effective_work_mode ?? 'offline';
+  useEffect(() => {
+    if (!availability?.mode_expires_at || !['available', 'busy'].includes(availability.work_mode)) return;
+    const expiry = new Date(availability.mode_expires_at).getTime();
+    if (Number.isNaN(expiry)) return;
+    const delay = Math.max(0, expiry - Date.now()) + 250;
+    const timeout = window.setTimeout(() => setExpiryTick((value) => value + 1), Math.min(delay, 2_147_000_000));
+    return () => window.clearTimeout(timeout);
+  }, [availability?.mode_expires_at, availability?.work_mode]);
+
+  const currentMode = useMemo(() => effectiveMode(availability), [availability, expiryTick]);
   const currentOption = useMemo(
     () => MODES.find((item) => item.value === currentMode) ?? MODES[2],
     [currentMode],
   );
   const statusUnavailable = !loading && Boolean(error) && !availability;
   const visibleStatus = loading ? 'Checking…' : statusUnavailable ? 'Unavailable' : modeLabel(currentMode);
+  const activeExpiryLabel = currentMode === 'available' || currentMode === 'busy'
+    ? expiryLabel(availability?.mode_expires_at ?? null)
+    : '';
 
   const updateMode = async (nextMode: ProviderWorkMode) => {
-    if (savingMode || statusUnavailable || nextMode === currentMode) return;
+    if (savingMode || statusUnavailable) return;
     setSavingMode(nextMode);
     setError('');
     try {
+      const expiring = nextMode === 'available' || nextMode === 'busy';
+      const modeExpiresAt = expiring
+        ? new Date(Date.now() + durationMinutes * 60 * 1000).toISOString()
+        : null;
       const response = await fetch('/api/provider/live-availability', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ work_mode: nextMode, mode_expires_at: null }),
+        body: JSON.stringify({ work_mode: nextMode, mode_expires_at: modeExpiresAt }),
       });
       const payload = await response.json() as { availability?: ProviderLiveAvailability; error?: string };
       if (!response.ok || !payload.availability) throw new Error(payload.error || 'Unable to update live work status.');
@@ -100,6 +136,20 @@ export default function ProviderLiveAvailabilityControl() {
 
       <p className={styles.boundaryCopy}>This status is separate from service schedules. For Businesses, it does not mean Shop Open/Closed.</p>
 
+      <label style={{ display: 'grid', gap: '5px', marginTop: '12px', color: 'var(--color-ink-muted)', fontSize: '.72rem', fontWeight: 700 }}>
+        Available / Busy duration
+        <select
+          value={durationMinutes}
+          disabled={Boolean(savingMode) || loading || statusUnavailable}
+          onChange={(event) => setDurationMinutes(Number(event.target.value) as LiveDurationMinutes)}
+          style={{ minHeight: '38px', border: '1px solid var(--color-border)', borderRadius: '10px', background: 'var(--color-surface)', color: 'var(--color-ink)', padding: '0 10px' }}
+        >
+          <option value={15}>15 minutes</option>
+          <option value={30}>30 minutes</option>
+          <option value={60}>60 minutes</option>
+        </select>
+      </label>
+
       <div className={styles.modeGrid} role="group" aria-label="Choose live work status">
         {MODES.map((mode) => {
           const selected = !statusUnavailable && currentMode === mode.value;
@@ -122,7 +172,7 @@ export default function ProviderLiveAvailabilityControl() {
       </div>
 
       {error ? <div className={styles.error} role="alert">{error} <button type="button" onClick={() => void load()}>Retry</button></div> : null}
-      <p className={styles.freshness}>Status stays as selected until you change it. Automatic expiry is supported by the foundation and can be added to the later “Available Now” UX.</p>
+      <p className={styles.freshness}>{activeExpiryLabel ? `${modeLabel(currentMode)} until ${activeExpiryLabel}. ` : ''}Available and Busy automatically expire to Offline. Choose the live status again to extend it. Service schedules and Business Shop Open/Closed remain separate.</p>
       <ProviderLiveLocationControl />
     </div> : null}
 
