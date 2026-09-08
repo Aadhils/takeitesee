@@ -42,6 +42,11 @@ create index if not exists business_product_launch_requests_status_created_idx
   on public.business_product_launch_requests(status, created_at desc);
 create index if not exists business_product_launch_requests_business_created_idx
   on public.business_product_launch_requests(business_id, created_at desc);
+create index if not exists business_product_launch_requests_applicant_created_idx
+  on public.business_product_launch_requests(applicant_user_id, created_at desc);
+create index if not exists business_product_launch_requests_reviewed_by_idx
+  on public.business_product_launch_requests(reviewed_by)
+  where reviewed_by is not null;
 
 create table if not exists public.business_product_launch_events (
   id uuid primary key default gen_random_uuid(),
@@ -56,6 +61,9 @@ create table if not exists public.business_product_launch_events (
 
 create index if not exists business_product_launch_events_request_created_idx
   on public.business_product_launch_events(launch_request_id, created_at);
+create index if not exists business_product_launch_events_actor_user_idx
+  on public.business_product_launch_events(actor_user_id)
+  where actor_user_id is not null;
 
 comment on table public.business_product_launch_requests is
   'Revision-bound platform review requests controlling whether a Business product may appear publicly.';
