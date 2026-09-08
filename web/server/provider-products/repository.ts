@@ -1,9 +1,23 @@
 import type { ServerCustomerSession } from '../../types/production-domain';
 import { createSupabaseServerClient } from '../../lib/supabase/server';
+import { createSupabaseServiceClient } from '../../lib/supabase/service';
 import { assertProductionBackendConfigured } from '../config';
 
 export type BusinessProductStatus = 'draft' | 'active' | 'paused';
 export type BusinessProductStockMode = 'in_stock' | 'out_of_stock' | 'made_to_order';
+export type BusinessProductLaunchStatus = 'pending' | 'approved' | 'changes_requested' | 'rejected' | 'withdrawn';
+
+export interface BusinessProductLaunchRecord {
+  id: string;
+  product_id: string;
+  business_id: string;
+  product_revision: number;
+  status: BusinessProductLaunchStatus;
+  review_note: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface BusinessProductRecord {
   id: string;
@@ -16,6 +30,8 @@ export interface BusinessProductRecord {
   unit_label: string;
   stock_mode: BusinessProductStockMode;
   status: BusinessProductStatus;
+  review_revision: number;
+  launch: BusinessProductLaunchRecord | null;
   created_at: string;
   updated_at: string;
 }
@@ -110,7 +126,21 @@ function updatePayload(input: UpdateBusinessProductInput) {
   return payload;
 }
 
-function mapProduct(row: Record<string, unknown>): BusinessProductRecord {
+function mapLaunch(row: Record<string, unknown>): BusinessProductLaunchRecord {
+  return {
+    id: String(row.id),
+    product_id: String(row.product_id),
+    business_id: String(row.business_id),
+    product_revision: Number(row.product_revision),
+    status: row.status as BusinessProductLaunchStatus,
+    review_note: (row.review_note as string | null) ?? null,
+    reviewed_at: (row.reviewed_at as string | null) ?? null,
+    created_at: String(row.created_at),
+    updated_at: String(row.updated_at),
+  };
+}
+
+function mapProduct(row: Record<string, unknown>, launch: BusinessProductLaunchRecord | null = null): BusinessProductRecord {
   return {
     id: String(row.id),
     business_id: String(row.business_id),
@@ -122,6 +152,8 @@ function mapProduct(row: Record<string, unknown>): BusinessProductRecord {
     unit_label: String(row.unit_label),
     stock_mode: row.stock_mode as BusinessProductStockMode,
     status: row.status as BusinessProductStatus,
+    review_revision: Number(row.review_revision ?? 1),
+    launch,
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
   };
@@ -132,18 +164,38 @@ function friendlyDatabaseError(message: string) {
   return new Error(message);
 }
 
+const productColumns = 'id,business_id,name,description,sku,price,currency,unit_label,stock_mode,status,review_revision,created_at,updated_at';
+const launchColumns = 'id,product_id,business_id,product_revision,status,review_note,reviewed_at,created_at,updated_at';
+
 export const productionProviderProductRepository = {
   async list(session: ServerCustomerSession): Promise<BusinessProductRecord[]> {
     assertProductionBackendConfigured();
     const identity = await resolveBusinessIdentity(session);
     const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase
-      .from('business_products')
-      .select('id,business_id,name,description,sku,price,currency,unit_label,stock_mode,status,created_at,updated_at')
-      .eq('business_id', identity.business_id)
-      .order('updated_at', { ascending: false });
+    const [{ data, error }, { data: launchRows, error: launchError }] = await Promise.all([
+      supabase
+        .from('business_products')
+        .select(productColumns)
+        .eq('business_id', identity.business_id)
+        .order('updated_at', { ascending: false }),
+      supabase
+        .from('business_product_launch_requests')
+        .select(launchColumns)
+        .eq('business_id', identity.business_id)
+        .order('created_at', { ascending: false }),
+    ]);
     if (error) throw friendlyDatabaseError(error.message);
-    return (data ?? []).map((row) => mapProduct(row as Record<string, unknown>));
+    if (launchError) throw new Error(launchError.message);
+
+    const latestLaunchByProduct = new Map<string, BusinessProductLaunchRecord>();
+    for (const row of launchRows ?? []) {
+      const launch = mapLaunch(row as Record<string, unknown>);
+      if (!latestLaunchByProduct.has(launch.product_id)) latestLaunchByProduct.set(launch.product_id, launch);
+    }
+    return (data ?? []).map((row) => {
+      const productId = String(row.id);
+      return mapProduct(row as Record<string, unknown>, latestLaunchByProduct.get(productId) ?? null);
+    });
   },
 
   async create(session: ServerCustomerSession, input: CreateBusinessProductInput): Promise<BusinessProductRecord> {
@@ -153,7 +205,7 @@ export const productionProviderProductRepository = {
     const { data, error } = await supabase
       .from('business_products')
       .insert({ business_id: identity.business_id, ...createPayload(input) })
-      .select('id,business_id,name,description,sku,price,currency,unit_label,stock_mode,status,created_at,updated_at')
+      .select(productColumns)
       .single();
     if (error) throw friendlyDatabaseError(error.message);
     return mapProduct(data as Record<string, unknown>);
@@ -169,10 +221,38 @@ export const productionProviderProductRepository = {
       .update(updatePayload(input))
       .eq('id', productId)
       .eq('business_id', identity.business_id)
-      .select('id,business_id,name,description,sku,price,currency,unit_label,stock_mode,status,created_at,updated_at')
+      .select(productColumns)
       .maybeSingle();
     if (error) throw friendlyDatabaseError(error.message);
     if (!data) throw new Error('Product was not found or is not owned by this Business.');
     return mapProduct(data as Record<string, unknown>);
+  },
+
+  async submitLaunch(session: ServerCustomerSession, productId: string): Promise<BusinessProductLaunchRecord> {
+    assertProductionBackendConfigured();
+    if (!productId) throw new Error('Product ID is required.');
+    const identity = await resolveBusinessIdentity(session);
+    const serviceRole = createSupabaseServiceClient();
+    const { data, error } = await serviceRole.rpc('submit_business_product_launch_request', {
+      target_product_id: productId,
+      target_business_id: identity.business_id,
+      target_applicant_user_id: session.user_id,
+    }).single();
+    if (error || !data) throw new Error(error?.message ?? 'Product launch request could not be submitted.');
+    return mapLaunch(data as Record<string, unknown>);
+  },
+
+  async withdrawLaunch(session: ServerCustomerSession, productId: string): Promise<BusinessProductLaunchRecord> {
+    assertProductionBackendConfigured();
+    if (!productId) throw new Error('Product ID is required.');
+    const identity = await resolveBusinessIdentity(session);
+    const serviceRole = createSupabaseServiceClient();
+    const { data, error } = await serviceRole.rpc('withdraw_business_product_launch_request', {
+      target_product_id: productId,
+      target_business_id: identity.business_id,
+      target_applicant_user_id: session.user_id,
+    }).single();
+    if (error || !data) throw new Error(error?.message ?? 'Product launch request could not be withdrawn.');
+    return mapLaunch(data as Record<string, unknown>);
   },
 };
