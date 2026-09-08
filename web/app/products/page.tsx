@@ -30,8 +30,8 @@ function normalized(value: unknown) {
   return String(value ?? '').normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, ' ').trim();
 }
 
-function storefrontProductHref(product: Product) {
-  return `/businesses/${encodeURIComponent(product.business_id)}#product-${product.id}`;
+function productDetailHref(product: Product) {
+  return `/products/${encodeURIComponent(product.id)}`;
 }
 
 export default function ProductsPage() {
@@ -166,7 +166,7 @@ export default function ProductsPage() {
         : filteredProducts.length ? <div className="service-grid">{filteredProducts.map((product) => {
           const stockState = stockPresentation(product.stock_mode);
           const shopOpen = product.business_shop_state === 'open';
-          const productHref = storefrontProductHref(product);
+          const productHref = productDetailHref(product);
           return <Card className="discovery-card service-discovery-card" key={product.id}>
             <div className="service-card-art" aria-hidden="true"><span>{product.name.slice(0, 1)}</span><span className="art-label">{tamil ? 'Product' : 'Product'}</span></div>
             <div className="discovery-card-content">

@@ -5,6 +5,7 @@ import { hasMarketplaceDisclosure, loadPublicProfessionals } from '../server/mar
 const siteUrl = 'https://www.takeitesee.com';
 const pageSize = 1000;
 const maxServiceRows = 15000;
+const maxProductRows = 10000;
 const maxProviderHandleRows = 15000;
 
 export const dynamic = 'force-dynamic';
@@ -12,6 +13,7 @@ export const dynamic = 'force-dynamic';
 const staticEntries: MetadataRoute.Sitemap = [
   { url: siteUrl, changeFrequency: 'daily', priority: 1 },
   { url: `${siteUrl}/explore`, changeFrequency: 'daily', priority: 0.9 },
+  { url: `${siteUrl}/products`, changeFrequency: 'daily', priority: 0.8 },
   { url: `${siteUrl}/jobs`, changeFrequency: 'daily', priority: 0.9 },
   { url: `${siteUrl}/categories`, changeFrequency: 'weekly', priority: 0.8 },
   { url: `${siteUrl}/professionals`, changeFrequency: 'daily', priority: 0.8 },
@@ -56,6 +58,28 @@ async function loadPublicServiceRows() {
   return rows;
 }
 
+async function loadPublicProductRows() {
+  const supabase = publicSupabase();
+  if (!supabase) return null;
+
+  const rows: any[] = [];
+
+  for (let start = 0; start < maxProductRows; start += pageSize) {
+    // business_products anon RLS exposes only current approved public revisions.
+    const { data, error } = await supabase
+      .from('business_products')
+      .select('id')
+      .order('id')
+      .range(start, Math.min(start + pageSize - 1, maxProductRows - 1));
+
+    if (error) return null;
+    rows.push(...(data ?? []));
+    if (!data || data.length < pageSize) break;
+  }
+
+  return rows;
+}
+
 async function loadCurrentProviderHandles() {
   const supabase = publicSupabase();
   if (!supabase) return null;
@@ -80,12 +104,22 @@ async function loadCurrentProviderHandles() {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [rows, publicProfessionals, providerHandles] = await Promise.all([
+  const [rows, publicProducts, publicProfessionals, providerHandles] = await Promise.all([
     loadPublicServiceRows(),
+    loadPublicProductRows(),
     loadPublicProfessionals(),
     loadCurrentProviderHandles(),
   ]);
-  if (!rows) return staticEntries;
+
+  const productEntries: MetadataRoute.Sitemap = (publicProducts ?? [])
+    .filter((product) => Boolean(product?.id))
+    .map((product) => ({
+      url: `${siteUrl}/products/${encodeURIComponent(product.id)}`,
+      changeFrequency: 'weekly' as const,
+      priority: 0.75,
+    }));
+
+  if (!rows) return [...staticEntries, ...productEntries];
 
   const serviceEntries: MetadataRoute.Sitemap = [];
   const businessIds = new Set<string>();
@@ -130,5 +164,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     };
   });
 
-  return [...staticEntries, ...serviceEntries, ...professionalEntries, ...businessEntries];
+  return [...staticEntries, ...serviceEntries, ...productEntries, ...professionalEntries, ...businessEntries];
 }
