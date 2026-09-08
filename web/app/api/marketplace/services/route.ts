@@ -12,8 +12,10 @@ const maxAvailabilityRows = 15000;
 const reviewServiceChunkSize = 200;
 const maxReviewRowsPerChunk = 15000;
 const geoServiceChunkSize = 2000;
+const shopBusinessChunkSize = 1000;
 
 type ProviderWorkMode = 'available' | 'busy' | 'offline' | 'paused';
+type BusinessShopState = 'open' | 'closed';
 type NearbyMatchMode = 'at_provider' | 'at_customer';
 type DistanceBand = 'under_1km' | '1_3km' | '3_7km' | '7_15km' | '15_30km' | '30_60km' | 'over_60km';
 type MarketplaceOrigin = { latitude: number; longitude: number };
@@ -99,6 +101,34 @@ async function loadGeoMatches(serviceIds: string[], origin: MarketplaceOrigin) {
   }
 }
 
+async function loadBusinessShopStates(businessIds: string[]) {
+  const states = new Map<string, BusinessShopState>();
+  const uniqueBusinessIds = Array.from(new Set(businessIds.filter(Boolean)));
+  if (!uniqueBusinessIds.length) return states;
+
+  try {
+    const serviceRole = createSupabaseServiceClient();
+    for (let start = 0; start < uniqueBusinessIds.length; start += shopBusinessChunkSize) {
+      const chunk = uniqueBusinessIds.slice(start, start + shopBusinessChunkSize);
+      const { data, error } = await serviceRole
+        .from('business_shop_status')
+        .select('business_id,shop_state')
+        .in('business_id', chunk);
+      if (error) throw new Error(error.message);
+      for (const row of data ?? []) {
+        if (row.business_id && row.shop_state === 'open') states.set(String(row.business_id), 'open');
+        else if (row.business_id && row.shop_state === 'closed') states.set(String(row.business_id), 'closed');
+      }
+    }
+  } catch {
+    // Shop-status enrichment never decides public eligibility. Missing or failed
+    // enrichment is interpreted fail-safe as Closed when response rows are built.
+    return new Map<string, BusinessShopState>();
+  }
+
+  return states;
+}
+
 async function buildMarketplaceResponse(origin: MarketplaceOrigin | null) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -127,6 +157,12 @@ async function buildMarketplaceResponse(origin: MarketplaceOrigin | null) {
     const providerId = row.provider_type === 'business' ? row.business_id : row.professional_id;
     return provider?.verified === true && hasMarketplaceDisclosure(provider) && Boolean(providerId);
   });
+
+  const businessShopStates = await loadBusinessShopStates(
+    publicRows
+      .filter((row: any) => row.provider_type === 'business' && row.business_id)
+      .map((row: any) => String(row.business_id)),
+  );
 
   const liveRows: any[] = [];
   for (let start = 0; start < maxAvailabilityRows; start += pageSize) {
@@ -201,6 +237,9 @@ async function buildMarketplaceResponse(origin: MarketplaceOrigin | null) {
       review_count: ratings.length,
       live_work_mode: liveWorkMode,
       availability: availabilityLabel(liveWorkMode),
+      business_shop_state: row.provider_type === 'business'
+        ? (businessShopStates.get(String(providerId)) ?? 'closed')
+        : null,
       distance_band: geoMatch?.distance_band ?? null,
       distance_priority: geoMatch?.distance_priority ?? 0,
       nearby_match_mode: geoMatch?.match_mode ?? null,

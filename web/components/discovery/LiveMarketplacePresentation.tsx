@@ -6,6 +6,7 @@ import { useLanguage } from '../i18n/LanguageProvider';
 
 type LocalizedValue = string | { default_locale?: string; values?: Record<string, string> } | null | undefined;
 type ProviderWorkMode = 'available' | 'busy' | 'offline' | 'paused';
+type BusinessShopState = 'open' | 'closed';
 type NearbyMatchMode = 'at_provider' | 'at_customer';
 type DistanceBand = 'under_1km' | '1_3km' | '3_7km' | '7_15km' | '15_30km' | '30_60km' | 'over_60km';
 
@@ -28,6 +29,7 @@ type LiveMarketplaceService = {
   location?: string;
   live_work_mode?: ProviderWorkMode;
   availability?: string;
+  business_shop_state?: BusinessShopState | null;
   distance_band?: DistanceBand | null;
   distance_priority?: number;
   nearby_match_mode?: NearbyMatchMode | null;
@@ -49,6 +51,12 @@ function availabilityPresentation(mode: ProviderWorkMode | undefined, tamil: boo
   if (mode === 'busy') return { label: tamil ? 'இப்போது பிஸி' : 'Busy now', tone: 'warning' as const };
   if (mode === 'paused') return { label: tamil ? 'தற்காலிக இடைநிறுத்தம்' : 'Paused', tone: 'neutral' as const };
   return { label: tamil ? 'ஆஃப்லைன்' : 'Offline', tone: 'neutral' as const };
+}
+
+function businessShopPresentation(providerType: string | undefined, state: BusinessShopState | null | undefined, tamil: boolean) {
+  if (providerType !== 'business' || !state) return null;
+  if (state === 'open') return { label: tamil ? 'Shop Open' : 'Shop Open', tone: 'success' as const };
+  return { label: tamil ? 'Shop Closed' : 'Shop Closed', tone: 'neutral' as const };
 }
 
 function distanceBandLabel(band: DistanceBand | null | undefined, tamil: boolean) {
@@ -91,6 +99,7 @@ export function LiveMarketplaceServiceCard({ service, contextQuery = '' }: { ser
     ? `5-ல் ${rating.toFixed(1)} மதிப்பீடு, ${reviewCount} விமர்சனங்கள்`
     : `${rating.toFixed(1)} out of 5 stars from ${reviewCount} reviews`;
   const availability = availabilityPresentation(service.live_work_mode, tamil);
+  const shop = businessShopPresentation(service.provider_type, service.business_shop_state, tamil);
   const nearbyDistance = distanceBandLabel(service.distance_band, tamil);
   const nearbyReach = reachLabel(service.nearby_match_mode, tamil);
 
@@ -100,6 +109,7 @@ export function LiveMarketplaceServiceCard({ service, contextQuery = '' }: { ser
       <div className="discovery-card-content">
         <div className="card-meta">
           <Badge tone={availability.tone}>{availability.label}</Badge>
+          {shop ? <Badge tone={shop.tone}>{shop.label}</Badge> : null}
           {service.verified ? <Badge tone="info">{tamil ? 'சரிபார்க்கப்பட்ட வழங்குநர்' : 'Verified provider'}</Badge> : null}
         </div>
         <h3><Link href={serviceHref}>{serviceName}</Link></h3>
