@@ -8,6 +8,7 @@ import BusinessPublicProfileContent, {
   publicBusinessSeoText,
   publicSiteUrl,
 } from '../../components/detail/BusinessPublicProfileContent';
+import BusinessShopPublicStatus from '../../components/detail/BusinessShopPublicStatus';
 import ProfessionalPublicProfileContent, {
   loadPublicProfessional,
   publicProfessionalSeoText,
@@ -160,6 +161,7 @@ export default async function PublicHandlePage({ params }: { params: Promise<{ h
     if (!record) notFound();
 
     return <PublicProviderIdentityLayout kind="business" providerId={resolved.identity_id}>
+      <BusinessShopPublicStatus businessId={resolved.identity_id} />
       <BusinessPublicProfileContent providerId={resolved.identity_id} canonicalUrl={canonical} />
     </PublicProviderIdentityLayout>;
   }
