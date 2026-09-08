@@ -6,7 +6,8 @@ import { useLanguage } from '../i18n/LanguageProvider';
 
 type LocalizedValue = string | { default_locale?: string; values?: Record<string, string> } | null | undefined;
 type ProviderWorkMode = 'available' | 'busy' | 'offline' | 'paused';
-type NearbyMatchMode = 'at_provider' | 'at_customer' | 'remote';
+type NearbyMatchMode = 'at_provider' | 'at_customer';
+type DistanceBand = 'under_1km' | '1_3km' | '3_7km' | '7_15km' | '15_30km' | '30_60km' | 'over_60km';
 
 type LiveMarketplaceService = {
   id: string;
@@ -27,7 +28,8 @@ type LiveMarketplaceService = {
   location?: string;
   live_work_mode?: ProviderWorkMode;
   availability?: string;
-  distance_meters?: number | null;
+  distance_band?: DistanceBand | null;
+  distance_priority?: number;
   nearby_match_mode?: NearbyMatchMode | null;
 };
 
@@ -49,19 +51,20 @@ function availabilityPresentation(mode: ProviderWorkMode | undefined, tamil: boo
   return { label: tamil ? 'ஆஃப்லைன்' : 'Offline', tone: 'neutral' as const };
 }
 
-function distanceLabel(distanceMeters: number | null | undefined, tamil: boolean) {
-  const distance = Number(distanceMeters);
-  if (!Number.isFinite(distance) || distance < 0) return '';
-  if (distance < 1000) return tamil ? `சுமார் ${Math.max(1, Math.round(distance))} மீ தொலைவில்` : `About ${Math.max(1, Math.round(distance))} m away`;
-  const km = distance / 1000;
-  const formatted = km < 10 ? km.toFixed(1) : Math.round(km).toString();
-  return tamil ? `சுமார் ${formatted} கி.மீ தொலைவில்` : `About ${formatted} km away`;
+function distanceBandLabel(band: DistanceBand | null | undefined, tamil: boolean) {
+  if (band === 'under_1km') return tamil ? '1 கி.மீ-க்குள்' : 'Within 1 km';
+  if (band === '1_3km') return tamil ? '1–3 கி.மீ தொலைவில்' : '1–3 km away';
+  if (band === '3_7km') return tamil ? '3–7 கி.மீ தொலைவில்' : '3–7 km away';
+  if (band === '7_15km') return tamil ? '7–15 கி.மீ தொலைவில்' : '7–15 km away';
+  if (band === '15_30km') return tamil ? '15–30 கி.மீ தொலைவில்' : '15–30 km away';
+  if (band === '30_60km') return tamil ? '30–60 கி.மீ தொலைவில்' : '30–60 km away';
+  if (band === 'over_60km') return tamil ? '60 கி.மீ-க்கு மேல்' : 'Over 60 km away';
+  return '';
 }
 
 function reachLabel(mode: NearbyMatchMode | null | undefined, tamil: boolean) {
   if (mode === 'at_customer') return tamil ? 'உங்கள் இடத்திற்கு வருவார்' : 'Travels to you';
   if (mode === 'at_provider') return tamil ? 'சேவை வழங்குநர் இடத்தில்' : 'At provider location';
-  if (mode === 'remote') return tamil ? 'ஆன்லைன் / தொலைநிலை' : 'Remote / online';
   return '';
 }
 
@@ -88,7 +91,7 @@ export function LiveMarketplaceServiceCard({ service, contextQuery = '' }: { ser
     ? `5-ல் ${rating.toFixed(1)} மதிப்பீடு, ${reviewCount} விமர்சனங்கள்`
     : `${rating.toFixed(1)} out of 5 stars from ${reviewCount} reviews`;
   const availability = availabilityPresentation(service.live_work_mode, tamil);
-  const nearbyDistance = distanceLabel(service.distance_meters, tamil);
+  const nearbyDistance = distanceBandLabel(service.distance_band, tamil);
   const nearbyReach = reachLabel(service.nearby_match_mode, tamil);
 
   return (
