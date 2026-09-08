@@ -5,6 +5,16 @@ import { assertProductionBackendConfigured } from '../config';
 
 export type BusinessProductOrderStatus = 'requested' | 'accepted' | 'declined' | 'fulfilled' | 'cancelled';
 export type BusinessProductOrderAction = 'accept' | 'decline' | 'fulfill';
+export type BusinessProductOrderActorType = 'customer' | 'business' | 'system';
+
+export interface BusinessProductOrderEventRecord {
+  id: string;
+  order_id: string;
+  actor_type: BusinessProductOrderActorType;
+  event_type: BusinessProductOrderStatus;
+  note: string | null;
+  created_at: string;
+}
 
 export interface BusinessProductOrderRecord {
   id: string;
@@ -25,6 +35,7 @@ export interface BusinessProductOrderRecord {
   status_changed_at: string;
   created_at: string;
   updated_at: string;
+  events: BusinessProductOrderEventRecord[];
 }
 
 export interface CreateBusinessProductOrderInput {
@@ -56,7 +67,30 @@ const orderColumns = [
   'updated_at',
 ].join(',');
 
-function mapOrder(row: Record<string, unknown>): BusinessProductOrderRecord {
+const eventColumns = [
+  'id',
+  'order_id',
+  'actor_type',
+  'event_type',
+  'note',
+  'created_at',
+].join(',');
+
+function mapEvent(row: Record<string, unknown>): BusinessProductOrderEventRecord {
+  return {
+    id: String(row.id),
+    order_id: String(row.order_id),
+    actor_type: row.actor_type as BusinessProductOrderActorType,
+    event_type: row.event_type as BusinessProductOrderStatus,
+    note: (row.note as string | null) ?? null,
+    created_at: String(row.created_at),
+  };
+}
+
+function mapOrder(
+  row: Record<string, unknown>,
+  events: BusinessProductOrderEventRecord[] = [],
+): BusinessProductOrderRecord {
   return {
     id: String(row.id),
     product_id: String(row.product_id),
@@ -76,7 +110,35 @@ function mapOrder(row: Record<string, unknown>): BusinessProductOrderRecord {
     status_changed_at: String(row.status_changed_at),
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
+    events,
   };
+}
+
+async function attachOrderEvents(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  orders: BusinessProductOrderRecord[],
+): Promise<BusinessProductOrderRecord[]> {
+  if (!orders.length) return orders;
+
+  const { data, error } = await supabase
+    .from('business_product_order_events')
+    .select(eventColumns)
+    .in('order_id', orders.map((order) => order.id))
+    .order('created_at', { ascending: true });
+  if (error) throw new Error(error.message);
+
+  const eventsByOrder = new Map<string, BusinessProductOrderEventRecord[]>();
+  for (const row of data ?? []) {
+    const event = mapEvent(row as unknown as Record<string, unknown>);
+    const current = eventsByOrder.get(event.order_id) ?? [];
+    current.push(event);
+    eventsByOrder.set(event.order_id, current);
+  }
+
+  return orders.map((order) => ({
+    ...order,
+    events: eventsByOrder.get(order.id) ?? [],
+  }));
 }
 
 function normalizeQuantity(value: unknown) {
@@ -118,7 +180,8 @@ export const productionBusinessOrderRepository = {
       .eq('customer_user_id', session.user_id)
       .order('created_at', { ascending: false });
     if (error) throw new Error(error.message);
-    return (data ?? []).map((row) => mapOrder(row as unknown as Record<string, unknown>));
+    const orders = (data ?? []).map((row) => mapOrder(row as unknown as Record<string, unknown>));
+    return attachOrderEvents(supabase, orders);
   },
 
   async create(session: ServerCustomerSession, input: CreateBusinessProductOrderInput): Promise<BusinessProductOrderRecord> {
@@ -158,7 +221,8 @@ export const productionBusinessOrderRepository = {
       .eq('business_id', identity.business_id)
       .order('created_at', { ascending: false });
     if (error) throw new Error(error.message);
-    return (data ?? []).map((row) => mapOrder(row as unknown as Record<string, unknown>));
+    const orders = (data ?? []).map((row) => mapOrder(row as unknown as Record<string, unknown>));
+    return attachOrderEvents(supabase, orders);
   },
 
   async transitionBusiness(

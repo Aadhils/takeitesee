@@ -6,6 +6,16 @@ import { Badge, Button, Card, EmptyState } from '../ui/primitives';
 import { useLanguage } from '../i18n/LanguageProvider';
 
 type OrderStatus = 'requested' | 'accepted' | 'declined' | 'fulfilled' | 'cancelled';
+type OrderActorType = 'customer' | 'business' | 'system';
+
+type ProductOrderEvent = {
+  id: string;
+  order_id: string;
+  actor_type: OrderActorType;
+  event_type: OrderStatus;
+  note: string | null;
+  created_at: string;
+};
 
 type ProductOrder = {
   id: string;
@@ -26,6 +36,7 @@ type ProductOrder = {
   status_changed_at: string;
   created_at: string;
   updated_at: string;
+  events: ProductOrderEvent[];
 };
 
 function statusTone(status: OrderStatus) {
@@ -93,6 +104,30 @@ export default function CustomerOrdersManager() {
     return tamil ? tamilCopy[status] : english[status];
   };
 
+  const eventLabel = (status: OrderStatus) => {
+    const english: Record<OrderStatus, string> = {
+      requested: 'Order requested',
+      accepted: 'Order accepted',
+      declined: 'Order declined',
+      fulfilled: 'Order fulfilled',
+      cancelled: 'Order cancelled',
+    };
+    const tamilCopy: Record<OrderStatus, string> = {
+      requested: 'Order கோரப்பட்டது',
+      accepted: 'Order ஏற்றுக்கொள்ளப்பட்டது',
+      declined: 'Order நிராகரிக்கப்பட்டது',
+      fulfilled: 'Order நிறைவேற்றப்பட்டது',
+      cancelled: 'Order ரத்து செய்யப்பட்டது',
+    };
+    return tamil ? tamilCopy[status] : english[status];
+  };
+
+  const actorLabel = (actorType: OrderActorType) => {
+    if (actorType === 'customer') return tamil ? 'வாடிக்கையாளர்' : 'Customer';
+    if (actorType === 'business') return tamil ? 'Business' : 'Business';
+    return tamil ? 'System' : 'System';
+  };
+
   const cancelOrder = async (orderId: string) => {
     setBusyOrderId(orderId);
     setError('');
@@ -104,7 +139,7 @@ export default function CustomerOrdersManager() {
       });
       const payload = await response.json() as { order?: ProductOrder; error?: string };
       if (!response.ok || !payload.order) throw new Error(payload.error || 'Unable to cancel this order.');
-      setOrders((current) => current.map((order) => order.id === payload.order!.id ? payload.order! : order));
+      await load();
     } catch (cancelError) {
       setError(cancelError instanceof Error ? cancelError.message : 'Unable to cancel this order.');
     } finally {
@@ -169,6 +204,20 @@ export default function CustomerOrdersManager() {
           <p className="muted" style={{ margin: 0 }}>
             {tamil ? 'Requested' : 'Requested'} {new Date(order.created_at).toLocaleString(locale)} · Rev {order.product_revision}
           </p>
+
+          {order.events.length ? <div style={{ borderTop: '1px solid var(--border, #e5e7eb)', paddingTop: '.75rem' }}>
+            <strong>{tamil ? 'Order activity' : 'Order activity'}</strong>
+            <ol style={{ margin: '.55rem 0 0', paddingLeft: '1.25rem', display: 'grid', gap: '.55rem' }}>
+              {order.events.map((event) => <li key={event.id}>
+                <div>
+                  <strong>{eventLabel(event.event_type)}</strong>
+                  <span className="muted"> · {actorLabel(event.actor_type)} · {new Date(event.created_at).toLocaleString(locale)}</span>
+                </div>
+                {event.note ? <p className="muted" style={{ margin: '.2rem 0 0' }}>{event.note}</p> : null}
+              </li>)}
+            </ol>
+          </div> : null}
+
           {cancellable ? <div className="button-row">
             <Button type="button" variant="secondary" loading={busyOrderId === order.id} onClick={() => void cancelOrder(order.id)}>
               {tamil ? 'Order request ரத்து செய்' : 'Cancel order request'}
