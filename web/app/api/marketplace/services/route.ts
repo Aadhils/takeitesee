@@ -14,9 +14,10 @@ const maxReviewRowsPerChunk = 15000;
 const geoServiceChunkSize = 2000;
 
 type ProviderWorkMode = 'available' | 'busy' | 'offline' | 'paused';
-type NearbyMatchMode = 'at_provider' | 'at_customer' | 'remote';
+type NearbyMatchMode = 'at_provider' | 'at_customer';
+type DistanceBand = 'under_1km' | '1_3km' | '3_7km' | '7_15km' | '15_30km' | '30_60km' | 'over_60km';
 type MarketplaceOrigin = { latitude: number; longitude: number };
-type GeoMatch = { distance_meters: number; match_mode: NearbyMatchMode };
+type GeoMatch = { distance_band: DistanceBand; distance_priority: number; match_mode: NearbyMatchMode };
 
 function providerKey(providerType: unknown, professionalId: unknown, businessId: unknown) {
   if (providerType === 'professional' && professionalId) return `professional:${String(professionalId)}`;
@@ -54,6 +55,16 @@ function parseOrigin(value: unknown): MarketplaceOrigin {
   return { latitude, longitude };
 }
 
+function summarizeDistance(distanceMeters: number): Pick<GeoMatch, 'distance_band' | 'distance_priority'> {
+  if (distanceMeters <= 1000) return { distance_band: 'under_1km', distance_priority: 24 };
+  if (distanceMeters <= 3000) return { distance_band: '1_3km', distance_priority: 20 };
+  if (distanceMeters <= 7000) return { distance_band: '3_7km', distance_priority: 16 };
+  if (distanceMeters <= 15000) return { distance_band: '7_15km', distance_priority: 12 };
+  if (distanceMeters <= 30000) return { distance_band: '15_30km', distance_priority: 8 };
+  if (distanceMeters <= 60000) return { distance_band: '30_60km', distance_priority: 4 };
+  return { distance_band: 'over_60km', distance_priority: 1 };
+}
+
 async function loadGeoMatches(serviceIds: string[], origin: MarketplaceOrigin) {
   const matches = new Map<string, GeoMatch>();
   if (!serviceIds.length) return { matches, status: 'ready' as const };
@@ -71,9 +82,9 @@ async function loadGeoMatches(serviceIds: string[], origin: MarketplaceOrigin) {
       for (const row of data ?? []) {
         const distance = Number(row.distance_meters);
         const mode = row.match_mode as NearbyMatchMode;
-        if (row.service_id && Number.isFinite(distance) && ['at_provider', 'at_customer', 'remote'].includes(mode)) {
+        if (row.service_id && Number.isFinite(distance) && distance >= 0 && ['at_provider', 'at_customer'].includes(mode)) {
           matches.set(String(row.service_id), {
-            distance_meters: Math.max(0, Math.round(distance)),
+            ...summarizeDistance(distance),
             match_mode: mode,
           });
         }
@@ -189,7 +200,8 @@ async function buildMarketplaceResponse(origin: MarketplaceOrigin | null) {
       review_count: ratings.length,
       live_work_mode: liveWorkMode,
       availability: availabilityLabel(liveWorkMode),
-      distance_meters: geoMatch?.distance_meters ?? null,
+      distance_band: geoMatch?.distance_band ?? null,
+      distance_priority: geoMatch?.distance_priority ?? 0,
       nearby_match_mode: geoMatch?.match_mode ?? null,
       verified: true,
     };
