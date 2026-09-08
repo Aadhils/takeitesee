@@ -145,6 +145,7 @@ grant select on table public.business_product_launch_events to authenticated;
 grant select, insert, update, delete on table public.business_product_launch_requests to service_role;
 grant select, insert, update, delete on table public.business_product_launch_events to service_role;
 
+drop policy if exists business_product_launch_requests_private_read on public.business_product_launch_requests;
 create policy business_product_launch_requests_private_read
 on public.business_product_launch_requests
 for select
@@ -154,6 +155,7 @@ using (
   or private.is_super_admin()
 );
 
+drop policy if exists business_product_launch_events_private_read on public.business_product_launch_events;
 create policy business_product_launch_events_private_read
 on public.business_product_launch_events
 for select
@@ -170,26 +172,240 @@ using (
   )
 );
 
+-- Atomic server-only workflow functions. Route handlers authenticate the caller first;
+-- these SECURITY INVOKER functions are executable only by service_role and independently
+-- validate Business ownership/current revision relationships.
+create or replace function public.submit_business_product_launch_request(
+  target_product_id uuid,
+  target_business_id uuid,
+  target_applicant_user_id uuid
+)
+returns public.business_product_launch_requests
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  product_row public.business_products%rowtype;
+  request_row public.business_product_launch_requests%rowtype;
+begin
+  if not exists (
+    select 1 from public.businesses b
+    where b.id = target_business_id and b.owner_user_id = target_applicant_user_id
+  ) then
+    raise exception 'Business ownership could not be verified.';
+  end if;
+  if exists (select 1 from public.professional_profiles p where p.user_id = target_applicant_user_id) then
+    raise exception 'Provider identity conflict detected.';
+  end if;
+
+  select * into product_row
+  from public.business_products p
+  where p.id = target_product_id and p.business_id = target_business_id
+  for update;
+  if not found then raise exception 'Product was not found or is not owned by this Business.'; end if;
+  if product_row.status <> 'active'::public.business_product_status then
+    raise exception 'Set the product catalog status to Active before requesting public launch.';
+  end if;
+  if exists (
+    select 1 from public.business_product_launch_requests r
+    where r.product_id = product_row.id and r.status = 'pending'
+  ) then
+    raise exception 'A launch request is already awaiting review for this product.';
+  end if;
+  if exists (
+    select 1 from public.business_product_launch_requests r
+    where r.product_id = product_row.id
+      and r.product_revision = product_row.review_revision
+      and r.status = 'approved'
+  ) then
+    raise exception 'The current product revision is already approved for public launch.';
+  end if;
+
+  insert into public.business_product_launch_requests(
+    product_id, business_id, applicant_user_id, product_revision, status
+  ) values (
+    product_row.id, product_row.business_id, target_applicant_user_id, product_row.review_revision, 'pending'
+  ) returning * into request_row;
+
+  insert into public.business_product_launch_events(
+    launch_request_id, actor_user_id, actor_type, event_type, note
+  ) values (
+    request_row.id, target_applicant_user_id, 'provider', 'submitted',
+    'Current product revision submitted for public launch review.'
+  );
+
+  return request_row;
+end;
+$$;
+
+create or replace function public.withdraw_business_product_launch_request(
+  target_product_id uuid,
+  target_business_id uuid,
+  target_applicant_user_id uuid
+)
+returns public.business_product_launch_requests
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  request_row public.business_product_launch_requests%rowtype;
+begin
+  if not exists (
+    select 1 from public.businesses b
+    where b.id = target_business_id and b.owner_user_id = target_applicant_user_id
+  ) then
+    raise exception 'Business ownership could not be verified.';
+  end if;
+
+  select * into request_row
+  from public.business_product_launch_requests r
+  where r.product_id = target_product_id
+    and r.business_id = target_business_id
+    and r.applicant_user_id = target_applicant_user_id
+    and r.status = 'pending'
+  order by r.created_at desc
+  limit 1
+  for update;
+  if not found then raise exception 'Pending product launch request was not found.'; end if;
+
+  update public.business_product_launch_requests
+  set status = 'withdrawn', updated_at = now()
+  where id = request_row.id
+  returning * into request_row;
+
+  insert into public.business_product_launch_events(
+    launch_request_id, actor_user_id, actor_type, event_type, note
+  ) values (
+    request_row.id, target_applicant_user_id, 'provider', 'withdrawn',
+    'Product launch request withdrawn by the Business owner.'
+  );
+
+  return request_row;
+end;
+$$;
+
+create or replace function public.review_business_product_launch_request(
+  target_request_id uuid,
+  target_reviewer_user_id uuid,
+  target_decision text,
+  target_review_note text default null
+)
+returns public.business_product_launch_requests
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  request_row public.business_product_launch_requests%rowtype;
+  product_row public.business_products%rowtype;
+  note_value text := nullif(btrim(coalesce(target_review_note, '')), '');
+  next_status text;
+begin
+  if target_decision not in ('approve','changes_requested','reject') then
+    raise exception 'Choose approve, changes_requested, or reject.';
+  end if;
+  if target_decision <> 'approve' and (note_value is null or char_length(note_value) < 3) then
+    raise exception 'A review reason is required.';
+  end if;
+  if note_value is not null and char_length(note_value) > 1200 then
+    raise exception 'Review note must be 1200 characters or fewer.';
+  end if;
+
+  select * into request_row
+  from public.business_product_launch_requests r
+  where r.id = target_request_id and r.status = 'pending'
+  for update;
+  if not found then raise exception 'Pending product launch request was not found.'; end if;
+  if request_row.applicant_user_id = target_reviewer_user_id then
+    raise exception 'You cannot review your own product launch request.';
+  end if;
+
+  select * into product_row
+  from public.business_products p
+  where p.id = request_row.product_id and p.business_id = request_row.business_id;
+  if not found then raise exception 'Product for this launch request was not found.'; end if;
+  if request_row.product_revision <> product_row.review_revision then
+    raise exception 'This launch request is stale because the product content changed.';
+  end if;
+
+  next_status := case target_decision
+    when 'approve' then 'approved'
+    when 'changes_requested' then 'changes_requested'
+    else 'rejected'
+  end;
+
+  update public.business_product_launch_requests
+  set status = next_status,
+      review_note = note_value,
+      reviewed_by = target_reviewer_user_id,
+      reviewed_at = now(),
+      updated_at = now()
+  where id = request_row.id
+  returning * into request_row;
+
+  insert into public.business_product_launch_events(
+    launch_request_id, actor_user_id, actor_type, event_type, note
+  ) values (
+    request_row.id,
+    target_reviewer_user_id,
+    'super_admin',
+    next_status,
+    coalesce(note_value, case when next_status = 'approved' then 'Current product revision approved for public launch.' else null end)
+  );
+
+  return request_row;
+end;
+$$;
+
+revoke all on function public.submit_business_product_launch_request(uuid,uuid,uuid) from public, anon, authenticated;
+revoke all on function public.withdraw_business_product_launch_request(uuid,uuid,uuid) from public, anon, authenticated;
+revoke all on function public.review_business_product_launch_request(uuid,uuid,text,text) from public, anon, authenticated;
+grant execute on function public.submit_business_product_launch_request(uuid,uuid,uuid) to service_role;
+grant execute on function public.withdraw_business_product_launch_request(uuid,uuid,uuid) to service_role;
+grant execute on function public.review_business_product_launch_request(uuid,uuid,text,text) to service_role;
+
+-- Private approval helper lets public product RLS inspect only a boolean without exposing
+-- internal launch-request rows to anon/authenticated callers.
+create or replace function private.business_product_current_revision_is_approved(
+  target_product_id uuid,
+  target_business_id uuid,
+  target_revision integer
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.business_product_launch_requests r
+    where r.product_id = target_product_id
+      and r.business_id = target_business_id
+      and r.product_revision = target_revision
+      and r.status = 'approved'
+  );
+$$;
+
+revoke all on function private.business_product_current_revision_is_approved(uuid,uuid,integer) from public;
+grant execute on function private.business_product_current_revision_is_approved(uuid,uuid,integer) to anon, authenticated, service_role;
+
 -- Public product reads are intentionally column-limited. SKU, review revision and internal timestamps
 -- are not exposed through the anon Data API surface.
 revoke all on table public.business_products from anon;
 grant select (id, business_id, name, description, price, currency, unit_label, stock_mode)
   on public.business_products to anon;
 
+drop policy if exists business_products_public_current_revision_read on public.business_products;
 create policy business_products_public_current_revision_read
 on public.business_products
 for select
 to anon
 using (
   status = 'active'::public.business_product_status
-  and exists (
-    select 1
-    from public.business_product_launch_requests r
-    where r.product_id = business_products.id
-      and r.business_id = business_products.business_id
-      and r.product_revision = business_products.review_revision
-      and r.status = 'approved'
-  )
+  and private.business_product_current_revision_is_approved(id, business_id, review_revision)
   and private.provider_owner_is_verified('business', null, business_id)
   and private.provider_profile_is_complete('business', null, business_id)
   and private.provider_marketplace_disclosure_is_complete('business', null, business_id)
