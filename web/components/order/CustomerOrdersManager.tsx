@@ -77,6 +77,14 @@ export default function CustomerOrdersManager() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    if (loading || !orders.length || typeof window === 'undefined') return;
+    const targetId = window.location.hash.slice(1);
+    if (!targetId.startsWith('order-')) return;
+    window.requestAnimationFrame(() => {
+      document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }, [loading, orders]);
 
   const money = (amount: number, currency: string) => {
     try {
@@ -189,7 +197,7 @@ export default function CustomerOrdersManager() {
       {orders.map((order) => {
         const total = order.unit_price_snapshot * order.quantity;
         const cancellable = order.status === 'requested' || order.status === 'accepted';
-        return <Card key={order.id} style={{ display: 'grid', gap: '.8rem' }}>
+        return <div id={`order-${order.id}`} key={order.id} style={{ scrollMarginTop: '6rem' }}><Card style={{ display: 'grid', gap: '.8rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
             <div>
               <span className="eyebrow">{order.business_name_snapshot}</span>
@@ -223,7 +231,7 @@ export default function CustomerOrdersManager() {
               {tamil ? 'Order request ரத்து செய்' : 'Cancel order request'}
             </Button>
           </div> : null}
-        </Card>;
+        </Card></div>;
       })}
     </div>
   </div>;

@@ -73,6 +73,14 @@ export default function ProviderOrdersManager() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    if (loading || !orders.length || typeof window === 'undefined') return;
+    const targetId = window.location.hash.slice(1);
+    if (!targetId.startsWith('order-')) return;
+    window.requestAnimationFrame(() => {
+      document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }, [loading, orders]);
 
   const money = (amount: number, currency: string) => {
     try {
@@ -173,7 +181,7 @@ export default function ProviderOrdersManager() {
         const canDecide = order.status === 'requested';
         const canFulfill = order.status === 'accepted';
         const note = notes[order.id] ?? '';
-        return <Card key={order.id} style={{ display: 'grid', gap: '.8rem' }}>
+        return <div id={`order-${order.id}`} key={order.id} style={{ scrollMarginTop: '6rem' }}><Card style={{ display: 'grid', gap: '.8rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
             <div>
               <span className="eyebrow">{order.customer_name_snapshot}</span>
@@ -228,7 +236,7 @@ export default function ProviderOrdersManager() {
               {tamil ? 'Mark fulfilled' : 'Mark fulfilled'}
             </Button>
           </div> : null}
-        </Card>;
+        </Card></div>;
       })}
     </div>
   </LiveProviderShell>;
