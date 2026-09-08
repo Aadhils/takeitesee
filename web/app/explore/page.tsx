@@ -11,6 +11,7 @@ type MarketplaceService = any;
 type PriceFilter = 'any' | 'under-1000' | '1000-5000' | 'over-5000';
 type RatingFilter = 'any' | '4-plus' | '4.5-plus';
 type ProviderFilter = 'any' | 'professional' | 'business';
+type ProviderWorkMode = 'available' | 'busy' | 'offline' | 'paused';
 
 type Filters = {
   category: string;
@@ -23,6 +24,7 @@ type Filters = {
 const validSorts = ['relevance', 'rating', 'price', 'price-desc'];
 const priceValues: PriceFilter[] = ['any', 'under-1000', '1000-5000', 'over-5000'];
 const ratingValues: RatingFilter[] = ['any', '4-plus', '4.5-plus'];
+const workModes: ProviderWorkMode[] = ['available', 'busy', 'offline', 'paused'];
 
 function defaultFilters(): Filters {
   return { category: 'all', location: 'Anywhere', price: 'any', rating: 'any', provider: 'any' };
@@ -75,9 +77,15 @@ function matchesSearch(service: MarketplaceService, query: string) {
   return tokens.every((token) => haystack.includes(token));
 }
 
+function availabilityPriority(service: MarketplaceService) {
+  if (service.live_work_mode === 'available') return 3;
+  if (service.live_work_mode === 'busy') return 1;
+  return 0;
+}
+
 function relevanceScore(service: MarketplaceService, query: string) {
   const fullQuery = normalized(query);
-  if (!fullQuery) return 0;
+  if (!fullQuery) return availabilityPriority(service) * 10;
 
   const tokens = fullQuery.split(' ').filter(Boolean);
   const name = normalized(localized(service.service_name));
@@ -104,6 +112,9 @@ function relevanceScore(service: MarketplaceService, query: string) {
     if (description.includes(token)) score += 4;
   }
 
+  // Availability is an operational usefulness signal, not a substitute for service match.
+  // Available receives a meaningful boost; Busy a smaller one; Offline/Paused no boost.
+  score += availabilityPriority(service) * 10;
   score += Math.min(Number(service.rating || 0), 5) * 2;
   score += Math.min(Number(service.review_count || 0), 20) * 0.25;
   return score;
@@ -111,6 +122,9 @@ function relevanceScore(service: MarketplaceService, query: string) {
 
 function normalizeService(service: MarketplaceService) {
   const categorySlug = service.category_slug || service.category_id || 'other';
+  const liveWorkMode = workModes.includes(service.live_work_mode as ProviderWorkMode)
+    ? service.live_work_mode as ProviderWorkMode
+    : 'offline';
   return {
     ...service,
     provider_id: service.provider_id || service.business_id || service.professional_id || '',
@@ -122,7 +136,8 @@ function normalizeService(service: MarketplaceService) {
       base_price: service.pricing?.base_price ?? { amount: 0, currency: 'INR' },
       pricing_model: service.pricing?.pricing_model ?? 'fixed',
     },
-    availability: 'Check availability',
+    live_work_mode: liveWorkMode,
+    availability: service.availability || 'Offline',
     rating: Number(service.rating || 0),
     review_count: Number(service.review_count || 0),
     verified: Boolean(service.verified),
@@ -212,7 +227,9 @@ export default function ExplorePage() {
             ? b.pricing.base_price.amount - a.pricing.base_price.amount
             : query.trim()
               ? relevanceScore(b, query) - relevanceScore(a, query)
-              : 0);
+              : availabilityPriority(b) - availabilityPriority(a)
+                || b.rating - a.rating
+                || b.review_count - a.review_count);
   }, [services, filters, query, sort]);
 
   const clearAll = () => { setQuery(''); setFilters(defaultFilters()); setSort('relevance'); };
