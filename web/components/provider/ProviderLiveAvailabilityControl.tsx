@@ -63,9 +63,11 @@ export default function ProviderLiveAvailabilityControl() {
     () => MODES.find((item) => item.value === currentMode) ?? MODES[2],
     [currentMode],
   );
+  const statusUnavailable = !loading && Boolean(error) && !availability;
+  const visibleStatus = loading ? 'Checking…' : statusUnavailable ? 'Unavailable' : modeLabel(currentMode);
 
   const updateMode = async (nextMode: ProviderWorkMode) => {
-    if (savingMode || nextMode === currentMode) return;
+    if (savingMode || statusUnavailable || nextMode === currentMode) return;
     setSavingMode(nextMode);
     setError('');
     try {
@@ -99,14 +101,14 @@ export default function ProviderLiveAvailabilityControl() {
 
       <div className={styles.modeGrid} role="group" aria-label="Choose live work status">
         {MODES.map((mode) => {
-          const selected = currentMode === mode.value;
+          const selected = !statusUnavailable && currentMode === mode.value;
           const saving = savingMode === mode.value;
           return <button
             type="button"
             key={mode.value}
             className={`${styles.modeButton} ${selected ? styles.modeSelected : ''}`}
             aria-pressed={selected}
-            disabled={Boolean(savingMode) || loading}
+            disabled={Boolean(savingMode) || loading || statusUnavailable}
             onClick={() => void updateMode(mode.value)}
           >
             <span className={`${styles.modeSymbol} ${styles[`mode_${mode.value}`]}`}>{mode.symbol}</span>
@@ -126,13 +128,13 @@ export default function ProviderLiveAvailabilityControl() {
       type="button"
       className={styles.trigger}
       aria-expanded={expanded}
-      aria-label={`Live work status: ${modeLabel(currentMode)}. Change status.`}
+      aria-label={`Live work status: ${visibleStatus}. Change status.`}
       onClick={() => setExpanded((value) => !value)}
     >
-      <span className={`${styles.triggerDot} ${styles[`mode_${currentMode}`]}`} aria-hidden="true">{currentOption.symbol}</span>
+      <span className={`${styles.triggerDot} ${styles[`mode_${currentMode}`]}`} aria-hidden="true">{statusUnavailable ? '!' : currentOption.symbol}</span>
       <span className={styles.triggerCopy}>
         <small>Live status</small>
-        <strong>{loading ? 'Checking…' : modeLabel(currentMode)}</strong>
+        <strong>{visibleStatus}</strong>
       </span>
       <span className={styles.chevron} aria-hidden="true">{expanded ? '×' : '⌃'}</span>
     </button>
