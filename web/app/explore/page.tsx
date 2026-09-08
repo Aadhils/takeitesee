@@ -14,6 +14,7 @@ type ProviderFilter = 'any' | 'professional' | 'business';
 type ProviderWorkMode = 'available' | 'busy' | 'offline' | 'paused';
 type GeoStatus = 'not_requested' | 'ready' | 'unavailable';
 type GeoOrigin = { latitude: number; longitude: number };
+type DistanceBand = 'under_1km' | '1_3km' | '3_7km' | '7_15km' | '15_30km' | '30_60km' | 'over_60km';
 
 type Filters = {
   category: string;
@@ -27,6 +28,7 @@ const validSorts = ['relevance', 'rating', 'price', 'price-desc'];
 const priceValues: PriceFilter[] = ['any', 'under-1000', '1000-5000', 'over-5000'];
 const ratingValues: RatingFilter[] = ['any', '4-plus', '4.5-plus'];
 const workModes: ProviderWorkMode[] = ['available', 'busy', 'offline', 'paused'];
+const distanceBands: DistanceBand[] = ['under_1km', '1_3km', '3_7km', '7_15km', '15_30km', '30_60km', 'over_60km'];
 const searchIntentTokens = new Set([
   'near', 'nearby', 'nearest', 'closest', 'around', 'me', 'my',
   'available', 'now', 'service', 'services', 'provider', 'providers',
@@ -100,26 +102,9 @@ function availabilityPriority(service: MarketplaceService) {
 }
 
 function distancePriority(service: MarketplaceService, query: string) {
-  if (service.distance_meters == null) return 0;
-  const distance = Number(service.distance_meters);
-  if (!Number.isFinite(distance) || distance < 0) return 0;
-
-  let score = distance <= 1000
-    ? 24
-    : distance <= 3000
-      ? 20
-      : distance <= 7000
-        ? 16
-        : distance <= 15000
-          ? 12
-          : distance <= 30000
-            ? 8
-            : distance <= 60000
-              ? 4
-              : 1;
-
-  if (hasNearbyIntent(query)) score = Math.min(30, Math.round(score * 1.25));
-  return score;
+  const base = Number(service.distance_priority || 0);
+  if (!Number.isFinite(base) || base <= 0) return 0;
+  return hasNearbyIntent(query) ? Math.min(30, Math.round(base * 1.25)) : base;
 }
 
 function relevanceScore(service: MarketplaceService, query: string) {
@@ -151,9 +136,8 @@ function relevanceScore(service: MarketplaceService, query: string) {
     }
   }
 
-  // Service/text match remains primary. Live availability and derived distance are
-  // operational usefulness signals, so a merely-near result cannot overwhelm a
-  // clearly better service match.
+  // Service/text match remains primary. Live availability and coarse derived distance
+  // are operational usefulness signals, so proximity cannot overwhelm a clearer match.
   score += availabilityPriority(service) * 10;
   score += distancePriority(service, query);
   score += Math.min(Number(service.rating || 0), 5) * 2;
@@ -166,7 +150,10 @@ function normalizeService(service: MarketplaceService) {
   const liveWorkMode = workModes.includes(service.live_work_mode as ProviderWorkMode)
     ? service.live_work_mode as ProviderWorkMode
     : 'offline';
-  const distance = service.distance_meters == null ? null : Number(service.distance_meters);
+  const distanceBand = distanceBands.includes(service.distance_band as DistanceBand)
+    ? service.distance_band as DistanceBand
+    : null;
+  const distancePriorityValue = Number(service.distance_priority || 0);
   return {
     ...service,
     provider_id: service.provider_id || service.business_id || service.professional_id || '',
@@ -180,8 +167,9 @@ function normalizeService(service: MarketplaceService) {
     },
     live_work_mode: liveWorkMode,
     availability: service.availability || 'Offline',
-    distance_meters: Number.isFinite(distance) && distance !== null && distance >= 0 ? distance : null,
-    nearby_match_mode: ['at_provider', 'at_customer', 'remote'].includes(service.nearby_match_mode) ? service.nearby_match_mode : null,
+    distance_band: distanceBand,
+    distance_priority: Number.isFinite(distancePriorityValue) && distancePriorityValue > 0 ? Math.min(distancePriorityValue, 24) : 0,
+    nearby_match_mode: ['at_provider', 'at_customer'].includes(service.nearby_match_mode) ? service.nearby_match_mode : null,
     rating: Number(service.rating || 0),
     review_count: Number(service.review_count || 0),
     verified: Boolean(service.verified),
@@ -359,7 +347,7 @@ export default function ExplorePage() {
         </div>
         <div className="sort-control"><Select label={t('explore.sort')} value={sort} onChange={(e) => setSort(e.target.value)}><option value="relevance">{t('explore.relevance')}</option><option value="rating">{t('explore.highestRated')}</option><option value="price">{t('explore.lowestPrice')}</option><option value="price-desc">{t('explore.highestPrice')}</option></Select></div>
       </div>
-      {nearbyReady ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>Nearby ranking is active for this browser session. Your precise location is used for this marketplace request only and is not added to the page URL or saved as a customer location record.</p> : null}
+      {nearbyReady ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>Nearby ranking is active for this browser session. Your precise location is used for this marketplace request only; the public response contains only coarse distance bands and is not added to the page URL or saved as a customer location record.</p> : null}
       {geoError ? <p role="alert" style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{geoError}</p> : null}
     </section>
 
