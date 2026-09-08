@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import PublicProviderProfile from './PublicProviderProfile';
 import ProviderProfileShareAction from './ProviderProfileShareAction';
 import BusinessStorefrontQuickBook from './BusinessStorefrontQuickBook';
+import BusinessStorefrontProducts from './BusinessStorefrontProducts';
 import { createSupabaseServiceClient } from '../../lib/supabase/service';
 
 export const publicSiteUrl = 'https://www.takeitesee.com';
@@ -38,9 +39,21 @@ type PublicBusinessService = {
   location: string | null;
 };
 
+type PublicBusinessProduct = {
+  id: string;
+  business_id: string;
+  name: string | null;
+  description: string | null;
+  price: number | string | null;
+  currency: string | null;
+  unit_label: string | null;
+  stock_mode: 'in_stock' | 'out_of_stock' | 'made_to_order';
+};
+
 export type PublicBusinessRecord = {
   business: PublicBusiness;
   services: PublicBusinessService[];
+  products: PublicBusinessProduct[];
 };
 
 type StorefrontOperations = {
@@ -160,18 +173,26 @@ export const loadPublicBusiness = cache(async (providerId: string): Promise<Publ
 
   if (error || !business || !hasMarketplaceDisclosure(business as PublicBusiness)) return null;
 
-  const { data: services, error: servicesError } = await supabase
-    .from('services')
-    .select('id,name,description,base_price,currency,duration_minutes,location')
-    .eq('business_id', providerId)
-    .eq('provider_type', 'business')
-    .eq('status', 'active')
-    .eq('active', true)
-    .order('name');
+  const [{ data: services, error: servicesError }, { data: products, error: productsError }] = await Promise.all([
+    supabase
+      .from('services')
+      .select('id,name,description,base_price,currency,duration_minutes,location')
+      .eq('business_id', providerId)
+      .eq('provider_type', 'business')
+      .eq('status', 'active')
+      .eq('active', true)
+      .order('name'),
+    supabase
+      .from('business_products')
+      .select('id,business_id,name,description,price,currency,unit_label,stock_mode')
+      .eq('business_id', providerId)
+      .order('name'),
+  ]);
 
   return {
     business: business as PublicBusiness,
     services: servicesError ? [] : (services ?? []) as PublicBusinessService[],
+    products: productsError ? [] : (products ?? []) as PublicBusinessProduct[],
   };
 });
 
@@ -185,7 +206,7 @@ export default async function BusinessPublicProfileContent({
   const record = await loadPublicBusiness(providerId);
   if (!record) return null;
 
-  const { business, services } = record;
+  const { business, services, products } = record;
   const operations = await loadStorefrontOperations(providerId, services.map((service) => String(service.id)));
   const structuredData = services.length ? {
     '@context': 'https://schema.org',
@@ -223,6 +244,16 @@ export default async function BusinessPublicProfileContent({
     availability_mode: operations.availability_modes.get(String(service.id)) ?? 'on_request',
   }));
 
+  const storefrontProducts = products.map((product) => ({
+    id: String(product.id),
+    name: String(product.name || ''),
+    description: String(product.description || ''),
+    price: product.price ?? 0,
+    currency: product.currency || 'INR',
+    unit_label: product.unit_label || 'item',
+    stock_mode: product.stock_mode,
+  }));
+
   return <>
     {structuredData ? <script
       type="application/ld+json"
@@ -236,6 +267,7 @@ export default async function BusinessPublicProfileContent({
       businessLocation={business.location || ''}
       services={storefrontServices}
     />
+    <BusinessStorefrontProducts products={storefrontProducts} />
     <PublicProviderProfile
       kind="business"
       provider={{
