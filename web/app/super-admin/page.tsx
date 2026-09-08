@@ -52,7 +52,7 @@ export default async function SuperAdminPage() {
 
   const supabase = await createSupabaseServerClient();
 
-  const [admins, adminScopes, auditEvents, applications, locations, categories, privacyRequests, supportRequests] = await Promise.all([
+  const [admins, adminScopes, auditEvents, applications, locations, categories, privacyRequests, supportRequests, productLaunchRequests] = await Promise.all([
     supabase.from('admin_memberships').select('id', { count: 'exact', head: true }).eq('active', true),
     supabase.from('admin_scopes').select('id', { count: 'exact', head: true }).or('can_view.eq.true,can_manage.eq.true'),
     supabase.from('admin_audit_log').select('id', { count: 'exact', head: true }),
@@ -61,6 +61,7 @@ export default async function SuperAdminPage() {
     supabase.from('platform_categories').select('id', { count: 'exact', head: true }),
     supabase.from('privacy_requests').select('id', { count: 'exact', head: true }).in('status', ['submitted', 'in_review', 'awaiting_information']),
     supabase.from('platform_support_requests').select('id', { count: 'exact', head: true }).in('status', ['submitted', 'in_review', 'awaiting_information']),
+    supabase.from('business_product_launch_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
   ]);
 
   const metrics = [
@@ -113,12 +114,13 @@ export default async function SuperAdminPage() {
         <div>
           <span className="eyebrow"><LocaleText en="Platform governance" ta="Platform governance" /></span>
           <h2 style={{ marginBottom: '8px' }}><LocaleText en="Configuration & protected requests" ta="Configuration & protected requests" /></h2>
-          <p><LocaleText en="Manage global marketplace structure and platform-level privacy or support governance." ta="Global marketplace structure மற்றும் platform-level privacy/support governance-ஐ நிர்வகிக்கவும்." /></p>
+          <p><LocaleText en="Manage global marketplace structure and platform-level privacy, support, and Business product publication governance." ta="Global marketplace structure மற்றும் platform-level privacy/support/Business product publication governance-ஐ நிர்வகிக்கவும்." /></p>
         </div>
         <div style={actionGridStyle}>
           <div className="card" style={actionCardStyle}><h3 style={{ margin: 0 }}><LocaleText en="Applications" ta="Applications" /></h3><p style={{ margin: 'auto 0 0' }}><Link href="/super-admin/applications"><LocaleText en="Manage applications →" ta="Applications நிர்வகி →" /></Link></p></div>
           <div className="card" style={actionCardStyle}><h3 style={{ margin: 0 }}><LocaleText en="Locations & markets" ta="Locations & markets" /></h3><p style={{ margin: 'auto 0 0' }}><Link href="/super-admin/locations"><LocaleText en="Manage locations →" ta="Locations நிர்வகி →" /></Link></p></div>
           <div className="card" style={actionCardStyle}><h3 style={{ margin: 0 }}><LocaleText en="Categories" ta="Categories" /></h3><p style={{ margin: 'auto 0 0' }}><Link href="/super-admin/categories"><LocaleText en="Manage categories →" ta="Categories நிர்வகி →" /></Link></p></div>
+          <div className="card" style={actionCardStyle}><span className="eyebrow"><LocaleText en="Pending" ta="Pending" /> · {productLaunchRequests.count ?? 0}</span><h3 style={{ margin: 0 }}><LocaleText en="Product launch reviews" ta="Product launch reviews" /></h3><p style={{ margin: 0 }}><LocaleText en="Approve only the submitted current catalog revision before public storefront exposure." ta="Public storefront exposure-க்கு முன் submitted current product revision-ஐ review செய்யவும்." /></p><p style={{ margin: 'auto 0 0' }}><Link href="/super-admin/product-launches"><LocaleText en="Review products →" ta="Products review செய் →" /></Link></p></div>
           <div className="card" style={actionCardStyle}><span className="eyebrow"><LocaleText en="Pending" ta="Pending" /> · {privacyRequests.count ?? 0}</span><h3 style={{ margin: 0 }}><LocaleText en="Privacy requests" ta="Privacy requests" /></h3><p style={{ margin: 'auto 0 0' }}><Link href="/super-admin/privacy-requests"><LocaleText en="Review privacy →" ta="Privacy review செய் →" /></Link></p></div>
           <div className="card" style={actionCardStyle}><span className="eyebrow"><LocaleText en="Pending" ta="Pending" /> · {supportRequests.count ?? 0}</span><h3 style={{ margin: 0 }}><LocaleText en="Platform support" ta="Platform support" /></h3><p style={{ margin: 'auto 0 0' }}><Link href="/super-admin/support-requests"><LocaleText en="Review support →" ta="Support review செய் →" /></Link></p></div>
         </div>
@@ -129,7 +131,7 @@ export default async function SuperAdminPage() {
       <div>
         <span className="eyebrow"><LocaleText en="Operations handoff" ta="Operations handoff" /></span>
         <h2 style={{ marginBottom: '8px' }}><LocaleText en="Provider operations live in Admin" ta="Provider operations Admin-ல்" /></h2>
-        <p style={{ marginBottom: 0 }}><LocaleText en="Provider applications, verification, management, trust, and launch review belong to Admin. Super Admin enters only for oversight or emergency intervention." ta="Provider applications, verification, management, trust மற்றும் launch review Admin பொறுப்பு. Oversight அல்லது emergency intervention தேவைப்பட்டால் மட்டும் Super Admin அங்கு செல்லும்." /></p>
+        <p style={{ marginBottom: 0 }}><LocaleText en="Provider applications, verification, management, trust, and service launch review belong to Admin. Revision-bound Business product publication is retained here as a Super Admin commerce-governance gate for now." ta="Provider applications, verification, management, trust மற்றும் service launch review Admin பொறுப்பு. Revision-bound Business product publication தற்போது Super Admin commerce-governance gate ஆக இங்கே இருக்கும்." /></p>
       </div>
       <Link className="button button-secondary" href="/admin"><LocaleText en="Open Admin operations" ta="Admin operations திற" /></Link>
     </section>
