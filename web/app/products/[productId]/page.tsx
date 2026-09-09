@@ -6,6 +6,7 @@ import { createClient } from '@supabase/supabase-js';
 import BusinessShopPublicStatus from '../../../components/detail/BusinessShopPublicStatus';
 import BusinessStorefrontProducts from '../../../components/detail/BusinessStorefrontProducts';
 import ProductShareAction from '../../../components/detail/ProductShareAction';
+import SavedProductAction from '../../../components/detail/SavedProductAction';
 import { hasMarketplaceDisclosure } from '../../../server/marketplace/public-directory';
 
 const siteUrl = 'https://www.takeitesee.com';
@@ -165,7 +166,10 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     />
     <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', paddingTop: '1rem' }}>
       <Link href="/products" className="button button-quiet">← Browse products</Link>
-      <ProductShareAction productId={product.id} productName={productName} businessName={businessName} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem', flexWrap: 'wrap' }}>
+        <SavedProductAction productId={product.id} />
+        <ProductShareAction productId={product.id} productName={productName} businessName={businessName} />
+      </div>
     </div>
     <section className="container page-intro" style={{ paddingTop: '1rem' }}>
       <span className="eyebrow">Business product</span>
