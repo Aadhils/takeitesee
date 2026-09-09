@@ -11,7 +11,9 @@ create index if not exists customer_saved_products_product_id_idx
 alter table public.customer_saved_products enable row level security;
 
 revoke all on table public.customer_saved_products from public, anon, authenticated;
-grant select, insert, delete on table public.customer_saved_products to authenticated;
+-- Customers may read/remove only their own saved references. New saves are written
+-- server-side only after the API verifies current anon/RLS Product visibility.
+grant select, delete on table public.customer_saved_products to authenticated;
 grant select, insert, update, delete on table public.customer_saved_products to service_role;
 
 create policy customer_saved_products_owner_select
@@ -19,19 +21,6 @@ on public.customer_saved_products
 for select
 to authenticated
 using (
-  exists (
-    select 1
-    from public.customer_profiles cp
-    where cp.id = customer_id
-      and cp.user_id = (select auth.uid())
-  )
-);
-
-create policy customer_saved_products_owner_insert
-on public.customer_saved_products
-for insert
-to authenticated
-with check (
   exists (
     select 1
     from public.customer_profiles cp
