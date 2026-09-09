@@ -23,6 +23,7 @@ type Product = {
   unit_label: string;
   stock_mode: StockMode;
   business_shop_state: ShopState;
+  has_primary_image: boolean;
   verified_business: boolean;
 };
 
@@ -32,6 +33,10 @@ function normalized(value: unknown) {
 
 function productDetailHref(product: Product) {
   return `/products/${encodeURIComponent(product.id)}`;
+}
+
+function productImageHref(productId: string) {
+  return `/api/marketplace/products/${encodeURIComponent(productId)}/image`;
 }
 
 export default function ProductsPage() {
@@ -168,7 +173,14 @@ export default function ProductsPage() {
           const shopOpen = product.business_shop_state === 'open';
           const productHref = productDetailHref(product);
           return <Card className="discovery-card service-discovery-card" key={product.id}>
-            <div className="service-card-art" aria-hidden="true"><span>{product.name.slice(0, 1)}</span><span className="art-label">{tamil ? 'Product' : 'Product'}</span></div>
+            {product.has_primary_image ? <div className="service-card-art" style={{ padding: 0, overflow: 'hidden' }}>
+              <img
+                src={productImageHref(product.id)}
+                alt={`${product.name} product`}
+                style={{ width: '100%', height: '100%', minHeight: '160px', objectFit: 'cover', display: 'block' }}
+              />
+              <span className="art-label" style={{ position: 'absolute', left: '.75rem', bottom: '.75rem' }}>{tamil ? 'Product' : 'Product'}</span>
+            </div> : <div className="service-card-art" aria-hidden="true"><span>{product.name.slice(0, 1)}</span><span className="art-label">{tamil ? 'Product' : 'Product'}</span></div>}
             <div className="discovery-card-content">
               <div className="card-meta">
                 <Badge tone={stockState.tone}>{stockState.label}</Badge>
