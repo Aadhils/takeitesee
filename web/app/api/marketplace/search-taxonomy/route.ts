@@ -31,7 +31,13 @@ export async function GET() {
     const supabase = createClient(url, key, {
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
     });
-    const { data, error } = await supabase.rpc('get_marketplace_search_taxonomy');
+    const { data, error } = await supabase
+      .from('marketplace_search_taxonomy_public')
+      .select('category_code,category_name,group_name,search_aliases')
+      .order('group_sort_order', { ascending: true })
+      .order('group_name', { ascending: true })
+      .order('category_sort_order', { ascending: true })
+      .order('category_name', { ascending: true });
 
     if (error) {
       return NextResponse.json({ categories: [] }, { headers: { 'Cache-Control': 'no-store' } });
