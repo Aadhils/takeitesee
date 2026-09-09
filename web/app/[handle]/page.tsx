@@ -69,15 +69,20 @@ export async function generateMetadata({ params }: { params: Promise<{ handle: s
     const record = await loadPublicBusiness(resolved.identity_id);
     if (!record) return unavailableMetadata();
 
-    const { business, services } = record;
+    const { business, services, products } = record;
     const location = business.location || '';
     const pageTitle = `${business.name || `@${resolved.canonical_handle}`}${location ? ` in ${location}` : ''}`;
     const socialTitle = `${pageTitle} | TakeItEsee`;
+    const offeringLabel = services.length > 0 && products.length > 0
+      ? 'services and products'
+      : products.length > 0
+        ? 'products'
+        : 'services';
     const description = publicBusinessSeoText(
       business.description,
-      `Explore services from ${business.name || `@${resolved.canonical_handle}`}${location ? ` in ${location}` : ''} on TakeItEsee.`,
+      `Explore ${offeringLabel} from ${business.name || `@${resolved.canonical_handle}`}${location ? ` in ${location}` : ''} on TakeItEsee.`,
     );
-    const indexable = services.length > 0;
+    const indexable = services.length > 0 || products.length > 0;
 
     return {
       title: { absolute: socialTitle },
