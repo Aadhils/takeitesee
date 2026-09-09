@@ -28,6 +28,7 @@ export default function BusinessStorefrontProducts({ products }: { products: Pub
   const tamil = locale === 'ta-IN';
   const [drafts, setDrafts] = useState<Record<string, OrderDraft>>({});
   const [feedback, setFeedback] = useState<Record<string, OrderFeedback>>({});
+  const [imageFailures, setImageFailures] = useState<Record<string, boolean>>({});
   if (!products.length) return null;
 
   const money = (product: PublicProduct) => {
@@ -111,16 +112,18 @@ export default function BusinessStorefrontProducts({ products }: { products: Pub
         const draft = draftFor(product.id);
         const state = feedback[product.id];
         const available = product.stock_mode !== 'out_of_stock';
+        const shouldTryImage = product.has_primary_image !== false && !imageFailures[product.id];
         return <article
           className="card"
           id={`product-${product.id}`}
           key={product.id}
           style={{ display: 'grid', gap: '.8rem', alignContent: 'start', scrollMarginTop: '7rem', overflow: 'hidden' }}
         >
-          {product.has_primary_image ? <img
+          {shouldTryImage ? <img
             src={productImageHref(product.id)}
             alt={`${product.name} product`}
             style={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'cover', borderRadius: '12px', display: 'block' }}
+            onError={() => setImageFailures((current) => ({ ...current, [product.id]: true }))}
           /> : null}
           <div>
             <span className="eyebrow">{stockLabel(product.stock_mode)}</span>
