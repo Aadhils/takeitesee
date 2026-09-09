@@ -14,6 +14,7 @@ export default function robots(): MetadataRoute.Robots {
         '/super-admin',
         '/provider',
         '/bookings',
+        '/orders',
         '/confirmation',
         '/messages',
         '/notifications',
