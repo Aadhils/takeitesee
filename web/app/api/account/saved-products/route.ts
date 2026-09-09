@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createSupabaseServerClient } from '../../../../lib/supabase/server';
+import { createSupabaseServiceClient } from '../../../../lib/supabase/service';
 import { productionAuthProvider } from '../../../../server/auth/session';
 import { hasMarketplaceDisclosure } from '../../../../server/marketplace/public-directory';
 import { loadProductImagePresence } from '../../../../server/marketplace/public-product-media';
@@ -195,7 +196,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'This Product is not currently available to save.' }, { status: 409 });
     }
 
-    const { data: saved, error: saveError } = await context.supabase
+    // Authenticated callers intentionally have no direct INSERT privilege on the saved
+    // relation. Only this server path writes after current public Product verification.
+    const serviceRole = createSupabaseServiceClient();
+    const { data: saved, error: saveError } = await serviceRole
       .from('customer_saved_products')
       .insert({ customer_id: context.customer.id, product_id: productId })
       .select('product_id,saved_at')
