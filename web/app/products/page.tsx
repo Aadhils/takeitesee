@@ -27,6 +27,8 @@ type Product = {
   verified_business: boolean;
 };
 
+type SavedProductSummary = { product_id: string };
+
 function normalized(value: unknown) {
   return String(value ?? '').normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, ' ').trim();
 }
@@ -49,6 +51,10 @@ export default function ProductsPage() {
   const [stock, setStock] = useState<StockFilter>('any');
   const [shop, setShop] = useState<ShopFilter>('any');
   const [sort, setSort] = useState<SortMode>('relevance');
+  const [saveAuthenticated, setSaveAuthenticated] = useState<boolean | null>(null);
+  const [savedProductIds, setSavedProductIds] = useState<Set<string>>(() => new Set());
+  const [saveBusyId, setSaveBusyId] = useState('');
+  const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -62,6 +68,28 @@ export default function ProductsPage() {
         if (!cancelled) setError(loadError instanceof Error ? loadError.message : 'Product marketplace unavailable.');
       })
       .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch('/api/account/saved-products', { cache: 'no-store' })
+      .then(async (response) => {
+        if (response.status === 401) {
+          if (!cancelled) {
+            setSaveAuthenticated(false);
+            setSavedProductIds(new Set());
+          }
+          return;
+        }
+        const payload = await response.json() as { saved_products?: SavedProductSummary[]; error?: string };
+        if (!cancelled) setSaveAuthenticated(true);
+        if (!response.ok) throw new Error(payload.error || 'Unable to load saved Products.');
+        if (!cancelled) setSavedProductIds(new Set((payload.saved_products ?? []).map((item) => item.product_id)));
+      })
+      .catch((cause) => {
+        if (!cancelled) setSaveError(cause instanceof Error ? cause.message : 'Unable to load saved Products.');
+      });
     return () => { cancelled = true; };
   }, []);
 
@@ -107,6 +135,36 @@ export default function ProductsPage() {
     return { label: tamil ? 'Stock இல்லை' : 'Out of stock', tone: 'neutral' as const };
   };
 
+  const toggleSavedProduct = async (productId: string) => {
+    if (saveBusyId) return;
+    const saved = savedProductIds.has(productId);
+    setSaveBusyId(productId);
+    setSaveError('');
+    try {
+      const response = await fetch('/api/account/saved-products', {
+        method: saved ? 'DELETE' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product_id: productId }),
+      });
+      if (response.status === 401) {
+        window.location.assign(`/login?returnTo=${encodeURIComponent('/products')}`);
+        return;
+      }
+      const payload = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(payload.error || (saved ? 'Unable to remove saved Product.' : 'Unable to save Product.'));
+      setSaveAuthenticated(true);
+      setSavedProductIds((current) => {
+        const next = new Set(current);
+        if (saved) next.delete(productId); else next.add(productId);
+        return next;
+      });
+    } catch (cause) {
+      setSaveError(cause instanceof Error ? cause.message : 'Unable to update saved Product.');
+    } finally {
+      setSaveBusyId('');
+    }
+  };
+
   const clear = () => {
     setQuery('');
     setStock('any');
@@ -124,6 +182,7 @@ export default function ProductsPage() {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.75rem', marginTop: '1rem' }}>
         <Link href="/explore" className="button button-secondary">{tamil ? 'Services பார்க்க' : 'Browse services'}</Link>
         <Link href="/businesses" className="button button-quiet">{tamil ? 'Businesses பார்க்க' : 'Browse Businesses'}</Link>
+        {saveAuthenticated ? <Link href="/saved-products" className="button button-quiet">{tamil ? 'Saved Products' : 'Saved Products'}</Link> : null}
       </div>
     </section>
 
@@ -159,6 +218,8 @@ export default function ProductsPage() {
       </div>
     </section>
 
+    {saveError ? <p className="field-error" role="alert" style={{ marginBottom: '1rem' }}>{saveError}</p> : null}
+
     <div className="results-heading">
       <div>
         <span className="eyebrow">{tamil ? 'Approved products' : 'Approved products'}</span>
@@ -172,6 +233,7 @@ export default function ProductsPage() {
           const stockState = stockPresentation(product.stock_mode);
           const shopOpen = product.business_shop_state === 'open';
           const productHref = productDetailHref(product);
+          const saved = savedProductIds.has(product.id);
           return <Card className="discovery-card service-discovery-card" key={product.id}>
             {product.has_primary_image ? <div className="service-card-art" style={{ padding: 0, overflow: 'hidden' }}>
               <img
@@ -186,6 +248,7 @@ export default function ProductsPage() {
                 <Badge tone={stockState.tone}>{stockState.label}</Badge>
                 <Badge tone={shopOpen ? 'success' : 'neutral'}>{shopOpen ? (tamil ? 'Shop Open' : 'Shop Open') : (tamil ? 'Shop Closed' : 'Shop Closed')}</Badge>
                 {product.verified_business ? <Badge tone="info">{tamil ? 'Verified Business' : 'Verified Business'}</Badge> : null}
+                {saved ? <Badge tone="success">{tamil ? 'Saved' : 'Saved'}</Badge> : null}
               </div>
               <h3><Link href={productHref}>{product.name}</Link></h3>
               {product.description ? <p className="card-description">{product.description}</p> : null}
@@ -195,7 +258,12 @@ export default function ProductsPage() {
                   <span className="price">{money(product)} / {product.unit_label}</span>
                   <small style={{ display: 'block', marginTop: '.35rem' }}>{tamil ? 'Order request மட்டும்; online payment இல்லை.' : 'Order request only; no online payment.'}</small>
                 </div>
-                <Link href={productHref} className="button button-secondary">{product.stock_mode === 'out_of_stock' ? (tamil ? 'Product பார்க்க' : 'View product') : (tamil ? 'இந்த product order கேள்' : 'Request this product')}</Link>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.5rem', justifyContent: 'flex-end' }}>
+                  {saveAuthenticated === false ? <Link href={`/login?returnTo=${encodeURIComponent('/products')}`} className="button button-quiet">{tamil ? 'Save செய்ய Sign in' : 'Sign in to save'}</Link>
+                    : saveAuthenticated === true ? <Button type="button" variant={saved ? 'secondary' : 'quiet'} loading={saveBusyId === product.id} disabled={Boolean(saveBusyId && saveBusyId !== product.id)} aria-pressed={saved} onClick={() => void toggleSavedProduct(product.id)}>{saved ? (tamil ? 'Saved ✓' : 'Saved ✓') : (tamil ? 'Save Product' : 'Save Product')}</Button>
+                      : null}
+                  <Link href={productHref} className="button button-secondary">{product.stock_mode === 'out_of_stock' ? (tamil ? 'Product பார்க்க' : 'View product') : (tamil ? 'இந்த product order கேள்' : 'Request this product')}</Link>
+                </div>
               </div>
             </div>
           </Card>;
@@ -203,7 +271,7 @@ export default function ProductsPage() {
           : <Card><EmptyState title={tamil ? 'இந்த filters-க்கு products இல்லை' : 'No products match these filters'}>{tamil ? 'Filters clear செய்து மீண்டும் பார்க்கவும்.' : 'Clear the filters and browse the approved catalog again.'}</EmptyState></Card>}
 
     <p className="explore-disclaimer">{tamil
-      ? 'Shop Open/Closed என்பது தகவல் signal மட்டும். Out of stock products order செய்ய முடியாது. TakeItEsee payment/Cashfree activation இன்னும் இல்லை.'
-      : 'Shop Open/Closed is informational only. Out-of-stock products cannot be ordered. TakeItEsee payment and Cashfree are not active.'}</p>
+      ? 'Save என்பது shortlist மட்டும். Shop Open/Closed என்பது தகவல் signal மட்டும். Out of stock products order செய்ய முடியாது. TakeItEsee payment/Cashfree activation இன்னும் இல்லை.'
+      : 'Saving creates a shortlist only. Shop Open/Closed is informational only. Out-of-stock products cannot be ordered. TakeItEsee payment and Cashfree are not active.'}</p>
   </div>;
 }
