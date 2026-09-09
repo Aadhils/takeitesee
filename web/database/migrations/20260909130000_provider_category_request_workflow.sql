@@ -32,13 +32,76 @@ create unique index if not exists provider_category_requests_one_pending_name_id
 alter table public.provider_category_requests enable row level security;
 
 revoke all on public.provider_category_requests from anon, authenticated;
-grant select on public.provider_category_requests to authenticated;
+grant select, insert, update on public.provider_category_requests to authenticated;
+
+create or replace function private.provider_category_request_insert_allowed(
+  requested_provider_type text,
+  target_application_id uuid,
+  target_parent_category_id uuid,
+  target_name text
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path=''
+as $$
+  select auth.uid() is not null
+    and lower(btrim(coalesce(requested_provider_type,''))) in ('professional','business')
+    and (
+      (lower(btrim(coalesce(requested_provider_type,'')))='professional' and exists(
+        select 1 from public.professional_profiles p where p.user_id=auth.uid()
+      ))
+      or
+      (lower(btrim(coalesce(requested_provider_type,'')))='business' and exists(
+        select 1 from public.businesses b where b.owner_user_id=auth.uid()
+      ))
+    )
+    and exists(
+      select 1 from public.platform_applications a
+      where a.id=target_application_id and a.status='active'
+    )
+    and (
+      target_parent_category_id is null
+      or exists(
+        select 1 from public.platform_categories c
+        where c.id=target_parent_category_id
+          and c.application_id=target_application_id
+          and c.active=true
+      )
+    )
+    and not exists(
+      select 1 from public.platform_categories c
+      where c.application_id=target_application_id
+        and lower(btrim(c.name))=lower(btrim(coalesce(target_name,'')))
+    );
+$$;
+
+revoke all on function private.provider_category_request_insert_allowed(text,uuid,uuid,text) from public,anon;
+grant execute on function private.provider_category_request_insert_allowed(text,uuid,uuid,text) to authenticated;
 
 drop policy if exists provider_category_requests_private_read on public.provider_category_requests;
 create policy provider_category_requests_private_read on public.provider_category_requests
 for select to authenticated using (
-  requester_user_id=auth.uid() or private.is_super_admin()
+  requester_user_id=(select auth.uid()) or (select private.is_super_admin())
 );
+
+drop policy if exists provider_category_requests_provider_insert on public.provider_category_requests;
+create policy provider_category_requests_provider_insert on public.provider_category_requests
+for insert to authenticated with check (
+  requester_user_id=(select auth.uid())
+  and status='pending'
+  and reviewed_by is null
+  and reviewed_at is null
+  and created_category_id is null
+  and (select private.provider_category_request_insert_allowed(provider_type,application_id,suggested_parent_category_id,requested_name))
+);
+
+drop policy if exists provider_category_requests_super_update on public.provider_category_requests;
+create policy provider_category_requests_super_update on public.provider_category_requests
+for update to authenticated
+using ((select private.is_super_admin()))
+with check ((select private.is_super_admin()));
 
 create or replace function public.submit_provider_category_request(
   requested_provider_type text,
@@ -49,7 +112,7 @@ create or replace function public.submit_provider_category_request(
 )
 returns public.provider_category_requests
 language plpgsql
-security definer
+security invoker
 set search_path=''
 as $$
 declare
@@ -60,43 +123,11 @@ declare
 begin
   if auth.uid() is null then raise exception 'Authentication required.'; end if;
   if provider_type_value not in ('professional','business') then raise exception 'Provider type must be professional or business.'; end if;
+  if char_length(name_value)<2 or char_length(name_value)>100 then raise exception 'Category name must be 2 to 100 characters.'; end if;
+  if description_value is not null and char_length(description_value)>1000 then raise exception 'Category description must be 1000 characters or fewer.'; end if;
 
-  if provider_type_value='professional' then
-    if not exists(select 1 from public.professional_profiles p where p.user_id=auth.uid()) then
-      raise exception 'Professional provider account is required.';
-    end if;
-  else
-    if not exists(select 1 from public.businesses b where b.owner_user_id=auth.uid()) then
-      raise exception 'Business provider account is required.';
-    end if;
-  end if;
-
-  if char_length(name_value)<2 or char_length(name_value)>100 then
-    raise exception 'Category name must be 2 to 100 characters.';
-  end if;
-  if description_value is not null and char_length(description_value)>1000 then
-    raise exception 'Category description must be 1000 characters or fewer.';
-  end if;
-
-  if not exists(select 1 from public.platform_applications a where a.id=target_application_id and a.status='active') then
-    raise exception 'Selected application is not available.';
-  end if;
-
-  if target_parent_category_id is not null and not exists(
-    select 1 from public.platform_categories c
-    where c.id=target_parent_category_id
-      and c.application_id=target_application_id
-      and c.active=true
-  ) then
-    raise exception 'Suggested parent category is not available for this application.';
-  end if;
-
-  if exists(
-    select 1 from public.platform_categories c
-    where c.application_id=target_application_id
-      and lower(btrim(c.name))=lower(name_value)
-  ) then
-    raise exception 'This category is already registered in the platform taxonomy.';
+  if not private.provider_category_request_insert_allowed(provider_type_value,target_application_id,target_parent_category_id,name_value) then
+    raise exception 'The category request is not valid for this Provider workspace or platform application.';
   end if;
 
   if exists(
@@ -134,7 +165,7 @@ create or replace function public.review_provider_category_request(
 )
 returns jsonb
 language plpgsql
-security definer
+security invoker
 set search_path=''
 as $$
 declare
@@ -159,15 +190,9 @@ begin
   if req.status<>'pending' then raise exception 'Only pending category requests can be reviewed.'; end if;
 
   if decision_value='approve' then
-    if char_length(name_value)<2 or char_length(name_value)>100 then
-      raise exception 'Final category name must be 2 to 100 characters.';
-    end if;
-    if code_value !~ '^[a-z0-9][a-z0-9_-]{1,62}$' then
-      raise exception 'Final category code is invalid.';
-    end if;
-    if not exists(select 1 from public.platform_applications a where a.id=req.application_id and a.status='active') then
-      raise exception 'The requested application is not active.';
-    end if;
+    if char_length(name_value)<2 or char_length(name_value)>100 then raise exception 'Final category name must be 2 to 100 characters.'; end if;
+    if code_value !~ '^[a-z0-9][a-z0-9_-]{1,62}$' then raise exception 'Final category code is invalid.'; end if;
+    if not exists(select 1 from public.platform_applications a where a.id=req.application_id and a.status='active') then raise exception 'The requested application is not active.'; end if;
     if final_parent_category_id is not null and not exists(
       select 1 from public.platform_categories c
       where c.id=final_parent_category_id
