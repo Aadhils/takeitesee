@@ -20,11 +20,25 @@ type NearbyMatchMode = 'at_provider' | 'at_customer';
 type DistanceBand = 'under_1km' | '1_3km' | '3_7km' | '7_15km' | '15_30km' | '30_60km' | 'over_60km';
 type MarketplaceOrigin = { latitude: number; longitude: number };
 type GeoMatch = { distance_band: DistanceBand; distance_priority: number; match_mode: NearbyMatchMode };
+type CategorySearchMetadata = { canonical_code: string; group_name: string; aliases: string[] };
 
 function providerKey(providerType: unknown, professionalId: unknown, businessId: unknown) {
   if (providerType === 'professional' && professionalId) return `professional:${String(professionalId)}`;
   if (providerType === 'business' && businessId) return `business:${String(businessId)}`;
   return '';
+}
+
+function normalizeCategoryName(value: unknown) {
+  return String(value ?? '').normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+function categoryAliases(metadata: unknown) {
+  if (!metadata || typeof metadata !== 'object') return [];
+  const aliases = (metadata as Record<string, unknown>).search_aliases;
+  if (!Array.isArray(aliases)) return [];
+  return Array.from(new Set(
+    aliases.map((alias) => String(alias ?? '').normalize('NFKC').replace(/\s+/g, ' ').trim()).filter(Boolean),
+  ));
 }
 
 function effectiveWorkMode(row: any): ProviderWorkMode {
@@ -129,6 +143,50 @@ async function loadBusinessShopStates(businessIds: string[]) {
   return states;
 }
 
+async function loadCategorySearchMetadata() {
+  const categories = new Map<string, CategorySearchMetadata>();
+
+  try {
+    const serviceRole = createSupabaseServiceClient();
+    const { data: applications, error: applicationError } = await serviceRole
+      .from('platform_applications')
+      .select('id')
+      .eq('code', 'services')
+      .eq('status', 'active')
+      .limit(2);
+
+    if (applicationError || applications?.length !== 1) return categories;
+
+    const { data, error } = await serviceRole
+      .from('platform_categories')
+      .select('id,parent_id,code,name,metadata')
+      .eq('application_id', applications[0].id)
+      .eq('active', true)
+      .order('sort_order', { ascending: true })
+      .order('name', { ascending: true });
+
+    if (error) return categories;
+
+    const byId = new Map((data ?? []).map((row: any) => [String(row.id), row]));
+    for (const row of data ?? []) {
+      const nameKey = normalizeCategoryName(row.name);
+      if (!nameKey) continue;
+      const parent = row.parent_id ? byId.get(String(row.parent_id)) : null;
+      categories.set(nameKey, {
+        canonical_code: String(row.code || ''),
+        group_name: parent?.name ? String(parent.name) : '',
+        aliases: categoryAliases(row.metadata),
+      });
+    }
+  } catch {
+    // Taxonomy aliases are ranking/search enrichment only. If control-plane lookup
+    // fails, public eligibility remains governed exclusively by the anon/RLS path.
+    return new Map<string, CategorySearchMetadata>();
+  }
+
+  return categories;
+}
+
 async function buildMarketplaceResponse(origin: MarketplaceOrigin | null) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -158,11 +216,14 @@ async function buildMarketplaceResponse(origin: MarketplaceOrigin | null) {
     return provider?.verified === true && hasMarketplaceDisclosure(provider) && Boolean(providerId);
   });
 
-  const businessShopStates = await loadBusinessShopStates(
-    publicRows
-      .filter((row: any) => row.provider_type === 'business' && row.business_id)
-      .map((row: any) => String(row.business_id)),
-  );
+  const [businessShopStates, categorySearchMetadata] = await Promise.all([
+    loadBusinessShopStates(
+      publicRows
+        .filter((row: any) => row.provider_type === 'business' && row.business_id)
+        .map((row: any) => String(row.business_id)),
+    ),
+    loadCategorySearchMetadata(),
+  ]);
 
   const liveRows: any[] = [];
   for (let start = 0; start < maxAvailabilityRows; start += pageSize) {
@@ -218,6 +279,7 @@ async function buildMarketplaceResponse(origin: MarketplaceOrigin | null) {
     const ratings = reviews.get(row.id) ?? [];
     const rating = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
     const category = row.category || 'Other';
+    const categorySearch = categorySearchMetadata.get(normalizeCategoryName(category));
     const liveWorkMode = liveModes.get(providerKey(row.provider_type, row.professional_id, row.business_id)) ?? 'offline';
     const geoMatch = geo.matches.get(String(row.id));
     return {
@@ -231,6 +293,9 @@ async function buildMarketplaceResponse(origin: MarketplaceOrigin | null) {
       service_area: provider?.service_area || provider?.location || row.location || '',
       category_id: category.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       category_slug: category.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      category_code: categorySearch?.canonical_code || null,
+      category_group: categorySearch?.group_name || '',
+      category_aliases: categorySearch?.aliases || [],
       pricing: { base_price: { amount: Math.round(Number(row.base_price || 0) * 100), currency: row.currency || 'INR' } },
       duration_minutes: row.duration_minutes,
       rating,
