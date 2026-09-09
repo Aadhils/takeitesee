@@ -14,7 +14,7 @@ function normalize(value: string) {
 
 const nearMePatterns = [
   /\b(?:near|nearby|nearest|closest|around)\s+(?:me|my location)\b/i,
-  /\b(?:nearby|nearest)\s*$/i,
+  /\b(?:nearby|nearest|closest)\b/i,
   /(?:எனக்கு|என்)\s+(?:அருகில்|அருகிலுள்ள|அருகாமை)/u,
 ];
 
@@ -31,16 +31,6 @@ function stripNearMe(value: string) {
 export function parseMarketplaceSearchIntent(rawQuery: string): MarketplaceSearchIntent {
   const query = tidy(rawQuery);
   if (!query) return { serviceQuery: '', locationQuery: '', nearMe: false };
-
-  const normalizedQuery = normalize(query);
-  const nearMe = nearMePatterns.some((pattern) => pattern.test(normalizedQuery));
-  if (nearMe) {
-    return {
-      serviceQuery: stripNearMe(query),
-      locationQuery: '',
-      nearMe: true,
-    };
-  }
 
   const englishMatch = query.match(englishLocationPattern);
   if (englishMatch) {
@@ -63,6 +53,16 @@ export function parseMarketplaceSearchIntent(rawQuery: string): MarketplaceSearc
     const serviceQuery = tidy(tamilLastMatch[1] || '');
     const locationQuery = tidy(tamilLastMatch[2] || '');
     if (serviceQuery && locationQuery) return { serviceQuery, locationQuery, nearMe: false };
+  }
+
+  const normalizedQuery = normalize(query);
+  const nearMe = nearMePatterns.some((pattern) => pattern.test(normalizedQuery));
+  if (nearMe) {
+    return {
+      serviceQuery: stripNearMe(query),
+      locationQuery: '',
+      nearMe: true,
+    };
   }
 
   return { serviceQuery: query, locationQuery: '', nearMe: false };
