@@ -22,6 +22,7 @@ type Props = {
   value: string;
   locale: string;
   onChange: (value: string) => void;
+  onResolvedIntent?: (categoryName: string | null) => void;
 };
 
 const intentTokens = new Set([
@@ -84,7 +85,7 @@ function rankCategory(category: TaxonomyCategory, needle: string): RankedSuggest
   return { ...category, score, matched_alias: matchedAlias };
 }
 
-export function TaxonomySearchInput({ label, placeholder, value, locale, onChange }: Props) {
+export function TaxonomySearchInput({ label, placeholder, value, locale, onChange, onResolvedIntent }: Props) {
   const [taxonomy, setTaxonomy] = useState<TaxonomyCategory[]>([]);
   const [focused, setFocused] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -118,6 +119,10 @@ export function TaxonomySearchInput({ label, placeholder, value, locale, onChang
       return aliasValues(category).some((alias) => alias === needle);
     }) ?? null;
   }, [needle, taxonomy]);
+
+  useEffect(() => {
+    onResolvedIntent?.(resolvedIntent?.name ?? null);
+  }, [onResolvedIntent, resolvedIntent]);
 
   useEffect(() => setActiveIndex(-1), [needle]);
 
