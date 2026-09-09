@@ -61,7 +61,7 @@ function normalized(value: unknown) {
   return String(value ?? '').normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, ' ').trim();
 }
 
-function categoryAliasValues(service: MarketplaceService) {
+function categoryAliasValues(service: MarketplaceService): string[] {
   if (!Array.isArray(service.category_aliases)) return [];
   return service.category_aliases.map((alias: unknown) => String(alias ?? '').trim()).filter(Boolean);
 }
