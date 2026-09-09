@@ -216,7 +216,28 @@ export default async function BusinessPublicProfileContent({
 
   const { business, services, products } = record;
   const operations = await loadStorefrontOperations(providerId, services.map((service) => String(service.id)));
-  const structuredData = services.length ? {
+  const serviceOffers = services.map((service) => ({
+    '@type': 'Offer',
+    itemOffered: {
+      '@type': 'Service',
+      name: service.name || undefined,
+      url: `${publicSiteUrl}/services/${encodeURIComponent(service.id)}`,
+    },
+  }));
+  const productOffers = products.map((product) => ({
+    '@type': 'Offer',
+    price: product.price ?? undefined,
+    priceCurrency: product.currency || undefined,
+    url: `${publicSiteUrl}/products/${encodeURIComponent(product.id)}`,
+    itemOffered: {
+      '@type': 'Product',
+      name: product.name || undefined,
+      description: product.description || undefined,
+      url: `${publicSiteUrl}/products/${encodeURIComponent(product.id)}`,
+    },
+  }));
+  const offerItems = [...serviceOffers, ...productOffers].slice(0, 20);
+  const structuredData = offerItems.length ? {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
     name: business.name || undefined,
@@ -227,15 +248,12 @@ export default async function BusinessPublicProfileContent({
     telephone: business.public_contact_phone || undefined,
     hasOfferCatalog: {
       '@type': 'OfferCatalog',
-      name: 'Active services',
-      itemListElement: services.slice(0, 20).map((service) => ({
-        '@type': 'Offer',
-        itemOffered: {
-          '@type': 'Service',
-          name: service.name || undefined,
-          url: `${publicSiteUrl}/services/${encodeURIComponent(service.id)}`,
-        },
-      })),
+      name: services.length > 0 && products.length > 0
+        ? 'Services and products'
+        : products.length > 0
+          ? 'Products'
+          : 'Active services',
+      itemListElement: offerItems,
     },
   } : null;
 
