@@ -89,7 +89,7 @@ function buildExploreParams(query: string, filters: Filters, sort: string) {
   if (filters.rating !== 'any') params.set('rating', filters.rating);
   if (filters.provider !== 'any') params.set('provider', filters.provider);
   if (filters.availability === 'available-now') params.set('availability', 'now');
-  if (sort !== 'relevance') params.set('sort', sort);
+  if (sort !== 'relevance' && sort !== 'nearest') params.set('sort', sort);
   return params;
 }
 
@@ -306,6 +306,10 @@ export default function ExplorePage() {
   const preciseNearbyActive = Boolean(geoOrigin && geoStatus === 'ready' && !effectiveLocationQuery);
   const namedLocationOverridesNearby = Boolean(geoOrigin && geoStatus === 'ready' && effectiveLocationQuery);
 
+  useEffect(() => {
+    if (sort === 'nearest' && !preciseNearbyActive) setSort('relevance');
+  }, [preciseNearbyActive, sort]);
+
   const filteredServices = useMemo(() => {
     const locationNeedle = normalized(effectiveLocationQuery);
     return services
@@ -316,15 +320,21 @@ export default function ExplorePage() {
       .filter((service) => filters.price === 'any' || (filters.price === 'under-1000' && service.pricing.base_price.amount < 100000) || (filters.price === '1000-5000' && service.pricing.base_price.amount >= 100000 && service.pricing.base_price.amount <= 500000) || (filters.price === 'over-5000' && service.pricing.base_price.amount > 500000))
       .filter((service) => filters.rating === 'any' || (filters.rating === '4-plus' && service.rating >= 4) || (filters.rating === '4.5-plus' && service.rating >= 4.5))
       .filter((service) => filters.provider === 'any' || service.provider_type === filters.provider)
-      .sort((a, b) => sort === 'rating'
-        ? b.rating - a.rating
-        : sort === 'price'
-          ? a.pricing.base_price.amount - b.pricing.base_price.amount
-          : sort === 'price-desc'
-            ? b.pricing.base_price.amount - a.pricing.base_price.amount
-            : relevanceScore(b, effectiveSearchQuery, preciseNearbyActive, searchIntent.nearMe) - relevanceScore(a, effectiveSearchQuery, preciseNearbyActive, searchIntent.nearMe)
-              || b.rating - a.rating
-              || b.review_count - a.review_count);
+      .sort((a, b) => sort === 'nearest'
+        ? Number(b.distance_priority || 0) - Number(a.distance_priority || 0)
+          || availabilityPriority(b) - availabilityPriority(a)
+          || relevanceScore(b, effectiveSearchQuery, preciseNearbyActive, searchIntent.nearMe) - relevanceScore(a, effectiveSearchQuery, preciseNearbyActive, searchIntent.nearMe)
+          || b.rating - a.rating
+          || b.review_count - a.review_count
+        : sort === 'rating'
+          ? b.rating - a.rating
+          : sort === 'price'
+            ? a.pricing.base_price.amount - b.pricing.base_price.amount
+            : sort === 'price-desc'
+              ? b.pricing.base_price.amount - a.pricing.base_price.amount
+              : relevanceScore(b, effectiveSearchQuery, preciseNearbyActive, searchIntent.nearMe) - relevanceScore(a, effectiveSearchQuery, preciseNearbyActive, searchIntent.nearMe)
+                || b.rating - a.rating
+                || b.review_count - a.review_count);
   }, [services, availableNowActive, effectiveLocationQuery, effectiveSearchQuery, filters, preciseNearbyActive, searchIntent.nearMe, sort]);
 
   const clearAll = () => { setQuery(''); setResolvedTaxonomyIntent(null); setFilters(defaultFilters()); setSort('relevance'); };
@@ -394,7 +404,7 @@ export default function ExplorePage() {
             ? <Button type="button" variant="secondary" onClick={clearNearbyLocation}>{nearbyReady ? 'Nearby ranking on · Clear' : 'Clear current location'}</Button>
             : <Button type="button" variant="secondary" loading={geoLocating} onClick={useCurrentLocation}>{searchIntent.nearMe ? 'Use my location for nearby results' : 'Use my location'}</Button>}
         </div>
-        <div className="sort-control"><Select label={t('explore.sort')} value={sort} onChange={(e) => setSort(e.target.value)}><option value="relevance">{t('explore.relevance')}</option><option value="rating">{t('explore.highestRated')}</option><option value="price">{t('explore.lowestPrice')}</option><option value="price-desc">{t('explore.highestPrice')}</option></Select></div>
+        <div className="sort-control"><Select label={t('explore.sort')} value={sort} onChange={(e) => setSort(e.target.value)}><option value="relevance">{t('explore.relevance')}</option>{preciseNearbyActive ? <option value="nearest">{locale === 'ta-IN' ? 'அருகிலுள்ளவை முதலில்' : 'Nearest first'}</option> : null}<option value="rating">{t('explore.highestRated')}</option><option value="price">{t('explore.lowestPrice')}</option><option value="price-desc">{t('explore.highestPrice')}</option></Select></div>
       </div>
       {searchIntent.locationQuery && !manualLocationQuery ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{locale === 'ta-IN' ? 'தேடலில் இடம் கண்டறியப்பட்டது:' : 'Location intent detected:'} <strong>{searchIntent.locationQuery}</strong>. {locale === 'ta-IN' ? 'இந்த இடத்துடன் பொருந்தும் சேவைகள் மட்டும் காட்டப்படும்.' : 'Only services matching this location are shown.'}</p> : null}
       {searchIntent.nearMe && !geoOrigin ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{locale === 'ta-IN' ? '“எனக்கு அருகில்” intent கண்டறியப்பட்டது. துல்லியமான அருகாமை ranking-க்கு Use my location தேர்வு செய்யவும்.' : '“Near me” intent was detected. Choose Use my location to enable precise nearby ranking.'}</p> : null}
