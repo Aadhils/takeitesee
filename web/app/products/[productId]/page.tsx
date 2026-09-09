@@ -8,6 +8,7 @@ import BusinessStorefrontProducts from '../../../components/detail/BusinessStore
 import ProductShareAction from '../../../components/detail/ProductShareAction';
 import SavedProductAction from '../../../components/detail/SavedProductAction';
 import { hasMarketplaceDisclosure } from '../../../server/marketplace/public-directory';
+import { loadProductImagePresence } from '../../../server/marketplace/public-product-media';
 
 const siteUrl = 'https://www.takeitesee.com';
 
@@ -51,6 +52,10 @@ function seoText(value: string | null | undefined, fallback: string, max = 160) 
   return `${text.slice(0, max - 1).trimEnd()}…`;
 }
 
+function publicProductImageUrl(productId: string) {
+  return `${siteUrl}/api/marketplace/products/${encodeURIComponent(productId)}/image`;
+}
+
 const loadPublicProduct = cache(async (productId: string) => {
   const supabase = publicSupabase();
   if (!supabase) return null;
@@ -72,9 +77,14 @@ const loadPublicProduct = cache(async (productId: string) => {
     .maybeSingle();
   if (businessError || !business || business.verified !== true || !hasMarketplaceDisclosure(business)) return null;
 
+  // Media presence is presentation-only and is checked only after the Product has
+  // already passed anon/RLS publication plus verified Business disclosure gates.
+  const imagePresence = await loadProductImagePresence([String(product.id)]);
+
   return {
     product: product as PublicProduct,
     business: business as PublicBusiness,
+    has_primary_image: imagePresence.has(String(product.id)),
   };
 });
 
@@ -89,7 +99,7 @@ export async function generateMetadata({ params }: { params: Promise<{ productId
     };
   }
 
-  const { product, business } = record;
+  const { product, business, has_primary_image } = record;
   const productName = product.name || 'Product';
   const businessName = business.name || 'Verified Business';
   const location = business.location || '';
@@ -100,6 +110,7 @@ export async function generateMetadata({ params }: { params: Promise<{ productId
     `View ${productName} from ${businessName}${location ? ` in ${location}` : ''} on TakeItEsee and send a non-payment order request.`,
   );
   const canonical = `${siteUrl}/products/${encodeURIComponent(productId)}`;
+  const socialImage = has_primary_image ? publicProductImageUrl(product.id) : `${siteUrl}/brand/social`;
 
   return {
     title: { absolute: socialTitle },
@@ -111,13 +122,13 @@ export async function generateMetadata({ params }: { params: Promise<{ productId
       description,
       url: canonical,
       type: 'website',
-      images: ['/brand/social'],
+      images: [socialImage],
     },
     twitter: {
       card: 'summary_large_image',
       title: socialTitle,
       description,
-      images: ['/brand/social'],
+      images: [socialImage],
     },
   };
 }
@@ -127,7 +138,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   const record = await loadPublicProduct(productId);
   if (!record) notFound();
 
-  const { product, business } = record;
+  const { product, business, has_primary_image } = record;
   const productName = product.name || 'Product';
   const businessName = business.name || 'Verified Business';
   const canonical = `${siteUrl}/products/${encodeURIComponent(product.id)}`;
@@ -138,6 +149,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       ? 'https://schema.org/PreOrder'
       : 'https://schema.org/InStock';
   const price = Number(product.price || 0);
+  const structuredImage = has_primary_image ? publicProductImageUrl(product.id) : undefined;
 
   const structuredData = {
     '@context': 'https://schema.org',
@@ -145,6 +157,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     name: productName,
     description: product.description || undefined,
     url: canonical,
+    image: structuredImage,
     offers: {
       '@type': 'Offer',
       url: canonical,
@@ -193,6 +206,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       currency: product.currency || 'INR',
       unit_label: product.unit_label || 'item',
       stock_mode: product.stock_mode,
+      has_primary_image,
     }]} />
   </>;
 }
