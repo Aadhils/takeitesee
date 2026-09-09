@@ -68,7 +68,9 @@ function categoryAliasValues(service: MarketplaceService): string[] {
 }
 
 function semanticTokens(query: string) {
-  return normalized(query).split(' ').filter((token) => token && !searchIntentTokens.has(token));
+  return normalized(query)
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((token) => token && !searchIntentTokens.has(token));
 }
 
 function hasNearbyIntent(query: string) {
@@ -127,7 +129,7 @@ function distancePriority(service: MarketplaceService, query: string) {
   return hasNearbyIntent(query) ? Math.min(30, Math.round(base * 1.25)) : base;
 }
 
-function relevanceScore(service: MarketplaceService, query: string) {
+function relevanceScore(service: MarketplaceService, query: string, intentQuery = query) {
   const tokens = semanticTokens(query);
   const fullQuery = tokens.join(' ');
   const name = normalized(localized(service.service_name));
@@ -167,7 +169,7 @@ function relevanceScore(service: MarketplaceService, query: string) {
   // Service/text match remains primary. Live availability and coarse derived distance
   // are operational usefulness signals, so proximity cannot overwhelm a clearer match.
   score += availabilityPriority(service) * 10;
-  score += distancePriority(service, query);
+  score += distancePriority(service, intentQuery);
   score += Math.min(Number(service.rating || 0), 5) * 2;
   score += Math.min(Number(service.review_count || 0), 20) * 0.25;
   return score;
@@ -222,6 +224,7 @@ function geolocationMessage(error: GeolocationPositionError) {
 
 export default function ExplorePage() {
   const [query, setQuery] = useState('');
+  const [resolvedTaxonomyIntent, setResolvedTaxonomyIntent] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [sort, setSort] = useState('relevance');
   const [urlReady, setUrlReady] = useState(false);
@@ -301,12 +304,13 @@ export default function ExplorePage() {
 
   const availableNowFromQuery = useMemo(() => hasAvailableNowIntent(query), [query]);
   const availableNowActive = filters.availability === 'available-now' || availableNowFromQuery;
+  const effectiveSearchQuery = resolvedTaxonomyIntent || query;
 
   const filteredServices = useMemo(() => {
     const locationNeedle = filters.location === 'Anywhere' ? '' : normalized(filters.location);
     return services
       .filter((service) => filters.category === 'all' || service.category_slug === filters.category)
-      .filter((service) => matchesSearch(service, query))
+      .filter((service) => matchesSearch(service, effectiveSearchQuery))
       .filter((service) => !availableNowActive || service.live_work_mode === 'available')
       .filter((service) => !locationNeedle || normalized(`${service.location ?? ''} ${service.service_area ?? ''}`).includes(locationNeedle))
       .filter((service) => filters.price === 'any' || (filters.price === 'under-1000' && service.pricing.base_price.amount < 100000) || (filters.price === '1000-5000' && service.pricing.base_price.amount >= 100000 && service.pricing.base_price.amount <= 500000) || (filters.price === 'over-5000' && service.pricing.base_price.amount > 500000))
@@ -318,12 +322,12 @@ export default function ExplorePage() {
           ? a.pricing.base_price.amount - b.pricing.base_price.amount
           : sort === 'price-desc'
             ? b.pricing.base_price.amount - a.pricing.base_price.amount
-            : relevanceScore(b, query) - relevanceScore(a, query)
+            : relevanceScore(b, effectiveSearchQuery, query) - relevanceScore(a, effectiveSearchQuery, query)
               || b.rating - a.rating
               || b.review_count - a.review_count);
-  }, [services, availableNowActive, filters, query, sort]);
+  }, [services, availableNowActive, effectiveSearchQuery, filters, query, sort]);
 
-  const clearAll = () => { setQuery(''); setFilters(defaultFilters()); setSort('relevance'); };
+  const clearAll = () => { setQuery(''); setResolvedTaxonomyIntent(null); setFilters(defaultFilters()); setSort('relevance'); };
   const update = <K extends keyof Filters>(key: K, value: Filters[K]) => setFilters((current) => ({ ...current, [key]: value }));
 
   const useCurrentLocation = () => {
@@ -367,7 +371,7 @@ export default function ExplorePage() {
     <section className="page-intro"><span className="eyebrow">{t('explore.eyebrow')}</span><h1>{t('explore.title')}</h1><p>{t('explore.subtitle')}</p></section>
 
     <section className="discovery-search-panel">
-      <div className="discovery-search-row"><TaxonomySearchInput label={t('explore.searchLabel')} placeholder={t('explore.searchPlaceholder')} value={query} locale={locale} onChange={setQuery} /></div>
+      <div className="discovery-search-row"><TaxonomySearchInput label={t('explore.searchLabel')} placeholder={t('explore.searchPlaceholder')} value={query} locale={locale} onChange={(value) => { setQuery(value); setResolvedTaxonomyIntent(null); }} onResolvedIntent={setResolvedTaxonomyIntent} /></div>
       <div className="discovery-filter-fields">
         <Select label={t('explore.category')} value={filters.category} onChange={(e) => update('category', e.target.value)}><option value="all">{t('explore.allCategories')}</option>{categories.map((category) => <option value={category} key={category}>{labelFromSlug(category)}</option>)}</Select>
         <Input label={t('explore.location')} placeholder={t('explore.locationPlaceholder')} value={filters.location === 'Anywhere' ? '' : filters.location} onChange={(e) => update('location', e.target.value.trim() ? e.target.value : 'Anywhere')} />
