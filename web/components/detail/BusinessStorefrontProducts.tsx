@@ -13,10 +13,15 @@ type PublicProduct = {
   currency: string;
   unit_label: string;
   stock_mode: 'in_stock' | 'out_of_stock' | 'made_to_order';
+  has_primary_image?: boolean;
 };
 
 type OrderDraft = { quantity: number; note: string };
 type OrderFeedback = { busy: boolean; message: string; error: boolean };
+
+function productImageHref(productId: string) {
+  return `/api/marketplace/products/${encodeURIComponent(productId)}/image`;
+}
 
 export default function BusinessStorefrontProducts({ products }: { products: PublicProduct[] }) {
   const { locale } = useLanguage();
@@ -110,8 +115,13 @@ export default function BusinessStorefrontProducts({ products }: { products: Pub
           className="card"
           id={`product-${product.id}`}
           key={product.id}
-          style={{ display: 'grid', gap: '.8rem', alignContent: 'start', scrollMarginTop: '7rem' }}
+          style={{ display: 'grid', gap: '.8rem', alignContent: 'start', scrollMarginTop: '7rem', overflow: 'hidden' }}
         >
+          {product.has_primary_image ? <img
+            src={productImageHref(product.id)}
+            alt={`${product.name} product`}
+            style={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'cover', borderRadius: '12px', display: 'block' }}
+          /> : null}
           <div>
             <span className="eyebrow">{stockLabel(product.stock_mode)}</span>
             <h3 style={{ margin: '.35rem 0' }}>{product.name}</h3>
