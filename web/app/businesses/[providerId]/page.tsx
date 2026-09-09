@@ -22,18 +22,23 @@ export async function generateMetadata({ params }: { params: Promise<{ providerI
     };
   }
 
-  const { business, services } = record;
+  const { business, services, products } = record;
   const location = business.location || '';
   const pageTitle = `${business.name || 'Verified business'}${location ? ` in ${location}` : ''}`;
   const socialTitle = `${pageTitle} | TakeItEsee`;
+  const offeringLabel = services.length > 0 && products.length > 0
+    ? 'services and products'
+    : products.length > 0
+      ? 'products'
+      : 'services';
   const description = publicBusinessSeoText(
     business.description,
-    `Explore services from ${business.name || 'this business'}${location ? ` in ${location}` : ''} on TakeItEsee.`,
+    `Explore ${offeringLabel} from ${business.name || 'this business'}${location ? ` in ${location}` : ''} on TakeItEsee.`,
   );
   const canonical = handle
     ? `${publicSiteUrl}/@${encodeURIComponent(handle)}`
     : `${publicSiteUrl}/businesses/${encodeURIComponent(providerId)}`;
-  const indexable = services.length > 0;
+  const indexable = services.length > 0 || products.length > 0;
 
   return {
     title: { absolute: socialTitle },
