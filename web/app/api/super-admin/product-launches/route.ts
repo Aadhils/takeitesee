@@ -5,6 +5,9 @@ import { createSupabaseServiceClient } from '../../../../lib/supabase/service';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+const PRODUCT_MEDIA_BUCKET = 'business-product-media';
+const PRODUCT_MEDIA_PREVIEW_TTL_SECONDS = 15 * 60;
+
 type PendingRequest = {
   id: string;
   product_id: string;
@@ -33,7 +36,7 @@ export async function GET(request: Request) {
 
     const [{ data: products, error: productError }, { data: businesses, error: businessError }] = await Promise.all([
       productIds.length
-        ? serviceRole.from('business_products').select('id,name,description,sku,price,currency,unit_label,stock_mode,status,review_revision').in('id', productIds)
+        ? serviceRole.from('business_products').select('id,name,description,sku,price,currency,unit_label,stock_mode,status,review_revision,primary_image_object_path').in('id', productIds)
         : Promise.resolve({ data: [], error: null }),
       businessIds.length
         ? serviceRole.from('businesses').select('id,name,verified').in('id', businessIds)
@@ -42,7 +45,32 @@ export async function GET(request: Request) {
     if (productError) throw new Error(productError.message);
     if (businessError) throw new Error(businessError.message);
 
-    const productById = new Map((products ?? []).map((row) => [String(row.id), row]));
+    const productEntries = await Promise.all((products ?? []).map(async (row) => {
+      const imagePath = (row.primary_image_object_path as string | null) ?? null;
+      let imageUrl: string | null = null;
+      if (imagePath) {
+        const { data } = await serviceRole.storage
+          .from(PRODUCT_MEDIA_BUCKET)
+          .createSignedUrl(imagePath, PRODUCT_MEDIA_PREVIEW_TTL_SECONDS);
+        imageUrl = data?.signedUrl ?? null;
+      }
+      return [String(row.id), {
+        id: String(row.id),
+        name: String(row.name || ''),
+        description: (row.description as string | null) ?? null,
+        sku: (row.sku as string | null) ?? null,
+        price: row.price,
+        currency: String(row.currency || 'INR'),
+        unit_label: String(row.unit_label || 'item'),
+        stock_mode: String(row.stock_mode || 'out_of_stock'),
+        status: String(row.status || 'draft'),
+        review_revision: Number(row.review_revision ?? 1),
+        has_image: Boolean(imagePath),
+        image_url: imageUrl,
+      }] as const;
+    }));
+
+    const productById = new Map(productEntries);
     const businessById = new Map((businesses ?? []).map((row) => [String(row.id), row]));
 
     return NextResponse.json({

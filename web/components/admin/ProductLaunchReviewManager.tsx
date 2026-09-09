@@ -21,6 +21,8 @@ type ReviewRow = {
     stock_mode: string;
     status: string;
     review_revision: number;
+    has_image: boolean;
+    image_url: string | null;
   } | null;
   business: { id: string; name: string | null; verified: boolean } | null;
 };
@@ -90,8 +92,17 @@ export default function ProductLaunchReviewManager() {
             <Badge tone={row.business?.verified ? 'success' : 'warning'}>{row.business?.verified ? 'Business verified' : 'Business not verified'}</Badge>
             <Badge tone={stale ? 'danger' : 'info'}>{stale ? 'Stale revision' : 'Current revision'}</Badge>
             {product ? <Badge tone={product.status === 'active' ? 'success' : 'neutral'}>{product.status}</Badge> : null}
+            {product?.has_image ? <Badge tone="info">Primary image attached</Badge> : <Badge tone="neutral">No primary image</Badge>}
           </div>
         </div>
+        {product?.image_url ? <div style={{ display: 'grid', gap: '.4rem' }}>
+          <span className="eyebrow">Review-sensitive Product image</span>
+          <img
+            src={product.image_url}
+            alt={`${product.name} Product review preview`}
+            style={{ width: 'min(100%, 420px)', maxHeight: '360px', objectFit: 'contain', border: '1px solid var(--color-border)', borderRadius: '14px', background: 'var(--color-surface-subtle, #fafafa)' }}
+          />
+        </div> : product?.has_image ? <Alert tone="warning">The Product has an image, but its private preview could not be generated. Request changes instead of approving if visual review is required.</Alert> : null}
         {product?.description ? <p style={{ margin: 0, lineHeight: 1.6 }}>{product.description}</p> : null}
         {stale ? <Alert tone="danger">This request cannot be approved because the product revision changed or the product is unavailable.</Alert> : null}
         <Textarea

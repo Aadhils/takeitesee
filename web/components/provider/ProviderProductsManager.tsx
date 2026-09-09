@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Badge, Button, Card, EmptyState, Input, Select, Textarea } from '../ui/primitives';
 import { ProviderHeading } from './ProviderPresentation';
 import { LiveProviderShell } from './LiveProviderShell';
+import ProductPrimaryImageControl from './ProductPrimaryImageControl';
 import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 
 type ProductStatus = 'draft' | 'active' | 'paused';
@@ -251,8 +252,8 @@ export default function ProviderProductsManager() {
 
     <Alert title={tamil ? 'Revision-bound public launch' : 'Revision-bound public launch'} tone="info">
       {tamil
-        ? 'Product name, description, SKU, price, currency அல்லது unit மாற்றினால் புதிய review revision உருவாகும். பழைய approval புதிய content-ஐ publish செய்யாது. Ordering/payment/Cashfree இன்னும் enable செய்யப்படவில்லை.'
-        : 'Changing product name, description, SKU, price, currency, or unit creates a new review revision. An old approval cannot publish changed content. Ordering, payment, and Cashfree are still disabled.'}
+        ? 'Product name, description, SKU, price, currency, unit அல்லது primary image மாற்றினால் புதிய review revision உருவாகும். பழைய approval புதிய content/media-ஐ publish செய்யாது. TakeItEsee payment/Cashfree இன்னும் enable செய்யப்படவில்லை.'
+        : 'Changing product name, description, SKU, price, currency, unit, or primary image creates a new review revision. An old approval cannot publish changed content or media. TakeItEsee payment and Cashfree are still disabled.'}
     </Alert>
 
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '.75rem', margin: '1rem 0' }}>
@@ -294,6 +295,7 @@ export default function ProviderProductsManager() {
             </div>
           </div>
 
+          <ProductPrimaryImageControl productId={product.id} productName={product.name} onChanged={load} />
           {currentLaunch?.review_note ? <Alert tone={currentLaunch.status === 'approved' ? 'success' : 'warning'}>{currentLaunch.review_note}</Alert> : null}
           {product.launch && !currentLaunch ? <Alert tone="warning">{tamil ? `முந்தைய review Rev ${product.launch.product_revision}-க்கு. Current Rev ${product.review_revision} புதிய approval தேவை.` : `The latest review belongs to revision ${product.launch.product_revision}. Current revision ${product.review_revision} needs a new approval.`}</Alert> : null}
 
