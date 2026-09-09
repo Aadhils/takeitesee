@@ -70,11 +70,13 @@ export default function AuthenticatedAccount() {
     {
       id: 'discover',
       eyebrow: tamil ? 'தேடு & திட்டமிடு' : 'Discover & plan',
-      title: tamil ? 'சேவைகள் & தேவைகள்' : 'Services & requirements',
+      title: tamil ? 'சேவைகள், Products & தேவைகள்' : 'Services, Products & requirements',
       links: [
         { href: '/saved-services', label: tamil ? 'சேமித்த சேவைகள்' : 'Saved services' },
+        { href: '/saved-products', label: tamil ? 'சேமித்த Products' : 'Saved Products' },
         { href: '/requirements', label: tamil ? 'என் தேவைகள்' : 'My requirements' },
         { href: '/explore', label: tamil ? 'சேவைகள் தேடு' : 'Explore services' },
+        { href: '/products', label: tamil ? 'Products தேடு' : 'Browse Products' },
       ],
     },
     {
