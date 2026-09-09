@@ -106,7 +106,7 @@ export default function ProductPrimaryImageControl({
       setNotice(tamil
         ? `Image update செய்யப்பட்டது. Current product revision ${payload.media.review_revision}; public launch approval மீண்டும் தேவைப்படலாம்.`
         : `Image updated. Current product revision is ${payload.media.review_revision}; public launch approval may be required again.`);
-      await onChanged?.();
+      void onChanged?.();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to upload product image.');
     } finally {
@@ -133,7 +133,7 @@ export default function ProductPrimaryImageControl({
       setNotice(tamil
         ? `Image remove செய்யப்பட்டது. Current product revision ${payload.media.review_revision}.`
         : `Image removed. Current product revision is ${payload.media.review_revision}.`);
-      await onChanged?.();
+      void onChanged?.();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to remove product image.');
     } finally {
