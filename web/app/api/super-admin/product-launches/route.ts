@@ -54,8 +54,20 @@ export async function GET(request: Request) {
           .createSignedUrl(imagePath, PRODUCT_MEDIA_PREVIEW_TTL_SECONDS);
         imageUrl = data?.signedUrl ?? null;
       }
-      const { primary_image_object_path: _privatePath, ...publicProduct } = row;
-      return [String(row.id), { ...publicProduct, has_image: Boolean(imagePath), image_url: imageUrl }] as const;
+      return [String(row.id), {
+        id: String(row.id),
+        name: String(row.name || ''),
+        description: (row.description as string | null) ?? null,
+        sku: (row.sku as string | null) ?? null,
+        price: row.price,
+        currency: String(row.currency || 'INR'),
+        unit_label: String(row.unit_label || 'item'),
+        stock_mode: String(row.stock_mode || 'out_of_stock'),
+        status: String(row.status || 'draft'),
+        review_revision: Number(row.review_revision ?? 1),
+        has_image: Boolean(imagePath),
+        image_url: imageUrl,
+      }] as const;
     }));
 
     const productById = new Map(productEntries);
