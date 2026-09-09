@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Button, Input, Select, Skeleton } from '../../components/ui/primitives';
 import { ServiceCard } from '../../components/discovery/MarketplaceCards';
 import { DiscoveryEmptyState } from '../../components/discovery/DiscoveryEnhancements';
+import { TaxonomySearchInput } from '../../components/discovery/TaxonomySearchInput';
 import { useLanguage } from '../../components/i18n/LanguageProvider';
 
 type MarketplaceService = any;
@@ -366,7 +367,7 @@ export default function ExplorePage() {
     <section className="page-intro"><span className="eyebrow">{t('explore.eyebrow')}</span><h1>{t('explore.title')}</h1><p>{t('explore.subtitle')}</p></section>
 
     <section className="discovery-search-panel">
-      <div className="discovery-search-row"><Input label={t('explore.searchLabel')} placeholder={t('explore.searchPlaceholder')} value={query} onChange={(e) => setQuery(e.target.value)} /></div>
+      <div className="discovery-search-row"><TaxonomySearchInput label={t('explore.searchLabel')} placeholder={t('explore.searchPlaceholder')} value={query} locale={locale} onChange={setQuery} /></div>
       <div className="discovery-filter-fields">
         <Select label={t('explore.category')} value={filters.category} onChange={(e) => update('category', e.target.value)}><option value="all">{t('explore.allCategories')}</option>{categories.map((category) => <option value={category} key={category}>{labelFromSlug(category)}</option>)}</Select>
         <Input label={t('explore.location')} placeholder={t('explore.locationPlaceholder')} value={filters.location === 'Anywhere' ? '' : filters.location} onChange={(e) => update('location', e.target.value.trim() ? e.target.value : 'Anywhere')} />

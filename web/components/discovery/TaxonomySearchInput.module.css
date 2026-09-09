@@ -1,0 +1,113 @@
+.wrap {
+  position: relative;
+  min-width: 0;
+}
+
+.list {
+  position: absolute;
+  z-index: 45;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+}
+
+.heading {
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+  color: var(--color-ink-muted);
+  padding: 9px 12px;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.option {
+  display: flex;
+  width: 100%;
+  min-height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  cursor: pointer;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.option:last-child {
+  border-bottom: 0;
+}
+
+.option:hover,
+.active {
+  background: var(--color-secondary);
+}
+
+.optionText {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.optionText strong {
+  overflow: hidden;
+  font-size: .82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.optionText small {
+  overflow: hidden;
+  color: var(--color-ink-muted);
+  font-size: .7rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.alias {
+  flex: 0 1 auto;
+  max-width: 42%;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-surface-muted);
+  color: var(--color-primary-strong);
+  padding: 5px 8px;
+  font-size: .67rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.intent {
+  margin: 6px 0 0;
+  color: var(--color-ink-muted);
+  font-size: .72rem;
+  line-height: 1.45;
+}
+
+.intent strong {
+  color: var(--color-primary-strong);
+}
+
+@media (max-width: 680px) {
+  .list {
+    max-height: 310px;
+    overflow-y: auto;
+  }
+
+  .option {
+    align-items: flex-start;
+  }
+
+  .alias {
+    max-width: 48%;
+  }
+}
