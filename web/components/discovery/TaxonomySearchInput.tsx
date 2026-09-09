@@ -20,9 +20,11 @@ type Props = {
   label: string;
   placeholder: string;
   value: string;
+  intentValue?: string;
   locale: string;
   onChange: (value: string) => void;
   onResolvedIntent?: (categoryName: string | null) => void;
+  onSuggestionSelect?: (categoryName: string) => void;
 };
 
 const intentTokens = new Set([
@@ -85,7 +87,7 @@ function rankCategory(category: TaxonomyCategory, needle: string): RankedSuggest
   return { ...category, score, matched_alias: matchedAlias };
 }
 
-export function TaxonomySearchInput({ label, placeholder, value, locale, onChange, onResolvedIntent }: Props) {
+export function TaxonomySearchInput({ label, placeholder, value, intentValue, locale, onChange, onResolvedIntent, onSuggestionSelect }: Props) {
   const [taxonomy, setTaxonomy] = useState<TaxonomyCategory[]>([]);
   const [focused, setFocused] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -105,7 +107,7 @@ export function TaxonomySearchInput({ label, placeholder, value, locale, onChang
     return () => { cancelled = true; };
   }, []);
 
-  const needle = useMemo(() => semanticNeedle(value), [value]);
+  const needle = useMemo(() => semanticNeedle(intentValue ?? value), [intentValue, value]);
   const suggestions = useMemo(() => taxonomy
     .map((category) => rankCategory(category, needle))
     .filter((category): category is RankedSuggestion => Boolean(category))
@@ -130,7 +132,8 @@ export function TaxonomySearchInput({ label, placeholder, value, locale, onChang
   const listId = 'marketplace-search-suggestions';
 
   const applySuggestion = (suggestion: TaxonomyCategory) => {
-    onChange(suggestion.name);
+    if (onSuggestionSelect) onSuggestionSelect(suggestion.name);
+    else onChange(suggestion.name);
     setFocused(false);
     setActiveIndex(-1);
   };
