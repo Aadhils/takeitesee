@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createSupabaseServiceClient } from '../../../../../lib/supabase/service';
+import { createSupabaseServiceClient } from '../../../../lib/supabase/service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
