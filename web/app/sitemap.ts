@@ -65,10 +65,11 @@ async function loadPublicProductRows() {
   const rows: any[] = [];
 
   for (let start = 0; start < maxProductRows; start += pageSize) {
-    // business_products anon RLS exposes only current approved public revisions.
+    // business_products anon RLS exposes only current approved revisions. The joined
+    // Business disclosure fields let sitemap eligibility match Product detail exactly.
     const { data, error } = await supabase
       .from('business_products')
-      .select('id')
+      .select('id,business_id,businesses(verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone)')
       .order('id')
       .range(start, Math.min(start + pageSize - 1, maxProductRows - 1));
 
@@ -111,18 +112,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     loadCurrentProviderHandles(),
   ]);
 
-  const productEntries: MetadataRoute.Sitemap = (publicProducts ?? [])
-    .filter((product) => Boolean(product?.id))
-    .map((product) => ({
-      url: `${siteUrl}/products/${encodeURIComponent(product.id)}`,
-      changeFrequency: 'weekly' as const,
-      priority: 0.75,
-    }));
+  const eligibleProductRows = (publicProducts ?? []).filter((product) => {
+    const business = relation(product?.businesses);
+    return Boolean(product?.id && product?.business_id && business?.verified && hasMarketplaceDisclosure(business));
+  });
+
+  const productEntries: MetadataRoute.Sitemap = eligibleProductRows.map((product) => ({
+    url: `${siteUrl}/products/${encodeURIComponent(product.id)}`,
+    changeFrequency: 'weekly' as const,
+    priority: 0.75,
+  }));
 
   if (!rows) return [...staticEntries, ...productEntries];
 
   const serviceEntries: MetadataRoute.Sitemap = [];
-  const businessIds = new Set<string>();
+  // A verified/disclosed Business with approved Products belongs in the sitemap even
+  // when it currently has no active Service rows.
+  const businessIds = new Set<string>(eligibleProductRows.map((product) => String(product.business_id)));
 
   for (const row of rows) {
     const provider = row.provider_type === 'business' ? relation(row.businesses) : relation(row.professional_profiles);
