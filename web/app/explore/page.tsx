@@ -61,6 +61,11 @@ function normalized(value: unknown) {
   return String(value ?? '').normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, ' ').trim();
 }
 
+function categoryAliasValues(service: MarketplaceService) {
+  if (!Array.isArray(service.category_aliases)) return [];
+  return service.category_aliases.map((alias: unknown) => String(alias ?? '').trim()).filter(Boolean);
+}
+
 function semanticTokens(query: string) {
   return normalized(query).split(' ').filter((token) => token && !searchIntentTokens.has(token));
 }
@@ -97,6 +102,8 @@ function searchText(service: MarketplaceService) {
     service.location,
     service.service_area,
     labelFromSlug(service.category_slug || service.category_id || 'other'),
+    service.category_group,
+    ...categoryAliasValues(service),
   ].filter(Boolean).join(' '));
 }
 
@@ -127,6 +134,8 @@ function relevanceScore(service: MarketplaceService, query: string) {
   const description = normalized(localized(service.description));
   const location = normalized(`${service.location ?? ''} ${service.service_area ?? ''}`);
   const category = normalized(labelFromSlug(service.category_slug || service.category_id || 'other'));
+  const categoryGroup = normalized(service.category_group);
+  const aliases = categoryAliasValues(service).map(normalized);
   let score = 0;
 
   if (fullQuery) {
@@ -136,12 +145,18 @@ function relevanceScore(service: MarketplaceService, query: string) {
 
     if (category === fullQuery) score += 90;
     else if (category.includes(fullQuery)) score += 55;
+    if (aliases.some((alias) => alias === fullQuery)) score += 88;
+    else if (aliases.some((alias) => alias.includes(fullQuery))) score += 52;
+    if (categoryGroup === fullQuery) score += 50;
+    else if (categoryGroup.includes(fullQuery)) score += 28;
     if (provider.includes(fullQuery)) score += 45;
     if (location.includes(fullQuery)) score += 35;
 
     for (const token of tokens) {
       if (name.includes(token)) score += 24;
       if (category.includes(token)) score += 16;
+      if (aliases.some((alias) => alias.includes(token))) score += 15;
+      if (categoryGroup.includes(token)) score += 6;
       if (provider.includes(token)) score += 10;
       if (location.includes(token)) score += 8;
       if (description.includes(token)) score += 4;
@@ -173,6 +188,9 @@ function normalizeService(service: MarketplaceService) {
     description: { default_locale: 'en', values: { en: localized(service.description) } },
     category_id: categorySlug,
     category_slug: categorySlug,
+    category_code: typeof service.category_code === 'string' ? service.category_code : null,
+    category_group: typeof service.category_group === 'string' ? service.category_group : '',
+    category_aliases: categoryAliasValues(service),
     pricing: {
       base_price: service.pricing?.base_price ?? { amount: 0, currency: 'INR' },
       pricing_model: service.pricing?.pricing_model ?? 'fixed',
