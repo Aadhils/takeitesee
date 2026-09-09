@@ -23,23 +23,55 @@ export interface ProviderServiceRecord {
   updated_at: string;
 }
 
-export interface CreateProviderServiceInput { name: string; description: string; category?: string; location?: string; duration_minutes: number; base_price: number; currency?: 'INR' | 'USD'; status?: ProviderServiceStatus; }
+export interface CreateProviderServiceInput {
+  name: string;
+  description: string;
+  category_id: EntityId;
+  location?: string;
+  duration_minutes: number;
+  base_price: number;
+  currency?: 'INR' | 'USD';
+  status?: ProviderServiceStatus;
+}
 export interface UpdateProviderServiceInput extends Partial<CreateProviderServiceInput> {}
 
 type ResolvedOwner = { provider_type: 'professional' | 'business'; professional_id: EntityId | null; business_id: EntityId | null; verified: boolean; trust_status: ProviderTrustStatus };
+type CanonicalCategory = { id: EntityId; name: string; application_id: EntityId };
 
 function validateInput(input: CreateProviderServiceInput | UpdateProviderServiceInput, partial = false) {
   if (!partial || input.name !== undefined) if (!input.name?.trim()) throw new Error('Service name is required.');
   if (!partial || input.description !== undefined) if (!input.description?.trim()) throw new Error('Service description is required.');
+  if (!partial || input.category_id !== undefined) if (!input.category_id?.trim()) throw new Error('Platform category is required.');
   if (!partial || input.duration_minutes !== undefined) if (!Number.isInteger(input.duration_minutes) || (input.duration_minutes ?? 0) <= 0) throw new Error('Service duration is invalid.');
   if (!partial || input.base_price !== undefined) if (!Number.isFinite(input.base_price) || (input.base_price ?? -1) < 0) throw new Error('Service price is invalid.');
   if (input.currency !== undefined && !['INR', 'USD'].includes(input.currency)) throw new Error('Currency is invalid.');
   if (input.status !== undefined && !['draft', 'active', 'paused'].includes(input.status)) throw new Error('Service status is invalid.');
 }
 
+async function resolveCanonicalCategory(categoryId: EntityId): Promise<CanonicalCategory> {
+  const supabase = await createSupabaseServerClient();
+  const { data: category, error: categoryError } = await supabase
+    .from('platform_categories')
+    .select('id,name,application_id')
+    .eq('id', categoryId)
+    .eq('active', true)
+    .maybeSingle();
+  if (categoryError) throw new Error(categoryError.message);
+  if (!category) throw new Error('Selected platform category is not available.');
+
+  const [{ data: application, error: applicationError }, { data: child, error: childError }] = await Promise.all([
+    supabase.from('platform_applications').select('id').eq('id', category.application_id).eq('status', 'active').maybeSingle(),
+    supabase.from('platform_categories').select('id').eq('parent_id', category.id).eq('active', true).limit(1).maybeSingle(),
+  ]);
+  if (applicationError) throw new Error(applicationError.message);
+  if (childError) throw new Error(childError.message);
+  if (!application) throw new Error('Selected platform category belongs to an inactive application.');
+  if (child) throw new Error('Choose a specific specialty category instead of a category group.');
+
+  return { id: category.id as EntityId, name: category.name, application_id: category.application_id as EntityId };
+}
+
 async function resolveTrustStatus(owner: Omit<ResolvedOwner, 'trust_status'>): Promise<ProviderTrustStatus> {
-  // The database RPC derives the provider id from auth.uid(), so a provider session can
-  // inspect only its own trust state while the underlying trust primitive stays private.
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc('provider_current_trust_status', {
     p_provider_type: owner.provider_type,
@@ -108,8 +140,9 @@ export const productionProviderServiceRepository = {
     assertProductionBackendConfigured(); validateInput(input);
     const owner = await resolveOwner(session); const status = input.status ?? 'draft';
     await assertPublishAllowed(owner, status);
+    const category = await resolveCanonicalCategory(input.category_id);
     const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.from('services').insert({ ...ownerFields(owner), name: input.name.trim(), description: input.description.trim(), category: input.category?.trim() || null, location: input.location?.trim() || null, duration_minutes: input.duration_minutes, base_price: input.base_price, currency: input.currency ?? 'INR', status, active: status === 'active' }).select('*').single();
+    const { data, error } = await supabase.from('services').insert({ ...ownerFields(owner), name: input.name.trim(), description: input.description.trim(), category: category.name, location: input.location?.trim() || null, duration_minutes: input.duration_minutes, base_price: input.base_price, currency: input.currency ?? 'INR', status, active: status === 'active' }).select('*').single();
     if (error || !data) throw new Error(error?.message ?? 'Service could not be created.');
     return mapService(data as Record<string, unknown>);
   },
@@ -120,7 +153,7 @@ export const productionProviderServiceRepository = {
     const supabase = await createSupabaseServerClient(); const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (input.name !== undefined) patch.name = input.name.trim();
     if (input.description !== undefined) patch.description = input.description.trim();
-    if (input.category !== undefined) patch.category = input.category.trim() || null;
+    if (input.category_id !== undefined) patch.category = (await resolveCanonicalCategory(input.category_id)).name;
     if (input.location !== undefined) patch.location = input.location.trim() || null;
     if (input.duration_minutes !== undefined) patch.duration_minutes = input.duration_minutes;
     if (input.base_price !== undefined) patch.base_price = input.base_price;
