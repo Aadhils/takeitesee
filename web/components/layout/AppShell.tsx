@@ -31,6 +31,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
   const isHomepage = pathname === '/';
   const { locale, setLocale, t } = useLanguage();
   const isTamil = locale === 'ta-IN';
+  const productsActive = pathname === '/products' || pathname.startsWith('/products/');
 
   useEffect(() => {
     const syncUser = async () => {
@@ -52,6 +53,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
           {!isHomepage ? <Link href="/" className="inner-page-brand" aria-label={t('nav.goHome')}><img src="/official-takeitesee-logo.png" alt="" /></Link> : null}
           <nav className="desktop-nav" aria-label={t('nav.main')}>
             {primaryLinks.map((link) => <Link key={link.href} href={link.href} className={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'nav-active' : ''} aria-current={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'page' : undefined}>{t(link.labelKey)}</Link>)}
+            <Link href="/products" className={productsActive ? 'nav-active' : ''} aria-current={productsActive ? 'page' : undefined}>{isTamil ? 'பொருட்கள்' : 'Products'}</Link>
           </nav>
           <div className="header-actions">
             <label className="language-switcher">
@@ -71,6 +73,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         {menuOpen ? (
           <nav id="mobile-menu" className="mobile-menu" aria-label={t('nav.mobile')}>
             {primaryLinks.map((link) => <Link key={link.href} href={link.href} className={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'nav-active' : ''} aria-current={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'page' : undefined} onClick={() => setMenuOpen(false)}>{t(link.labelKey)}</Link>)}
+            <Link href="/products" className={productsActive ? 'nav-active' : ''} aria-current={productsActive ? 'page' : undefined} onClick={() => setMenuOpen(false)}>{isTamil ? 'பொருட்கள்' : 'Products'}</Link>
             <Link href="/register" className="mobile-menu-join" onClick={() => setMenuOpen(false)}>{t('nav.createAccount')}</Link>
           </nav>
         ) : null}
@@ -84,7 +87,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
             <Link href="/" className="brand brand-footer"><img className="brand-logo" src="/official-takeitesee-logo.png" alt="takeitesee" /></Link>
             <p>{t('footer.tagline')}</p>
           </div>
-          <div className="footer-link-column"><strong>{t('footer.forCustomers')}</strong><Link href="/help">{t('footer.howItWorks')}</Link><Link href="/help">{t('footer.safety')}</Link><Link href="/help">{t('footer.helpSupport')}</Link></div>
+          <div className="footer-link-column"><strong>{t('footer.forCustomers')}</strong><Link href="/products">{isTamil ? 'பொருட்கள் பார்க்க' : 'Browse products'}</Link><Link href="/help">{t('footer.howItWorks')}</Link><Link href="/help">{t('footer.safety')}</Link><Link href="/help">{t('footer.helpSupport')}</Link></div>
           <div className="footer-link-column"><strong>{t('footer.forProfessionals')}</strong><Link href="/provider/onboarding">{t('footer.joinProfessional')}</Link><Link href="/professionals">{t('footer.professionalResources')}</Link></div>
           <div className="footer-link-column"><strong>{t('footer.forBusinesses')}</strong><Link href="/provider/onboarding">{t('footer.listBusiness')}</Link><Link href="/businesses">{t('footer.businessResources')}</Link></div>
           <div className="footer-link-column footer-connect"><strong>{isTamil ? 'உதவி' : 'Support'}</strong><Link href="/help">{isTamil ? 'உதவி மையம்' : 'Help center'}</Link></div>
