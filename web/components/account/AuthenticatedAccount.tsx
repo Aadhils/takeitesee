@@ -92,11 +92,34 @@ export default function AuthenticatedAccount() {
     },
   ];
 
+  const mobileQuickLinks = [
+    { href: '/bookings', label: tamil ? 'Bookings' : 'Bookings', icon: '▣' },
+    { href: '/orders', label: tamil ? 'Orders' : 'Orders', icon: '□' },
+    { href: '/messages', label: tamil ? 'செய்திகள்' : 'Messages', icon: '✉' },
+    { href: '/account/profile', label: tamil ? 'Profile' : 'Profile', icon: '◯' },
+  ];
+
   return (
     <div className="account-page-heading customer-social-dashboard">
       <span className="eyebrow">{t('auth.account')}</span>
       <h1>{t('account.welcome')}, {user.name.split(' ')[0]}.</h1>
       <p>{isSupabaseConfigured() ? t('account.productionSession') : t('account.localSession')}</p>
+
+      <section className="customer-mobile-quick-shell" aria-label={tamil ? 'Customer விரைவு வழிசெலுத்தல்' : 'Customer quick navigation'}>
+        <div className="customer-mobile-quick-identity">
+          <div>
+            <strong>{user.name}</strong>
+            <span>{tamil ? 'Customer workspace' : 'Customer workspace'}</span>
+          </div>
+          <Link href="/account/settings" className="customer-mobile-quick-settings" aria-label={tamil ? 'Account அமைப்புகள்' : 'Account settings'}>⚙</Link>
+        </div>
+        <nav className="customer-mobile-quick-nav" aria-label={tamil ? 'Customer முக்கிய வழிசெலுத்தல்' : 'Customer primary navigation'}>
+          {mobileQuickLinks.map((link) => <Link href={link.href} key={link.href}>
+            <span aria-hidden="true">{link.icon}</span>
+            <span>{link.label}</span>
+          </Link>)}
+        </nav>
+      </section>
 
       {isSupabaseConfigured() ? <RoleIdentityMediaHeader context="customer" displayName={user.name} subtitle="Personal customer account" meta={[user.email, user.phone].filter(Boolean).join(' · ')} /> : <Card className="profile-summary"><div className="provider-avatar provider-avatar-large" aria-hidden="true">{user.name.split(' ').map((part) => part[0]).join('')}</div><div><span className="eyebrow">{t('account.signedInCustomer')}</span><h2>{user.name}</h2><p>{user.email}</p>{user.phone ? <span className="card-location">{user.phone}</span> : null}</div></Card>}
 
@@ -125,6 +148,91 @@ export default function AuthenticatedAccount() {
       <div className="account-actions">
         <Button type="button" variant="quiet" className="account-sign-out" onClick={signOut}>{t('account.signOut')}</Button>
       </div>
+
+      <style jsx>{`
+        .customer-mobile-quick-shell { display: none; }
+
+        @media (max-width: 900px) {
+          .customer-mobile-quick-shell {
+            position: sticky;
+            top: 70px;
+            z-index: 18;
+            display: grid;
+            gap: 7px;
+            margin: 6px 0 14px;
+            padding: 8px;
+            border: 1px solid var(--color-border);
+            border-radius: 18px;
+            background: rgb(255 255 255 / 95%);
+            box-shadow: 0 10px 30px rgb(29 28 54 / 9%);
+            backdrop-filter: blur(14px);
+          }
+          .customer-mobile-quick-identity {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 1px 4px 0;
+          }
+          .customer-mobile-quick-identity > div {
+            min-width: 0;
+            display: grid;
+            gap: 1px;
+          }
+          .customer-mobile-quick-identity strong,
+          .customer-mobile-quick-identity span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+          .customer-mobile-quick-identity strong { color: var(--color-ink); font-size: .82rem; }
+          .customer-mobile-quick-identity span { color: var(--color-ink-muted); font-size: .68rem; }
+          .customer-mobile-quick-settings {
+            flex: 0 0 auto;
+            display: grid;
+            width: 34px;
+            height: 34px;
+            place-items: center;
+            border: 1px solid var(--color-border);
+            border-radius: 50%;
+            background: var(--color-surface);
+            color: var(--color-primary-strong);
+            font-size: 1rem;
+          }
+          .customer-mobile-quick-nav {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 4px;
+          }
+          .customer-mobile-quick-nav a {
+            display: grid;
+            min-width: 0;
+            min-height: 48px;
+            place-items: center;
+            align-content: center;
+            gap: 3px;
+            padding: 5px 2px;
+            border-radius: 12px;
+            color: var(--color-ink-muted);
+            font-size: .62rem;
+            font-weight: 750;
+            line-height: 1.05;
+            text-align: center;
+          }
+          .customer-mobile-quick-nav a:hover,
+          .customer-mobile-quick-nav a:focus-visible {
+            background: var(--color-selected);
+            color: var(--color-primary-strong);
+          }
+          .customer-mobile-quick-nav a > span:first-child { font-size: 1.03rem; }
+          .customer-mobile-quick-nav a > span:last-child {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+        }
+      `}</style>
     </div>
   );
 }
