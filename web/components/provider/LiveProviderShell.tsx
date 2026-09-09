@@ -132,6 +132,14 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
   const pending = provider?.pending_booking_count ?? 0;
   const providerKind = provider ? (provider.provider_type === 'business' ? t('profile.business') : t('profile.professional')) : null;
   const workspaceIdentity = providerKind ? `${providerKind} · ${workspaceState(provider)}` : workspaceState(provider);
+  const publicProfileHref = provider?.verified && provider.trust_status === 'normal'
+    ? provider.provider_type === 'business'
+      ? `/businesses/${encodeURIComponent(provider.id)}`
+      : `/professionals/${encodeURIComponent(provider.id)}`
+    : null;
+  const publicProfileLabel = provider?.provider_type === 'business'
+    ? (tamil ? 'Public storefront பார்க்க' : 'View public storefront')
+    : (tamil ? 'Public profile பார்க்க' : 'View public profile');
 
   const navLink = (link: ProviderNavLink) => <Link
     ref={active === link.href ? activeLinkRef : undefined}
@@ -180,6 +188,7 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
         </div>
       </nav>
       <Link href="/account#workspaces" className="provider-exit-link">{tamil ? 'என் Profiles' : 'My profiles'}</Link>
+      {publicProfileHref ? <Link href={publicProfileHref} target="_blank" rel="noreferrer" className="provider-exit-link">{publicProfileLabel} ↗</Link> : null}
       <Link href="/" className="provider-exit-link">{t('provider.viewMarketplace')}</Link>
     </aside>
     <main className="provider-content">
@@ -217,6 +226,7 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
           <div className="provider-mobile-more-grid">
             {mobileMoreLinks.map((link) => <Link href={link.href} className={active === link.href ? 'provider-mobile-more-active' : ''} key={link.href}>{link.label}</Link>)}
             <Link href="/account#workspaces">{tamil ? 'என் Profiles' : 'My profiles'}</Link>
+            {publicProfileHref ? <Link href={publicProfileHref} target="_blank" rel="noreferrer">{publicProfileLabel} ↗</Link> : null}
             <Link href="/">{t('provider.viewMarketplace')}</Link>
             <Link href="/account/settings">{tamil ? 'Account அமைப்புகள்' : 'Account settings'}</Link>
           </div>
