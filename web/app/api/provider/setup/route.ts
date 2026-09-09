@@ -39,14 +39,20 @@ export async function GET(request: Request) {
 
     const serviceIds = (raw.services ?? []).map((service) => typeof service.id === 'string' ? service.id : '').filter(Boolean);
     let requests: Record<string, unknown>[] = [];
+    const serviceCategoryById = new Map<string, string | null>();
     if (serviceIds.length) {
-      const requestsResult = await supabase.from('service_launch_requests')
-        .select('id,service_id,requested_application_id,requested_category_id,requested_location_id,status,review_note,reviewed_at,created_at,updated_at')
-        .eq('applicant_user_id', session.user_id)
-        .in('service_id', serviceIds)
-        .order('created_at', { ascending: false });
+      const [requestsResult, servicesResult] = await Promise.all([
+        supabase.from('service_launch_requests')
+          .select('id,service_id,requested_application_id,requested_category_id,requested_location_id,status,review_note,reviewed_at,created_at,updated_at')
+          .eq('applicant_user_id', session.user_id)
+          .in('service_id', serviceIds)
+          .order('created_at', { ascending: false }),
+        supabase.from('services').select('id,category').in('id', serviceIds),
+      ]);
       if (requestsResult.error) throw new Error(requestsResult.error.message);
+      if (servicesResult.error) throw new Error(servicesResult.error.message);
       requests = (requestsResult.data ?? []) as Record<string, unknown>[];
+      for (const service of servicesResult.data ?? []) serviceCategoryById.set(service.id, service.category ?? null);
     }
 
     const readiness = {
@@ -54,7 +60,11 @@ export async function GET(request: Request) {
       trust_status: trust?.status ?? 'normal',
       trust_reason: trust?.reason ?? null,
       marketplace_live: Boolean(raw.marketplace_live) && trustNormal,
-      services: (raw.services ?? []).map((service) => ({ ...service, launch_ready: Boolean(service.launch_ready) && trustNormal })),
+      services: (raw.services ?? []).map((service) => ({
+        ...service,
+        catalog_category: typeof service.id === 'string' ? serviceCategoryById.get(service.id) ?? null : null,
+        launch_ready: Boolean(service.launch_ready) && trustNormal,
+      })),
     };
 
     return NextResponse.json({ readiness, trust, options: optionsResult.data, requests });
