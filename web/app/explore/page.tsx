@@ -39,7 +39,6 @@ const searchIntentTokens = new Set([
   'அருகில்', 'அருகிலுள்ள', 'அருகாமை', 'எனக்கு', 'இப்போது', 'சேவை', 'சேவைகள்',
   'கிடைக்கும்', 'கிடைக்கிறார்', 'கிடைக்கிறது',
 ]);
-const nearbyIntentTokens = new Set(['near', 'nearby', 'nearest', 'closest', 'around', 'அருகில்', 'அருகிலுள்ள', 'அருகாமை']);
 const tamilAvailabilityTokens = new Set(['கிடைக்கும்', 'கிடைக்கிறார்', 'கிடைக்கிறது']);
 
 function defaultFilters(): Filters {
@@ -72,10 +71,6 @@ function semanticTokens(query: string) {
   return normalized(query)
     .split(/[^\p{L}\p{N}]+/u)
     .filter((token) => token && !searchIntentTokens.has(token));
-}
-
-function hasNearbyIntent(query: string) {
-  return normalized(query).split(' ').some((token) => nearbyIntentTokens.has(token));
 }
 
 function hasAvailableNowIntent(query: string) {
@@ -124,13 +119,14 @@ function availabilityPriority(service: MarketplaceService) {
   return 0;
 }
 
-function distancePriority(service: MarketplaceService, query: string) {
+function distancePriority(service: MarketplaceService, preciseNearbyActive: boolean, nearMeIntent: boolean) {
+  if (!preciseNearbyActive) return 0;
   const base = Number(service.distance_priority || 0);
   if (!Number.isFinite(base) || base <= 0) return 0;
-  return hasNearbyIntent(query) ? Math.min(30, Math.round(base * 1.25)) : base;
+  return nearMeIntent ? Math.min(30, Math.round(base * 1.25)) : base;
 }
 
-function relevanceScore(service: MarketplaceService, query: string, intentQuery = query) {
+function relevanceScore(service: MarketplaceService, query: string, preciseNearbyActive = false, nearMeIntent = false) {
   const tokens = semanticTokens(query);
   const fullQuery = tokens.join(' ');
   const name = normalized(localized(service.service_name));
@@ -168,7 +164,7 @@ function relevanceScore(service: MarketplaceService, query: string, intentQuery 
   }
 
   score += availabilityPriority(service) * 10;
-  score += distancePriority(service, intentQuery);
+  score += distancePriority(service, preciseNearbyActive, nearMeIntent);
   score += Math.min(Number(service.rating || 0), 5) * 2;
   score += Math.min(Number(service.review_count || 0), 20) * 0.25;
   return score;
@@ -307,6 +303,8 @@ export default function ExplorePage() {
   const effectiveSearchQuery = resolvedTaxonomyIntent || searchIntent.serviceQuery || query;
   const manualLocationQuery = filters.location === 'Anywhere' ? '' : filters.location.trim();
   const effectiveLocationQuery = manualLocationQuery || searchIntent.locationQuery;
+  const preciseNearbyActive = Boolean(geoOrigin && geoStatus === 'ready' && !effectiveLocationQuery);
+  const namedLocationOverridesNearby = Boolean(geoOrigin && geoStatus === 'ready' && effectiveLocationQuery);
 
   const filteredServices = useMemo(() => {
     const locationNeedle = normalized(effectiveLocationQuery);
@@ -324,10 +322,10 @@ export default function ExplorePage() {
           ? a.pricing.base_price.amount - b.pricing.base_price.amount
           : sort === 'price-desc'
             ? b.pricing.base_price.amount - a.pricing.base_price.amount
-            : relevanceScore(b, effectiveSearchQuery, query) - relevanceScore(a, effectiveSearchQuery, query)
+            : relevanceScore(b, effectiveSearchQuery, preciseNearbyActive, searchIntent.nearMe) - relevanceScore(a, effectiveSearchQuery, preciseNearbyActive, searchIntent.nearMe)
               || b.rating - a.rating
               || b.review_count - a.review_count);
-  }, [services, availableNowActive, effectiveLocationQuery, effectiveSearchQuery, filters, query, sort]);
+  }, [services, availableNowActive, effectiveLocationQuery, effectiveSearchQuery, filters, preciseNearbyActive, searchIntent.nearMe, sort]);
 
   const clearAll = () => { setQuery(''); setResolvedTaxonomyIntent(null); setFilters(defaultFilters()); setSort('relevance'); };
   const update = <K extends keyof Filters>(key: K, value: Filters[K]) => setFilters((current) => ({ ...current, [key]: value }));
@@ -374,7 +372,7 @@ export default function ExplorePage() {
         : `${filteredServices.length} ${filteredServices.length === 1 ? t('explore.match') : t('explore.matches')} ${t('explore.forQuery')} “${query.trim()}”`
       : `${filteredServices.length} ${t('explore.servicesToExplore')}`;
 
-  const nearbyReady = Boolean(geoOrigin && geoStatus === 'ready');
+  const nearbyReady = preciseNearbyActive;
 
   return <div className="discovery-page discovery-workspace">
     <section className="page-intro"><span className="eyebrow">{t('explore.eyebrow')}</span><h1>{t('explore.title')}</h1><p>{t('explore.subtitle')}</p></section>
@@ -401,12 +399,13 @@ export default function ExplorePage() {
       {searchIntent.locationQuery && !manualLocationQuery ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{locale === 'ta-IN' ? 'தேடலில் இடம் கண்டறியப்பட்டது:' : 'Location intent detected:'} <strong>{searchIntent.locationQuery}</strong>. {locale === 'ta-IN' ? 'இந்த இடத்துடன் பொருந்தும் சேவைகள் மட்டும் காட்டப்படும்.' : 'Only services matching this location are shown.'}</p> : null}
       {searchIntent.nearMe && !geoOrigin ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{locale === 'ta-IN' ? '“எனக்கு அருகில்” intent கண்டறியப்பட்டது. துல்லியமான அருகாமை ranking-க்கு Use my location தேர்வு செய்யவும்.' : '“Near me” intent was detected. Choose Use my location to enable precise nearby ranking.'}</p> : null}
       {availableNowFromQuery ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{locale === 'ta-IN' ? 'உங்கள் தேடலில் “இப்போது கிடைக்கும்” intent கண்டறியப்பட்டது. Available Providers மட்டும் காட்டப்படுகிறார்கள்.' : '“Available now” was detected in your search. Only currently Available Providers are shown.'}</p> : null}
+      {namedLocationOverridesNearby ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{locale === 'ta-IN' ? 'Named location தேடல் active ஆக இருப்பதால் current-location distance ranking தற்காலிகமாக பயன்படுத்தப்படவில்லை.' : 'A named location is active, so current-location distance ranking is paused for these results.'}</p> : null}
       {nearbyReady ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>Nearby ranking is active for this browser session. Your precise location is used for this marketplace request only; the public response contains only coarse distance bands and is not added to the page URL or saved as a customer location record.</p> : null}
       {geoError ? <p role="alert" style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{geoError}</p> : null}
     </section>
 
     <div className="results-heading"><div><span className="eyebrow">{t('explore.marketplace')}</span><h2>{resultHeading}</h2></div></div>
-    {loading ? <div className="service-grid"><div className="loading-card"><Skeleton className="loading-art" /><Skeleton className="loading-line" /><Skeleton className="loading-line short" /></div></div> : loadError ? <DiscoveryEmptyState query={loadError} onClear={() => location.reload()} suggestions={[]} errorState /> : filteredServices.length ? <div className="service-grid">{filteredServices.map((service) => <ServiceCard service={service} contextQuery={contextQuery} key={service.id} />)}</div> : <><DiscoveryEmptyState query={query} onClear={clearAll} suggestions={[]} /><div className="empty-actions"><Link href="/requirements" className="button button-primary">{t('explore.postRequirement')}</Link></div></>}
+    {loading ? <div className="service-grid"><div className="loading-card"><Skeleton className="loading-art" /><Skeleton className="loading-line" /><Skeleton className="loading-line short" /></div></div> : loadError ? <DiscoveryEmptyState query={loadError} onClear={() => location.reload()} suggestions={[]} errorState /> : filteredServices.length ? <div className="service-grid">{filteredServices.map((service) => <ServiceCard service={preciseNearbyActive ? service : { ...service, distance_band: null, distance_priority: 0, nearby_match_mode: null }} contextQuery={contextQuery} key={service.id} />)}</div> : <><DiscoveryEmptyState query={query} onClear={clearAll} suggestions={[]} /><div className="empty-actions"><Link href="/requirements" className="button button-primary">{t('explore.postRequirement')}</Link></div></>}
     <p className="explore-disclaimer">{t('explore.disclaimer')}</p>
   </div>;
 }
