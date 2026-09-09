@@ -6,6 +6,7 @@ import { Button, Input, Select, Skeleton } from '../../components/ui/primitives'
 import { ServiceCard } from '../../components/discovery/MarketplaceCards';
 import { DiscoveryEmptyState } from '../../components/discovery/DiscoveryEnhancements';
 import { TaxonomySearchInput } from '../../components/discovery/TaxonomySearchInput';
+import { parseMarketplaceSearchIntent } from '../../components/discovery/marketplaceSearchIntent';
 import { useLanguage } from '../../components/i18n/LanguageProvider';
 
 type MarketplaceService = any;
@@ -166,8 +167,6 @@ function relevanceScore(service: MarketplaceService, query: string, intentQuery 
     }
   }
 
-  // Service/text match remains primary. Live availability and coarse derived distance
-  // are operational usefulness signals, so proximity cannot overwhelm a clearer match.
   score += availabilityPriority(service) * 10;
   score += distancePriority(service, intentQuery);
   score += Math.min(Number(service.rating || 0), 5) * 2;
@@ -302,12 +301,15 @@ export default function ExplorePage() {
     window.history.replaceState(null, '', contextQuery ? `/explore?${contextQuery}` : '/explore');
   }, [contextQuery, urlReady]);
 
+  const searchIntent = useMemo(() => parseMarketplaceSearchIntent(query), [query]);
   const availableNowFromQuery = useMemo(() => hasAvailableNowIntent(query), [query]);
   const availableNowActive = filters.availability === 'available-now' || availableNowFromQuery;
-  const effectiveSearchQuery = resolvedTaxonomyIntent || query;
+  const effectiveSearchQuery = resolvedTaxonomyIntent || searchIntent.serviceQuery || query;
+  const manualLocationQuery = filters.location === 'Anywhere' ? '' : filters.location.trim();
+  const effectiveLocationQuery = manualLocationQuery || searchIntent.locationQuery;
 
   const filteredServices = useMemo(() => {
-    const locationNeedle = filters.location === 'Anywhere' ? '' : normalized(filters.location);
+    const locationNeedle = normalized(effectiveLocationQuery);
     return services
       .filter((service) => filters.category === 'all' || service.category_slug === filters.category)
       .filter((service) => matchesSearch(service, effectiveSearchQuery))
@@ -325,7 +327,7 @@ export default function ExplorePage() {
             : relevanceScore(b, effectiveSearchQuery, query) - relevanceScore(a, effectiveSearchQuery, query)
               || b.rating - a.rating
               || b.review_count - a.review_count);
-  }, [services, availableNowActive, effectiveSearchQuery, filters, query, sort]);
+  }, [services, availableNowActive, effectiveLocationQuery, effectiveSearchQuery, filters, query, sort]);
 
   const clearAll = () => { setQuery(''); setResolvedTaxonomyIntent(null); setFilters(defaultFilters()); setSort('relevance'); };
   const update = <K extends keyof Filters>(key: K, value: Filters[K]) => setFilters((current) => ({ ...current, [key]: value }));
@@ -357,6 +359,13 @@ export default function ExplorePage() {
     setGeoError('');
   };
 
+  const applyTaxonomySuggestion = (categoryName: string) => {
+    if (searchIntent.nearMe) setQuery(`${categoryName} near me`);
+    else if (searchIntent.locationQuery) setQuery(`${categoryName} in ${searchIntent.locationQuery}`);
+    else setQuery(categoryName);
+    setResolvedTaxonomyIntent(categoryName);
+  };
+
   const resultHeading = loading
     ? t('explore.loading')
     : query.trim()
@@ -371,7 +380,7 @@ export default function ExplorePage() {
     <section className="page-intro"><span className="eyebrow">{t('explore.eyebrow')}</span><h1>{t('explore.title')}</h1><p>{t('explore.subtitle')}</p></section>
 
     <section className="discovery-search-panel">
-      <div className="discovery-search-row"><TaxonomySearchInput label={t('explore.searchLabel')} placeholder={t('explore.searchPlaceholder')} value={query} locale={locale} onChange={(value) => { setQuery(value); setResolvedTaxonomyIntent(null); }} onResolvedIntent={setResolvedTaxonomyIntent} /></div>
+      <div className="discovery-search-row"><TaxonomySearchInput label={t('explore.searchLabel')} placeholder={t('explore.searchPlaceholder')} value={query} intentValue={searchIntent.serviceQuery} locale={locale} onChange={(value) => { setQuery(value); setResolvedTaxonomyIntent(null); }} onResolvedIntent={setResolvedTaxonomyIntent} onSuggestionSelect={applyTaxonomySuggestion} /></div>
       <div className="discovery-filter-fields">
         <Select label={t('explore.category')} value={filters.category} onChange={(e) => update('category', e.target.value)}><option value="all">{t('explore.allCategories')}</option>{categories.map((category) => <option value={category} key={category}>{labelFromSlug(category)}</option>)}</Select>
         <Input label={t('explore.location')} placeholder={t('explore.locationPlaceholder')} value={filters.location === 'Anywhere' ? '' : filters.location} onChange={(e) => update('location', e.target.value.trim() ? e.target.value : 'Anywhere')} />
@@ -385,10 +394,12 @@ export default function ExplorePage() {
           <Button type="button" variant="quiet" onClick={clearAll}>{t('explore.clearFilters')}</Button>
           {geoOrigin
             ? <Button type="button" variant="secondary" onClick={clearNearbyLocation}>{nearbyReady ? 'Nearby ranking on · Clear' : 'Clear current location'}</Button>
-            : <Button type="button" variant="secondary" loading={geoLocating} onClick={useCurrentLocation}>Use my location</Button>}
+            : <Button type="button" variant="secondary" loading={geoLocating} onClick={useCurrentLocation}>{searchIntent.nearMe ? 'Use my location for nearby results' : 'Use my location'}</Button>}
         </div>
         <div className="sort-control"><Select label={t('explore.sort')} value={sort} onChange={(e) => setSort(e.target.value)}><option value="relevance">{t('explore.relevance')}</option><option value="rating">{t('explore.highestRated')}</option><option value="price">{t('explore.lowestPrice')}</option><option value="price-desc">{t('explore.highestPrice')}</option></Select></div>
       </div>
+      {searchIntent.locationQuery && !manualLocationQuery ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{locale === 'ta-IN' ? 'தேடலில் இடம் கண்டறியப்பட்டது:' : 'Location intent detected:'} <strong>{searchIntent.locationQuery}</strong>. {locale === 'ta-IN' ? 'இந்த இடத்துடன் பொருந்தும் சேவைகள் மட்டும் காட்டப்படும்.' : 'Only services matching this location are shown.'}</p> : null}
+      {searchIntent.nearMe && !geoOrigin ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{locale === 'ta-IN' ? '“எனக்கு அருகில்” intent கண்டறியப்பட்டது. துல்லியமான அருகாமை ranking-க்கு Use my location தேர்வு செய்யவும்.' : '“Near me” intent was detected. Choose Use my location to enable precise nearby ranking.'}</p> : null}
       {availableNowFromQuery ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{locale === 'ta-IN' ? 'உங்கள் தேடலில் “இப்போது கிடைக்கும்” intent கண்டறியப்பட்டது. Available Providers மட்டும் காட்டப்படுகிறார்கள்.' : '“Available now” was detected in your search. Only currently Available Providers are shown.'}</p> : null}
       {nearbyReady ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>Nearby ranking is active for this browser session. Your precise location is used for this marketplace request only; the public response contains only coarse distance bands and is not added to the page URL or saved as a customer location record.</p> : null}
       {geoError ? <p role="alert" style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{geoError}</p> : null}
