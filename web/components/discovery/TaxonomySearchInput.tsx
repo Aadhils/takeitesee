@@ -24,6 +24,7 @@ type Props = {
   locale: string;
   onChange: (value: string) => void;
   onResolvedIntent?: (categoryName: string | null) => void;
+  onSuggestionSelect?: (categoryName: string) => void;
 };
 
 const intentTokens = new Set([
@@ -86,7 +87,7 @@ function rankCategory(category: TaxonomyCategory, needle: string): RankedSuggest
   return { ...category, score, matched_alias: matchedAlias };
 }
 
-export function TaxonomySearchInput({ label, placeholder, value, intentValue, locale, onChange, onResolvedIntent }: Props) {
+export function TaxonomySearchInput({ label, placeholder, value, intentValue, locale, onChange, onResolvedIntent, onSuggestionSelect }: Props) {
   const [taxonomy, setTaxonomy] = useState<TaxonomyCategory[]>([]);
   const [focused, setFocused] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -131,7 +132,8 @@ export function TaxonomySearchInput({ label, placeholder, value, intentValue, lo
   const listId = 'marketplace-search-suggestions';
 
   const applySuggestion = (suggestion: TaxonomyCategory) => {
-    onChange(suggestion.name);
+    if (onSuggestionSelect) onSuggestionSelect(suggestion.name);
+    else onChange(suggestion.name);
     setFocused(false);
     setActiveIndex(-1);
   };
