@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createSupabaseServiceClient } from '../../../../lib/supabase/service';
 import { hasMarketplaceDisclosure } from '../../../../server/marketplace/public-directory';
+import { loadProductImagePresence } from '../../../../server/marketplace/public-product-media';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -100,14 +101,22 @@ export async function GET() {
   }
 
   const publicBusinessIds = businessIds.filter((id) => businesses.has(id));
-  const shopStates = await loadBusinessShopStates(publicBusinessIds);
+  const publicProductIds = productRows
+    .filter((row) => businesses.has(String(row.business_id || '')))
+    .map((row) => String(row.id || ''))
+    .filter(Boolean);
+  const [shopStates, imagePresence] = await Promise.all([
+    loadBusinessShopStates(publicBusinessIds),
+    loadProductImagePresence(publicProductIds),
+  ]);
 
   const products = productRows.flatMap((row) => {
+    const productId = String(row.id || '');
     const businessId = String(row.business_id || '');
     const business = businesses.get(businessId);
     if (!business) return [];
     return [{
-      id: String(row.id),
+      id: productId,
       business_id: businessId,
       business_name: business.name || 'Verified business',
       business_location: business.location || '',
@@ -118,6 +127,7 @@ export async function GET() {
       unit_label: String(row.unit_label || 'item'),
       stock_mode: row.stock_mode === 'in_stock' || row.stock_mode === 'made_to_order' ? row.stock_mode : 'out_of_stock',
       business_shop_state: shopStates.get(businessId) ?? 'closed',
+      has_primary_image: imagePresence.has(productId),
       verified_business: true,
     }];
   });
