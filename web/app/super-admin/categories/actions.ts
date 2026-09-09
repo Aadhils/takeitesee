@@ -38,8 +38,7 @@ export async function createCategory(formData: FormData) {
     resource_type: 'platform_category',
     resource_id: data.id,
     application_id: applicationId,
-    category_id: data.id,
-    metadata: { name, code, parent_id: parentId },
+    metadata: { category_id: data.id, name, code, parent_id: parentId },
   });
 
   revalidatePath('/super-admin');
@@ -100,8 +99,7 @@ export async function setCategoryActive(formData: FormData) {
     resource_type: 'platform_category',
     resource_id: id,
     application_id: applicationId,
-    category_id: id,
-    metadata: { active },
+    metadata: { category_id: id, active },
   });
 
   revalidatePath('/super-admin');
