@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createSupabaseServiceClient } from '../../../../lib/supabase/service';
+import { createClient } from '@supabase/supabase-js';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -11,12 +11,10 @@ type SearchTaxonomyCategory = {
   aliases: string[];
 };
 
-function normalizedAliases(metadata: unknown) {
-  if (!metadata || typeof metadata !== 'object') return [];
-  const aliases = (metadata as Record<string, unknown>).search_aliases;
-  if (!Array.isArray(aliases)) return [];
+function normalizedAliases(value: unknown) {
+  if (!Array.isArray(value)) return [];
   return Array.from(new Set(
-    aliases
+    value
       .map((alias) => String(alias ?? '').normalize('NFKC').replace(/\s+/g, ' ').trim())
       .filter(Boolean),
   )).slice(0, 40);
@@ -24,44 +22,29 @@ function normalizedAliases(metadata: unknown) {
 
 export async function GET() {
   try {
-    const supabase = createSupabaseServiceClient();
-    const { data: applications, error: applicationError } = await supabase
-      .from('platform_applications')
-      .select('id')
-      .eq('code', 'services')
-      .eq('status', 'active')
-      .limit(2);
-
-    if (applicationError || applications?.length !== 1) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !key) {
       return NextResponse.json({ categories: [] }, { headers: { 'Cache-Control': 'no-store' } });
     }
 
-    const { data, error } = await supabase
-      .from('platform_categories')
-      .select('id,parent_id,code,name,metadata,sort_order')
-      .eq('application_id', applications[0].id)
-      .eq('active', true)
-      .order('sort_order', { ascending: true })
-      .order('name', { ascending: true });
+    const supabase = createClient(url, key, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    });
+    const { data, error } = await supabase.rpc('get_marketplace_search_taxonomy');
 
     if (error) {
       return NextResponse.json({ categories: [] }, { headers: { 'Cache-Control': 'no-store' } });
     }
 
-    const byId = new Map((data ?? []).map((row: any) => [String(row.id), row]));
-    const categories: SearchTaxonomyCategory[] = [];
-
-    for (const row of data ?? []) {
-      if (!row.parent_id) continue;
-      const parent = byId.get(String(row.parent_id));
-      if (!parent?.name || !row.code || !row.name) continue;
-      categories.push({
-        code: String(row.code),
-        name: String(row.name),
-        group_name: String(parent.name),
-        aliases: normalizedAliases(row.metadata),
-      });
-    }
+    const categories: SearchTaxonomyCategory[] = (data ?? [])
+      .map((row: any) => ({
+        code: String(row.category_code ?? '').trim(),
+        name: String(row.category_name ?? '').trim(),
+        group_name: String(row.group_name ?? '').trim(),
+        aliases: normalizedAliases(row.search_aliases),
+      }))
+      .filter((category: SearchTaxonomyCategory) => category.code && category.name && category.group_name);
 
     return NextResponse.json(
       { categories },
