@@ -7,9 +7,10 @@ import { ProviderHeading } from './ProviderPresentation';
 import { LiveProviderShell } from './LiveProviderShell';
 
 type TrustStatus = 'normal' | 'reverification_required' | 'suspended';
-type ReadinessService = { id: string; name: string; status: string; scope_enabled: boolean; application_id?: string | null; application_name?: string | null; category_id?: string | null; category_name?: string | null; location_id?: string | null; location_name?: string | null; launch_ready: boolean };
+type ReadinessService = { id: string; name: string; status: string; catalog_category?: string | null; scope_enabled: boolean; application_id?: string | null; application_name?: string | null; category_id?: string | null; category_name?: string | null; location_id?: string | null; location_name?: string | null; launch_ready: boolean };
 type Readiness = { profile_complete: boolean; verified: boolean; trust_status: TrustStatus; trust_reason?: string | null; services_total: number; services_scoped: number; services_active: number; pending_launch_requests: number; first_service_created: boolean; first_service_scoped: boolean; marketplace_live: boolean; progress_percent: number; services: ReadinessService[] };
-type LaunchOptions = { applications: { id: string; code: string; name: string }[]; categories: { id: string; application_id: string; code: string; name: string }[]; locations: { id: string; type: string; code: string; name: string; country_code?: string | null; timezone?: string | null }[] };
+type LaunchCategory = { id: string; application_id: string; parent_id?: string | null; code: string; name: string };
+type LaunchOptions = { applications: { id: string; code: string; name: string }[]; categories: LaunchCategory[]; locations: { id: string; type: string; code: string; name: string; country_code?: string | null; timezone?: string | null }[] };
 type LaunchRequest = { id: string; service_id: string; requested_application_id: string; requested_category_id: string; requested_location_id: string; status: 'pending' | 'approved' | 'changes_requested' | 'rejected' | 'withdrawn'; review_note?: string | null; reviewed_at?: string | null; created_at: string };
 
 type SetupPayload = { readiness?: Readiness; options?: LaunchOptions; requests?: LaunchRequest[]; error?: string };
@@ -21,17 +22,26 @@ function requestTone(status: LaunchRequest['status']) {
   return 'neutral' as const;
 }
 
+function normalizedCategory(value: string | null | undefined) {
+  return String(value ?? '').trim().toLocaleLowerCase();
+}
+
 function LaunchRequestForm({ service, options, disabled, onSubmitted }: { service: ReadinessService; options: LaunchOptions; disabled: boolean; onSubmitted: () => Promise<void> }) {
-  const firstApp = options.applications[0]?.id ?? '';
-  const [applicationId, setApplicationId] = useState(firstApp);
-  const categories = options.categories.filter((category) => category.application_id === applicationId);
-  const [categoryId, setCategoryId] = useState(categories[0]?.id ?? '');
+  const childParentIds = useMemo(() => new Set(options.categories.map((category) => category.parent_id).filter(Boolean) as string[]), [options.categories]);
+  const selectableCategories = useMemo(() => options.categories.filter((category) => !childParentIds.has(category.id)), [childParentIds, options.categories]);
+  const canonicalCategory = useMemo(() => selectableCategories.find((category) => normalizedCategory(category.name) === normalizedCategory(service.catalog_category)), [selectableCategories, service.catalog_category]);
+  const applicationId = canonicalCategory?.application_id ?? '';
+  const categoryId = canonicalCategory?.id ?? '';
+  const parentById = useMemo(() => new Map(options.categories.map((category) => [category.id, category])), [options.categories]);
+  const categoryDisplay = canonicalCategory ? `${canonicalCategory.parent_id ? `${parentById.get(canonicalCategory.parent_id)?.name ?? 'Category'} → ` : ''}${canonicalCategory.name}` : '';
   const preferredLocations = options.locations.some((location) => location.type === 'city') ? options.locations.filter((location) => location.type === 'city') : options.locations;
   const [locationId, setLocationId] = useState(preferredLocations[0]?.id ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => { if (!categories.some((category) => category.id === categoryId)) setCategoryId(categories[0]?.id ?? ''); }, [applicationId, categoryId, categories]);
+  useEffect(() => {
+    if (!preferredLocations.some((location) => location.id === locationId)) setLocationId(preferredLocations[0]?.id ?? '');
+  }, [locationId, preferredLocations]);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -46,9 +56,17 @@ function LaunchRequestForm({ service, options, disabled, onSubmitted }: { servic
     finally { setBusy(false); }
   };
 
+  if (!canonicalCategory) {
+    return <div className="section-stack" style={{ marginTop: '1rem' }}>
+      <Alert title="Choose a platform category" tone="warning">This service still uses a legacy or unavailable category. Open Services, choose a specific Admin-managed category, save the service, then return here for approval.</Alert>
+      <Link href="/provider/services" className="text-link">Choose service category →</Link>
+    </div>;
+  }
+
   return <form onSubmit={submit} className="section-stack" style={{ marginTop: '1rem' }}>
-    <Select label="Application" value={applicationId} onChange={(event) => setApplicationId(event.target.value)} disabled={disabled}>{options.applications.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</Select>
-    <Select label="Platform category" value={categoryId} onChange={(event) => setCategoryId(event.target.value)} disabled={disabled}>{categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</Select>
+    <Select label="Application" value={applicationId} disabled><option value={applicationId}>{options.applications.find((item) => item.id === applicationId)?.name ?? 'TakeItEsee'}</option></Select>
+    <Select label="Platform category" value={categoryId} disabled><option value={categoryId}>{categoryDisplay}</option></Select>
+    <p className="summary-note">Category comes from the service catalog and stays locked to the same Admin-managed taxonomy during launch approval.</p>
     <Select label="Launch location" value={locationId} onChange={(event) => setLocationId(event.target.value)} disabled={disabled}>{preferredLocations.map((item) => <option key={item.id} value={item.id}>{item.name}{item.type ? ` · ${item.type}` : ''}</option>)}</Select>
     {error ? <p className="field-error" role="alert">{error}</p> : null}
     <Button type="submit" loading={busy} disabled={disabled || !categoryId || !locationId}>Request platform approval</Button>
@@ -104,7 +122,7 @@ export default function ProviderSetupManager() {
   const effectiveProgress = steps.length ? Math.round((steps.filter((step) => step.done).length / steps.length) * 100) : 0;
 
   return <LiveProviderShell active="/provider/setup">
-    <ProviderHeading eyebrow="Launch readiness" title="Provider setup" description="Finish profile, verification, trust, and service-scope gates before public marketplace launch." />
+    <ProviderHeading eyebrow="Launch readiness" title="Provider setup" description="Finish profile, verification, trust, and canonical service-scope gates before public marketplace launch." />
     {loading ? <Card><p>Loading setup readiness…</p></Card> : null}
     {error ? <Card><p className="field-error" role="alert">{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>Reload</Button></Card> : null}
 
@@ -124,13 +142,13 @@ export default function ProviderSetupManager() {
       </div>
 
       <section id="service-launch" className="section-stack">
-        <div><span className="eyebrow">Controlled launch</span><h2>Service category & location approval</h2><p>Platform approval creates the canonical ecosystem scope. Scope can be prepared while verification is pending, but activation also requires normal trust state.</p></div>
-        {!readiness.services.length ? <Card><EmptyState title="Create a service first">Add a draft service before requesting its platform category and launch location.</EmptyState><Link href="/provider/services" className="text-link">Create a service →</Link></Card> : null}
+        <div><span className="eyebrow">Controlled launch</span><h2>Service category & location approval</h2><p>The service category comes from the Admin-managed taxonomy. Platform approval then creates the canonical ecosystem scope for that same category and a launch location.</p></div>
+        {!readiness.services.length ? <Card><EmptyState title="Create a service first">Add a draft service and choose its platform category before requesting launch approval.</EmptyState><Link href="/provider/services" className="text-link">Create a service →</Link></Card> : null}
         {readiness.services.map((service) => {
           const latest = latestByService.get(service.id);
           const pending = latest?.status === 'pending';
           return <Card key={service.id}>
-            <div className="section-heading"><div><span className="eyebrow">{service.status}</span><h2>{service.name}</h2></div><Badge tone={service.scope_enabled ? 'success' : pending ? 'warning' : 'neutral'}>{service.scope_enabled ? 'Scope approved' : pending ? 'Review pending' : 'Scope required'}</Badge></div>
+            <div className="section-heading"><div><span className="eyebrow">{service.status}</span><h2>{service.name}</h2><p className="summary-note">Catalog category: <strong>{service.catalog_category || 'Not selected'}</strong></p></div><Badge tone={service.scope_enabled ? 'success' : pending ? 'warning' : 'neutral'}>{service.scope_enabled ? 'Scope approved' : pending ? 'Review pending' : 'Scope required'}</Badge></div>
             {service.scope_enabled ? <p><strong>{service.category_name}</strong> · {service.location_name} · {service.application_name}</p> : null}
             {latest && !service.scope_enabled ? <div><p>Latest request: <Badge tone={requestTone(latest.status)}>{latest.status.replaceAll('_',' ')}</Badge></p>{latest.review_note ? <p><strong>Platform note:</strong> {latest.review_note}</p> : null}</div> : null}
             {pending ? <Button type="button" variant="secondary" loading={busyId === latest!.id} onClick={() => void withdraw(latest!.id)}>Withdraw request</Button> : null}
