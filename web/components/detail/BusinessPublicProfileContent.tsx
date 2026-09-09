@@ -5,6 +5,7 @@ import ProviderProfileShareAction from './ProviderProfileShareAction';
 import BusinessStorefrontQuickBook from './BusinessStorefrontQuickBook';
 import BusinessStorefrontProducts from './BusinessStorefrontProducts';
 import { createSupabaseServiceClient } from '../../lib/supabase/service';
+import { loadProductImagePresence } from '../../server/marketplace/public-product-media';
 
 export const publicSiteUrl = 'https://www.takeitesee.com';
 
@@ -48,6 +49,7 @@ type PublicBusinessProduct = {
   currency: string | null;
   unit_label: string | null;
   stock_mode: 'in_stock' | 'out_of_stock' | 'made_to_order';
+  has_primary_image: boolean;
 };
 
 export type PublicBusinessRecord = {
@@ -189,10 +191,16 @@ export const loadPublicBusiness = cache(async (providerId: string): Promise<Publ
       .order('name'),
   ]);
 
+  const publicProducts = productsError ? [] : (products ?? []) as Omit<PublicBusinessProduct, 'has_primary_image'>[];
+  const imagePresence = await loadProductImagePresence(publicProducts.map((product) => String(product.id)));
+
   return {
     business: business as PublicBusiness,
     services: servicesError ? [] : (services ?? []) as PublicBusinessService[],
-    products: productsError ? [] : (products ?? []) as PublicBusinessProduct[],
+    products: publicProducts.map((product) => ({
+      ...product,
+      has_primary_image: imagePresence.has(String(product.id)),
+    })),
   };
 });
 
@@ -252,6 +260,7 @@ export default async function BusinessPublicProfileContent({
     currency: product.currency || 'INR',
     unit_label: product.unit_label || 'item',
     stock_mode: product.stock_mode,
+    has_primary_image: product.has_primary_image,
   }));
 
   return <>
