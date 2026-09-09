@@ -46,6 +46,37 @@ export async function createCategory(formData: FormData) {
   revalidatePath('/super-admin/categories');
 }
 
+export async function reviewCategoryRequest(formData: FormData) {
+  await requireSuperAdmin();
+  const supabase = await createSupabaseServerClient();
+
+  const requestId = String(formData.get('request_id') ?? '').trim();
+  const decision = String(formData.get('decision') ?? '').trim().toLowerCase();
+  const finalName = String(formData.get('final_name') ?? '').trim();
+  const finalCode = String(formData.get('final_code') ?? '').trim().toLowerCase();
+  const parentId = String(formData.get('parent_id') ?? '').trim() || null;
+  const reviewNote = String(formData.get('review_note') ?? '').trim() || null;
+
+  if (!requestId || !['approve', 'reject'].includes(decision)) throw new Error('Category request and decision are required.');
+
+  const { error } = await supabase.rpc('review_provider_category_request', {
+    target_request_id: requestId,
+    decision,
+    final_category_name: finalName,
+    final_category_code: finalCode,
+    final_parent_category_id: parentId,
+    note: reviewNote,
+  });
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath('/super-admin');
+  revalidatePath('/super-admin/categories');
+  revalidatePath('/provider/category-requests');
+  revalidatePath('/provider/services');
+  revalidatePath('/provider/setup');
+}
+
 export async function setCategoryActive(formData: FormData) {
   const session = await requireSuperAdmin();
   const supabase = await createSupabaseServerClient();
