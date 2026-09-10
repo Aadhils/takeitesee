@@ -168,7 +168,7 @@ export default function ProviderDashboardManager() {
       }
     } else {
       setBookings([]);
-      setBookingsError(profileResult.reason instanceof Error ? profileResult.reason.message : 'Unable to load booking activity.');
+      setBookingsError(bookingsResult.reason instanceof Error ? bookingsResult.reason.message : 'Unable to load booking activity.');
     }
 
     setLoading(false);
