@@ -16,6 +16,7 @@ type ProviderContext = {
   verified: boolean;
   location?: string | null;
   pending_booking_count: number;
+  unread_lead_count: number;
   trust_status: TrustStatus;
   trust_reason?: string | null;
 };
@@ -107,6 +108,12 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
   }, [active]);
 
   useEffect(() => {
+    const markSeen = () => setProvider((current) => current ? { ...current, unread_lead_count: 0 } : current);
+    window.addEventListener('provider-leads-seen', markSeen);
+    return () => { window.removeEventListener('provider-leads-seen', markSeen); };
+  }, []);
+
+  useEffect(() => {
     if (typeof document === 'undefined') return;
     document.body.classList.add('provider-dashboard-active');
     return () => { document.body.classList.remove('provider-dashboard-active'); };
@@ -130,6 +137,8 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
   const displayName = provider?.display_name ?? t('provider.workspace');
   const avatar = provider?.initials ?? 'P';
   const pending = provider?.pending_booking_count ?? 0;
+  const unreadLeads = provider?.unread_lead_count ?? 0;
+  const countLabel = (value: number) => value > 99 ? '99+' : String(value);
   const providerKind = provider ? (provider.provider_type === 'business' ? t('profile.business') : t('profile.professional')) : null;
   const workspaceIdentity = providerKind ? `${providerKind} · ${workspaceState(provider)}` : workspaceState(provider);
   const publicProfileHref = provider?.verified && provider.trust_status === 'normal'
@@ -149,7 +158,8 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
     key={link.href}
   >
     {link.label}
-    {link.href === '/provider/bookings' && pending > 0 ? <span className="provider-nav-count">{pending}</span> : null}
+    {link.href === '/provider/leads' && unreadLeads > 0 ? <span className="provider-nav-count">{countLabel(unreadLeads)}</span> : null}
+    {link.href === '/provider/bookings' && pending > 0 ? <span className="provider-nav-count">{countLabel(pending)}</span> : null}
   </Link>;
 
   const mobilePrimaryLinks = [
@@ -218,7 +228,8 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
           >
             <span aria-hidden="true">{link.icon}</span>
             <span>{link.label}</span>
-            {link.href === '/provider/bookings' && pending > 0 ? <em>{pending}</em> : null}
+            {link.href === '/provider/leads' && unreadLeads > 0 ? <em>{countLabel(unreadLeads)}</em> : null}
+            {link.href === '/provider/bookings' && pending > 0 ? <em>{countLabel(pending)}</em> : null}
           </Link>)}
         </nav>
         <details className="provider-mobile-more-tools">
@@ -267,7 +278,7 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
         .provider-mobile-primary-nav a > span:first-child { font-size: 1.05rem; }
         .provider-mobile-primary-nav a > span:nth-child(2) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .provider-mobile-primary-nav a.provider-mobile-nav-active { background: var(--color-selected); color: var(--color-primary-strong); }
-        .provider-mobile-primary-nav em { position: absolute; top: 3px; right: 7px; display: grid; min-width: 16px; height: 16px; place-items: center; border-radius: 999px; background: var(--color-primary); color: #fff; font-size: .58rem; font-style: normal; }
+        .provider-mobile-primary-nav em { position: absolute; top: 3px; right: 7px; display: grid; min-width: 16px; height: 16px; place-items: center; padding: 0 3px; border-radius: 999px; background: var(--color-primary); color: #fff; font-size: .58rem; font-style: normal; }
         .provider-mobile-more-tools { border-top: 1px solid var(--color-border); }
         .provider-mobile-more-tools summary { min-height: 32px; padding: 8px 6px 3px; color: var(--color-primary-strong); cursor: pointer; font-size: .72rem; font-weight: 800; list-style: none; }
         .provider-mobile-more-tools summary::-webkit-details-marker { display: none; }

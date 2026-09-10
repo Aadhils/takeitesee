@@ -33,6 +33,23 @@ export async function GET(request: Request) {
   }
 }
 
+export async function PATCH(request: Request) {
+  try {
+    const session = await productionAuthProvider.requireProvider(request);
+    const supabase = await createSupabaseServerClient();
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read_at: new Date().toISOString() })
+      .eq('recipient_user_id', session.user_id)
+      .eq('event_type', 'provider_requirement_match')
+      .is('read_at', null);
+    if (error) throw new Error(error.message);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to mark provider leads as seen.' }, { status: 401 });
+  }
+}
+
 export async function POST(request: Request) {
   try {
     await productionAuthProvider.requireProvider(request);
