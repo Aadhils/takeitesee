@@ -1,0 +1,12 @@
+Provider trust recovery -> marketplace re-entry contract
+
+1. Generic trust restore is valid only for a suspended Provider. A re-verification requirement can return to normal only when a fresh provider verification request is approved.
+2. Re-verification and suspension pause active Services. For Business Providers they also pause active Business Products.
+3. A Business Product cannot transition to catalog status Active while Provider trust is not normal, even through a direct authenticated product update.
+4. Trust restoration never auto-reactivates paused Services or Products. The Provider must review and explicitly reactivate each offering after recovery.
+5. Existing bookings, history, support, closeout, Provider ownership, verification evidence, product launch approval history and identity handles are preserved.
+6. After trust returns to normal, base public profile/@handle/search eligibility continues to depend on the existing verification, disclosure, profile and public-readiness gates.
+7. Existing approved Product revision remains revision-bound; a trust pause does not manufacture a new approval or bypass product launch review.
+8. Professional and Business remain separate final Provider identities while unified marketplace discovery remains unchanged.
+9. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD.
+10. Recurrence/recovery remain frozen.
