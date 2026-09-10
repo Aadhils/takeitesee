@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
 
+const requirementIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export async function GET(request: Request) {
   try {
     const supabase = await createSupabaseServerClient();
@@ -33,17 +35,32 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const body = await request.json() as { id?: string; mark_all_read?: boolean };
+    const body = await request.json() as {
+      id?: string;
+      mark_all_read?: boolean;
+      mark_requirement_proposals_read?: boolean;
+      requirement_id?: string;
+    };
     const supabase = await createSupabaseServerClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
 
     let query = supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('recipient_user_id', user.id);
-    if (!body.mark_all_read) {
+
+    if (body.mark_requirement_proposals_read) {
+      const requirementId = body.requirement_id?.trim() ?? '';
+      if (!requirementIdPattern.test(requirementId)) {
+        return NextResponse.json({ error: 'A valid requirement id is required.' }, { status: 400 });
+      }
+      query = query
+        .eq('event_type', 'requirement_proposal_received')
+        .like('target_path', `/requirements/${requirementId}?proposal=%`)
+        .is('read_at', null);
+    } else if (body.mark_all_read) {
+      query = query.is('read_at', null);
+    } else {
       if (!body.id) return NextResponse.json({ error: 'Notification id is required.' }, { status: 400 });
       query = query.eq('id', body.id);
-    } else {
-      query = query.is('read_at', null);
     }
 
     const { error } = await query;
