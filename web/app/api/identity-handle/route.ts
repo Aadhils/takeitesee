@@ -55,23 +55,40 @@ async function providerPublicProfileReady(
   identity: OwnedIdentity,
 ) {
   if (identity.identity_type === 'professional') {
-    const { data, error } = await supabase
-      .from('professional_profiles')
-      .select('headline,description,service_area,verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone')
-      .eq('id', identity.identity_id)
-      .maybeSingle();
+    const [{ data, error }, { data: trust, error: trustError }] = await Promise.all([
+      supabase
+        .from('professional_profiles')
+        .select('headline,description,service_area,verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone')
+        .eq('id', identity.identity_id)
+        .maybeSingle(),
+      supabase.from('provider_trust_states').select('status').eq('professional_id', identity.identity_id).maybeSingle(),
+    ]);
     if (error) throw new Error(error.message);
-    return Boolean(data?.verified && professionalBasicsComplete(data) && marketplaceDisclosureComplete(data));
+    if (trustError) throw new Error(trustError.message);
+    return Boolean(
+      data?.verified
+      && professionalBasicsComplete(data)
+      && marketplaceDisclosureComplete(data)
+      && (trust?.status ?? 'normal') === 'normal',
+    );
   }
 
   if (identity.identity_type === 'business') {
-    const { data, error } = await supabase
-      .from('businesses')
-      .select('verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone')
-      .eq('id', identity.identity_id)
-      .maybeSingle();
+    const [{ data, error }, { data: trust, error: trustError }] = await Promise.all([
+      supabase
+        .from('businesses')
+        .select('verified,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone')
+        .eq('id', identity.identity_id)
+        .maybeSingle(),
+      supabase.from('provider_trust_states').select('status').eq('business_id', identity.identity_id).maybeSingle(),
+    ]);
     if (error) throw new Error(error.message);
-    return Boolean(data?.verified && marketplaceDisclosureComplete(data));
+    if (trustError) throw new Error(trustError.message);
+    return Boolean(
+      data?.verified
+      && marketplaceDisclosureComplete(data)
+      && (trust?.status ?? 'normal') === 'normal',
+    );
   }
 
   return false;
