@@ -25,6 +25,9 @@ function hrefFor(item: NotificationItem) {
   if (item.event_type === 'review_submitted' && item.booking_id) {
     return `/provider/reviews?booking=${encodeURIComponent(item.booking_id)}`;
   }
+  if (item.event_type === 'provider_reverification_required') return '/provider/verification';
+  if (item.event_type === 'provider_suspended') return '/account/support';
+  if (item.event_type === 'provider_restored' || item.event_type === 'provider_verification_approved') return '/provider/public-readiness';
   if (item.target_path?.startsWith('/') && !item.target_path.startsWith('//')) return item.target_path;
   if (item.conversation_id) return `/messages?conversation=${encodeURIComponent(item.conversation_id)}`;
   if (item.booking_id) return `/bookings/${encodeURIComponent(item.booking_id)}`;
@@ -145,11 +148,17 @@ export default function LiveNotificationsPage() {
             ? (locale === 'ta-IN' ? 'ஏற்கப்பட்ட Proposal-ஐ பார்க்க' : 'View accepted proposal')
             : item.event_type === 'review_submitted'
               ? (locale === 'ta-IN' ? 'Customer review-ஐ பார்க்க' : 'Open customer review')
-              : item.target_path
-                ? (locale === 'ta-IN' ? 'Update-ஐ திற' : 'Open update')
-                : item.conversation_id
-                  ? t('notif.openConversation')
-                  : t('notif.viewBooking');
+              : item.event_type === 'provider_reverification_required'
+                ? (locale === 'ta-IN' ? 'Re-verification-ஐ தொடங்கு' : 'Start re-verification')
+                : item.event_type === 'provider_suspended'
+                  ? (locale === 'ta-IN' ? 'Platform support-ஐ திற' : 'Open platform support')
+                  : item.event_type === 'provider_restored' || item.event_type === 'provider_verification_approved'
+                    ? (locale === 'ta-IN' ? 'Public readiness-ஐ review செய்' : 'Review public readiness')
+                    : item.target_path
+                      ? (locale === 'ta-IN' ? 'Update-ஐ திற' : 'Open update')
+                      : item.conversation_id
+                        ? t('notif.openConversation')
+                        : t('notif.viewBooking');
         return <Card className={`notification-card ${!item.read_at ? 'notification-unread' : ''}`} key={item.id}><div className="notification-card-mark" aria-hidden="true">{label.slice(0,1)}</div><div className="notification-card-body"><div className="notification-card-top"><Badge tone={!item.read_at ? 'info' : 'neutral'}>{label}</Badge><time>{new Date(item.created_at).toLocaleString(locale)}</time></div><h2>{item.title}</h2><p>{item.body}</p><div className="notification-card-actions">{href ? <Link href={href} className="text-link" onClick={(event) => void openNotification(event, item, href)}>{openLabel}</Link> : null}{!item.read_at ? <Button type="button" variant="quiet" onClick={() => void markRead(item.id)}>{t('notif.markRead')}</Button> : null}</div></div></Card>;
       })}</div> : <Card><EmptyState title={t('notif.none')}>{t('notif.noneHelp')}</EmptyState></Card>}
     </>}
