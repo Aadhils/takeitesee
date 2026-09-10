@@ -10,6 +10,17 @@ export async function GET(request: Request) {
     if (authError || !user) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
 
     const url = new URL(request.url);
+    if (url.searchParams.get('mode') === 'proposal-unread-count') {
+      const { count, error } = await supabase
+        .from('notifications')
+        .select('id', { count: 'exact', head: true })
+        .eq('recipient_user_id', user.id)
+        .eq('event_type', 'requirement_proposal_received')
+        .is('read_at', null);
+      if (error) throw new Error(error.message);
+      return NextResponse.json({ unread_count: count ?? 0 });
+    }
+
     if (url.searchParams.get('mode') === 'unread-count') {
       const { count, error } = await supabase
         .from('notifications')
