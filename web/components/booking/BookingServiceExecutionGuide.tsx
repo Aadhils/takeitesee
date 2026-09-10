@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Badge, Card } from '../ui/primitives';
+import { Badge } from '../ui/primitives';
 import { useLanguage } from '../i18n/LanguageProvider';
 
 type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'rescheduled';
@@ -49,11 +49,7 @@ function zonedDateTimeToEpoch(date: string, time: string, timeZone: string) {
 
 function formatMoment(epoch: number, locale: string, timeZone: string) {
   try {
-    return new Intl.DateTimeFormat(locale, {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-      timeZone,
-    }).format(new Date(epoch));
+    return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', timeZone }).format(new Date(epoch));
   } catch {
     return new Date(epoch).toLocaleString();
   }
@@ -75,7 +71,7 @@ export default function BookingServiceExecutionGuide({ bookingId, viewer }: { bo
         if (!response.ok) return;
         const payload = await response.json() as { booking?: BookingSnapshot };
         if (active) setBooking(payload.booking ?? null);
-      } catch { /* Guidance is optional and must never block booking detail. */ }
+      } catch { /* Optional guidance must never block the booking or requirement context. */ }
     })();
     return () => { active = false; };
   }, [bookingId, viewer]);
@@ -109,9 +105,7 @@ export default function BookingServiceExecutionGuide({ bookingId, viewer }: { bo
     ? phase === 'prepare'
       ? {
           title: tamil ? 'Service confirmed — தயாராகுங்கள்' : 'Service confirmed — prepare to deliver',
-          body: tamil
-            ? `Customer booking confirm ஆகிவிட்டது. ${moment}க்கு service தொடங்க தயாராக இருந்து, தேவையான service details-ஐ முன்பே coordinate செய்யுங்கள்.`
-            : `The customer booking is confirmed. Be ready to start the service at ${moment} and coordinate any remaining service details beforehand.`,
+          body: tamil ? `Customer booking confirm ஆகிவிட்டது. ${moment}க்கு service தொடங்க தயாராக இருந்து, தேவையான service details-ஐ முன்பே coordinate செய்யுங்கள்.` : `The customer booking is confirmed. Be ready to start the service at ${moment} and coordinate any remaining service details beforehand.`,
           note: tamil ? 'Service window முடியும் வரை completion action lock ஆகவே இருக்கும்.' : 'The completion action stays locked until the scheduled service window ends.',
         }
       : phase === 'service'
@@ -122,19 +116,19 @@ export default function BookingServiceExecutionGuide({ bookingId, viewer }: { bo
           }
         : {
             title: tamil ? 'Service window முடிந்தது — record-ஐ finish செய்யுங்கள்' : 'Service window ended — finish the service record',
-            body: tamil ? 'Service உண்மையாக முடிந்திருந்தால் கீழே உள்ள Next action-ல் “Mark complete” செய்யுங்கள். ஏதேனும் unresolved issue இருந்தால் complete செய்யாமல் coordination தொடருங்கள்.' : 'If the service was actually delivered, use “Mark complete” in the Next action below. If anything remains unresolved, keep coordinating instead of closing it.',
+            body: tamil ? 'Service உண்மையாக முடிந்திருந்தால் Next action-ல் “Mark complete” செய்யுங்கள். ஏதேனும் unresolved issue இருந்தால் complete செய்யாமல் coordination தொடருங்கள்.' : 'If the service was actually delivered, use “Mark complete” in Next action. If anything remains unresolved, keep coordinating instead of closing it.',
             note: tamil ? `Scheduled end: ${moment}` : `Scheduled end: ${moment}`,
           }
     : phase === 'prepare'
       ? {
           title: tamil ? 'Booking confirmed — service-க்கு தயாராகுங்கள்' : 'Booking confirmed — get ready for service',
-          body: tamil ? `Provider உங்கள் booking-ஐ confirm செய்துள்ளார். ${moment}க்கு service location-ல் தயாராக இருங்கள்; timing அல்லது service details மாறினால் coordination option-ஐ பயன்படுத்துங்கள்.` : `Your provider confirmed the booking. Be ready at the service location for ${moment}; use the available coordination option if timing or service details need clarification.`,
+          body: tamil ? `Provider உங்கள் booking-ஐ confirm செய்துள்ளார். ${moment}க்கு service location-ல் தயாராக இருங்கள்; timing அல்லது service details மாறினால் மேலே உள்ள coordination option-ஐ பயன்படுத்துங்கள்.` : `Your provider confirmed the booking. Be ready at the service location for ${moment}; use the coordination option above if timing or service details need clarification.`,
           note: tamil ? 'அடுத்த stage: scheduled service.' : 'Next stage: scheduled service.',
         }
       : phase === 'service'
         ? {
             title: tamil ? 'Service window இப்போது நடைபெறுகிறது' : 'Service window is now in progress',
-            body: tamil ? 'Service நடைபெறும் நேரம் இது. ஏதேனும் clarification தேவைப்பட்டால் Provider உடன் coordination தொடருங்கள்.' : 'This is the scheduled service window. Keep coordinating with the provider if anything needs clarification.',
+            body: tamil ? 'Service நடைபெறும் நேரம் இது. ஏதேனும் clarification தேவைப்பட்டால் Provider உடன் அதே private conversation-ல் coordination தொடருங்கள்.' : 'This is the scheduled service window. Keep coordinating with the provider in the same private conversation if anything needs clarification.',
             note: tamil ? `Scheduled end: ${moment}` : `Scheduled end: ${moment}`,
           }
         : {
@@ -143,14 +137,14 @@ export default function BookingServiceExecutionGuide({ bookingId, viewer }: { bo
             note: tamil ? `Scheduled end: ${moment}` : `Scheduled end: ${moment}`,
           };
 
-  return <Card className={viewer === 'provider' ? 'provider-detail-card' : 'detail-status-card'}>
+  return <div style={{ borderTop: '1px solid #e7eaf0', marginTop: '1rem', paddingTop: '1rem', display: 'grid', gap: '.55rem' }}>
     <div className="section-heading">
-      <div><span className="eyebrow">Service execution</span><h2>{copy.title}</h2></div>
+      <div><span className="eyebrow">Service execution</span><h3 style={{ margin: 0 }}>{copy.title}</h3></div>
       <Badge tone={phase === 'prepare' ? 'info' : phase === 'service' ? 'success' : 'warning'}>
         {phase === 'prepare' ? 'Prepare' : phase === 'service' ? 'In service' : 'Completion due'}
       </Badge>
     </div>
-    <p className="detail-copy">{copy.body}</p>
-    <p className="summary-note">{copy.note}</p>
-  </Card>;
+    <p className="detail-copy" style={{ margin: 0 }}>{copy.body}</p>
+    <p className="summary-note" style={{ margin: 0 }}>{copy.note}</p>
+  </div>;
 }
