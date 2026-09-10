@@ -14,6 +14,7 @@ type ProviderContext = {
   display_name: string;
   initials: string;
   verified: boolean;
+  public_profile_ready: boolean;
   location?: string | null;
   pending_booking_count: number;
   unread_lead_count: number;
@@ -47,6 +48,7 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
         links: [
           { href: '/provider/setup', label: t('provider.setup') },
           { href: '/provider/services', label: t('provider.services') },
+          { href: '/provider/public-readiness', label: tamil ? 'Public profile தயார்நிலை' : 'Public profile readiness' },
           { href: '/provider/handle', label: 'Public @handle' },
           { href: '/provider/verification', label: t('provider.verification') },
           { href: '/provider/reviews', label: t('provider.reviews') },
@@ -59,7 +61,6 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
         id: 'professional-career',
         label: tamil ? 'Profile & Career' : 'Presence & career',
         links: [
-          { href: '/provider/public-readiness', label: tamil ? 'Public profile தயார்நிலை' : 'Public profile readiness' },
           { href: '/provider/portfolio', label: tamil ? 'வேலை Portfolio' : 'Portfolio' },
           { href: '/provider/resume', label: 'Resume & Career' },
           { href: '/provider/jobs', label: 'Jobs & Applications' },
@@ -141,7 +142,7 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
   const countLabel = (value: number) => value > 99 ? '99+' : String(value);
   const providerKind = provider ? (provider.provider_type === 'business' ? t('profile.business') : t('profile.professional')) : null;
   const workspaceIdentity = providerKind ? `${providerKind} · ${workspaceState(provider)}` : workspaceState(provider);
-  const publicProfileHref = provider?.verified && provider.trust_status === 'normal'
+  const publicProfileHref = provider?.public_profile_ready && provider.trust_status === 'normal'
     ? provider.provider_type === 'business'
       ? `/businesses/${encodeURIComponent(provider.id)}`
       : `/professionals/${encodeURIComponent(provider.id)}`
@@ -149,6 +150,10 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
   const publicProfileLabel = provider?.provider_type === 'business'
     ? (tamil ? 'Public storefront பார்க்க' : 'View public storefront')
     : (tamil ? 'Public profile பார்க்க' : 'View public profile');
+  const publicProfileSetupLabel = provider?.provider_type === 'business'
+    ? (tamil ? 'Public storefront முடிக்க' : 'Finish public storefront')
+    : (tamil ? 'Public profile முடிக்க' : 'Finish public profile');
+  const showPublicReadinessLink = Boolean(provider && provider.trust_status === 'normal' && !provider.public_profile_ready);
 
   const navLink = (link: ProviderNavLink) => <Link
     ref={active === link.href ? activeLinkRef : undefined}
@@ -199,6 +204,7 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
       </nav>
       <Link href="/account#workspaces" className="provider-exit-link">{tamil ? 'என் Profiles' : 'My profiles'}</Link>
       {publicProfileHref ? <Link href={publicProfileHref} target="_blank" rel="noreferrer" className="provider-exit-link">{publicProfileLabel} ↗</Link> : null}
+      {showPublicReadinessLink ? <Link href="/provider/public-readiness" className="provider-exit-link">{publicProfileSetupLabel}</Link> : null}
       <Link href="/" className="provider-exit-link">{t('provider.viewMarketplace')}</Link>
     </aside>
     <main className="provider-content">
@@ -238,6 +244,7 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
             {mobileMoreLinks.map((link) => <Link href={link.href} className={active === link.href ? 'provider-mobile-more-active' : ''} key={link.href}>{link.label}</Link>)}
             <Link href="/account#workspaces">{tamil ? 'என் Profiles' : 'My profiles'}</Link>
             {publicProfileHref ? <Link href={publicProfileHref} target="_blank" rel="noreferrer">{publicProfileLabel} ↗</Link> : null}
+            {showPublicReadinessLink ? <Link href="/provider/public-readiness">{publicProfileSetupLabel}</Link> : null}
             <Link href="/">{t('provider.viewMarketplace')}</Link>
             <Link href="/account/settings">{tamil ? 'Account அமைப்புகள்' : 'Account settings'}</Link>
           </div>
