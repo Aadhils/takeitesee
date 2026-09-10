@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Badge, Button, Card } from '../ui/primitives';
 import { MarketplaceReportForm } from '../safety/MarketplaceReportForm';
@@ -18,6 +19,7 @@ type Proposal = {
   id: string; proposal_reference: string; requirement_id: string; service_id: string; amount_minor: number; currency: 'INR' | 'USD'; pricing_basis: PricingBasis;
   message: string; estimated_start_date: string | null; status: 'submitted' | 'withdrawn' | 'accepted' | 'declined'; submitted_at: string;
   decided_at: string | null; requirement_reference: string; requirement_title: string; requirement_status: string; category_name: string; location_name: string;
+  conversation_id?: string | null;
 };
 type Marketplace = { leads: Lead[]; proposals: Proposal[] };
 type Draft = { amount: string; pricingBasis: PricingBasis; message: string; estimatedStartDate: string };
@@ -205,10 +207,15 @@ export function ProviderRequirementLeadsManager() {
       <div className="section-heading"><div><span className="eyebrow">{t('lead.myProposals')}</span><h2>{t('lead.track')}</h2></div><Badge tone="neutral">{marketplace.proposals.length}</Badge></div>
       {marketplace.proposals.length === 0 ? <Card><p>{t('lead.noneSubmitted')}</p></Card> : marketplace.proposals.map((proposal) => {
         const targeted = focusedProposalId === proposal.id;
+        const chatHref = proposal.conversation_id ? `/provider/messages?conversation=${encodeURIComponent(proposal.conversation_id)}` : '/provider/messages';
         return <Card id={`provider-proposal-history-${proposal.id}`} tabIndex={targeted ? -1 : undefined} className={`policy-card${targeted ? ' provider-targeted-proposal' : ''}`} key={proposal.id}>
           <div className="section-heading"><div><span className="eyebrow">{proposal.proposal_reference}</span><h3>{proposal.requirement_title}</h3></div><div style={{ display: 'flex', gap: '.45rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>{targeted && proposal.status === 'accepted' ? <Badge tone="success">{tamil ? 'Customer உங்களை தேர்வு செய்தார்' : 'Customer selected you'}</Badge> : null}<Badge tone={proposalTone(proposal.status)}>{status(proposal.status)}</Badge></div></div>
           {targeted && proposal.status === 'accepted' ? <Alert title={tamil ? 'உங்கள் proposal ஏற்கப்பட்டது' : 'Your proposal was accepted'} tone="success">{tamil ? 'Customer இந்த requirement-க்கு உங்கள் proposal-ஐ தேர்வு செய்துள்ளார். Quote, start date மற்றும் requirement விவரங்களை review செய்து அடுத்த coordination-க்கு தயாராகுங்கள்.' : 'The customer selected your proposal for this requirement. Review your quote, start date and requirement details, then prepare for the next coordination step.'}</Alert> : null}
           <dl className="review-details"><div><dt>{t('lead.requirement')}</dt><dd>{proposal.requirement_reference}</dd></div><div><dt>{t('common.category')}</dt><dd>{proposal.category_name}</dd></div><div><dt>{t('common.location')}</dt><dd>{proposal.location_name}</dd></div><div><dt>{t('lead.yourQuote')}</dt><dd>{money(proposal.amount_minor, proposal.currency)}</dd></div><div><dt>Quote basis</dt><dd>{pricingBasisLabel(proposal.pricing_basis || 'per_occurrence')}</dd></div><div><dt>{t('lead.startDate')}</dt><dd>{proposal.estimated_start_date || t('common.flexible')}</dd></div><div><dt>{t('lead.requirementStatus')}</dt><dd>{status(proposal.requirement_status)}</dd></div></dl>
+          {proposal.status === 'accepted' ? <div className="provider-award-next-actions">
+            <div><strong>{tamil ? 'அடுத்தது: Customer உடன் service விவரங்களை உறுதி செய்யுங்கள்' : 'Next: confirm service details with the customer'}</strong><p>{tamil ? 'Private chat-ல் date, start time மற்றும் service details-ஐ confirm செய்யுங்கள். Customer service job உருவாக்கியதும் அது உங்கள் Bookings workspace-ல் வரும்.' : 'Use the private chat to confirm the date, start time and service details. Once the customer creates the service job, it will appear in your Bookings workspace.'}</p></div>
+            <div className="provider-award-next-actions-buttons"><Link className="button button-primary" href={chatHref}>{tamil ? 'Customer-க்கு message செய்' : 'Message customer'}</Link><Link className="button button-secondary" href="/provider/bookings">{tamil ? 'Bookings பார்க்க' : 'Open bookings'}</Link></div>
+          </div> : null}
           <p className="detail-copy">{proposal.message}</p><div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', alignItems: 'start' }}>{proposal.status === 'submitted' && proposal.requirement_status === 'open' ? <Button type="button" variant="quiet" loading={busyId === proposal.id} onClick={() => void withdrawProposal(proposal)}>{t('lead.withdraw')}</Button> : null}<MarketplaceReportForm targetType="requirement" targetId={proposal.requirement_id} label={t('lead.reportRequirement')} /></div>
         </Card>;
       })}
@@ -223,6 +230,9 @@ export function ProviderRequirementLeadsManager() {
       .provider-lead-response-cta { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-top: 1rem; }
       .provider-lead-response-cta span, .provider-proposal-helper span { color: var(--color-text-muted); font-size: .86rem; }
       .provider-proposal-helper, .provider-proposal-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .65rem; }
+      .provider-award-next-actions { display: grid; gap: .75rem; margin: .9rem 0; padding: .9rem 1rem; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-selected); }
+      .provider-award-next-actions p { margin: .3rem 0 0; color: var(--color-text-muted); line-height: 1.55; }
+      .provider-award-next-actions-buttons { display: flex; flex-wrap: wrap; gap: .6rem; }
     `}</style>
   </div></LiveProviderShell>;
 }
