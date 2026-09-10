@@ -35,7 +35,7 @@ export async function GET(request: Request) {
         supabase.from('provider_trust_states').select('status,reason').eq('business_id', business.id).maybeSingle(),
         supabase.from('notifications').select('id', { count: 'exact', head: true })
           .eq('recipient_user_id', session.user_id)
-          .eq('event_type', 'provider_requirement_match')
+          .in('event_type', ['provider_requirement_match', 'requirement_proposal_accepted'])
           .is('read_at', null),
       ]);
       if (countError) throw new Error(countError.message);
@@ -78,7 +78,7 @@ export async function GET(request: Request) {
       supabase.from('provider_trust_states').select('status,reason').eq('professional_id', professional.id).maybeSingle(),
       supabase.from('notifications').select('id', { count: 'exact', head: true })
         .eq('recipient_user_id', session.user_id)
-        .eq('event_type', 'provider_requirement_match')
+        .in('event_type', ['provider_requirement_match', 'requirement_proposal_accepted'])
         .is('read_at', null),
     ]);
     if (userError) throw new Error(userError.message);

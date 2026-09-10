@@ -43,7 +43,9 @@ export function ProviderRequirementLeadsManager() {
   const [expandedProposalIds, setExpandedProposalIds] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true); const [busyId, setBusyId] = useState(''); const [error, setError] = useState(''); const [notice, setNotice] = useState('');
   const [targetRequirementId, setTargetRequirementId] = useState('');
+  const [targetProposalId, setTargetProposalId] = useState('');
   const [focusedRequirementId, setFocusedRequirementId] = useState('');
+  const [focusedProposalId, setFocusedProposalId] = useState('');
   const [targetMissing, setTargetMissing] = useState(false);
   const focusFrameRef = useRef<number | null>(null);
 
@@ -95,38 +97,60 @@ export function ProviderRequirementLeadsManager() {
   }, [markLeadNotificationsSeen]);
 
   useEffect(() => {
-    const requested = new URLSearchParams(window.location.search).get('requirement')?.trim() ?? '';
-    if (UUID_PATTERN.test(requested)) setTargetRequirementId(requested);
+    const params = new URLSearchParams(window.location.search);
+    const requestedRequirement = params.get('requirement')?.trim() ?? '';
+    const requestedProposal = params.get('proposal')?.trim() ?? '';
+    if (UUID_PATTERN.test(requestedRequirement)) setTargetRequirementId(requestedRequirement);
+    if (UUID_PATTERN.test(requestedProposal)) setTargetProposalId(requestedProposal);
   }, []);
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
     if (loading || !targetRequirementId) return;
-    const match = marketplace.leads.find((lead) => lead.id === targetRequirementId);
-    if (!match) {
+
+    const focusTarget = (elementId: string) => {
+      if (focusFrameRef.current != null) window.cancelAnimationFrame(focusFrameRef.current);
+      focusFrameRef.current = window.requestAnimationFrame(() => {
+        const target = document.getElementById(elementId);
+        target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        target?.focus({ preventScroll: true });
+        focusFrameRef.current = null;
+      });
+      return () => {
+        if (focusFrameRef.current != null) {
+          window.cancelAnimationFrame(focusFrameRef.current);
+          focusFrameRef.current = null;
+        }
+      };
+    };
+
+    const leadMatch = marketplace.leads.find((lead) => lead.id === targetRequirementId);
+    const proposalMatch = targetProposalId
+      ? marketplace.proposals.find((proposal) => proposal.id === targetProposalId && proposal.requirement_id === targetRequirementId)
+      : marketplace.proposals.find((proposal) => proposal.requirement_id === targetRequirementId);
+
+    if (!leadMatch && proposalMatch) {
+      setTargetMissing(false);
       setFocusedRequirementId('');
+      setFocusedProposalId(proposalMatch.id);
+      return focusTarget(`provider-proposal-history-${proposalMatch.id}`);
+    }
+
+    if (!leadMatch) {
+      setFocusedRequirementId('');
+      setFocusedProposalId('');
       setTargetMissing(true);
       return;
     }
+
     setTargetMissing(false);
+    setFocusedProposalId('');
     setFocusedRequirementId(targetRequirementId);
-    if (!match.already_proposed) {
+    if (!leadMatch.already_proposed) {
       setExpandedProposalIds((current) => current[targetRequirementId] ? current : { ...current, [targetRequirementId]: true });
-      setDrafts((current) => current[targetRequirementId] ? current : { ...current, [targetRequirementId]: initialDraftForLead(match) });
+      setDrafts((current) => current[targetRequirementId] ? current : { ...current, [targetRequirementId]: initialDraftForLead(leadMatch) });
     }
-    if (focusFrameRef.current != null) window.cancelAnimationFrame(focusFrameRef.current);
-    focusFrameRef.current = window.requestAnimationFrame(() => {
-      const target = document.getElementById(`provider-lead-${targetRequirementId}`);
-      target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      target?.focus({ preventScroll: true });
-      focusFrameRef.current = null;
-    });
-    return () => {
-      if (focusFrameRef.current != null) {
-        window.cancelAnimationFrame(focusFrameRef.current);
-        focusFrameRef.current = null;
-      }
-    };
-  }, [loading, marketplace.leads, targetRequirementId]);
+    return focusTarget(`provider-lead-${targetRequirementId}`);
+  }, [loading, marketplace.leads, marketplace.proposals, targetProposalId, targetRequirementId]);
 
   const submittedRequirementIds = useMemo(() => new Set(marketplace.proposals.map((p) => p.requirement_id)), [marketplace.proposals]);
   const updateDraft = (leadId: string, patch: Partial<Draft>) => setDrafts((current) => ({ ...current, [leadId]: { ...(current[leadId] ?? emptyDraft), ...patch } }));
@@ -179,15 +203,19 @@ export function ProviderRequirementLeadsManager() {
     </section>
     <section style={{ display: 'grid', gap: '1rem' }}>
       <div className="section-heading"><div><span className="eyebrow">{t('lead.myProposals')}</span><h2>{t('lead.track')}</h2></div><Badge tone="neutral">{marketplace.proposals.length}</Badge></div>
-      {marketplace.proposals.length === 0 ? <Card><p>{t('lead.noneSubmitted')}</p></Card> : marketplace.proposals.map((proposal) => <Card className="policy-card" key={proposal.id}>
-        <div className="section-heading"><div><span className="eyebrow">{proposal.proposal_reference}</span><h3>{proposal.requirement_title}</h3></div><Badge tone={proposalTone(proposal.status)}>{status(proposal.status)}</Badge></div>
-        <dl className="review-details"><div><dt>{t('lead.requirement')}</dt><dd>{proposal.requirement_reference}</dd></div><div><dt>{t('common.category')}</dt><dd>{proposal.category_name}</dd></div><div><dt>{t('common.location')}</dt><dd>{proposal.location_name}</dd></div><div><dt>{t('lead.yourQuote')}</dt><dd>{money(proposal.amount_minor, proposal.currency)}</dd></div><div><dt>Quote basis</dt><dd>{pricingBasisLabel(proposal.pricing_basis || 'per_occurrence')}</dd></div><div><dt>{t('lead.startDate')}</dt><dd>{proposal.estimated_start_date || t('common.flexible')}</dd></div><div><dt>{t('lead.requirementStatus')}</dt><dd>{status(proposal.requirement_status)}</dd></div></dl>
-        <p className="detail-copy">{proposal.message}</p><div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', alignItems: 'start' }}>{proposal.status === 'submitted' && proposal.requirement_status === 'open' ? <Button type="button" variant="quiet" loading={busyId === proposal.id} onClick={() => void withdrawProposal(proposal)}>{t('lead.withdraw')}</Button> : null}<MarketplaceReportForm targetType="requirement" targetId={proposal.requirement_id} label={t('lead.reportRequirement')} /></div>
-      </Card>)}
+      {marketplace.proposals.length === 0 ? <Card><p>{t('lead.noneSubmitted')}</p></Card> : marketplace.proposals.map((proposal) => {
+        const targeted = focusedProposalId === proposal.id;
+        return <Card id={`provider-proposal-history-${proposal.id}`} tabIndex={targeted ? -1 : undefined} className={`policy-card${targeted ? ' provider-targeted-proposal' : ''}`} key={proposal.id}>
+          <div className="section-heading"><div><span className="eyebrow">{proposal.proposal_reference}</span><h3>{proposal.requirement_title}</h3></div><div style={{ display: 'flex', gap: '.45rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>{targeted && proposal.status === 'accepted' ? <Badge tone="success">{tamil ? 'Customer உங்களை தேர்வு செய்தார்' : 'Customer selected you'}</Badge> : null}<Badge tone={proposalTone(proposal.status)}>{status(proposal.status)}</Badge></div></div>
+          {targeted && proposal.status === 'accepted' ? <Alert title={tamil ? 'உங்கள் proposal ஏற்கப்பட்டது' : 'Your proposal was accepted'} tone="success">{tamil ? 'Customer இந்த requirement-க்கு உங்கள் proposal-ஐ தேர்வு செய்துள்ளார். Quote, start date மற்றும் requirement விவரங்களை review செய்து அடுத்த coordination-க்கு தயாராகுங்கள்.' : 'The customer selected your proposal for this requirement. Review your quote, start date and requirement details, then prepare for the next coordination step.'}</Alert> : null}
+          <dl className="review-details"><div><dt>{t('lead.requirement')}</dt><dd>{proposal.requirement_reference}</dd></div><div><dt>{t('common.category')}</dt><dd>{proposal.category_name}</dd></div><div><dt>{t('common.location')}</dt><dd>{proposal.location_name}</dd></div><div><dt>{t('lead.yourQuote')}</dt><dd>{money(proposal.amount_minor, proposal.currency)}</dd></div><div><dt>Quote basis</dt><dd>{pricingBasisLabel(proposal.pricing_basis || 'per_occurrence')}</dd></div><div><dt>{t('lead.startDate')}</dt><dd>{proposal.estimated_start_date || t('common.flexible')}</dd></div><div><dt>{t('lead.requirementStatus')}</dt><dd>{status(proposal.requirement_status)}</dd></div></dl>
+          <p className="detail-copy">{proposal.message}</p><div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', alignItems: 'start' }}>{proposal.status === 'submitted' && proposal.requirement_status === 'open' ? <Button type="button" variant="quiet" loading={busyId === proposal.id} onClick={() => void withdrawProposal(proposal)}>{t('lead.withdraw')}</Button> : null}<MarketplaceReportForm targetType="requirement" targetId={proposal.requirement_id} label={t('lead.reportRequirement')} /></div>
+        </Card>;
+      })}
     </section>
     <style jsx global>{`
-      .provider-targeted-lead { scroll-margin-top: 180px; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-selected), var(--shadow-card); }
-      .provider-targeted-lead:focus { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+      .provider-targeted-lead, .provider-targeted-proposal { scroll-margin-top: 180px; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-selected), var(--shadow-card); }
+      .provider-targeted-lead:focus, .provider-targeted-proposal:focus { outline: 2px solid var(--color-primary); outline-offset: 3px; }
       .provider-lead-match-context { display: grid; gap: .55rem; margin-top: 1rem; padding: .85rem 1rem; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-selected); }
       .provider-lead-match-context strong { color: var(--color-primary-strong); }
       .provider-lead-match-context p { margin: 0; color: var(--color-text-muted); line-height: 1.55; }
