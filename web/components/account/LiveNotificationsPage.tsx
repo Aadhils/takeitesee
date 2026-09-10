@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import LocalizedAccountShell from './LocalizedAccountShell';
 import { Badge, Button, Card, EmptyState } from '../ui/primitives';
 import { getSupabaseBrowserUser } from '../../services/auth-adapter';
@@ -29,6 +30,7 @@ function hrefFor(item: NotificationItem) {
 
 export default function LiveNotificationsPage() {
   const { locale, t } = useOperationalTranslations();
+  const router = useRouter();
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [customerName, setCustomerName] = useState('');
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
@@ -49,6 +51,7 @@ export default function LiveNotificationsPage() {
   };
 
   const labelFor = (type: string) => {
+    if (type === 'requirement_proposal_received') return locale === 'ta-IN' ? 'Proposal' : 'Proposal';
     if (type === 'message_received' || type === 'requirement_chat_opened') return t('notif.message');
     if (type.startsWith('booking_') || type.startsWith('reschedule_')) return t('notif.booking');
     if (type.startsWith('payment_') || type.startsWith('refund_')) return t('notif.payment');
@@ -92,9 +95,21 @@ export default function LiveNotificationsPage() {
   const unread = useMemo(() => items.filter((item) => !item.read_at).length, [items]);
 
   const markRead = async (id: string) => {
-    const response = await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
-    if (!response.ok) return;
-    setItems((current) => current.map((item) => item.id === id ? { ...item, read_at: new Date().toISOString() } : item));
+    try {
+      const response = await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+      if (!response.ok) return false;
+      setItems((current) => current.map((item) => item.id === id ? { ...item, read_at: new Date().toISOString() } : item));
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const openNotification = async (event: MouseEvent<HTMLAnchorElement>, item: NotificationItem, href: string) => {
+    if (item.read_at) return;
+    event.preventDefault();
+    await markRead(item.id);
+    router.push(href);
   };
 
   const markAllRead = async () => {
@@ -121,12 +136,14 @@ export default function LiveNotificationsPage() {
       {loading ? <Card><p>{t('notif.loading')}</p></Card> : error ? <Card><p className="field-error" role="alert">{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>{t('common.tryAgain')}</Button></Card> : items.length ? <div className="notification-list">{items.map((item) => {
         const label = labelFor(item.event_type);
         const href = hrefFor(item);
-        const openLabel = item.target_path
-          ? (locale === 'ta-IN' ? 'Update-ஐ திற' : 'Open update')
-          : item.conversation_id
-            ? t('notif.openConversation')
-            : t('notif.viewBooking');
-        return <Card className={`notification-card ${!item.read_at ? 'notification-unread' : ''}`} key={item.id}><div className="notification-card-mark" aria-hidden="true">{label.slice(0,1)}</div><div className="notification-card-body"><div className="notification-card-top"><Badge tone={!item.read_at ? 'info' : 'neutral'}>{label}</Badge><time>{new Date(item.created_at).toLocaleString(locale)}</time></div><h2>{item.title}</h2><p>{item.body}</p><div className="notification-card-actions">{href ? <Link href={href} className="text-link">{openLabel}</Link> : null}{!item.read_at ? <Button type="button" variant="quiet" onClick={() => void markRead(item.id)}>{t('notif.markRead')}</Button> : null}</div></div></Card>;
+        const openLabel = item.event_type === 'requirement_proposal_received'
+          ? (locale === 'ta-IN' ? 'Proposal-ஐ review செய்' : 'Review proposal')
+          : item.target_path
+            ? (locale === 'ta-IN' ? 'Update-ஐ திற' : 'Open update')
+            : item.conversation_id
+              ? t('notif.openConversation')
+              : t('notif.viewBooking');
+        return <Card className={`notification-card ${!item.read_at ? 'notification-unread' : ''}`} key={item.id}><div className="notification-card-mark" aria-hidden="true">{label.slice(0,1)}</div><div className="notification-card-body"><div className="notification-card-top"><Badge tone={!item.read_at ? 'info' : 'neutral'}>{label}</Badge><time>{new Date(item.created_at).toLocaleString(locale)}</time></div><h2>{item.title}</h2><p>{item.body}</p><div className="notification-card-actions">{href ? <Link href={href} className="text-link" onClick={(event) => void openNotification(event, item, href)}>{openLabel}</Link> : null}{!item.read_at ? <Button type="button" variant="quiet" onClick={() => void markRead(item.id)}>{t('notif.markRead')}</Button> : null}</div></div></Card>;
       })}</div> : <Card><EmptyState title={t('notif.none')}>{t('notif.noneHelp')}</EmptyState></Card>}
     </>}
   </LocalizedAccountShell>;
