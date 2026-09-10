@@ -37,12 +37,60 @@ type RequirementRow = {
   platform_locations?: { name?: string | null; code?: string | null; timezone?: string | null } | Array<{ name?: string | null; code?: string | null; timezone?: string | null }> | null;
 };
 
+type ProposalSummaryRow = {
+  requirement_id: string;
+  proposal_reference: string;
+  status: 'submitted' | 'withdrawn' | 'accepted' | 'declined';
+  submitted_at: string;
+};
+
+type ProposalNotificationRow = {
+  target_path: string | null;
+  created_at: string;
+};
+
+type ProposalAttention = {
+  proposal_count: number;
+  submitted_proposal_count: number;
+  unread_proposal_count: number;
+  latest_proposal_reference: string | null;
+  latest_proposal_at: string | null;
+  latest_unread_proposal_reference: string | null;
+};
+
+const requirementIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const proposalReferencePattern = /^PROP-[A-Z0-9-]{6,40}$/i;
+
 function related(value: RequirementRow['platform_categories'] | RequirementRow['platform_locations']) {
   const row = Array.isArray(value) ? value[0] : value;
   return row && typeof row === 'object' ? row : null;
 }
 
-function safeRequirement(row: RequirementRow) {
+function blankProposalAttention(): ProposalAttention {
+  return {
+    proposal_count: 0,
+    submitted_proposal_count: 0,
+    unread_proposal_count: 0,
+    latest_proposal_reference: null,
+    latest_proposal_at: null,
+    latest_unread_proposal_reference: null,
+  };
+}
+
+function proposalNotificationTarget(targetPath: string | null) {
+  if (!targetPath?.startsWith('/requirements/')) return null;
+  try {
+    const parsed = new URL(targetPath, 'https://takeitesee.invalid');
+    const requirementId = parsed.pathname.slice('/requirements/'.length);
+    const proposalReference = parsed.searchParams.get('proposal')?.trim() ?? '';
+    if (!requirementIdPattern.test(requirementId) || !proposalReferencePattern.test(proposalReference)) return null;
+    return { requirementId, proposalReference };
+  } catch {
+    return null;
+  }
+}
+
+function safeRequirement(row: RequirementRow, attention: ProposalAttention | null = blankProposalAttention()) {
   const category = related(row.platform_categories);
   const location = related(row.platform_locations);
   return {
@@ -74,6 +122,12 @@ function safeRequirement(row: RequirementRow) {
     accepted_proposal_id: row.accepted_proposal_id,
     created_at: row.created_at,
     updated_at: row.updated_at,
+    proposal_count: attention?.proposal_count ?? null,
+    submitted_proposal_count: attention?.submitted_proposal_count ?? null,
+    unread_proposal_count: attention?.unread_proposal_count ?? null,
+    latest_proposal_reference: attention?.latest_proposal_reference ?? null,
+    latest_proposal_at: attention?.latest_proposal_at ?? null,
+    latest_unread_proposal_reference: attention?.latest_unread_proposal_reference ?? null,
   };
 }
 
@@ -89,7 +143,60 @@ export async function GET(request: Request) {
       .eq('customer_id', session.user_id)
       .order('created_at', { ascending: false });
     if (error) throw new Error(error.message);
-    return NextResponse.json({ requirements: ((data ?? []) as unknown as RequirementRow[]).map(safeRequirement) });
+
+    const rows = (data ?? []) as unknown as RequirementRow[];
+    if (!rows.length) return NextResponse.json({ requirements: [], proposal_attention_status: 'ready' });
+
+    const requirementIds = rows.map((row) => row.id);
+    const [proposalResult, notificationResult] = await Promise.all([
+      supabase
+        .from('requirement_proposals')
+        .select('requirement_id,proposal_reference,status,submitted_at')
+        .in('requirement_id', requirementIds)
+        .order('submitted_at', { ascending: false }),
+      supabase
+        .from('notifications')
+        .select('target_path,created_at')
+        .eq('recipient_user_id', session.user_id)
+        .eq('event_type', 'requirement_proposal_received')
+        .is('read_at', null)
+        .order('created_at', { ascending: false }),
+    ]);
+
+    if (proposalResult.error || notificationResult.error) {
+      return NextResponse.json({
+        requirements: rows.map((row) => safeRequirement(row, null)),
+        proposal_attention_status: 'unavailable',
+      });
+    }
+
+    const attentionByRequirement = new Map<string, ProposalAttention>();
+    for (const requirementId of requirementIds) attentionByRequirement.set(requirementId, blankProposalAttention());
+
+    for (const proposal of (proposalResult.data ?? []) as ProposalSummaryRow[]) {
+      const attention = attentionByRequirement.get(proposal.requirement_id);
+      if (!attention) continue;
+      attention.proposal_count += 1;
+      if (proposal.status === 'submitted') attention.submitted_proposal_count += 1;
+      if (!attention.latest_proposal_at) {
+        attention.latest_proposal_at = proposal.submitted_at;
+        attention.latest_proposal_reference = proposal.proposal_reference;
+      }
+    }
+
+    for (const notification of (notificationResult.data ?? []) as ProposalNotificationRow[]) {
+      const target = proposalNotificationTarget(notification.target_path);
+      if (!target) continue;
+      const attention = attentionByRequirement.get(target.requirementId);
+      if (!attention) continue;
+      attention.unread_proposal_count += 1;
+      if (!attention.latest_unread_proposal_reference) attention.latest_unread_proposal_reference = target.proposalReference;
+    }
+
+    return NextResponse.json({
+      requirements: rows.map((row) => safeRequirement(row, attentionByRequirement.get(row.id) ?? blankProposalAttention())),
+      proposal_attention_status: 'ready',
+    });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to load requirements.' }, { status: 401 });
   }
