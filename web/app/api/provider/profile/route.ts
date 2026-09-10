@@ -5,6 +5,8 @@ import { createSupabaseServerClient } from '../../../../lib/supabase/server';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+type TrustStatus = 'normal' | 'reverification_required' | 'suspended';
+
 function profileInput(input: { display_name?: string; description?: string; location?: string }) {
   const displayName = input.display_name?.trim() ?? '';
   const description = input.description?.trim() || null;
@@ -56,9 +58,13 @@ export async function GET(request: Request) {
         .maybeSingle();
       if (error) throw new Error(error.message);
       if (!profile) throw new Error('Professional profile is required.');
-      const { data: services, error: serviceError } = await supabase.from('services').select('id,status').eq('professional_id', profile.id);
+      const [{ data: services, error: serviceError }, { data: trust, error: trustError }] = await Promise.all([
+        supabase.from('services').select('id,status').eq('professional_id', profile.id),
+        supabase.from('provider_trust_states').select('status').eq('professional_id', profile.id).maybeSingle(),
+      ]);
       if (serviceError) throw new Error(serviceError.message);
-      return NextResponse.json({ profile: { provider_type: 'professional', id: profile.id, display_name: profile.headline || 'Professional provider', description: profile.description || '', location: profile.service_area || '', verified: Boolean(profile.verified), profile_complete: profileBasicsComplete(profile.headline, profile.description, profile.service_area), marketplace_disclosure_complete: marketplaceDisclosureComplete(profile), services_total: services?.length ?? 0, services_active: (services ?? []).filter((service) => service.status === 'active').length, created_at: profile.created_at, updated_at: profile.updated_at } });
+      if (trustError) throw new Error(trustError.message);
+      return NextResponse.json({ profile: { provider_type: 'professional', id: profile.id, display_name: profile.headline || 'Professional provider', description: profile.description || '', location: profile.service_area || '', verified: Boolean(profile.verified), profile_complete: profileBasicsComplete(profile.headline, profile.description, profile.service_area), marketplace_disclosure_complete: marketplaceDisclosureComplete(profile), trust_status: (trust?.status ?? 'normal') as TrustStatus, services_total: services?.length ?? 0, services_active: (services ?? []).filter((service) => service.status === 'active').length, created_at: profile.created_at, updated_at: profile.updated_at } });
     }
 
     const { data: business, error } = await supabase
@@ -69,9 +75,13 @@ export async function GET(request: Request) {
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!business) throw new Error('Business profile is required.');
-    const { data: services, error: serviceError } = await supabase.from('services').select('id,status').eq('business_id', business.id);
+    const [{ data: services, error: serviceError }, { data: trust, error: trustError }] = await Promise.all([
+      supabase.from('services').select('id,status').eq('business_id', business.id),
+      supabase.from('provider_trust_states').select('status').eq('business_id', business.id).maybeSingle(),
+    ]);
     if (serviceError) throw new Error(serviceError.message);
-    return NextResponse.json({ profile: { provider_type: 'business', id: business.id, display_name: business.name, description: business.description || '', location: business.location || '', verified: Boolean(business.verified), profile_complete: profileBasicsComplete(business.name, business.description, business.location), marketplace_disclosure_complete: marketplaceDisclosureComplete(business), services_total: services?.length ?? 0, services_active: (services ?? []).filter((service) => service.status === 'active').length, created_at: business.created_at, updated_at: business.updated_at } });
+    if (trustError) throw new Error(trustError.message);
+    return NextResponse.json({ profile: { provider_type: 'business', id: business.id, display_name: business.name, description: business.description || '', location: business.location || '', verified: Boolean(business.verified), profile_complete: profileBasicsComplete(business.name, business.description, business.location), marketplace_disclosure_complete: marketplaceDisclosureComplete(business), trust_status: (trust?.status ?? 'normal') as TrustStatus, services_total: services?.length ?? 0, services_active: (services ?? []).filter((service) => service.status === 'active').length, created_at: business.created_at, updated_at: business.updated_at } });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to load provider profile.' }, { status: 401 });
   }
