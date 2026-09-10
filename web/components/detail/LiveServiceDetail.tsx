@@ -6,7 +6,16 @@ import { Badge, Card } from '../ui/primitives';
 import SavedServiceAction from './SavedServiceAction';
 import ServiceShareAction from './ServiceShareAction';
 
-type Review = { id: string; reviewer_name: string; rating: number; comment: string; date: string; verified_booking: boolean };
+type Review = {
+  id: string;
+  reviewer_name: string;
+  rating: number;
+  comment: string;
+  provider_response: string;
+  provider_responded_at?: string | null;
+  date: string;
+  verified_booking: boolean;
+};
 type LiveService = {
   id: string;
   name: string;
@@ -102,7 +111,17 @@ export default function LiveServiceDetail({ service, reviews, exploreHref = '/ex
         <div className="section-heading"><div><span className="eyebrow">{text('Customer voice', 'வாடிக்கையாளர் கருத்து')}</span><h2 id="reviews-heading">{text('Reviews', 'மதிப்புரைகள்')}</h2></div><Stars rating={service.rating} count={service.review_count} /></div>
         {reviews.length ? <>
           <div className="review-summary"><strong>{service.rating.toFixed(1)} <span aria-hidden="true">★</span></strong><div className="rating-bars">{counts.map(({ star, count }) => { const pct = reviews.length ? Math.round((count / reviews.length) * 100) : 0; return <span key={star}><i style={{ width: `${pct}%` }} />{star} <small>{pct}%</small></span>; })}</div></div>
-          <div className="review-list">{reviews.map((review) => <Card className="review-card" key={review.id}><div className="review-card-top"><strong>{review.reviewer_name || text('Customer', 'வாடிக்கையாளர்')}</strong><span>{formatDate(review.date)}</span></div><Stars rating={review.rating} count={0} />{review.verified_booking ? <Badge tone="success">{text('Completed booking', 'முடிந்த booking')}</Badge> : null}{review.comment ? <p>{review.comment}</p> : null}</Card>)}</div>
+          <div className="review-list">{reviews.map((review) => <Card className="review-card" key={review.id}>
+            <div className="review-card-top"><strong>{review.reviewer_name || text('Customer', 'வாடிக்கையாளர்')}</strong><span>{formatDate(review.date)}</span></div>
+            <Stars rating={review.rating} count={0} />
+            {review.verified_booking ? <Badge tone="success">{text('Verified completed booking', 'சரிபார்க்கப்பட்ட முடிந்த booking')}</Badge> : null}
+            {review.comment ? <p>{review.comment}</p> : null}
+            {review.provider_response ? <div style={{ marginTop: '.85rem', paddingTop: '.85rem', borderTop: '1px solid var(--color-border, #d9dce5)' }}>
+              <div style={{ display: 'flex', gap: '.45rem', alignItems: 'center', flexWrap: 'wrap' }}><strong>{text('Official provider response', 'Provider அதிகாரப்பூர்வ பதில்')}</strong><Badge tone="info">{text('Provider reply', 'Provider reply')}</Badge></div>
+              <p style={{ marginBottom: '.25rem' }}>{review.provider_response}</p>
+              {review.provider_responded_at ? <small>{text('Responded', 'பதில் அளிக்கப்பட்டது')} {formatDate(review.provider_responded_at)}</small> : null}
+            </div> : null}
+          </Card>)}</div>
         </> : <p className="empty-inline">{text('No published customer reviews yet.', 'இன்னும் வெளியிடப்பட்ட வாடிக்கையாளர் மதிப்புரைகள் இல்லை.')}</p>}
       </section>
     </main>

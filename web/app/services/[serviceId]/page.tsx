@@ -125,7 +125,7 @@ export default async function ServiceDetailPage({
 
   const { data: reviewRows } = await supabase
     .from('reviews')
-    .select('id,rating,comment,created_at,customer_id,users(name)')
+    .select('id,rating,comment,provider_response,provider_responded_at,created_at,customer_id,users(name)')
     .eq('service_id', serviceId)
     .eq('status', 'published')
     .order('created_at', { ascending: false });
@@ -135,6 +135,8 @@ export default async function ServiceDetailPage({
     reviewer_name: relation(review.users)?.name || '',
     rating: Number(review.rating),
     comment: review.comment || '',
+    provider_response: review.provider_response || '',
+    provider_responded_at: review.provider_responded_at || null,
     date: review.created_at,
     verified_booking: true,
   }));
