@@ -6,9 +6,39 @@ export const runtime = 'nodejs';
 
 type TrustStatus = 'normal' | 'reverification_required' | 'suspended';
 
+type DisclosureProfile = {
+  legal_name?: string | null;
+  principal_address?: string | null;
+  public_contact_email?: string | null;
+  public_contact_phone?: string | null;
+  grievance_officer_name?: string | null;
+  grievance_officer_designation?: string | null;
+  grievance_email?: string | null;
+  grievance_phone?: string | null;
+};
+
 function initials(value: string) {
   const letters = value.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase() ?? '').join('');
   return letters || 'P';
+}
+
+function marketplaceDisclosureComplete(provider: DisclosureProfile) {
+  return Boolean(
+    provider.legal_name?.trim()
+    && provider.principal_address?.trim()
+    && provider.public_contact_email?.trim()
+    && provider.public_contact_phone?.trim()
+    && provider.grievance_officer_name?.trim()
+    && provider.grievance_officer_designation?.trim()
+    && provider.grievance_email?.trim()
+    && provider.grievance_phone?.trim(),
+  );
+}
+
+function profileBasicsComplete(displayName: string | null | undefined, description: string | null | undefined, location: string | null | undefined) {
+  return String(displayName || '').trim().length >= 2
+    && String(description || '').trim().length >= 20
+    && String(location || '').trim().length >= 2;
 }
 
 export async function GET(request: Request) {
@@ -19,7 +49,7 @@ export async function GET(request: Request) {
     if (session.roles.includes('business_owner')) {
       const { data: business, error: businessError } = await supabase
         .from('businesses')
-        .select('id, name, verified, location')
+        .select('id,name,description,verified,location,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone')
         .eq('owner_user_id', session.user_id)
         .limit(1)
         .maybeSingle();
@@ -42,6 +72,8 @@ export async function GET(request: Request) {
       if (trustError) throw new Error(trustError.message);
       if (unreadLeadCountError) throw new Error(unreadLeadCountError.message);
 
+      const disclosureComplete = marketplaceDisclosureComplete(business);
+      const profileComplete = profileBasicsComplete(business.name, business.description, business.location);
       return NextResponse.json({
         provider: {
           id: business.id,
@@ -49,6 +81,9 @@ export async function GET(request: Request) {
           display_name: business.name,
           initials: initials(business.name),
           verified: business.verified,
+          profile_complete: profileComplete,
+          marketplace_disclosure_complete: disclosureComplete,
+          public_profile_ready: Boolean(business.verified) && disclosureComplete,
           location: business.location,
           pending_booking_count: count ?? 0,
           unread_lead_count: unreadLeadCount ?? 0,
@@ -60,7 +95,7 @@ export async function GET(request: Request) {
 
     const { data: professional, error: professionalError } = await supabase
       .from('professional_profiles')
-      .select('id, headline, verified, service_area')
+      .select('id,headline,description,verified,service_area,legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone')
       .eq('user_id', session.user_id)
       .limit(1)
       .maybeSingle();
@@ -87,6 +122,8 @@ export async function GET(request: Request) {
     if (unreadLeadCountError) throw new Error(unreadLeadCountError.message);
 
     const displayName = professional.headline?.trim() || user?.name?.trim() || 'Professional';
+    const disclosureComplete = marketplaceDisclosureComplete(professional);
+    const profileComplete = profileBasicsComplete(professional.headline, professional.description, professional.service_area);
     return NextResponse.json({
       provider: {
         id: professional.id,
@@ -94,6 +131,9 @@ export async function GET(request: Request) {
         display_name: displayName,
         initials: initials(displayName),
         verified: professional.verified,
+        profile_complete: profileComplete,
+        marketplace_disclosure_complete: disclosureComplete,
+        public_profile_ready: Boolean(professional.verified) && disclosureComplete && profileComplete,
         location: professional.service_area,
         pending_booking_count: count ?? 0,
         unread_lead_count: unreadLeadCount ?? 0,

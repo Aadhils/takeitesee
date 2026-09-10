@@ -12,7 +12,6 @@ Read-side guard
 - No cookie or page guard grants Provider authorization; existing API/RPC/RLS/ownership checks remain authoritative.
 
 Professional-only routes
-- /provider/public-readiness requires the active Professional role; Business redirects to /provider.
 - /provider/portfolio requires the active Professional role; Business redirects to /provider.
 - /provider/resume requires the active Professional role; Business redirects to /provider.
 - /provider/resume/export requires the active Professional role; Business redirects to /provider.
@@ -22,6 +21,7 @@ Business-only routes
 
 Shared routes intentionally remain shared/type-aware
 - /provider
+- /provider/public-readiness (Professional public-profile visibility and Business public-storefront visibility are evaluated with their current type-specific public route contracts)
 - /provider/setup
 - /provider/leads
 - /provider/messages
@@ -33,6 +33,13 @@ Shared routes intentionally remain shared/type-aware
 - /provider/reviews
 - /provider/profile
 - /provider/jobs (Business employer workflow vs Professional jobs workflow is selected by the existing live job-marketplace mode)
+
+Public readiness semantics
+- Professional public-profile visibility requires profile basics, verification, and marketplace disclosure, matching the existing Professional public loader.
+- Business public-storefront visibility requires verification and marketplace disclosure, matching the existing Business public loader.
+- Service/role/career content is shown as discovery content rather than being mislabeled as a base public-profile visibility requirement.
+- Business service activation still requires Business profile basics through the existing service-launch contract.
+- Provider navigation must not offer a public-profile/storefront link unless the corresponding public-profile readiness state is satisfied and the existing trust navigation guard is normal.
 
 Scope boundaries
 - No database migration, RLS, Provider identity, onboarding, verification, trust, service, booking, job application/interview/offer, moderation, or notification state-machine change.
