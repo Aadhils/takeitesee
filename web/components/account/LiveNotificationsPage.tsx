@@ -51,7 +51,7 @@ export default function LiveNotificationsPage() {
   };
 
   const labelFor = (type: string) => {
-    if (type === 'requirement_proposal_received') return locale === 'ta-IN' ? 'Proposal' : 'Proposal';
+    if (type === 'requirement_proposal_received' || type === 'requirement_proposal_accepted') return locale === 'ta-IN' ? 'Proposal' : 'Proposal';
     if (type === 'message_received' || type === 'requirement_chat_opened') return t('notif.message');
     if (type.startsWith('booking_') || type.startsWith('reschedule_')) return t('notif.booking');
     if (type.startsWith('payment_') || type.startsWith('refund_')) return t('notif.payment');
@@ -138,11 +138,13 @@ export default function LiveNotificationsPage() {
         const href = hrefFor(item);
         const openLabel = item.event_type === 'requirement_proposal_received'
           ? (locale === 'ta-IN' ? 'Proposal-ஐ review செய்' : 'Review proposal')
-          : item.target_path
-            ? (locale === 'ta-IN' ? 'Update-ஐ திற' : 'Open update')
-            : item.conversation_id
-              ? t('notif.openConversation')
-              : t('notif.viewBooking');
+          : item.event_type === 'requirement_proposal_accepted'
+            ? (locale === 'ta-IN' ? 'ஏற்கப்பட்ட Proposal-ஐ பார்க்க' : 'View accepted proposal')
+            : item.target_path
+              ? (locale === 'ta-IN' ? 'Update-ஐ திற' : 'Open update')
+              : item.conversation_id
+                ? t('notif.openConversation')
+                : t('notif.viewBooking');
         return <Card className={`notification-card ${!item.read_at ? 'notification-unread' : ''}`} key={item.id}><div className="notification-card-mark" aria-hidden="true">{label.slice(0,1)}</div><div className="notification-card-body"><div className="notification-card-top"><Badge tone={!item.read_at ? 'info' : 'neutral'}>{label}</Badge><time>{new Date(item.created_at).toLocaleString(locale)}</time></div><h2>{item.title}</h2><p>{item.body}</p><div className="notification-card-actions">{href ? <Link href={href} className="text-link" onClick={(event) => void openNotification(event, item, href)}>{openLabel}</Link> : null}{!item.read_at ? <Button type="button" variant="quiet" onClick={() => void markRead(item.id)}>{t('notif.markRead')}</Button> : null}</div></div></Card>;
       })}</div> : <Card><EmptyState title={t('notif.none')}>{t('notif.noneHelp')}</EmptyState></Card>}
     </>}
