@@ -11,6 +11,7 @@ type Profile = {
   display_name: string;
   provider_type: 'professional' | 'business';
   verified: boolean;
+  profile_complete: boolean;
   marketplace_disclosure_complete: boolean;
   services_active: number;
   services_total: number;
@@ -207,11 +208,13 @@ export default function ProviderDashboardManager() {
     : 'Professional · Independent provider + Job seeker';
 
   const profileReadiness = profile
-    ? profile.verified && profile.marketplace_disclosure_complete
-      ? { value: 'Ready', detail: 'Verified and public details complete', tone: 'success' as const }
-      : profile.verified
-        ? { value: 'Finish setup', detail: 'Complete public marketplace details', tone: 'warning' as const }
-        : { value: 'Verify', detail: 'Verification is still required', tone: 'warning' as const }
+    ? !profile.verified
+      ? { value: 'Verify', detail: 'Verification is still required', tone: 'warning' as const }
+      : !profile.profile_complete
+        ? { value: 'Finish profile', detail: 'Complete name, description and service area', tone: 'warning' as const }
+        : !profile.marketplace_disclosure_complete
+          ? { value: 'Finish setup', detail: 'Complete public marketplace disclosure', tone: 'warning' as const }
+          : { value: 'Ready', detail: 'Profile and public details complete', tone: 'success' as const }
     : { value: '—', detail: 'Provider profile is loading', tone: 'neutral' as const };
 
   const nextSteps = useMemo<DashboardLink[]>(() => {
@@ -221,11 +224,13 @@ export default function ProviderDashboardManager() {
     if (!profile.verified) {
       items.push({ href: '/provider/verification', label: 'Complete verification', detail: 'Unlock trusted marketplace participation.', icon: 'alert' });
     }
-    if (!profile.marketplace_disclosure_complete) {
+    if (!profile.profile_complete || !profile.marketplace_disclosure_complete) {
       items.push({
-        href: profile.provider_type === 'professional' ? '/provider/public-readiness' : '/provider/setup',
-        label: 'Finish public profile',
-        detail: 'Complete the details customers need before choosing you.',
+        href: '/provider/public-readiness',
+        label: profile.provider_type === 'business' ? 'Finish storefront readiness' : 'Finish public profile',
+        detail: profile.profile_complete
+          ? 'Complete the public legal and contact details customers need before choosing you.'
+          : 'Complete your profile basics and review the remaining public visibility gates.',
         icon: 'profile',
       });
     }
@@ -286,7 +291,7 @@ export default function ProviderDashboardManager() {
         eyebrow={profile ? roleLabel : 'Provider workspace'}
         title={dashboardTitle}
         description={dashboardDescription}
-        action={profile ? <Link href={profile.provider_type === 'professional' ? '/provider/public-readiness' : '/provider/profile'} className="button button-secondary">View public profile</Link> : undefined}
+        action={profile ? <Link href="/provider/public-readiness" className="button button-secondary">Public profile readiness</Link> : undefined}
       />
 
       {loading ? <Card className={styles.supportCard}><p>Preparing your workspace overview…</p></Card> : null}
@@ -333,7 +338,7 @@ export default function ProviderDashboardManager() {
             icon="service"
           />
           <MetricCard
-            href={profile.provider_type === 'professional' ? '/provider/public-readiness' : '/provider/setup'}
+            href="/provider/public-readiness"
             label="Profile readiness"
             value={profileReadiness.value}
             detail={profileReadiness.detail}
@@ -398,6 +403,7 @@ export default function ProviderDashboardManager() {
             <div className={styles.identityFacts}>
               <div className={styles.identityFact}><strong>Services</strong><span>{profile.services_active} active of {profile.services_total} total</span></div>
               <div className={styles.identityFact}><strong>Completed work</strong><span>{bookingsError ? 'Booking activity unavailable' : `${operations.completed.length} completed booking${operations.completed.length === 1 ? '' : 's'}`}</span></div>
+              <div className={styles.identityFact}><strong>Profile basics</strong><span>{profile.profile_complete ? 'Complete' : 'Needs attention'}</span></div>
               <div className={styles.identityFact}><strong>Public details</strong><span>{profile.marketplace_disclosure_complete ? 'Complete' : 'Needs attention'}</span></div>
             </div>
             <Link href="/provider/profile" className="text-link">Open profile</Link>
