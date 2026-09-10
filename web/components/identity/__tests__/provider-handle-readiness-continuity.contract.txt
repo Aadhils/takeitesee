@@ -1,0 +1,10 @@
+Provider public @handle readiness continuity contract
+
+1. Provider @handles may be claimed or renamed before the Provider public profile is ready; handle reservation remains separate from public visibility.
+2. GET/PATCH /api/identity-handle?context=provider exposes public_profile_ready using the same base public-route gates: Professional = profile basics + verification + marketplace disclosure; Business = verification + marketplace disclosure.
+3. A reserved Provider handle whose public profile is not ready must not be presented as a live/shareable public profile link and must not expose a Copy link action in the Provider handle workspace.
+4. The Provider handle workspace shows the reserved canonical URL plus a direct /provider/public-readiness action until the public profile becomes ready.
+5. Once public_profile_ready is true, the same current @handle becomes the live shareable https://www.takeitesee.com/@<handle> URL without requiring another handle claim.
+6. Customer handle behavior remains reservation-only and Customer public profile details/media remain unavailable.
+7. Existing canonical/retired-handle redirect behavior, sitemap eligibility, referral attribution, public profile loaders, Provider identity finality, and unified Professional/Business discovery remain unchanged.
+8. No database migration or Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery/recurrence change is part of this slice.
