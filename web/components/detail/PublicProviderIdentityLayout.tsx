@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import ReferralAttributionCapture from '../identity/ReferralAttributionCapture';
 import PublicProviderIdentityHero from './PublicProviderIdentityHero';
+import PublicProviderReviewTrust from './PublicProviderReviewTrust';
+import { loadPublicProviderReviewTrust } from '../../server/marketplace/public-provider-reviews';
 import styles from './PublicProviderIdentity.module.css';
 
 type ProviderKind = 'professional' | 'business';
@@ -47,7 +49,10 @@ export default async function PublicProviderIdentityLayout({
         .eq('verified', true)
         .maybeSingle();
 
-  const { data, error } = await query;
+  const [{ data, error }, reviewTrust] = await Promise.all([
+    query,
+    loadPublicProviderReviewTrust(kind, providerId),
+  ]);
   if (error || !data) return <>{children}</>;
 
   const row = data as Record<string, unknown>;
@@ -70,5 +75,6 @@ export default async function PublicProviderIdentityLayout({
       bannerUrl={bannerUrl}
     />
     <div className={styles.legacyBody}>{children}</div>
+    <PublicProviderReviewTrust trust={reviewTrust} />
   </div>;
 }
