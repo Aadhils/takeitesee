@@ -110,13 +110,12 @@ export async function GET(request: Request, context: RouteContext) {
     if (!requirement) return NextResponse.json({ error: 'Requirement was not found.' }, { status: 404 });
     if (eventError) throw new Error(eventError.message);
     if (proposalError) throw new Error(proposalError.message);
-    if (conversationError) throw new Error(conversationError.message);
     const enrichedProposals = await enrichProposalMarketplaceContext(proposals ?? []);
     return NextResponse.json({
       requirement,
       events: events ?? [],
       proposals: enrichedProposals,
-      conversation_id: conversation?.id ?? null,
+      conversation_id: conversationError ? null : conversation?.id ?? null,
     });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to load requirement.' }, { status: 401 });
