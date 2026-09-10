@@ -13,6 +13,7 @@ type Profile = {
   verified: boolean;
   profile_complete: boolean;
   marketplace_disclosure_complete: boolean;
+  trust_status: 'normal' | 'reverification_required' | 'suspended';
   services_active: number;
   services_total: number;
   location: string;
@@ -167,7 +168,7 @@ export default function ProviderDashboardManager() {
       }
     } else {
       setBookings([]);
-      setBookingsError(bookingsResult.reason instanceof Error ? bookingsResult.reason.message : 'Unable to load booking activity.');
+      setBookingsError(profileResult.reason instanceof Error ? profileResult.reason.message : 'Unable to load booking activity.');
     }
 
     setLoading(false);
@@ -208,20 +209,28 @@ export default function ProviderDashboardManager() {
     : 'Professional · Independent provider + Job seeker';
 
   const profileReadiness = profile
-    ? !profile.verified
-      ? { value: 'Verify', detail: 'Verification is still required', tone: 'warning' as const }
-      : !profile.profile_complete
-        ? { value: 'Finish profile', detail: 'Complete name, description and service area', tone: 'warning' as const }
-        : !profile.marketplace_disclosure_complete
-          ? { value: 'Finish setup', detail: 'Complete public marketplace disclosure', tone: 'warning' as const }
-          : { value: 'Ready', detail: 'Profile and public details complete', tone: 'success' as const }
+    ? profile.trust_status === 'suspended'
+      ? { value: 'Suspended', detail: 'Public marketplace visibility is paused', tone: 'warning' as const }
+      : profile.trust_status === 'reverification_required'
+        ? { value: 'Re-verify', detail: 'Fresh verification is required', tone: 'warning' as const }
+        : !profile.verified
+          ? { value: 'Verify', detail: 'Verification is still required', tone: 'warning' as const }
+          : !profile.profile_complete
+            ? { value: 'Finish profile', detail: 'Complete name, description and service area', tone: 'warning' as const }
+            : !profile.marketplace_disclosure_complete
+              ? { value: 'Finish setup', detail: 'Complete public marketplace disclosure', tone: 'warning' as const }
+              : { value: 'Ready', detail: 'Profile, public details and trust access complete', tone: 'success' as const }
     : { value: '—', detail: 'Provider profile is loading', tone: 'neutral' as const };
 
   const nextSteps = useMemo<DashboardLink[]>(() => {
     if (!profile) return [];
     const items: DashboardLink[] = [];
 
-    if (!profile.verified) {
+    if (profile.trust_status === 'suspended') {
+      items.push({ href: '/provider/setup', label: 'Marketplace access suspended', detail: 'Review the platform trust status while public visibility remains paused.', icon: 'alert' });
+    } else if (profile.trust_status === 'reverification_required') {
+      items.push({ href: '/provider/verification', label: 'Complete re-verification', detail: 'Submit current verification evidence to restore public marketplace access.', icon: 'alert' });
+    } else if (!profile.verified) {
       items.push({ href: '/provider/verification', label: 'Complete verification', detail: 'Unlock trusted marketplace participation.', icon: 'alert' });
     }
     if (!profile.profile_complete || !profile.marketplace_disclosure_complete) {
@@ -405,6 +414,7 @@ export default function ProviderDashboardManager() {
               <div className={styles.identityFact}><strong>Completed work</strong><span>{bookingsError ? 'Booking activity unavailable' : `${operations.completed.length} completed booking${operations.completed.length === 1 ? '' : 's'}`}</span></div>
               <div className={styles.identityFact}><strong>Profile basics</strong><span>{profile.profile_complete ? 'Complete' : 'Needs attention'}</span></div>
               <div className={styles.identityFact}><strong>Public details</strong><span>{profile.marketplace_disclosure_complete ? 'Complete' : 'Needs attention'}</span></div>
+              <div className={styles.identityFact}><strong>Marketplace trust</strong><span>{profile.trust_status === 'normal' ? 'Normal' : profile.trust_status === 'suspended' ? 'Suspended' : 'Re-verification required'}</span></div>
             </div>
             <Link href="/provider/profile" className="text-link">Open profile</Link>
           </Card>
