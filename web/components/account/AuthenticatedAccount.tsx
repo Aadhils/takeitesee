@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Button, Card } from '../ui/primitives';
 import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 import RoleIdentityMediaHeader from '../identity/RoleIdentityMediaHeader';
+import CustomerAccountProposalSummary from './CustomerAccountProposalSummary';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { getSupabaseBrowserUser, isSupabaseConfigured, localDevelopmentAuthAdapter, signOutWithSupabase } from '../../services/auth-adapter';
 import { getBookingsForCustomer, getBookingsThroughConfiguredRepository } from '../../services/booking-repository';
@@ -124,6 +125,8 @@ export default function AuthenticatedAccount() {
       {isSupabaseConfigured() ? <RoleIdentityMediaHeader context="customer" displayName={user.name} subtitle="Personal customer account" meta={[user.email, user.phone].filter(Boolean).join(' · ')} /> : <Card className="profile-summary"><div className="provider-avatar provider-avatar-large" aria-hidden="true">{user.name.split(' ').map((part) => part[0]).join('')}</div><div><span className="eyebrow">{t('account.signedInCustomer')}</span><h2>{user.name}</h2><p>{user.email}</p>{user.phone ? <span className="card-location">{user.phone}</span> : null}</div></Card>}
 
       <WorkspaceSwitcher currentWorkspace="customer" />
+
+      <CustomerAccountProposalSummary />
 
       <section className="dashboard-grid" aria-label={tamil ? 'Customer வழிசெலுத்தல்' : 'Customer navigation'}>
         {navigationGroups.map((group) => (
