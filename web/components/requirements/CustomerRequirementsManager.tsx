@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Badge, Button, Card, Input, Select, Textarea } from '../ui/primitives';
 import { useOperationalTranslations } from '../i18n/OperationalTranslations';
 
@@ -11,6 +11,14 @@ type BudgetType = 'fixed' | 'range' | 'negotiable';
 type ServiceMode = 'onsite' | 'remote' | 'either';
 type SchedulePattern = 'one_time' | 'recurring';
 type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly';
+
+export type RequirementPrefill = {
+  source?: 'explore';
+  search?: string;
+  service?: string;
+  location?: string;
+};
+
 type Requirement = {
   id: string;
   reference: string;
@@ -62,7 +70,38 @@ function statusTone(status: RequirementStatus) {
   return 'neutral' as const;
 }
 
-export default function CustomerRequirementsManager() {
+function normalized(value: string) {
+  return value.normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+function findCatalogOption<T extends { id: string; name: string; code: string }>(rows: T[], value?: string) {
+  if (!value) return null;
+  const needle = normalized(value);
+  if (!needle) return null;
+  return rows.find((row) => normalized(row.name) === needle || normalized(row.code) === needle) ?? null;
+}
+
+function draftTitle(prefill: RequirementPrefill) {
+  const subject = (prefill.service || prefill.search || '').trim();
+  if (!subject) return '';
+  return `Need ${subject}`.slice(0, 120);
+}
+
+function draftDescription(prefill: RequirementPrefill, tamil: boolean) {
+  const service = (prefill.service || prefill.search || '').trim();
+  if (!service) return '';
+  const location = prefill.location?.trim();
+  const search = prefill.search?.trim();
+  const searchContext = search && normalized(search) !== normalized(service)
+    ? `\n\nMarketplace search: “${search}”`
+    : '';
+  if (tamil) {
+    return `எனக்கு ${service}${location ? ` — ${location} பகுதியில்` : ''} சேவை தேவை. கிடைப்பாடு, சேவை விவரம் மற்றும் அடுத்த படிகளை பகிரவும்.${searchContext}`.slice(0, 3000);
+  }
+  return `I need ${service}${location ? ` in ${location}` : ''}. Please share your availability, service details, and the next steps.${searchContext}`.slice(0, 3000);
+}
+
+export default function CustomerRequirementsManager({ prefill = {} }: { prefill?: RequirementPrefill }) {
   const { locale, t, status } = useOperationalTranslations();
   const [catalog, setCatalog] = useState<Catalog>({ categories: [], locations: [] });
   const [requirements, setRequirements] = useState<Requirement[]>([]);
@@ -71,6 +110,8 @@ export default function CustomerRequirementsManager() {
   const [actionId, setActionId] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [prefillNotice, setPrefillNotice] = useState(false);
+  const prefillApplied = useRef(false);
 
   const [categoryId, setCategoryId] = useState('');
   const [locationId, setLocationId] = useState('');
@@ -138,14 +179,30 @@ export default function CustomerRequirementsManager() {
       const requirementPayload = await requirementResponse.json() as { requirements?: Requirement[]; error?: string };
       if (!catalogResponse.ok) throw new Error(catalogPayload.error || 'Requirements could not be loaded.');
       if (!requirementResponse.ok) throw new Error(requirementPayload.error || 'Requirements could not be loaded.');
-      setCatalog({ categories: catalogPayload.categories ?? [], locations: catalogPayload.locations ?? [] });
+      const nextCategories = catalogPayload.categories ?? [];
+      const nextLocations = catalogPayload.locations ?? [];
+      setCatalog({ categories: nextCategories, locations: nextLocations });
       setRequirements(requirementPayload.requirements ?? []);
-      if (!categoryId && catalogPayload.categories?.[0]) setCategoryId(catalogPayload.categories[0].id);
-      if (!locationId && catalogPayload.locations?.[0]) setLocationId(catalogPayload.locations[0].id);
+
+      if (!prefillApplied.current && (prefill.source === 'explore' || prefill.search || prefill.service || prefill.location)) {
+        prefillApplied.current = true;
+        const matchedCategory = findCatalogOption(nextCategories, prefill.service);
+        const matchedLocation = findCatalogOption(nextLocations, prefill.location);
+        setCategoryId(matchedCategory?.id ?? nextCategories[0]?.id ?? '');
+        setLocationId(matchedLocation?.id ?? nextLocations[0]?.id ?? '');
+        const nextTitle = draftTitle(prefill);
+        const nextDescription = draftDescription(prefill, tamil);
+        if (nextTitle) setTitle(nextTitle);
+        if (nextDescription) setDescription(nextDescription);
+        setPrefillNotice(true);
+      } else {
+        if (!categoryId && nextCategories[0]) setCategoryId(nextCategories[0].id);
+        if (!locationId && nextLocations[0]) setLocationId(nextLocations[0].id);
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Requirement workspace could not be loaded.');
     } finally { setLoading(false); }
-  }, [categoryId, locationId]);
+  }, [categoryId, locationId, prefill, tamil]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -159,6 +216,7 @@ export default function CustomerRequirementsManager() {
     setTitle(''); setDescription(''); setServiceMode('onsite'); setBudgetType('negotiable');
     setBudgetMin(''); setBudgetMax(''); setCurrency('INR'); setNeededBy(''); setPreferredStartTime(''); setExpectedDurationHours('');
     setSchedulePattern('one_time'); setRecurrenceFrequency('weekly'); setRecurrenceInterval('1'); setRecurrenceCount('4'); setRecurrenceWeekdays([]);
+    setPrefillNotice(false);
   };
 
   const submit = async (event: FormEvent) => {
@@ -240,6 +298,14 @@ export default function CustomerRequirementsManager() {
 
     {error ? <Card><p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p></Card> : null}
     {notice ? <Card><p role="status">{notice}</p></Card> : null}
+    {prefillNotice ? <Card>
+      <div style={{ display: 'grid', gap: '.45rem' }}>
+        <strong>{tamil ? 'Explore தேடலிலிருந்து draft தயார் செய்யப்பட்டது' : 'Draft prepared from your Explore search'}</strong>
+        <p className="detail-copy" style={{ margin: 0 }}>{tamil
+          ? 'Category மற்றும் city கிடைத்த catalog option-களுடன் match செய்யப்பட்டுள்ளன. Post செய்வதற்கு முன் எல்லா fields-ஐயும் review/edit செய்யுங்கள். Precise GPS location copy செய்யப்படவில்லை; Provider type restriction எதுவும் சேர்க்கப்படவில்லை.'
+          : 'Category and city were matched to available catalog options where possible. Review or edit every field before posting. Precise GPS location was not copied, and this handoff does not add a provider-type restriction.'}</p>
+      </div>
+    </Card> : null}
 
     <Card className="policy-card">
       <div className="section-heading"><div><span className="eyebrow">{t('req.new')}</span><h2>{t('req.tell')}</h2></div><Badge tone="info">{t('req.customerPost')}</Badge></div>
