@@ -1,8 +1,7 @@
 'use client';
 
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { Badge } from '../ui/primitives';
+import { useCallback, useEffect, useState } from 'react';
+import { Badge, Button } from '../ui/primitives';
 import { useLanguage } from '../i18n/LanguageProvider';
 
 type Closeout = {
@@ -16,31 +15,42 @@ export default function RequirementCompletionGuide({ bookingId, viewer }: { book
   const { locale } = useLanguage();
   const [completed, setCompleted] = useState(false);
   const [closeout, setCloseout] = useState<Closeout | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    let active = true;
-    void (async () => {
-      try {
-        const bookingPath = viewer === 'provider'
-          ? `/api/provider/bookings/${encodeURIComponent(bookingId)}`
-          : `/api/bookings/${encodeURIComponent(bookingId)}`;
-        const [bookingResponse, closeoutResponse] = await Promise.all([
-          fetch(bookingPath, { cache: 'no-store' }),
-          fetch(`/api/bookings/${encodeURIComponent(bookingId)}/closeout`, { cache: 'no-store' }),
-        ]);
-        if (!active) return;
-        if (bookingResponse.ok) {
-          const payload = await bookingResponse.json() as { booking?: { status?: string } };
-          setCompleted(payload.booking?.status === 'completed');
-        }
-        if (closeoutResponse.ok) {
-          const payload = await closeoutResponse.json() as Closeout;
-          setCloseout(payload);
-        }
-      } catch { /* Optional completion guidance must not block booking detail. */ }
-    })();
-    return () => { active = false; };
+  const load = useCallback(async () => {
+    try {
+      const bookingPath = viewer === 'provider'
+        ? `/api/provider/bookings/${encodeURIComponent(bookingId)}`
+        : `/api/bookings/${encodeURIComponent(bookingId)}`;
+      const [bookingResponse, closeoutResponse] = await Promise.all([
+        fetch(bookingPath, { cache: 'no-store' }),
+        fetch(`/api/bookings/${encodeURIComponent(bookingId)}/closeout`, { cache: 'no-store' }),
+      ]);
+      if (bookingResponse.ok) {
+        const payload = await bookingResponse.json() as { booking?: { status?: string } };
+        setCompleted(payload.booking?.status === 'completed');
+      }
+      if (closeoutResponse.ok) {
+        const payload = await closeoutResponse.json() as Closeout;
+        setCloseout(payload);
+      }
+    } catch { /* Optional completion guidance must not block booking detail. */ }
   }, [bookingId, viewer]);
+
+  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const refresh = (event: Event) => {
+      const detail = (event as CustomEvent<{ bookingId?: string }>).detail;
+      if (!detail?.bookingId || detail.bookingId === bookingId) void load();
+    };
+    window.addEventListener('booking:closeout-refresh', refresh);
+    window.addEventListener('booking:provider-list-refresh', refresh);
+    return () => {
+      window.removeEventListener('booking:closeout-refresh', refresh);
+      window.removeEventListener('booking:provider-list-refresh', refresh);
+    };
+  }, [bookingId, load]);
 
   if (!completed || !closeout) return null;
 
@@ -48,6 +58,27 @@ export default function RequirementCompletionGuide({ bookingId, viewer }: { book
   const confirmed = Boolean(closeout.customer_completion_confirmed_at);
   const hasReview = Boolean(closeout.review);
   const hasSupport = Boolean(closeout.active_issue);
+
+  const confirmCompletion = async () => {
+    if (viewer !== 'customer' || busy || confirmed || !closeout.can_confirm_completion) return;
+    setBusy(true); setError('');
+    try {
+      const response = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}/attendance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'confirm_completion' }),
+      });
+      const payload = await response.json() as Closeout & { error?: string };
+      if (!response.ok) throw new Error(payload.error ?? 'Completion could not be confirmed.');
+      setCloseout(payload);
+      window.dispatchEvent(new CustomEvent('booking:closeout-refresh', { detail: { bookingId } }));
+      window.dispatchEvent(new CustomEvent('booking:audit-refresh', { detail: { bookingId } }));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Completion could not be confirmed.');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const copy = viewer === 'provider'
     ? hasSupport
@@ -82,8 +113,8 @@ export default function RequirementCompletionGuide({ bookingId, viewer }: { book
           label: tamil ? 'Support open' : 'Support open',
           title: tamil ? 'உங்கள் service issue support-ல் உள்ளது' : 'Your service issue is with support',
           body: tamil
-            ? 'Active support case இருக்கும் போது completion-ஐ அவசரமாக confirm செய்ய தேவையில்லை. கீழே உள்ள closeout section-ல் case status-ஐ பார்க்கலாம்.'
-            : 'You do not need to confirm completion while an active service issue is being handled. Follow the case status in the closeout section below.',
+            ? 'Active support case இருக்கும் போது completion-ஐ அவசரமாக confirm செய்ய தேவையில்லை. கீழே உள்ள Service lifecycle section-ல் case status-ஐ பார்க்கலாம்.'
+            : 'You do not need to confirm completion while an active service issue is being handled. Follow the case status in the Service lifecycle section below.',
         }
       : !confirmed && closeout.can_confirm_completion
         ? {
@@ -91,8 +122,8 @@ export default function RequirementCompletionGuide({ bookingId, viewer }: { book
             label: tamil ? 'Action needed' : 'Action needed',
             title: tamil ? 'Provider service-ஐ complete என்று பதிவு செய்துள்ளார்' : 'Provider marked the service complete',
             body: tamil
-              ? 'Service உண்மையாக முடிந்திருந்தால் முதலில் completion-ஐ confirm செய்யுங்கள். ஏதேனும் பிரச்சனை இருந்தால் confirm செய்யாமல் Provider-க்கு message செய்யவும் அல்லது support raise செய்யவும். அதன் பிறகு review கொடுக்கலாம்.'
-              : 'If the service was actually completed, confirm completion first. If there is a problem, do not confirm yet—message the provider or open support. You can leave a review after checking the completion details.',
+              ? 'Service உண்மையாக முடிந்திருந்தால் completion-ஐ confirm செய்யுங்கள். ஏதேனும் பிரச்சனை இருந்தால் confirm செய்யாமல் Provider-க்கு message செய்யவும் அல்லது கீழே உள்ள Service lifecycle section-ல் support raise செய்யவும். அதன் பிறகு review கொடுக்கலாம்.'
+              : 'If the service was actually completed, confirm completion. If there is a problem, do not confirm yet—message the provider or open support in the Service lifecycle section below. You can review after checking the completion details.',
           }
         : confirmed && !hasReview
           ? {
@@ -100,28 +131,27 @@ export default function RequirementCompletionGuide({ bookingId, viewer }: { book
               label: tamil ? 'Acknowledged' : 'Acknowledged',
               title: tamil ? 'Completion confirmed — Review அடுத்த step' : 'Completion confirmed — review is the next step',
               body: tamil
-                ? 'Service completion acknowledgement பதிவு செய்யப்பட்டுள்ளது. உங்கள் experience-ஐ rating/review மூலம் பதிவு செய்யலாம்; issue இருந்தால் support window இருக்கும் வரை help பெறலாம்.'
-                : 'Your completion acknowledgement is recorded. You can now rate and review the experience, and still use support while the support window remains open.',
+                ? 'Service completion acknowledgement பதிவு செய்யப்பட்டுள்ளது. இந்த booking page-ல் கீழே உள்ள review section மூலம் உங்கள் experience-ஐ பதிவு செய்யலாம்; issue இருந்தால் support window இருக்கும் வரை help பெறலாம்.'
+                : 'Your completion acknowledgement is recorded. Use the review section further down this booking page to rate the experience; support remains available while its window is open.',
             }
           : {
               tone: 'success' as const,
               label: tamil ? 'Reviewed' : 'Reviewed',
               title: tamil ? 'Completion மற்றும் review பதிவு செய்யப்பட்டுள்ளது' : 'Completion and review are recorded',
               body: tamil
-                ? 'இந்த service interaction-ன் customer-side steps முடிந்துள்ளன. Final lifecycle status booking closeout rules-ன் படி update ஆகும்.'
+                ? 'இந்த service interaction-ன் customer-side steps முடிந்துள்ளன. Final lifecycle status existing booking closeout rules-ன் படி update ஆகும்.'
                 : 'Your customer-side service steps are complete. Final lifecycle status will continue according to the existing booking closeout rules.',
             };
 
   return <div style={{ borderTop: '1px solid #e7eaf0', marginTop: '1rem', paddingTop: '1rem', display: 'grid', gap: '.55rem' }}>
     <div className="section-heading">
-      <div><span className="eyebrow">{tamil ? 'Service completion' : 'Service completion'}</span><h3 style={{ margin: 0 }}>{copy.title}</h3></div>
+      <div><span className="eyebrow">Service completion</span><h3 style={{ margin: 0 }}>{copy.title}</h3></div>
       <Badge tone={copy.tone}>{copy.label}</Badge>
     </div>
     <p className="detail-copy" style={{ margin: 0 }}>{copy.body}</p>
-    {viewer === 'customer' ? <div style={{ display: 'flex', gap: '.55rem', flexWrap: 'wrap' }}>
-      {!confirmed && !hasSupport ? <Link className="button button-primary" href="#service-closeout">{tamil ? 'Completion details பார்க்க' : 'Review completion details'}</Link> : null}
-      {confirmed && !hasReview && !hasSupport ? <Link className="button button-secondary" href="#customer-review">{tamil ? 'Review கொடுக்க' : 'Leave a review'}</Link> : null}
-      {hasSupport ? <Link className="button button-secondary" href="#service-closeout">{tamil ? 'Support status பார்க்க' : 'View support status'}</Link> : null}
-    </div> : <div><Link className="button button-secondary" href="#provider-service-closeout">{tamil ? 'Closeout status பார்க்க' : 'View closeout status'}</Link></div>}
+    {viewer === 'customer' && !confirmed && !hasSupport && closeout.can_confirm_completion ? <div>
+      <Button type="button" disabled={busy} onClick={() => void confirmCompletion()}>{busy ? (tamil ? 'உறுதி செய்கிறது…' : 'Confirming…') : (tamil ? 'Service completion உறுதி செய்' : 'Confirm service completed')}</Button>
+    </div> : null}
+    {error ? <p role="alert" style={{ color: 'var(--danger, #b42318)', margin: 0 }}>{error}</p> : null}
   </div>;
 }
