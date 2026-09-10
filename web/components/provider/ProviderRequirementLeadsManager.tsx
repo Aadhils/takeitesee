@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Badge, Button, Card } from '../ui/primitives';
 import { MarketplaceReportForm } from '../safety/MarketplaceReportForm';
 import { LiveProviderShell } from './LiveProviderShell';
@@ -26,6 +26,7 @@ const WEEKDAY_NAMES = {
   en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
   ta: ['ஞாயி', 'திங்கள்', 'செவ்வாய்', 'புதன்', 'வியாழன்', 'வெள்ளி', 'சனி'],
 } as const;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function proposalTone(status: Proposal['status']) { if (status === 'accepted') return 'success' as const; if (status === 'submitted') return 'info' as const; if (status === 'declined') return 'danger' as const; return 'neutral' as const; }
 
@@ -34,6 +35,10 @@ export function ProviderRequirementLeadsManager() {
   const [marketplace, setMarketplace] = useState<Marketplace>({ leads: [], proposals: [] });
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [loading, setLoading] = useState(true); const [busyId, setBusyId] = useState(''); const [error, setError] = useState(''); const [notice, setNotice] = useState('');
+  const [targetRequirementId, setTargetRequirementId] = useState('');
+  const [focusedRequirementId, setFocusedRequirementId] = useState('');
+  const [targetMissing, setTargetMissing] = useState(false);
+  const focusFrameRef = useRef<number | null>(null);
 
   const tamil = locale.toLowerCase().startsWith('ta');
   const money = (minor: number | null, currency: 'INR' | 'USD') => { if (minor == null) return ''; return new Intl.NumberFormat(locale, { style: 'currency', currency, maximumFractionDigits: 0 }).format(minor / 100); };
@@ -59,12 +64,56 @@ export function ProviderRequirementLeadsManager() {
     ? (tamil ? 'முழு recurring requirement-க்கு மொத்த quote' : 'Total for the whole recurring requirement')
     : (tamil ? 'ஒவ்வொரு service occurrence-க்கும்' : 'Per service occurrence');
 
+  const markLeadNotificationsSeen = useCallback(() => {
+    void fetch('/api/provider/requirement-leads', { method: 'PATCH', cache: 'no-store' })
+      .then((response) => {
+        if (response.ok) window.dispatchEvent(new Event('provider-leads-seen'));
+      })
+      .catch(() => undefined);
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true); setError('');
-    try { const response = await fetch('/api/provider/requirement-leads', { cache: 'no-store' }); const payload = await response.json() as { marketplace?: Marketplace; error?: string }; if (!response.ok || !payload.marketplace) throw new Error(payload.error || 'Provider leads could not be loaded.'); setMarketplace({ leads: payload.marketplace.leads ?? [], proposals: payload.marketplace.proposals ?? [] }); }
+    try {
+      const response = await fetch('/api/provider/requirement-leads', { cache: 'no-store' });
+      const payload = await response.json() as { marketplace?: Marketplace; error?: string };
+      if (!response.ok || !payload.marketplace) throw new Error(payload.error || 'Provider leads could not be loaded.');
+      setMarketplace({ leads: payload.marketplace.leads ?? [], proposals: payload.marketplace.proposals ?? [] });
+      markLeadNotificationsSeen();
+    }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Provider leads could not be loaded.'); } finally { setLoading(false); }
+  }, [markLeadNotificationsSeen]);
+
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get('requirement')?.trim() ?? '';
+    if (UUID_PATTERN.test(requested)) setTargetRequirementId(requested);
   }, []);
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    if (loading || !targetRequirementId) return;
+    const match = marketplace.leads.find((lead) => lead.id === targetRequirementId);
+    if (!match) {
+      setFocusedRequirementId('');
+      setTargetMissing(true);
+      return;
+    }
+    setTargetMissing(false);
+    setFocusedRequirementId(targetRequirementId);
+    if (focusFrameRef.current != null) window.cancelAnimationFrame(focusFrameRef.current);
+    focusFrameRef.current = window.requestAnimationFrame(() => {
+      const target = document.getElementById(`provider-lead-${targetRequirementId}`);
+      target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target?.focus({ preventScroll: true });
+      focusFrameRef.current = null;
+    });
+    return () => {
+      if (focusFrameRef.current != null) {
+        window.cancelAnimationFrame(focusFrameRef.current);
+        focusFrameRef.current = null;
+      }
+    };
+  }, [loading, marketplace.leads, targetRequirementId]);
+
   const submittedRequirementIds = useMemo(() => new Set(marketplace.proposals.map((p) => p.requirement_id)), [marketplace.proposals]);
   const updateDraft = (leadId: string, patch: Partial<Draft>) => setDrafts((current) => ({ ...current, [leadId]: { ...(current[leadId] ?? emptyDraft), ...patch } }));
 
@@ -88,11 +137,12 @@ export function ProviderRequirementLeadsManager() {
   return <LiveProviderShell active="/provider/leads"><div style={{ display: 'grid', gap: '1.25rem' }}>
     <section><span className="eyebrow">{t('lead.marketplace')}</span><h1>{t('lead.title')}</h1><p className="detail-copy">{t('lead.intro')}</p></section>
     {error ? <Alert title={t('lead.unavailable')} tone="danger">{error}</Alert> : null}{notice ? <Alert title={t('lead.proposalUpdate')} tone="success">{notice}</Alert> : null}
+    {targetMissing ? <Alert title={tamil ? 'இந்த Lead தற்போது கிடைக்கவில்லை' : 'This lead is no longer available'} tone="warning">{tamil ? 'இந்த requirement closed, awarded அல்லது இனி உங்கள் matching service-க்கு eligible இல்லாமல் இருக்கலாம். மற்ற புதிய matching leads கீழே இருக்கின்றன.' : 'This requirement may have closed, been awarded, or no longer match your eligible service. Other current matching leads are shown below.'}</Alert> : null}
     <section style={{ display: 'grid', gap: '1rem' }}>
       <div className="section-heading"><div><span className="eyebrow">{t('lead.matched')}</span><h2>{t('lead.customersLooking')}</h2></div><Badge tone="info">{marketplace.leads.length}</Badge></div>
       {loading ? <Card><p>{t('lead.loading')}</p></Card> : null}{!loading && marketplace.leads.length === 0 ? <Card><p>{t('lead.none')}</p></Card> : null}
-      {marketplace.leads.map((lead) => { const draft = drafts[lead.id] ?? emptyDraft; const alreadyProposed = lead.already_proposed || submittedRequirementIds.has(lead.id); return <Card className="policy-card" key={lead.id}>
-        <div className="section-heading"><div><span className="eyebrow">{lead.requirement_reference}</span><h3>{lead.title}</h3></div><Badge tone="success">{t('common.open')}</Badge></div><p className="detail-copy">{lead.description}</p>
+      {marketplace.leads.map((lead) => { const draft = drafts[lead.id] ?? emptyDraft; const alreadyProposed = lead.already_proposed || submittedRequirementIds.has(lead.id); const targeted = focusedRequirementId === lead.id; return <Card id={`provider-lead-${lead.id}`} tabIndex={targeted ? -1 : undefined} className={`policy-card${targeted ? ' provider-targeted-lead' : ''}`} key={lead.id}>
+        <div className="section-heading"><div><span className="eyebrow">{lead.requirement_reference}</span><h3>{lead.title}</h3></div><div style={{ display: 'flex', gap: '.45rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>{targeted ? <Badge tone="info">{tamil ? 'புதிய Lead' : 'New lead'}</Badge> : null}<Badge tone="success">{t('common.open')}</Badge></div></div><p className="detail-copy">{lead.description}</p>
         <dl className="review-details"><div><dt>{t('common.category')}</dt><dd>{lead.category_name}</dd></div><div><dt>{t('common.location')}</dt><dd>{lead.location_name}</dd></div><div><dt>{t('common.mode')}</dt><dd>{modeLabel(lead.service_mode)}</dd></div><div><dt>{t('lead.customerBudget')}</dt><dd>{leadBudget(lead)}</dd></div><div><dt>{t('common.neededBy')}</dt><dd>{lead.needed_by || t('common.flexible')}</dd></div><div><dt>{tamil ? 'விருப்பமான தொடக்க நேரம்' : 'Preferred start time'}</dt><dd>{startTimeLabel(lead.preferred_start_time)}</dd></div><div><dt>{tamil ? 'எதிர்பார்க்கப்படும் கால அளவு' : 'Expected duration'}</dt><dd>{durationLabel(lead.expected_duration_minutes)}</dd></div><div><dt>{tamil ? 'சேவை அட்டவணை' : 'Service schedule'}</dt><dd>{recurrenceLabel(lead)}</dd></div>{lead.recurrence_frequency === 'weekly' && lead.recurrence_weekdays?.length ? <div><dt>{tamil ? 'வார நாட்கள்' : 'Weekdays'}</dt><dd>{weekdayLabel(lead.recurrence_weekdays)}</dd></div> : null}<div><dt>{t('common.posted')}</dt><dd>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(lead.published_at))}</dd></div></dl>
         {alreadyProposed ? <p className="summary-note" style={{ marginTop: '1rem' }}>{t('lead.already')}</p> : <div style={{ display: 'grid', gap: '.75rem', marginTop: '1rem' }}>
           <label className="field"><span className="field-label">{t('lead.yourQuote')} ({lead.currency})</span><input className="field-control" type="number" min="1" step="1" value={draft.amount} onChange={(event) => updateDraft(lead.id, { amount: event.target.value })} placeholder="1200" /></label>
@@ -109,5 +159,9 @@ export function ProviderRequirementLeadsManager() {
         <p className="detail-copy">{proposal.message}</p><div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', alignItems: 'start' }}>{proposal.status === 'submitted' && proposal.requirement_status === 'open' ? <Button type="button" variant="quiet" loading={busyId === proposal.id} onClick={() => void withdrawProposal(proposal)}>{t('lead.withdraw')}</Button> : null}<MarketplaceReportForm targetType="requirement" targetId={proposal.requirement_id} label={t('lead.reportRequirement')} /></div>
       </Card>)}
     </section>
+    <style jsx global>{`
+      .provider-targeted-lead { scroll-margin-top: 180px; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-selected), var(--shadow-card); }
+      .provider-targeted-lead:focus { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+    `}</style>
   </div></LiveProviderShell>;
 }
