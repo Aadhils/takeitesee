@@ -29,11 +29,18 @@ const WEEKDAY_NAMES = {
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function proposalTone(status: Proposal['status']) { if (status === 'accepted') return 'success' as const; if (status === 'submitted') return 'info' as const; if (status === 'declined') return 'danger' as const; return 'neutral' as const; }
+function initialDraftForLead(lead: Lead): Draft {
+  const amount = lead.budget_type === 'fixed' && lead.budget_min_minor != null && lead.budget_min_minor > 0
+    ? String(lead.budget_min_minor / 100)
+    : '';
+  return { ...emptyDraft, amount };
+}
 
 export function ProviderRequirementLeadsManager() {
   const { locale, t, status } = useOperationalTranslations();
   const [marketplace, setMarketplace] = useState<Marketplace>({ leads: [], proposals: [] });
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
+  const [expandedProposalIds, setExpandedProposalIds] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true); const [busyId, setBusyId] = useState(''); const [error, setError] = useState(''); const [notice, setNotice] = useState('');
   const [targetRequirementId, setTargetRequirementId] = useState('');
   const [focusedRequirementId, setFocusedRequirementId] = useState('');
@@ -63,6 +70,9 @@ export function ProviderRequirementLeadsManager() {
   const pricingBasisLabel = (basis: PricingBasis) => basis === 'whole_requirement'
     ? (tamil ? 'முழு recurring requirement-க்கு மொத்த quote' : 'Total for the whole recurring requirement')
     : (tamil ? 'ஒவ்வொரு service occurrence-க்கும்' : 'Per service occurrence');
+  const starterMessage = (lead: Lead) => tamil
+    ? `இந்த ${lead.category_name} requirement-ஐ ${lead.location_name} பகுதியில் செய்ய உதவ முடியும். என் quote கேட்ட service-க்கு பொருந்தும்; தேவையான விவரங்களை chat-ல் உறுதி செய்யலாம்.`
+    : `I can help with this ${lead.category_name} requirement in ${lead.location_name}. My quote covers the requested service, and we can confirm the remaining details in chat.`;
 
   const markLeadNotificationsSeen = useCallback(() => {
     void fetch('/api/provider/requirement-leads', { method: 'PATCH', cache: 'no-store' })
@@ -99,6 +109,10 @@ export function ProviderRequirementLeadsManager() {
     }
     setTargetMissing(false);
     setFocusedRequirementId(targetRequirementId);
+    if (!match.already_proposed) {
+      setExpandedProposalIds((current) => current[targetRequirementId] ? current : { ...current, [targetRequirementId]: true });
+      setDrafts((current) => current[targetRequirementId] ? current : { ...current, [targetRequirementId]: initialDraftForLead(match) });
+    }
     if (focusFrameRef.current != null) window.cancelAnimationFrame(focusFrameRef.current);
     focusFrameRef.current = window.requestAnimationFrame(() => {
       const target = document.getElementById(`provider-lead-${targetRequirementId}`);
@@ -116,6 +130,11 @@ export function ProviderRequirementLeadsManager() {
 
   const submittedRequirementIds = useMemo(() => new Set(marketplace.proposals.map((p) => p.requirement_id)), [marketplace.proposals]);
   const updateDraft = (leadId: string, patch: Partial<Draft>) => setDrafts((current) => ({ ...current, [leadId]: { ...(current[leadId] ?? emptyDraft), ...patch } }));
+  const openProposal = (lead: Lead) => {
+    setExpandedProposalIds((current) => ({ ...current, [lead.id]: true }));
+    setDrafts((current) => current[lead.id] ? current : { ...current, [lead.id]: initialDraftForLead(lead) });
+  };
+  const closeProposal = (leadId: string) => setExpandedProposalIds((current) => ({ ...current, [leadId]: false }));
 
   const submitProposal = async (lead: Lead) => {
     const draft = drafts[lead.id] ?? emptyDraft; const amount = Number(draft.amount);
@@ -124,7 +143,7 @@ export function ProviderRequirementLeadsManager() {
     try {
       const response = await fetch('/api/provider/requirement-leads', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requirement_id: lead.id, service_id: lead.matching_service_id, amount_minor: Math.round(amount * 100), pricing_basis: lead.schedule_pattern === 'recurring' ? draft.pricingBasis : 'per_occurrence', message: draft.message, estimated_start_date: draft.estimatedStartDate || null }) });
       const payload = await response.json() as { error?: string }; if (!response.ok) throw new Error(payload.error || 'Proposal could not be submitted.');
-      setNotice(`${t('lead.sentFor')} ${lead.requirement_reference}.`); setDrafts((current) => ({ ...current, [lead.id]: emptyDraft })); await load();
+      setNotice(`${t('lead.sentFor')} ${lead.requirement_reference}.`); setDrafts((current) => ({ ...current, [lead.id]: emptyDraft })); setExpandedProposalIds((current) => ({ ...current, [lead.id]: false })); await load();
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Proposal could not be submitted.'); } finally { setBusyId(''); }
   };
 
@@ -141,14 +160,21 @@ export function ProviderRequirementLeadsManager() {
     <section style={{ display: 'grid', gap: '1rem' }}>
       <div className="section-heading"><div><span className="eyebrow">{t('lead.matched')}</span><h2>{t('lead.customersLooking')}</h2></div><Badge tone="info">{marketplace.leads.length}</Badge></div>
       {loading ? <Card><p>{t('lead.loading')}</p></Card> : null}{!loading && marketplace.leads.length === 0 ? <Card><p>{t('lead.none')}</p></Card> : null}
-      {marketplace.leads.map((lead) => { const draft = drafts[lead.id] ?? emptyDraft; const alreadyProposed = lead.already_proposed || submittedRequirementIds.has(lead.id); const targeted = focusedRequirementId === lead.id; return <Card id={`provider-lead-${lead.id}`} tabIndex={targeted ? -1 : undefined} className={`policy-card${targeted ? ' provider-targeted-lead' : ''}`} key={lead.id}>
+      {marketplace.leads.map((lead) => { const draft = drafts[lead.id] ?? emptyDraft; const alreadyProposed = lead.already_proposed || submittedRequirementIds.has(lead.id); const targeted = focusedRequirementId === lead.id; const proposalOpen = Boolean(expandedProposalIds[lead.id]); return <Card id={`provider-lead-${lead.id}`} tabIndex={targeted ? -1 : undefined} className={`policy-card${targeted ? ' provider-targeted-lead' : ''}`} key={lead.id}>
         <div className="section-heading"><div><span className="eyebrow">{lead.requirement_reference}</span><h3>{lead.title}</h3></div><div style={{ display: 'flex', gap: '.45rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>{targeted ? <Badge tone="info">{tamil ? 'புதிய Lead' : 'New lead'}</Badge> : null}<Badge tone="success">{t('common.open')}</Badge></div></div><p className="detail-copy">{lead.description}</p>
         <dl className="review-details"><div><dt>{t('common.category')}</dt><dd>{lead.category_name}</dd></div><div><dt>{t('common.location')}</dt><dd>{lead.location_name}</dd></div><div><dt>{t('common.mode')}</dt><dd>{modeLabel(lead.service_mode)}</dd></div><div><dt>{t('lead.customerBudget')}</dt><dd>{leadBudget(lead)}</dd></div><div><dt>{t('common.neededBy')}</dt><dd>{lead.needed_by || t('common.flexible')}</dd></div><div><dt>{tamil ? 'விருப்பமான தொடக்க நேரம்' : 'Preferred start time'}</dt><dd>{startTimeLabel(lead.preferred_start_time)}</dd></div><div><dt>{tamil ? 'எதிர்பார்க்கப்படும் கால அளவு' : 'Expected duration'}</dt><dd>{durationLabel(lead.expected_duration_minutes)}</dd></div><div><dt>{tamil ? 'சேவை அட்டவணை' : 'Service schedule'}</dt><dd>{recurrenceLabel(lead)}</dd></div>{lead.recurrence_frequency === 'weekly' && lead.recurrence_weekdays?.length ? <div><dt>{tamil ? 'வார நாட்கள்' : 'Weekdays'}</dt><dd>{weekdayLabel(lead.recurrence_weekdays)}</dd></div> : null}<div><dt>{t('common.posted')}</dt><dd>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(lead.published_at))}</dd></div></dl>
-        {alreadyProposed ? <p className="summary-note" style={{ marginTop: '1rem' }}>{t('lead.already')}</p> : <div style={{ display: 'grid', gap: '.75rem', marginTop: '1rem' }}>
-          <label className="field"><span className="field-label">{t('lead.yourQuote')} ({lead.currency})</span><input className="field-control" type="number" min="1" step="1" value={draft.amount} onChange={(event) => updateDraft(lead.id, { amount: event.target.value })} placeholder="1200" /></label>
+        <div className="provider-lead-match-context">
+          <strong>{tamil ? 'இந்த Lead உங்களுக்கு ஏன் match ஆனது?' : 'Why this lead matches you'}</strong>
+          <p>{tamil ? `உங்கள் active eligible service ${lead.category_name} category-யும் ${lead.location_name} location-யும் match செய்கிறது; ${modeLabel(lead.service_mode)} service mode-க்கும் பொருந்துகிறது.` : `Your active eligible service matches the ${lead.category_name} category in ${lead.location_name}, and its fulfillment options support ${modeLabel(lead.service_mode)} work.`}</p>
+          <div className="provider-lead-match-badges"><Badge tone="info">{tamil ? 'Category match' : 'Category match'}</Badge><Badge tone="info">{tamil ? 'Location match' : 'Location match'}</Badge><Badge tone="success">{modeLabel(lead.service_mode)} {tamil ? 'compatible' : 'compatible'}</Badge></div>
+        </div>
+        {alreadyProposed ? <p className="summary-note" style={{ marginTop: '1rem' }}>{t('lead.already')}</p> : proposalOpen ? <div id={`provider-proposal-${lead.id}`} className="provider-lead-proposal" style={{ display: 'grid', gap: '.75rem', marginTop: '1rem' }}>
+          {lead.budget_type === 'fixed' && lead.budget_min_minor != null && lead.budget_min_minor > 0 ? <p className="summary-note">{tamil ? 'Customer fixed budget உங்கள் quote-ல் editable starting amount ஆக முன்பே நிரப்பப்பட்டுள்ளது.' : 'The customer fixed budget is prefilled as an editable starting quote.'}</p> : null}
+          <label className="field"><span className="field-label">{t('lead.yourQuote')} ({lead.currency})</span><input className="field-control" type="number" min="0.01" step="0.01" value={draft.amount} onChange={(event) => updateDraft(lead.id, { amount: event.target.value })} placeholder="1200" /></label>
           {lead.schedule_pattern === 'recurring' ? <label className="field"><span className="field-label">{tamil ? 'Quote எதற்காக?' : 'What does this quote cover?'}</span><select className="field-control" value={draft.pricingBasis} onChange={(event) => updateDraft(lead.id, { pricingBasis: event.target.value as PricingBasis })}><option value="per_occurrence">{pricingBasisLabel('per_occurrence')}</option><option value="whole_requirement">{pricingBasisLabel('whole_requirement')}</option></select></label> : <p className="summary-note">{pricingBasisLabel('per_occurrence')}</p>}
           <label className="field"><span className="field-label">{t('lead.proposalMessage')}</span><textarea className="field-control field-textarea" rows={4} minLength={20} maxLength={2000} value={draft.message} onChange={(event) => updateDraft(lead.id, { message: event.target.value })} placeholder={t('lead.proposalPlaceholder')} /></label>
-          <label className="field"><span className="field-label">{t('lead.startOptional')}</span><input className="field-control" type="date" min={new Date().toISOString().slice(0, 10)} value={draft.estimatedStartDate} onChange={(event) => updateDraft(lead.id, { estimatedStartDate: event.target.value })} /></label><Button type="button" loading={busyId === lead.id} disabled={!draft.amount || draft.message.trim().length < 20} onClick={() => void submitProposal(lead)}>{t('lead.send')}</Button></div>}
+          <div className="provider-proposal-helper"><Button type="button" variant="quiet" onClick={() => updateDraft(lead.id, { message: starterMessage(lead) })}>{tamil ? 'Starter message பயன்படுத்து' : 'Use starter message'}</Button><span>{tamil ? 'அனுப்பும் முன் amount மற்றும் message இரண்டையும் review செய்யவும்.' : 'Review the amount and message before sending.'}</span></div>
+          <label className="field"><span className="field-label">{t('lead.startOptional')}</span><input className="field-control" type="date" min={new Date().toISOString().slice(0, 10)} value={draft.estimatedStartDate} onChange={(event) => updateDraft(lead.id, { estimatedStartDate: event.target.value })} /></label><div className="provider-proposal-actions"><Button type="button" loading={busyId === lead.id} disabled={!draft.amount || draft.message.trim().length < 20} onClick={() => void submitProposal(lead)}>{t('lead.send')}</Button><Button type="button" variant="quiet" disabled={busyId === lead.id} onClick={() => closeProposal(lead.id)}>{tamil ? 'பின்னர்' : 'Not now'}</Button></div></div> : <div className="provider-lead-response-cta"><Button type="button" aria-expanded={false} aria-controls={`provider-proposal-${lead.id}`} onClick={() => openProposal(lead)}>{tamil ? 'இந்த Lead-க்கு பதில் அளிக்க' : 'Respond to this lead'}</Button><span>{tamil ? 'Quote மற்றும் message அனுப்பி Customer-க்கு proposal கொடுக்கலாம்.' : 'Send a quote and message to propose your service to the customer.'}</span></div>}
       </Card>; })}
     </section>
     <section style={{ display: 'grid', gap: '1rem' }}>
@@ -162,6 +188,13 @@ export function ProviderRequirementLeadsManager() {
     <style jsx global>{`
       .provider-targeted-lead { scroll-margin-top: 180px; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-selected), var(--shadow-card); }
       .provider-targeted-lead:focus { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+      .provider-lead-match-context { display: grid; gap: .55rem; margin-top: 1rem; padding: .85rem 1rem; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-selected); }
+      .provider-lead-match-context strong { color: var(--color-primary-strong); }
+      .provider-lead-match-context p { margin: 0; color: var(--color-text-muted); line-height: 1.55; }
+      .provider-lead-match-badges { display: flex; flex-wrap: wrap; gap: .4rem; }
+      .provider-lead-response-cta { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-top: 1rem; }
+      .provider-lead-response-cta span, .provider-proposal-helper span { color: var(--color-text-muted); font-size: .86rem; }
+      .provider-proposal-helper, .provider-proposal-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .65rem; }
     `}</style>
   </div></LiveProviderShell>;
 }
