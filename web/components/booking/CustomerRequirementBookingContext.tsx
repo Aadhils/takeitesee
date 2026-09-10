@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { Card } from '../ui/primitives';
 import { useOperationalTranslations } from '../i18n/OperationalTranslations';
 import BookingServiceExecutionGuide from './BookingServiceExecutionGuide';
+import RequirementCompletionGuide from './RequirementCompletionGuide';
 
 type RequirementBookingContext = {
   requirement_id: string;
@@ -49,5 +50,6 @@ export default function CustomerRequirementBookingContext({ bookingId }: { booki
       <Link className="button button-secondary" href={`/requirements/${encodeURIComponent(context.requirement_id)}`}>{tamil ? 'Requirement பார்க்க' : 'Open requirement'}</Link>
     </div>
     <BookingServiceExecutionGuide bookingId={bookingId} viewer="customer" />
+    <RequirementCompletionGuide bookingId={bookingId} viewer="customer" />
   </Card>;
 }
