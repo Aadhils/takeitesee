@@ -18,6 +18,8 @@ type ProviderProfile = {
   marketplace_disclosure_complete: boolean;
   trust_status: 'normal' | 'reverification_required' | 'suspended';
   services_active: number;
+  services_paused: number;
+  products_paused: number;
 };
 
 type ProfessionalRole = { id: string; active: boolean };
@@ -86,7 +88,7 @@ export default function ProviderPublicReadinessManager() {
       : profile.services_active > 0;
     const trustNormal = profile.trust_status === 'normal';
     const trustDetail = profile.trust_status === 'suspended'
-      ? text('Public marketplace visibility is paused while this Provider account is suspended. Platform restoration is required before the public profile can return.', 'இந்த Provider account suspended நிலையில் இருக்கும் வரை public marketplace visibility pause ஆகும். Public profile மீண்டும் வர platform restoration தேவை.')
+      ? text('Public marketplace visibility is paused while this Provider account is suspended. Open Platform Support if you need help with the suspension or restoration path.', 'இந்த Provider account suspended நிலையில் இருக்கும் வரை public marketplace visibility pause ஆகும். Suspension அல்லது restoration path குறித்து உதவி தேவைப்பட்டால் Platform Support-ஐ திறக்கவும்.')
       : profile.trust_status === 'reverification_required'
         ? text('Fresh verification is required before marketplace trust access and public visibility can resume.', 'Marketplace trust access மற்றும் public visibility மீண்டும் தொடங்க fresh verification தேவை.')
         : text('Marketplace trust state allows this Provider identity to be shown publicly.', 'Marketplace trust state இந்த Provider identity-ஐ public-ஆக காட்ட அனுமதிக்கிறது.');
@@ -95,7 +97,11 @@ export default function ProviderPublicReadinessManager() {
       done: trustNormal,
       label: text('Marketplace trust access', 'Marketplace trust access'),
       detail: trustDetail,
-      href: profile.trust_status === 'reverification_required' ? '/provider/verification' : '/provider/setup',
+      href: profile.trust_status === 'reverification_required'
+        ? '/provider/verification'
+        : profile.trust_status === 'suspended'
+          ? '/account/support'
+          : '/provider/public-readiness',
     };
 
     const steps: ReadinessStep[] = professional ? [
@@ -146,6 +152,7 @@ export default function ProviderPublicReadinessManager() {
       steps,
       publicProfileReady: steps.every((step) => step.done),
       completed: steps.filter((step) => step.done).length,
+      pausedOfferingCount: profile.services_paused + (professional ? 0 : profile.products_paused),
     };
   }, [profile, publicResumeEnabled, roles, text]);
 
@@ -201,6 +208,26 @@ export default function ProviderPublicReadinessManager() {
         </Card>)}
       </div>
 
+      {profile.trust_status === 'normal' && readiness.pausedOfferingCount > 0 ? <Card>
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">{text('Marketplace re-entry', 'Marketplace re-entry')}</span>
+            <h2>{text('Review paused offerings before publishing again', 'மீண்டும் publish செய்வதற்கு முன் paused offerings-ஐ review செய்யவும்')}</h2>
+          </div>
+          <Badge tone="warning">{readiness.pausedOfferingCount} {text('paused', 'paused')}</Badge>
+        </div>
+        <p>{text('Your trust state is normal, but paused Services or Products stay private until you explicitly review and reactivate what should return to the marketplace. Nothing is auto-published after recovery.', 'உங்கள் trust state normal. ஆனால் paused Services அல்லது Products நீங்கள் review செய்து re-activate செய்யும் வரை private-ஆகவே இருக்கும். Recovery பிறகு எதுவும் automatically publish ஆகாது.')}</p>
+        <div className="provider-review-summary">
+          <div><strong>{profile.services_paused}</strong><span>{text('Paused services', 'Paused services')}</span></div>
+          {profile.provider_type === 'business' ? <div><strong>{profile.products_paused}</strong><span>{text('Paused products', 'Paused products')}</span></div> : null}
+        </div>
+        <div className="button-row">
+          {profile.services_paused > 0 ? <Link href="/provider/services" className="button button-primary">{text('Review Services', 'Services review செய்ய')}</Link> : null}
+          {profile.provider_type === 'business' && profile.products_paused > 0 ? <Link href="/provider/products" className="button button-secondary">{text('Review Products', 'Products review செய்ய')}</Link> : null}
+          <Link href="/provider/handle" className="button button-secondary">{text('Review @handle', '@handle review செய்ய')}</Link>
+        </div>
+      </Card> : null}
+
       {profile.provider_type === 'business' ? <Card>
         <div className="section-heading">
           <div><span className="eyebrow">{text('Service launch quality', 'Service launch quality')}</span><h2>{text('Business profile basics', 'Business profile basics')}</h2></div>
@@ -240,9 +267,13 @@ export default function ProviderPublicReadinessManager() {
       </Card>
 
       {profile.trust_status !== 'normal' ? <Alert title={text('Public visibility paused by trust state', 'Trust state காரணமாக public visibility pause')} tone={profile.trust_status === 'suspended' ? 'danger' : 'warning'}>
-        {profile.trust_status === 'suspended'
-          ? text('Your Provider public profile/storefront, public talents and published career data stay unavailable while the account is suspended. Existing private account and booking operations remain separate.', 'Provider account suspended இருக்கும் வரை public profile/storefront, public talents மற்றும் published career data unavailable ஆக இருக்கும். Existing private account மற்றும் booking operations தனியாக தொடரும்.')
-          : text('Your public marketplace presence stays unavailable until fresh verification restores normal trust access.', 'Fresh verification normal trust access-ஐ restore செய்யும் வரை public marketplace presence unavailable ஆக இருக்கும்.')}
+        {profile.trust_status === 'suspended' ? <>
+          <p>{text('Your Provider public profile/storefront, public talents and published career data stay unavailable while the account is suspended. Existing private account and booking operations remain separate.', 'Provider account suspended இருக்கும் வரை public profile/storefront, public talents மற்றும் published career data unavailable ஆக இருக்கும். Existing private account மற்றும் booking operations தனியாக தொடரும்.')}</p>
+          <div className="button-row"><Link href="/account/support" className="button button-secondary">{text('Open Platform Support', 'Platform Support திறக்க')}</Link></div>
+        </> : <>
+          <p>{text('Your public marketplace presence stays unavailable until fresh verification restores normal trust access.', 'Fresh verification normal trust access-ஐ restore செய்யும் வரை public marketplace presence unavailable ஆக இருக்கும்.')}</p>
+          <div className="button-row"><Link href="/provider/verification" className="button button-secondary">{text('Continue re-verification', 'Re-verification continue செய்ய')}</Link></div>
+        </>}
       </Alert> : null}
 
       {!profile.marketplace_disclosure_complete ? <Alert title={text('Why disclosure is required', 'Disclosure ஏன் தேவை')} tone="warning">
