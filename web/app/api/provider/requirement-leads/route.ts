@@ -41,7 +41,7 @@ export async function PATCH(request: Request) {
       .from('notifications')
       .update({ read_at: new Date().toISOString() })
       .eq('recipient_user_id', session.user_id)
-      .eq('event_type', 'provider_requirement_match')
+      .in('event_type', ['provider_requirement_match', 'requirement_proposal_accepted'])
       .is('read_at', null);
     if (error) throw new Error(error.message);
     return NextResponse.json({ ok: true });
