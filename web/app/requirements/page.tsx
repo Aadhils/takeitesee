@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import LocalizedAccountShell from '../../components/account/LocalizedAccountShell';
 import CustomerRequirementProposalAttention from '../../components/requirements/CustomerRequirementProposalAttention';
+import CustomerRequirementLifecycleOverview from '../../components/requirements/CustomerRequirementLifecycleOverview';
 import CustomerRequirementsManager, { type RequirementPrefill } from '../../components/requirements/CustomerRequirementsManager';
 import { parseMarketplaceSearchIntent } from '../../components/discovery/marketplaceSearchIntent';
 import { Card, EmptyState } from '../../components/ui/primitives';
@@ -141,6 +142,7 @@ export default function RequirementsPage() {
   return <LocalizedAccountShell active="/requirements">
     <div style={{ display: 'grid', gap: '1.5rem' }}>
       <CustomerRequirementProposalAttention />
+      <CustomerRequirementLifecycleOverview />
       <CustomerRequirementsManager prefill={prefill} />
     </div>
   </LocalizedAccountShell>;

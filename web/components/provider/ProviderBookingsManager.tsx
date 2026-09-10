@@ -53,15 +53,18 @@ function upcoming(booking: ProviderBooking, now: number) { return !closeoutOutco
 function queueMatches(booking: ProviderBooking, queue: QueueKey, now: number) {
   if (queue === 'action') return needsAction(booking, now);
   if (queue === 'upcoming') return upcoming(booking, now);
-  if (queue === 'completed') return booking.status === 'completed';
+  if (queue === 'completed') return booking.status === 'completed' && !closeoutOutcome(booking);
   if (queue === 'outcomes') return closeoutOutcome(booking);
-  if (queue === 'cancelled') return booking.status === 'cancelled';
+  if (queue === 'cancelled') return booking.status === 'cancelled' && !closeoutOutcome(booking);
   return true;
 }
 function statusTone(booking: ProviderBooking, now: number) {
   if (booking.attendance_outcome === 'provider_no_show') return 'danger' as const;
-  if (booking.attendance_outcome === 'customer_no_show' || needsAction(booking, now)) return 'warning' as const;
-  if (booking.closeout_state === 'closed' || booking.status === 'completed' || booking.status === 'confirmed') return 'success' as const;
+  if (booking.attendance_outcome === 'customer_no_show' || booking.closeout_state === 'eligible_to_close' || booking.closeout_state === 'support_open' || needsAction(booking, now)) return 'warning' as const;
+  if (booking.closeout_state === 'closed') return 'success' as const;
+  if (booking.status === 'completed' && booking.closeout_state === 'awaiting_customer') return 'warning' as const;
+  if (booking.status === 'completed') return 'info' as const;
+  if (booking.status === 'confirmed') return 'success' as const;
   if (booking.status === 'cancelled') return 'danger' as const;
   return 'info' as const;
 }
@@ -77,8 +80,8 @@ function operationalRank(booking: ProviderBooking, now: number) {
   if (booking.status === 'pending' || booking.status === 'rescheduled') return 0;
   if (booking.status === 'confirmed' && booking.attendance_outcome === 'pending' && bookingEndEpoch(booking) <= now) return 1;
   if (booking.status === 'confirmed' && booking.attendance_outcome === 'pending') return 2;
-  if (booking.status === 'completed') return 3;
   if (closeoutOutcome(booking)) return 4;
+  if (booking.status === 'completed') return 3;
   return 5;
 }
 
@@ -98,10 +101,14 @@ export default function ProviderBookingsManager() {
 
   const money = (booking: ProviderBooking) => new Intl.NumberFormat(locale, { style: 'currency', currency: booking.currency, maximumFractionDigits: 2 }).format(booking.quoted_price);
   const queueLabel = (booking: ProviderBooking) => {
-    if (booking.closeout_state === 'closed') return locale === 'ta-IN' ? 'முழுமையாக மூடப்பட்டது' : 'finally closed';
-    if (booking.closeout_state === 'eligible_to_close') return locale === 'ta-IN' ? 'closeout செய்ய வேண்டும்' : 'closeout due';
+    if (booking.closeout_state === 'closed') return locale === 'ta-IN' ? 'இறுதி history' : 'final history';
+    if (booking.closeout_state === 'eligible_to_close') return locale === 'ta-IN' ? 'final closeout நிலுவையில்' : 'final closeout pending';
     if (booking.attendance_outcome === 'customer_no_show') return status('customer_no_show');
     if (booking.attendance_outcome === 'provider_no_show') return status('provider_no_show');
+    if (booking.closeout_state === 'support_open') return locale === 'ta-IN' ? 'support நடைபெறுகிறது' : 'support in progress';
+    if (booking.status === 'completed' && booking.closeout_state === 'awaiting_customer') return locale === 'ta-IN' ? 'customer உறுதி நிலுவையில்' : 'awaiting customer';
+    if (booking.status === 'completed' && booking.closeout_state === 'open') return locale === 'ta-IN' ? 'customer உறுதிசெய்தார்' : 'customer acknowledged';
+    if (booking.status === 'completed') return locale === 'ta-IN' ? 'சேவை முடிந்தது' : 'service completed';
     if (booking.status === 'pending') return locale === 'ta-IN' ? 'புதிய கோரிக்கை' : 'new request';
     if (booking.status === 'rescheduled') return t('provider.rescheduleRequest');
     if (booking.status === 'confirmed' && bookingEndEpoch(booking) <= now) return locale === 'ta-IN' ? 'completion செய்ய வேண்டும்' : 'completion due';
@@ -109,26 +116,32 @@ export default function ProviderBookingsManager() {
   };
   const operationalNote = (booking: ProviderBooking) => {
     if (locale === 'ta-IN') {
-      if (booking.closeout_state === 'closed') return 'Final SLA closeout முடிந்தது.';
-      if (booking.closeout_state === 'eligible_to_close') return 'SLA window முடிந்தது; payment settlement போன்ற மீதமுள்ள blockers காரணமாக closeout காத்திருக்கிறது.';
+      if (booking.closeout_state === 'closed') return 'Service lifecycle final history-ஆக மூடப்பட்டுள்ளது.';
+      if (booking.closeout_state === 'eligible_to_close') return 'Service-side work முடிந்துள்ளது; final lifecycle closeout இன்னும் நிலுவையில் உள்ளது.';
       if (booking.attendance_outcome === 'customer_no_show') return 'வாடிக்கையாளர் no-show பதிவு செய்யப்பட்டது. Completion lock செய்யப்பட்டுள்ளது; dispute-ஐ support கையாளும்.';
       if (booking.attendance_outcome === 'provider_no_show') return 'Provider no-show report செய்யப்பட்டுள்ளது; support follow-up தேவை.';
+      if (booking.closeout_state === 'support_open') return 'Customer support issue active-ஆ உள்ளது. Booking details-ல் coordination மற்றும் support status-ஐ தொடருங்கள்.';
+      if (booking.status === 'completed' && booking.closeout_state === 'awaiting_customer') return 'Service complete என்று பதிவு செய்துள்ளீர்கள்; customer completion confirmation அல்லது issue response காத்திருக்கிறது.';
+      if (booking.status === 'completed' && booking.closeout_state === 'open') return 'Customer completion-ஐ உறுதி செய்துள்ளார்; review/support follow-up window இன்னும் இருக்கலாம்.';
       if (booking.status === 'pending') return 'புதிய வாடிக்கையாளர் கோரிக்கைக்கு உங்கள் பதில் தேவை.';
       if (booking.status === 'rescheduled') return 'வாடிக்கையாளர் புதிய நேரம் கேட்டுள்ளார். புதுப்பிக்கப்பட்ட schedule-ஐ உறுதி செய்யவும் அல்லது நிராகரிக்கவும்.';
       if (booking.status === 'confirmed' && bookingEndEpoch(booking) <= now) return 'திட்டமிட்ட சேவை நேரம் முடிந்தது. சேவை வழங்கப்பட்டிருந்தால் completed என குறிக்கவும்; இல்லையெனில் booking details-ல் customer no-show பதிவு செய்யவும்.';
       if (booking.status === 'confirmed') return 'உறுதி செய்யப்பட்ட வரவிருக்கும் வேலை.';
-      if (booking.status === 'completed') return 'சேவை முடிந்தது; review/support SLA closeout செயலில் உள்ளது.';
+      if (booking.status === 'completed') return 'Service முடிந்துள்ளது; final lifecycle closeout தனியாக தொடர்ந்து நடைபெறும்.';
       return 'புக்கிங் ரத்து செய்யப்பட்டது.';
     }
-    if (booking.closeout_state === 'closed') return 'Final SLA closeout is complete.';
-    if (booking.closeout_state === 'eligible_to_close') return 'SLA window ended; closeout is waiting for remaining blockers such as payment settlement.';
+    if (booking.closeout_state === 'closed') return 'The service lifecycle is closed and retained as final history.';
+    if (booking.closeout_state === 'eligible_to_close') return 'Service-side work is complete; final lifecycle closeout is still pending.';
     if (booking.attendance_outcome === 'customer_no_show') return 'Customer no-show recorded. Completion is locked; support handles any dispute.';
     if (booking.attendance_outcome === 'provider_no_show') return 'Provider no-show was reported and support follow-up is required.';
+    if (booking.closeout_state === 'support_open') return 'A customer support issue is active. Continue coordination and follow the support status from booking details.';
+    if (booking.status === 'completed' && booking.closeout_state === 'awaiting_customer') return 'You marked the service complete; customer completion confirmation or an issue response is still pending.';
+    if (booking.status === 'completed' && booking.closeout_state === 'open') return 'The customer acknowledged completion; the review/support follow-up window may still be active.';
     if (booking.status === 'pending') return 'New customer request needs your response.';
     if (booking.status === 'rescheduled') return 'Customer requested this new time. Confirm or decline the updated schedule.';
     if (booking.status === 'confirmed' && bookingEndEpoch(booking) <= now) return 'The scheduled service ended. Mark completed if delivered, or record a customer no-show from booking details.';
     if (booking.status === 'confirmed') return 'Confirmed upcoming work.';
-    if (booking.status === 'completed') return 'Service completed; review/support SLA closeout is active.';
+    if (booking.status === 'completed') return 'Service is completed; final lifecycle closeout continues separately.';
     return 'Booking cancelled.';
   };
 
@@ -154,9 +167,9 @@ export default function ProviderBookingsManager() {
   const counts = useMemo(() => ({
     action: items.filter((booking) => needsAction(booking, now)).length,
     upcoming: items.filter((booking) => upcoming(booking, now)).length,
-    completed: items.filter((booking) => booking.status === 'completed').length,
+    completed: items.filter((booking) => queueMatches(booking, 'completed', now)).length,
     outcomes: items.filter(closeoutOutcome).length,
-    cancelled: items.filter((booking) => booking.status === 'cancelled').length,
+    cancelled: items.filter((booking) => booking.status === 'cancelled' && !closeoutOutcome(booking)).length,
     all: items.length,
   }), [items, now]);
 
@@ -202,6 +215,11 @@ export default function ProviderBookingsManager() {
 
   return <LiveProviderShell active="/provider/bookings">
     <ProviderHeading eyebrow={t('provider.operations')} title={t('provider.bookings')} description={t('provider.bookingsIntro')} />
+
+    <Card style={{ padding: '1rem', marginBottom: '1rem' }}>
+      <strong>{locale === 'ta-IN' ? 'Completed மற்றும் final history வேறு states' : 'Completed and final history are separate states'}</strong>
+      <p className="summary-note" style={{ margin: '.35rem 0 0' }}>{locale === 'ta-IN' ? 'Completed queue என்பது service delivery முடிந்த பிறகான customer acknowledgement/support follow-up. Closeout queue என்பது no-show அல்லது final lifecycle outcome/history.' : 'Completed is the post-service customer acknowledgement/support follow-up queue. Closeout contains no-show outcomes and records that reached the final lifecycle stage.'}</p>
+    </Card>
 
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '.75rem', marginBottom: '1rem' }}>
       {queueOptions.slice(0, 4).map((item) => <Card key={item.key} style={{ padding: '1rem' }}><span className="eyebrow">{t(item.labelKey)}</span><strong style={{ display: 'block', marginTop: '.35rem', fontSize: '1.65rem' }}>{item.count}</strong></Card>)}
