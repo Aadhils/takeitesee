@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Badge, Card } from '../ui/primitives';
 import BookingServiceExecutionGuide from '../booking/BookingServiceExecutionGuide';
+import RequirementCompletionGuide from '../booking/RequirementCompletionGuide';
 
 type RequirementStatus = 'open' | 'paused' | 'awarded' | 'fulfilled' | 'cancelled';
 type JobState = 'active' | 'declined' | 'cancelled' | 'service_completed' | 'fulfilled';
@@ -97,6 +98,7 @@ export default function ProviderRequirementOccurrenceContext({ bookingId, locale
       <div><Link className="button button-secondary" href={chatHref}>{tamil ? 'Customer-க்கு message செய்' : 'Message customer'}</Link></div>
     </div>
     <BookingServiceExecutionGuide bookingId={bookingId} viewer="provider" />
+    <RequirementCompletionGuide bookingId={bookingId} viewer="provider" />
     {context.requirement_status === 'fulfilled' && recurring ? <p className="summary-note">{tamil ? 'இந்த recurring requirement-ன் அனைத்து service occurrences-மும் நிறைவடைந்துள்ளன. இந்த context read-only final history ஆகும்.' : 'All service occurrences for this recurring requirement are complete. This context is now read-only final history.'}</p> : null}
 
     {context.recovery ? <div style={{ borderTop: '1px solid #e7eaf0', marginTop: '1rem', paddingTop: '1rem', display: 'grid', gap: '.45rem' }}>
