@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Card } from '../ui/primitives';
 import { useOperationalTranslations } from '../i18n/OperationalTranslations';
+import BookingServiceExecutionGuide from './BookingServiceExecutionGuide';
 
 type RequirementBookingContext = {
   requirement_id: string;
@@ -36,7 +37,7 @@ export default function CustomerRequirementBookingContext({ bookingId }: { booki
     : '/messages';
 
   return <Card className="policy-card">
-    <span className="eyebrow">{tamil ? 'Requirement coordination' : 'Requirement coordination'}</span>
+    <span className="eyebrow">Requirement coordination</span>
     <h2>{tamil ? 'Selected Provider உடன் coordination தொடருங்கள்' : 'Continue with your selected provider'}</h2>
     <p className="detail-copy">
       {tamil
@@ -47,5 +48,6 @@ export default function CustomerRequirementBookingContext({ bookingId }: { booki
       <Link className="button button-primary" href={chatHref}>{tamil ? 'Provider-க்கு message செய்' : 'Message provider'}</Link>
       <Link className="button button-secondary" href={`/requirements/${encodeURIComponent(context.requirement_id)}`}>{tamil ? 'Requirement பார்க்க' : 'Open requirement'}</Link>
     </div>
+    <BookingServiceExecutionGuide bookingId={bookingId} viewer="customer" />
   </Card>;
 }
