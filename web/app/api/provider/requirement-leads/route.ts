@@ -20,14 +20,51 @@ type ProposalRow = {
   submitted_at: string;
   decided_at: string | null;
 };
+type ProposalRecord = Record<string, unknown> & { id?: unknown; status?: unknown };
+type MarketplacePayload = { leads?: unknown[]; proposals?: ProposalRecord[] };
 
 export async function GET(request: Request) {
   try {
-    await productionAuthProvider.requireProvider(request);
+    const session = await productionAuthProvider.requireProvider(request);
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase.rpc('get_provider_requirement_leads');
     if (error) throw new Error(error.message);
-    return NextResponse.json({ marketplace: data ?? { leads: [], proposals: [] } });
+
+    const marketplace = data && typeof data === 'object' && !Array.isArray(data)
+      ? data as MarketplacePayload
+      : {};
+    const proposals = Array.isArray(marketplace.proposals) ? marketplace.proposals : [];
+    const acceptedProposalIds = proposals
+      .filter((proposal) => proposal.status === 'accepted')
+      .map((proposal) => String(proposal.id ?? '').trim())
+      .filter(Boolean);
+
+    let enrichedProposals = proposals;
+    if (acceptedProposalIds.length) {
+      const { data: conversations, error: conversationError } = await supabase
+        .from('marketplace_conversations')
+        .select('id,proposal_id')
+        .eq('provider_user_id', session.user_id)
+        .in('proposal_id', acceptedProposalIds);
+
+      if (!conversationError) {
+        const conversationByProposal = new Map(
+          (conversations ?? []).map((conversation) => [String(conversation.proposal_id), String(conversation.id)]),
+        );
+        enrichedProposals = proposals.map((proposal) => ({
+          ...proposal,
+          conversation_id: conversationByProposal.get(String(proposal.id ?? '')) ?? null,
+        }));
+      }
+    }
+
+    return NextResponse.json({
+      marketplace: {
+        ...marketplace,
+        leads: Array.isArray(marketplace.leads) ? marketplace.leads : [],
+        proposals: enrichedProposals,
+      },
+    });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to load provider leads.' }, { status: 401 });
   }

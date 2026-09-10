@@ -66,7 +66,7 @@ function stateTone(state: JobState) {
   return 'neutral' as const;
 }
 
-export function RequirementJobPanel({ requirementId, requirementStatus }: { requirementId: string; requirementStatus: RequirementStatus }) {
+export function RequirementJobPanel({ requirementId, requirementStatus, conversationId }: { requirementId: string; requirementStatus: RequirementStatus; conversationId?: string | null }) {
   const { locale, t, status } = useOperationalTranslations();
   const [jobs, setJobs] = useState<RequirementJob[]>([]);
   const [occurrencePlan, setOccurrencePlan] = useState<OccurrencePlan | null>(null);
@@ -80,6 +80,7 @@ export function RequirementJobPanel({ requirementId, requirementStatus }: { requ
 
   const tamil = locale.toLowerCase().startsWith('ta');
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const chatHref = conversationId ? `/messages?conversation=${encodeURIComponent(conversationId)}` : '/messages';
   const liveJob = jobs.find((job) => ['active', 'service_completed'].includes(job.state));
   const latestJob = useMemo(() => jobs.reduce<RequirementJob | null>((latest, job) => !latest || job.sequence_no > latest.sequence_no ? job : latest, null), [jobs]);
   const nextOccurrence = useMemo(() => occurrencePlan?.occurrences.find((occurrence) => !occurrence.job_id) ?? null, [occurrencePlan]);
@@ -212,7 +213,7 @@ export function RequirementJobPanel({ requirementId, requirementStatus }: { requ
         </dl>
         <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', marginTop: '.75rem' }}>
           <Link className="button button-secondary" href={`/bookings/${encodeURIComponent(job.booking_id)}`}>{t('job.open')}</Link>
-          <Link className="button button-quiet" href="/messages">{t('req.openChat')}</Link>
+          <Link className="button button-quiet" href={chatHref}>{t('req.openChat')}</Link>
         </div>
       </div>)}
     </div> : !loading && !canCreate ? <p className="summary-note" style={{ marginTop: '1rem' }}>{t('job.afterProposal')}</p> : null}
