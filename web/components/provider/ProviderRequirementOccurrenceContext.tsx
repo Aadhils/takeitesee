@@ -18,6 +18,7 @@ type RequirementContext = {
   recurrence_interval: number | null;
   recurrence_weekdays: number[] | null;
   pricing_basis: 'per_occurrence' | 'whole_requirement' | null;
+  conversation_id?: string | null;
   recovery: {
     id: string;
     attempt_number: number;
@@ -54,6 +55,9 @@ export default function ProviderRequirementOccurrenceContext({ bookingId, locale
   if (!context) return error ? <Card><p role="status" className="summary-note">{error}</p></Card> : null;
   const tamil = locale.toLowerCase().startsWith('ta');
   const recurring = context.schedule_pattern === 'recurring';
+  const chatHref = context.conversation_id
+    ? `/provider/messages?conversation=${encodeURIComponent(context.conversation_id)}`
+    : '/provider/messages';
   const weekdays = context.recurrence_frequency === 'weekly' && context.recurrence_weekdays?.length
     ? context.recurrence_weekdays.map((value) => (tamil ? WEEKDAY_NAMES.ta : WEEKDAY_NAMES.en)[value] ?? String(value)).join(', ')
     : null;
@@ -86,6 +90,11 @@ export default function ProviderRequirementOccurrenceContext({ bookingId, locale
     {recurring ? <p><strong>Occurrence #{context.occurrence_number}</strong> / {context.occurrence_count}</p> : null}
     {cadence ? <p className="summary-note">{tamil ? 'அட்டவணை' : 'Schedule'}: {cadence}</p> : null}
     <p className="summary-note">{pricing}</p>
+    <div style={{ display: 'grid', gap: '.55rem', marginTop: '.9rem', paddingTop: '.9rem', borderTop: '1px solid #e7eaf0' }}>
+      <strong>{tamil ? 'Customer உடன் coordination தொடருங்கள்' : 'Continue coordination with the customer'}</strong>
+      <p className="summary-note">{tamil ? 'Booking schedule அல்லது service details பற்றி பேச வேண்டுமெனில், இந்த requirement-க்கான அதே private conversation-ஐ பயன்படுத்துங்கள்.' : 'Use the same private requirement conversation for booking schedule or service-detail coordination.'}</p>
+      <div><Link className="button button-secondary" href={chatHref}>{tamil ? 'Customer-க்கு message செய்' : 'Message customer'}</Link></div>
+    </div>
     {context.requirement_status === 'fulfilled' && recurring ? <p className="summary-note">{tamil ? 'இந்த recurring requirement-ன் அனைத்து service occurrences-மும் நிறைவடைந்துள்ளன. இந்த context read-only final history ஆகும்.' : 'All service occurrences for this recurring requirement are complete. This context is now read-only final history.'}</p> : null}
 
     {context.recovery ? <div style={{ borderTop: '1px solid #e7eaf0', marginTop: '1rem', paddingTop: '1rem', display: 'grid', gap: '.45rem' }}>
