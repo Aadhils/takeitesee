@@ -9,9 +9,32 @@ type ProviderType = 'professional' | 'business';
 type TrustState = { status?: 'normal' | 'reverification_required' | 'suspended'; reason?: string | null } | null;
 type ReadinessService = Record<string, unknown> & { id?: string; launch_ready?: boolean };
 type Readiness = { provider_id?: string; marketplace_live?: boolean; services?: ReadinessService[] } & Record<string, unknown>;
+type MarketplaceDisclosure = {
+  legal_name?: string | null;
+  principal_address?: string | null;
+  public_contact_email?: string | null;
+  public_contact_phone?: string | null;
+  grievance_officer_name?: string | null;
+  grievance_officer_designation?: string | null;
+  grievance_email?: string | null;
+  grievance_phone?: string | null;
+} | null;
 
 function activeProviderType(roles: readonly string[]): ProviderType {
   return roles.includes('professional') ? 'professional' : 'business';
+}
+
+function marketplaceDisclosureComplete(provider: MarketplaceDisclosure) {
+  return Boolean(
+    provider?.legal_name?.trim()
+    && provider?.principal_address?.trim()
+    && provider?.public_contact_email?.trim()
+    && provider?.public_contact_phone?.trim()
+    && provider?.grievance_officer_name?.trim()
+    && provider?.grievance_officer_designation?.trim()
+    && provider?.grievance_email?.trim()
+    && provider?.grievance_phone?.trim(),
+  );
 }
 
 export async function GET(request: Request) {
@@ -30,12 +53,25 @@ export async function GET(request: Request) {
     const providerId = typeof raw.provider_id === 'string' ? raw.provider_id : '';
     if (!providerId) throw new Error('Active provider profile was not resolved.');
 
-    const trustResult = providerType === 'professional'
-      ? await supabase.from('provider_trust_states').select('status,reason').eq('professional_id', providerId).maybeSingle()
-      : await supabase.from('provider_trust_states').select('status,reason').eq('business_id', providerId).maybeSingle();
+    const [trustResult, disclosureResult] = await Promise.all([
+      providerType === 'professional'
+        ? supabase.from('provider_trust_states').select('status,reason').eq('professional_id', providerId).maybeSingle()
+        : supabase.from('provider_trust_states').select('status,reason').eq('business_id', providerId).maybeSingle(),
+      providerType === 'professional'
+        ? supabase.from('professional_profiles')
+          .select('legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone')
+          .eq('id', providerId)
+          .maybeSingle()
+        : supabase.from('businesses')
+          .select('legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone')
+          .eq('id', providerId)
+          .maybeSingle(),
+    ]);
     if (trustResult.error) throw new Error(trustResult.error.message);
+    if (disclosureResult.error) throw new Error(disclosureResult.error.message);
     const trust = (trustResult.data ?? null) as TrustState;
     const trustNormal = !trust || trust.status === 'normal';
+    const disclosureComplete = marketplaceDisclosureComplete(disclosureResult.data as MarketplaceDisclosure);
 
     const serviceIds = (raw.services ?? []).map((service) => typeof service.id === 'string' ? service.id : '').filter(Boolean);
     let requests: Record<string, unknown>[] = [];
@@ -57,13 +93,14 @@ export async function GET(request: Request) {
 
     const readiness = {
       ...raw,
+      marketplace_disclosure_complete: disclosureComplete,
       trust_status: trust?.status ?? 'normal',
       trust_reason: trust?.reason ?? null,
-      marketplace_live: Boolean(raw.marketplace_live) && trustNormal,
+      marketplace_live: Boolean(raw.marketplace_live) && trustNormal && disclosureComplete,
       services: (raw.services ?? []).map((service) => ({
         ...service,
         catalog_category: typeof service.id === 'string' ? serviceCategoryById.get(service.id) ?? null : null,
-        launch_ready: Boolean(service.launch_ready) && trustNormal,
+        launch_ready: Boolean(service.launch_ready) && trustNormal && disclosureComplete,
       })),
     };
 
@@ -110,7 +147,7 @@ export async function DELETE(request: Request) {
       .eq('applicant_user_id', session.user_id)
       .maybeSingle();
     if (requestError) throw new Error(requestError.message);
-    if (!launchRequest) return NextResponse.json({ error: 'Launch request was not found.' }, { status: 404 });
+    if (!launchRequest) return NextResponse.json({ error: 'This launch request was not found.' }, { status: 404 });
 
     const { data: service, error: serviceError } = await supabase.from('services')
       .select('id,professional_id,business_id')

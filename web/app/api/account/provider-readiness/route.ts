@@ -20,15 +20,40 @@ type RawReadiness = {
   pending_launch_requests?: number;
 };
 
-type OwnedProvider = {
+type MarketplaceDisclosure = {
+  legal_name?: string | null;
+  principal_address?: string | null;
+  public_contact_email?: string | null;
+  public_contact_phone?: string | null;
+  grievance_officer_name?: string | null;
+  grievance_officer_designation?: string | null;
+  grievance_email?: string | null;
+  grievance_phone?: string | null;
+};
+
+type OwnedProvider = MarketplaceDisclosure & {
   provider_type: ProviderType;
   display_name: string;
   provider_id: string;
 };
 
-function nextAction(readiness: RawReadiness, trustStatus: TrustStatus, marketplaceLive: boolean) {
+function marketplaceDisclosureComplete(provider: MarketplaceDisclosure) {
+  return Boolean(
+    provider.legal_name?.trim()
+    && provider.principal_address?.trim()
+    && provider.public_contact_email?.trim()
+    && provider.public_contact_phone?.trim()
+    && provider.grievance_officer_name?.trim()
+    && provider.grievance_officer_designation?.trim()
+    && provider.grievance_email?.trim()
+    && provider.grievance_phone?.trim(),
+  );
+}
+
+function nextAction(readiness: RawReadiness, disclosureComplete: boolean, trustStatus: TrustStatus, marketplaceLive: boolean) {
   if (!readiness.profile_complete) return { id: 'profile', label: 'Complete provider profile', href: '/provider/profile' };
   if (!readiness.verified) return { id: 'verification', label: 'Complete provider verification', href: '/provider/verification' };
+  if (!disclosureComplete) return { id: 'disclosure', label: 'Complete marketplace disclosure', href: '/provider/verification' };
   if (trustStatus !== 'normal') return { id: 'trust', label: 'Clear provider trust state', href: '/provider/verification' };
   if (!readiness.first_service_created) return { id: 'service', label: 'Create your first service', href: '/provider/services' };
   if (!readiness.first_service_scoped) return { id: 'scope', label: 'Approve category & location', href: '/provider/setup#service-launch' };
@@ -42,12 +67,13 @@ export async function GET(request: Request) {
     if (!session) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
 
     const supabase = await createSupabaseServerClient();
+    const disclosureColumns = 'legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone';
     const [professionalResult, businessResult] = await Promise.all([
       session.roles.includes('professional')
-        ? supabase.from('professional_profiles').select('id,headline').eq('user_id', session.user_id).limit(1).maybeSingle()
+        ? supabase.from('professional_profiles').select(`id,headline,${disclosureColumns}`).eq('user_id', session.user_id).limit(1).maybeSingle()
         : Promise.resolve({ data: null, error: null }),
       session.roles.includes('business_owner')
-        ? supabase.from('businesses').select('id,name').eq('owner_user_id', session.user_id).limit(1).maybeSingle()
+        ? supabase.from('businesses').select(`id,name,${disclosureColumns}`).eq('owner_user_id', session.user_id).limit(1).maybeSingle()
         : Promise.resolve({ data: null, error: null }),
     ]);
     if (professionalResult.error) throw new Error(professionalResult.error.message);
@@ -59,6 +85,14 @@ export async function GET(request: Request) {
         provider_type: 'professional',
         provider_id: professionalResult.data.id,
         display_name: professionalResult.data.headline?.trim() || 'Professional profile',
+        legal_name: professionalResult.data.legal_name,
+        principal_address: professionalResult.data.principal_address,
+        public_contact_email: professionalResult.data.public_contact_email,
+        public_contact_phone: professionalResult.data.public_contact_phone,
+        grievance_officer_name: professionalResult.data.grievance_officer_name,
+        grievance_officer_designation: professionalResult.data.grievance_officer_designation,
+        grievance_email: professionalResult.data.grievance_email,
+        grievance_phone: professionalResult.data.grievance_phone,
       });
     }
     if (businessResult.data) {
@@ -66,6 +100,14 @@ export async function GET(request: Request) {
         provider_type: 'business',
         provider_id: businessResult.data.id,
         display_name: businessResult.data.name?.trim() || 'Business profile',
+        legal_name: businessResult.data.legal_name,
+        principal_address: businessResult.data.principal_address,
+        public_contact_email: businessResult.data.public_contact_email,
+        public_contact_phone: businessResult.data.public_contact_phone,
+        grievance_officer_name: businessResult.data.grievance_officer_name,
+        grievance_officer_designation: businessResult.data.grievance_officer_designation,
+        grievance_email: businessResult.data.grievance_email,
+        grievance_phone: businessResult.data.grievance_phone,
       });
     }
 
@@ -83,10 +125,12 @@ export async function GET(request: Request) {
       if (trustResult.error) throw new Error(trustResult.error.message);
       const trustStatus = (trustResult.data?.status ?? 'normal') as TrustStatus;
       const trustNormal = trustStatus === 'normal';
-      const marketplaceLive = Boolean(raw.marketplace_live) && trustNormal;
+      const disclosureComplete = marketplaceDisclosureComplete(provider);
+      const marketplaceLive = Boolean(raw.marketplace_live) && trustNormal && disclosureComplete;
       const gates = [
         Boolean(raw.profile_complete),
         Boolean(raw.verified),
+        disclosureComplete,
         trustNormal,
         Boolean(raw.first_service_created),
         Boolean(raw.first_service_scoped),
@@ -100,6 +144,7 @@ export async function GET(request: Request) {
         display_name: provider.display_name,
         profile_complete: Boolean(raw.profile_complete),
         verified: Boolean(raw.verified),
+        marketplace_disclosure_complete: disclosureComplete,
         trust_status: trustStatus,
         trust_reason: trustResult.data?.reason ?? null,
         first_service_created: Boolean(raw.first_service_created),
@@ -110,7 +155,7 @@ export async function GET(request: Request) {
         services_active: Number(raw.services_active ?? 0),
         pending_launch_requests: Number(raw.pending_launch_requests ?? 0),
         progress_percent: progressPercent,
-        next_action: nextAction(raw, trustStatus, marketplaceLive),
+        next_action: nextAction(raw, disclosureComplete, trustStatus, marketplaceLive),
       };
     }));
 

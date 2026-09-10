@@ -35,8 +35,39 @@ export interface CreateProviderServiceInput {
 }
 export interface UpdateProviderServiceInput extends Partial<CreateProviderServiceInput> {}
 
-type ResolvedOwner = { provider_type: 'professional' | 'business'; professional_id: EntityId | null; business_id: EntityId | null; verified: boolean; trust_status: ProviderTrustStatus };
+type MarketplaceDisclosure = {
+  legal_name?: string | null;
+  principal_address?: string | null;
+  public_contact_email?: string | null;
+  public_contact_phone?: string | null;
+  grievance_officer_name?: string | null;
+  grievance_officer_designation?: string | null;
+  grievance_email?: string | null;
+  grievance_phone?: string | null;
+};
+
+type ResolvedOwner = {
+  provider_type: 'professional' | 'business';
+  professional_id: EntityId | null;
+  business_id: EntityId | null;
+  verified: boolean;
+  marketplace_disclosure_complete: boolean;
+  trust_status: ProviderTrustStatus;
+};
 type CanonicalCategory = { id: EntityId; name: string; application_id: EntityId };
+
+function marketplaceDisclosureComplete(provider: MarketplaceDisclosure) {
+  return Boolean(
+    provider.legal_name?.trim()
+    && provider.principal_address?.trim()
+    && provider.public_contact_email?.trim()
+    && provider.public_contact_phone?.trim()
+    && provider.grievance_officer_name?.trim()
+    && provider.grievance_officer_designation?.trim()
+    && provider.grievance_email?.trim()
+    && provider.grievance_phone?.trim(),
+  );
+}
 
 function validateInput(input: CreateProviderServiceInput | UpdateProviderServiceInput, partial = false) {
   if (!partial || input.name !== undefined) if (!input.name?.trim()) throw new Error('Service name is required.');
@@ -71,7 +102,7 @@ async function resolveCanonicalCategory(categoryId: EntityId): Promise<Canonical
   return { id: category.id as EntityId, name: category.name, application_id: category.application_id as EntityId };
 }
 
-async function resolveTrustStatus(owner: Omit<ResolvedOwner, 'trust_status'>): Promise<ProviderTrustStatus> {
+async function resolveTrustStatus(owner: Pick<ResolvedOwner, 'provider_type' | 'professional_id' | 'business_id'>): Promise<ProviderTrustStatus> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc('provider_current_trust_status', {
     p_provider_type: owner.provider_type,
@@ -82,18 +113,31 @@ async function resolveTrustStatus(owner: Omit<ResolvedOwner, 'trust_status'>): P
 
 async function resolveOwner(session: ServerCustomerSession): Promise<ResolvedOwner> {
   const supabase = await createSupabaseServerClient();
+  const disclosureColumns = 'legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone';
   if (session.roles.includes('professional')) {
-    const { data, error } = await supabase.from('professional_profiles').select('id,verified').eq('user_id', session.user_id).maybeSingle();
+    const { data, error } = await supabase.from('professional_profiles').select(`id,verified,${disclosureColumns}`).eq('user_id', session.user_id).maybeSingle();
     if (error) throw new Error(error.message);
     if (!data) throw new Error('Professional profile is required before adding services.');
-    const owner = { provider_type: 'professional' as const, professional_id: data.id as EntityId, business_id: null, verified: Boolean(data.verified) };
+    const owner = {
+      provider_type: 'professional' as const,
+      professional_id: data.id as EntityId,
+      business_id: null,
+      verified: Boolean(data.verified),
+      marketplace_disclosure_complete: marketplaceDisclosureComplete(data),
+    };
     return { ...owner, trust_status: await resolveTrustStatus(owner) };
   }
   if (session.roles.includes('business_owner')) {
-    const { data, error } = await supabase.from('businesses').select('id,verified').eq('owner_user_id', session.user_id).limit(1).maybeSingle();
+    const { data, error } = await supabase.from('businesses').select(`id,verified,${disclosureColumns}`).eq('owner_user_id', session.user_id).limit(1).maybeSingle();
     if (error) throw new Error(error.message);
     if (!data) throw new Error('Business profile is required before adding services.');
-    const owner = { provider_type: 'business' as const, professional_id: null, business_id: data.id as EntityId, verified: Boolean(data.verified) };
+    const owner = {
+      provider_type: 'business' as const,
+      professional_id: null,
+      business_id: data.id as EntityId,
+      verified: Boolean(data.verified),
+      marketplace_disclosure_complete: marketplaceDisclosureComplete(data),
+    };
     return { ...owner, trust_status: await resolveTrustStatus(owner) };
   }
   throw new Error('Provider role is required.');
@@ -112,6 +156,7 @@ async function assertPublishAllowed(owner: ResolvedOwner, status: ProviderServic
   });
   if (profileError) throw new Error(profileError.message);
   if (!profileComplete) throw new Error('Complete your provider profile before publishing a service.');
+  if (!owner.marketplace_disclosure_complete) throw new Error('Complete marketplace public disclosure in Verification before publishing a service.');
   if (!serviceId) throw new Error('Save the service as a draft, then request platform category and location approval from Provider Setup before activation.');
   const { data: scopeReady, error: scopeError } = await supabase.rpc('service_scope_is_launchable', { p_service_id: serviceId });
   if (scopeError) throw new Error(scopeError.message);
