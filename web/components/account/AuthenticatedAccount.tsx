@@ -18,6 +18,7 @@ export default function AuthenticatedAccount() {
   const [user, setUser] = useState<User>();
   const [bookings, setBookings] = useState<CustomerBooking[]>([]);
   const [bookingError, setBookingError] = useState('');
+  const [proposalUnreadCount, setProposalUnreadCount] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -93,9 +94,10 @@ export default function AuthenticatedAccount() {
     },
   ];
 
-  const mobileQuickLinks = [
+  const mobileQuickLinks: Array<{ href: string; label: string; icon: string; badge?: number }> = [
     { href: '/bookings', label: tamil ? 'Bookings' : 'Bookings', icon: '▣' },
     { href: '/orders', label: tamil ? 'Orders' : 'Orders', icon: '□' },
+    { href: '/requirements', label: tamil ? 'தேவைகள்' : 'Needs', icon: '◇', badge: proposalUnreadCount },
     { href: '/messages', label: tamil ? 'செய்திகள்' : 'Messages', icon: '✉' },
     { href: '/account/profile', label: tamil ? 'Profile' : 'Profile', icon: '◯' },
   ];
@@ -115,8 +117,11 @@ export default function AuthenticatedAccount() {
           <Link href="/account/settings" className="customer-mobile-quick-settings" aria-label={tamil ? 'Account அமைப்புகள்' : 'Account settings'}>⚙</Link>
         </div>
         <nav className="customer-mobile-quick-nav" aria-label={tamil ? 'Customer முக்கிய வழிசெலுத்தல்' : 'Customer primary navigation'}>
-          {mobileQuickLinks.map((link) => <Link href={link.href} key={link.href}>
-            <span aria-hidden="true">{link.icon}</span>
+          {mobileQuickLinks.map((link) => <Link href={link.href} key={link.href} aria-label={link.badge ? `${link.label}, ${link.badge} new proposals` : link.label}>
+            <span className="customer-mobile-quick-icon" aria-hidden="true">
+              {link.icon}
+              {link.badge ? <span className="customer-mobile-quick-badge">{link.badge > 99 ? '99+' : link.badge}</span> : null}
+            </span>
             <span>{link.label}</span>
           </Link>)}
         </nav>
@@ -126,7 +131,7 @@ export default function AuthenticatedAccount() {
 
       <WorkspaceSwitcher currentWorkspace="customer" />
 
-      <CustomerAccountProposalSummary />
+      <CustomerAccountProposalSummary onUnreadChange={setProposalUnreadCount} />
 
       <section className="dashboard-grid" aria-label={tamil ? 'Customer வழிசெலுத்தல்' : 'Customer navigation'}>
         {navigationGroups.map((group) => (
@@ -204,7 +209,7 @@ export default function AuthenticatedAccount() {
           }
           .customer-mobile-quick-nav {
             display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 4px;
           }
           .customer-mobile-quick-nav a {
@@ -227,7 +232,29 @@ export default function AuthenticatedAccount() {
             background: var(--color-selected);
             color: var(--color-primary-strong);
           }
-          .customer-mobile-quick-nav a > span:first-child { font-size: 1.03rem; }
+          .customer-mobile-quick-nav .customer-mobile-quick-icon {
+            position: relative;
+            overflow: visible;
+            font-size: 1.03rem;
+            line-height: 1;
+          }
+          .customer-mobile-quick-badge {
+            position: absolute;
+            top: -8px;
+            right: -13px;
+            display: grid;
+            min-width: 17px;
+            height: 17px;
+            place-items: center;
+            padding: 0 4px;
+            border: 2px solid white;
+            border-radius: 999px;
+            background: var(--color-primary-strong);
+            color: white;
+            font-size: .52rem;
+            font-weight: 850;
+            line-height: 1;
+          }
           .customer-mobile-quick-nav a > span:last-child {
             max-width: 100%;
             overflow: hidden;
