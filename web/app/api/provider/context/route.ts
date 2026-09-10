@@ -74,6 +74,7 @@ export async function GET(request: Request) {
 
       const disclosureComplete = marketplaceDisclosureComplete(business);
       const profileComplete = profileBasicsComplete(business.name, business.description, business.location);
+      const trustStatus = (trust?.status ?? 'normal') as TrustStatus;
       return NextResponse.json({
         provider: {
           id: business.id,
@@ -83,11 +84,11 @@ export async function GET(request: Request) {
           verified: business.verified,
           profile_complete: profileComplete,
           marketplace_disclosure_complete: disclosureComplete,
-          public_profile_ready: Boolean(business.verified) && disclosureComplete,
+          public_profile_ready: Boolean(business.verified) && disclosureComplete && trustStatus === 'normal',
           location: business.location,
           pending_booking_count: count ?? 0,
           unread_lead_count: unreadLeadCount ?? 0,
-          trust_status: (trust?.status ?? 'normal') as TrustStatus,
+          trust_status: trustStatus,
           trust_reason: trust?.reason ?? null,
         },
       });
@@ -124,6 +125,7 @@ export async function GET(request: Request) {
     const displayName = professional.headline?.trim() || user?.name?.trim() || 'Professional';
     const disclosureComplete = marketplaceDisclosureComplete(professional);
     const profileComplete = profileBasicsComplete(professional.headline, professional.description, professional.service_area);
+    const trustStatus = (trust?.status ?? 'normal') as TrustStatus;
     return NextResponse.json({
       provider: {
         id: professional.id,
@@ -133,11 +135,11 @@ export async function GET(request: Request) {
         verified: professional.verified,
         profile_complete: profileComplete,
         marketplace_disclosure_complete: disclosureComplete,
-        public_profile_ready: Boolean(professional.verified) && disclosureComplete && profileComplete,
+        public_profile_ready: Boolean(professional.verified) && disclosureComplete && profileComplete && trustStatus === 'normal',
         location: professional.service_area,
         pending_booking_count: count ?? 0,
         unread_lead_count: unreadLeadCount ?? 0,
-        trust_status: (trust?.status ?? 'normal') as TrustStatus,
+        trust_status: trustStatus,
         trust_reason: trust?.reason ?? null,
       },
     });

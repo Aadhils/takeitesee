@@ -16,6 +16,7 @@ type ProviderProfile = {
   verified: boolean;
   profile_complete: boolean;
   marketplace_disclosure_complete: boolean;
+  trust_status: 'normal' | 'reverification_required' | 'suspended';
   services_active: number;
 };
 
@@ -83,6 +84,19 @@ export default function ProviderPublicReadinessManager() {
     const contentReady = professional
       ? profile.services_active > 0 || activeRoles > 0 || publicResumeEnabled
       : profile.services_active > 0;
+    const trustNormal = profile.trust_status === 'normal';
+    const trustDetail = profile.trust_status === 'suspended'
+      ? text('Public marketplace visibility is paused while this Provider account is suspended. Platform restoration is required before the public profile can return.', 'இந்த Provider account suspended நிலையில் இருக்கும் வரை public marketplace visibility pause ஆகும். Public profile மீண்டும் வர platform restoration தேவை.')
+      : profile.trust_status === 'reverification_required'
+        ? text('Fresh verification is required before marketplace trust access and public visibility can resume.', 'Marketplace trust access மற்றும் public visibility மீண்டும் தொடங்க fresh verification தேவை.')
+        : text('Marketplace trust state allows this Provider identity to be shown publicly.', 'Marketplace trust state இந்த Provider identity-ஐ public-ஆக காட்ட அனுமதிக்கிறது.');
+    const trustStep: ReadinessStep = {
+      key: 'trust',
+      done: trustNormal,
+      label: text('Marketplace trust access', 'Marketplace trust access'),
+      detail: trustDetail,
+      href: profile.trust_status === 'reverification_required' ? '/provider/verification' : '/provider/setup',
+    };
 
     const steps: ReadinessStep[] = professional ? [
       {
@@ -106,6 +120,7 @@ export default function ProviderPublicReadinessManager() {
         detail: text('Legal identity, public contact, principal address and grievance contact must be present.', 'Legal identity, public contact, principal address மற்றும் grievance contact இருக்க வேண்டும்.'),
         href: '/provider/verification',
       },
+      trustStep,
     ] : [
       {
         key: 'verification',
@@ -121,6 +136,7 @@ export default function ProviderPublicReadinessManager() {
         detail: text('Legal identity, public contact, principal address and grievance contact must be present on the Business profile.', 'Business profile-ல் legal identity, public contact, principal address மற்றும் grievance contact இருக்க வேண்டும்.'),
         href: '/provider/verification',
       },
+      trustStep,
     ];
 
     return {
@@ -168,8 +184,8 @@ export default function ProviderPublicReadinessManager() {
         </div>
         <p>{readiness.publicProfileReady
           ? profile.provider_type === 'business'
-            ? text('Your verified Business identity and marketplace disclosure are ready for the public storefront.', 'உங்கள் verified Business identity மற்றும் marketplace disclosure public storefront-க்கு ready.')
-            : text('Your Professional profile basics, verification and marketplace disclosure are ready for public visibility.', 'உங்கள் Professional profile basics, verification மற்றும் marketplace disclosure public visibility-க்கு ready.')
+            ? text('Your verified Business identity, marketplace disclosure and trust state are ready for the public storefront.', 'உங்கள் verified Business identity, marketplace disclosure மற்றும் trust state public storefront-க்கு ready.')
+            : text('Your Professional profile basics, verification, marketplace disclosure and trust state are ready for public visibility.', 'உங்கள் Professional profile basics, verification, marketplace disclosure மற்றும் trust state public visibility-க்கு ready.')
           : text('Complete only the items marked Required below. Completed items do not need to be repeated.', 'கீழே Required என்று உள்ள items மட்டும் complete செய்யுங்கள். ஏற்கனவே Done ஆனவற்றை repeat செய்ய தேவையில்லை.')}</p>
         {readiness.publicProfileReady ? <Link href={publicHref} className="button button-primary">{profile.provider_type === 'business' ? text('View public storefront', 'Public storefront பார்க்க') : text('View public profile', 'Public profile பார்க்க')}</Link> : null}
       </Card>
@@ -222,6 +238,12 @@ export default function ProviderPublicReadinessManager() {
           </>}
         </div> : null}
       </Card>
+
+      {profile.trust_status !== 'normal' ? <Alert title={text('Public visibility paused by trust state', 'Trust state காரணமாக public visibility pause')} tone={profile.trust_status === 'suspended' ? 'danger' : 'warning'}>
+        {profile.trust_status === 'suspended'
+          ? text('Your Provider public profile/storefront, public talents and published career data stay unavailable while the account is suspended. Existing private account and booking operations remain separate.', 'Provider account suspended இருக்கும் வரை public profile/storefront, public talents மற்றும் published career data unavailable ஆக இருக்கும். Existing private account மற்றும் booking operations தனியாக தொடரும்.')
+          : text('Your public marketplace presence stays unavailable until fresh verification restores normal trust access.', 'Fresh verification normal trust access-ஐ restore செய்யும் வரை public marketplace presence unavailable ஆக இருக்கும்.')}
+      </Alert> : null}
 
       {!profile.marketplace_disclosure_complete ? <Alert title={text('Why disclosure is required', 'Disclosure ஏன் தேவை')} tone="warning">
         {profile.provider_type === 'business'

@@ -1,0 +1,10 @@
+Provider trust public visibility continuity contract
+
+1. Public Provider visibility requires the canonical Provider trust state to allow marketplace access in addition to existing verification, profile and disclosure gates.
+2. A suspended or re-verification-required Business or Professional is not anonymously readable as a public Provider identity; direct public routes and canonical @handle routes therefore fail closed through the same RLS-backed loaders.
+3. Professional public roles, published career profile, certifications, education, experience and skills require normal marketplace trust on their public/non-owner RLS branches; Provider-owner reads remain available for workspace recovery and editing.
+4. Existing Services already require normal trust through launch-ready service RLS. Existing Business Products and Product order requests already require normal trust through Product publication/order eligibility rules; those state machines are unchanged here.
+5. Provider context, @handle sharing readiness and the shared Public Readiness workspace must not report a Provider as public-ready unless trust status is normal.
+6. A reserved Provider handle stays reserved while public visibility is paused, but it is not presented as live/shareable until the Provider returns to normal trust and satisfies the existing public-profile gates.
+7. Suspension/re-verification does not change the one-final-Provider-identity rule, does not expose another Provider type, and does not change unified Professional/Business matching semantics for eligible Providers.
+8. Finance, Cashfree, payment, refund, payout, settlement, reconciliation, recovery and recurrence behavior remain outside this change.
