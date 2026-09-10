@@ -32,6 +32,7 @@ export default function ProviderReviewsManager() {
   const [editing, setEditing] = useState<string | null>(null);
   const [responseText, setResponseText] = useState('');
   const [busy, setBusy] = useState(false);
+  const [targetBookingId, setTargetBookingId] = useState('');
 
   const load = async () => {
     try {
@@ -48,7 +49,22 @@ export default function ProviderReviewsManager() {
     }
   };
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    try {
+      setTargetBookingId(new URL(window.location.href).searchParams.get('booking')?.trim() ?? '');
+    } catch {
+      setTargetBookingId('');
+    }
+    void load();
+  }, []);
+
+  useEffect(() => {
+    if (loading || !targetBookingId || !reviews.some((review) => review.booking_id === targetBookingId)) return;
+    const element = document.getElementById(`provider-review-${targetBookingId}`);
+    if (!element) return;
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    window.setTimeout(() => element.focus({ preventScroll: true }), 250);
+  }, [loading, reviews, targetBookingId]);
 
   const distribution = useMemo(() => [5, 4, 3, 2, 1].map((rating) => {
     const count = summary.counts?.[rating] ?? 0;
@@ -86,6 +102,7 @@ export default function ProviderReviewsManager() {
 
   return <LiveProviderShell active="/provider/reviews">
     <ProviderHeading eyebrow="Customer voice" title="Reviews" description="See real reviews from completed services and publish an official provider response." />
+    {targetBookingId && !loading && reviews.some((review) => review.booking_id === targetBookingId) ? <Card style={{ marginBottom: '1rem' }}><strong>Review opened from notification</strong><p className="summary-note" style={{ marginBottom: 0 }}>The matching completed-booking review is highlighted below so you can read it and respond directly.</p></Card> : null}
     <div className="provider-review-summary">
       <ProviderDashboardSummary label="Average rating" value={summary.total ? `${summary.average.toFixed(1)} / 5` : '—'} detail={`${summary.total} review${summary.total === 1 ? '' : 's'}`} tone="success" />
       <ProviderDashboardSummary label="Five-star share" value={`${summary.five_star_share}%`} detail="Based on published reviews" tone="info" />
@@ -98,15 +115,24 @@ export default function ProviderReviewsManager() {
     {!loading && !error && reviews.length === 0 ? <Card><EmptyState title="No customer reviews yet">Completed bookings that receive a review will appear here.</EmptyState></Card> : null}
 
     {!loading && reviews.length ? <div className="provider-review-list">
-      {reviews.map((review) => <Card className="provider-review-card" key={review.id}>
-        <div className="review-card-top"><div><strong>Customer review</strong><span>{new Date(review.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span></div><Stars value={review.rating} /></div>
-        <span className="eyebrow">{review.service_name}</span>
-        <p>{review.comment || 'No written comment provided.'}</p>
-        {review.provider_response && editing !== review.id ? <div style={{ borderTop: '1px solid var(--border, #d9dce5)', paddingTop: '.9rem', marginTop: '.9rem' }}><strong>Your response</strong><p>{review.provider_response}</p><Button type="button" variant="quiet" onClick={() => { setEditing(review.id); setResponseText(review.provider_response); }}>Edit response</Button></div> : null}
-        {editing === review.id ? <div style={{ display: 'grid', gap: '.65rem', marginTop: '.9rem' }}><label style={{ display: 'grid', gap: '.4rem' }}><strong>{review.provider_response ? 'Update your response' : 'Respond to this review'}</strong><textarea rows={4} maxLength={1000} value={responseText} onChange={(event) => setResponseText(event.target.value)} placeholder="Thank the customer or respond professionally to their feedback." style={{ width: '100%', padding: '.8rem', border: '1px solid #d9d9e3', borderRadius: '.7rem', font: 'inherit' }} /></label><div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}><Button type="button" disabled={busy || responseText.trim().length < 3} onClick={() => void saveResponse(review)}>{busy ? 'Saving…' : 'Publish response'}</Button><Button type="button" variant="quiet" disabled={busy} onClick={() => { setEditing(null); setResponseText(''); }}>Cancel</Button></div></div> : null}
-        {!review.provider_response && editing !== review.id ? <Button type="button" variant="secondary" onClick={() => { setEditing(review.id); setResponseText(''); }}>Respond to review</Button> : null}
-        <small>Booking {review.booking_id.slice(0, 8).toUpperCase()}</small>
-      </Card>)}
+      {reviews.map((review) => {
+        const targeted = review.booking_id === targetBookingId;
+        return <Card
+          id={`provider-review-${review.booking_id}`}
+          tabIndex={targeted ? -1 : undefined}
+          className="provider-review-card"
+          style={targeted ? { borderColor: 'var(--color-primary)', boxShadow: '0 0 0 3px var(--color-selected)' } : undefined}
+          key={review.id}
+        >
+          <div className="review-card-top"><div><strong>{targeted ? 'Customer review · notification target' : 'Customer review'}</strong><span>{new Date(review.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span></div><Stars value={review.rating} /></div>
+          <span className="eyebrow">{review.service_name}</span>
+          <p>{review.comment || 'No written comment provided.'}</p>
+          {review.provider_response && editing !== review.id ? <div style={{ borderTop: '1px solid var(--border, #d9dce5)', paddingTop: '.9rem', marginTop: '.9rem' }}><strong>Your public response</strong><p>{review.provider_response}</p><Button type="button" variant="quiet" onClick={() => { setEditing(review.id); setResponseText(review.provider_response); }}>Edit response</Button></div> : null}
+          {editing === review.id ? <div style={{ display: 'grid', gap: '.65rem', marginTop: '.9rem' }}><label style={{ display: 'grid', gap: '.4rem' }}><strong>{review.provider_response ? 'Update your public response' : 'Respond publicly to this review'}</strong><textarea rows={4} maxLength={1000} value={responseText} onChange={(event) => setResponseText(event.target.value)} placeholder="Thank the customer or respond professionally to their feedback. Your response is visible wherever this published review appears." style={{ width: '100%', padding: '.8rem', border: '1px solid #d9d9e3', borderRadius: '.7rem', font: 'inherit' }} /></label><div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}><Button type="button" disabled={busy || responseText.trim().length < 3} onClick={() => void saveResponse(review)}>{busy ? 'Saving…' : 'Publish response'}</Button><Button type="button" variant="quiet" disabled={busy} onClick={() => { setEditing(null); setResponseText(''); }}>Cancel</Button></div></div> : null}
+          {!review.provider_response && editing !== review.id ? <Button type="button" variant="secondary" onClick={() => { setEditing(review.id); setResponseText(''); }}>Respond to review</Button> : null}
+          <small>Verified completed booking · {review.booking_id.slice(0, 8).toUpperCase()}</small>
+        </Card>;
+      })}
     </div> : null}
   </LiveProviderShell>;
 }
