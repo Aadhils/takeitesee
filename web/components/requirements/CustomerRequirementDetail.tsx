@@ -64,7 +64,15 @@ function relationName(value: RequirementRow['platform_categories'] | Requirement
   const row = Array.isArray(value) ? value[0] : value;
   return row?.name || '';
 }
-function formatMoney(minor: number, currency: 'INR' | 'USD', locale: string) { return new Intl.NumberFormat(locale, { style: 'currency', currency, maximumFractionDigits: 0 }).format(minor / 100); }
+function formatMoney(minor: number, currency: 'INR' | 'USD', locale: string) {
+  const hasMinorUnits = Math.abs(minor) % 100 !== 0;
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: hasMinorUnits ? 2 : 0,
+    maximumFractionDigits: 2,
+  }).format(minor / 100);
+}
 function formatBudget(row: RequirementRow, locale: string, negotiableLabel: string) { if (row.budget_type === 'negotiable') return negotiableLabel; if (row.budget_type === 'fixed') return formatMoney(Number(row.budget_min_minor ?? 0), row.currency, locale); return `${formatMoney(Number(row.budget_min_minor ?? 0), row.currency, locale)} – ${formatMoney(Number(row.budget_max_minor ?? 0), row.currency, locale)}`; }
 function tone(status: RequirementStatus) { if (status === 'open') return 'success' as const; if (status === 'paused') return 'warning' as const; if (status === 'awarded') return 'info' as const; if (status === 'fulfilled') return 'success' as const; return 'neutral' as const; }
 function proposalTone(status: Proposal['status']) { if (status === 'accepted') return 'success' as const; if (status === 'submitted') return 'info' as const; if (status === 'declined') return 'danger' as const; return 'neutral' as const; }
@@ -78,6 +86,7 @@ export default function CustomerRequirementDetail({ requirementId }: { requireme
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const [proposalBusyId, setProposalBusyId] = useState('');
+  const [pendingAcceptId, setPendingAcceptId] = useState('');
   const tamil = locale.toLowerCase().startsWith('ta');
   const durationLabel = (minutes: number | null) => {
     if (minutes == null) return t('common.flexible');
@@ -128,6 +137,7 @@ export default function CustomerRequirementDetail({ requirementId }: { requireme
       const response = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/proposals/${encodeURIComponent(proposalId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ decision }) });
       const payload = await response.json() as { error?: string };
       if (!response.ok) throw new Error(payload.error || t('req.updateFailedFallback'));
+      if (decision === 'accept') setPendingAcceptId('');
       setNotice(decision === 'accept' ? t('req.providerSelected') : t('req.proposalDeclined')); await load();
     } catch (cause) { setError(cause instanceof Error ? cause.message : t('req.updateFailedFallback')); }
     finally { setProposalBusyId(''); }
@@ -137,6 +147,18 @@ export default function CustomerRequirementDetail({ requirementId }: { requireme
   const categoryName = relationName(requirement.platform_categories);
   const locationName = relationName(requirement.platform_locations);
   const canReviewProposals = ['open', 'paused'].includes(requirement.status);
+  const submittedProposals = proposals.filter((proposal) => proposal.status === 'submitted');
+  const submittedProfessionalCount = submittedProposals.filter((proposal) => proposal.provider_type === 'professional').length;
+  const submittedBusinessCount = submittedProposals.filter((proposal) => proposal.provider_type === 'business').length;
+  const submittedPricingBases = new Set(submittedProposals.map((proposal) => proposal.pricing_basis || 'per_occurrence'));
+  const quotesDirectlyComparable = submittedProposals.length > 1 && submittedPricingBases.size === 1;
+  const lowestComparableQuote = quotesDirectlyComparable ? Math.min(...submittedProposals.map((proposal) => proposal.amount_minor)) : null;
+  const orderedProposals = [...proposals].sort((left, right) => {
+    const priority: Record<Proposal['status'], number> = { accepted: 0, submitted: 1, declined: 2, withdrawn: 3 };
+    const statusDifference = priority[left.status] - priority[right.status];
+    if (statusDifference !== 0) return statusDifference;
+    return new Date(right.submitted_at).getTime() - new Date(left.submitted_at).getTime();
+  });
 
   return <div style={{ display: 'grid', gap: '1rem' }}>
     <Link href="/requirements">← {t('req.back')}</Link>
@@ -151,18 +173,43 @@ export default function CustomerRequirementDetail({ requirementId }: { requireme
 
     <Card className="policy-card">
       <div className="section-heading"><div><span className="eyebrow">{t('req.providerProposals')}</span><h2>{t('req.compareProviders')}</h2></div><Badge tone="info">{proposals.length}</Badge></div>
+      {submittedProposals.length > 0 && canReviewProposals ? <div className="customer-proposal-compare-guide">
+        <strong>{tamil ? 'Provider-ஐ தேர்வு செய்வதற்கு முன் compare செய்யுங்கள்' : 'Compare before selecting a provider'}</strong>
+        <p>{tamil ? 'Provider identity, service, quote basis, amount, start date மற்றும் proposal message அனைத்தையும் பார்த்து முடிவு செய்யுங்கள். Select செய்த பிறகு இந்த requirement அந்த Provider-க்கு award ஆகும்.' : 'Review provider identity, service, quote basis, amount, start date and proposal message before deciding. Selecting a provider awards this requirement to that provider.'}</p>
+        <div className="customer-proposal-compare-badges"><Badge tone="info">{submittedProposals.length} {tamil ? 'active proposals' : 'active proposals'}</Badge>{submittedProfessionalCount > 0 ? <Badge tone="neutral">{submittedProfessionalCount} {tamil ? 'Professional' : submittedProfessionalCount === 1 ? 'Professional' : 'Professionals'}</Badge> : null}{submittedBusinessCount > 0 ? <Badge tone="neutral">{submittedBusinessCount} {tamil ? 'Business' : submittedBusinessCount === 1 ? 'Business' : 'Businesses'}</Badge> : null}</div>
+        {submittedPricingBases.size > 1 ? <p className="summary-note">{tamil ? 'கவனம்: சில recurring proposals per-occurrence quote, சில whole-requirement quote. இந்த amounts-ஐ நேரடியாக cheapest என்று compare செய்ய வேண்டாம்.' : 'Note: these recurring proposals use different quote bases. Per-occurrence and whole-requirement amounts are not directly comparable.'}</p> : null}
+      </div> : null}
       {proposals.length === 0 ? <p className="detail-copy">{t('req.noProposals')}</p> : <div style={{ display: 'grid', gap: '1rem', marginTop: '1rem' }}>
-        {proposals.map((proposal) => <div key={proposal.id} style={{ border: '1px solid #e7eaf0', borderRadius: '16px', padding: '1rem' }}>
-          <div className="section-heading"><div><span className="eyebrow">{proposal.proposal_reference}</span><h3>{proposal.provider_display_name}</h3><p className="summary-note">{status(proposal.provider_type)} · {proposal.service_name}</p></div><Badge tone={proposalTone(proposal.status)}>{status(proposal.status)}</Badge></div>
-          <dl className="review-details"><div><dt>{t('common.quote')}</dt><dd>{formatMoney(proposal.amount_minor, proposal.currency, locale)}</dd></div><div><dt>Quote basis</dt><dd>{pricingBasisLabel(proposal.pricing_basis || 'per_occurrence')}</dd></div><div><dt>{t('common.estimatedStart')}</dt><dd>{proposal.estimated_start_date || t('common.flexible')}</dd></div><div><dt>{t('common.submitted')}</dt><dd>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(proposal.submitted_at))}</dd></div></dl>
-          <p className="detail-copy">{proposal.message}</p>
-          <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', alignItems: 'start' }}>{proposal.status === 'submitted' && canReviewProposals ? <><Button type="button" loading={proposalBusyId === proposal.id} onClick={() => void decideProposal(proposal.id, 'accept')}>{t('req.acceptProposal')}</Button><Button type="button" variant="quiet" loading={proposalBusyId === proposal.id} onClick={() => void decideProposal(proposal.id, 'decline')}>{t('req.decline')}</Button></> : null}<MarketplaceReportForm targetType="proposal" targetId={proposal.id} label={t('req.reportProposal')} /></div>
+        {orderedProposals.map((proposal) => { const pendingAccept = pendingAcceptId === proposal.id && proposal.status === 'submitted' && canReviewProposals; const lowestComparable = lowestComparableQuote != null && proposal.status === 'submitted' && proposal.amount_minor === lowestComparableQuote; return <div key={proposal.id} className={`customer-proposal-card${pendingAccept ? ' customer-proposal-card-selected' : ''}`}>
+          <div className="section-heading"><div><span className="eyebrow">{proposal.proposal_reference}</span><h3>{proposal.provider_display_name}</h3><p className="summary-note">{status(proposal.provider_type)} · {proposal.service_name}</p></div><div className="customer-proposal-statuses">{lowestComparable ? <Badge tone="success">{tamil ? 'குறைந்த comparable quote' : 'Lowest comparable quote'}</Badge> : null}<Badge tone={proposalTone(proposal.status)}>{status(proposal.status)}</Badge></div></div>
+          <dl className="review-details"><div><dt>{tamil ? 'Provider identity' : 'Provider identity'}</dt><dd>{status(proposal.provider_type)}</dd></div><div><dt>{t('common.quote')}</dt><dd>{formatMoney(proposal.amount_minor, proposal.currency, locale)}</dd></div><div><dt>{tamil ? 'Quote basis' : 'Quote basis'}</dt><dd>{pricingBasisLabel(proposal.pricing_basis || 'per_occurrence')}</dd></div><div><dt>{t('common.estimatedStart')}</dt><dd>{proposal.estimated_start_date || t('common.flexible')}</dd></div><div><dt>{t('common.submitted')}</dt><dd>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(proposal.submitted_at))}</dd></div></dl>
+          <div className="customer-proposal-message"><span className="eyebrow">{tamil ? 'Provider message' : 'Provider message'}</span><p className="detail-copy">{proposal.message}</p></div>
+          {pendingAccept ? <div className="customer-proposal-confirm" role="region" aria-label={tamil ? 'Provider தேர்வு உறுதி' : 'Confirm provider selection'}>
+            <strong>{tamil ? 'இந்த Provider-ஐ தேர்வு செய்வதை உறுதி செய்யவா?' : 'Confirm this provider selection?'}</strong>
+            <p>{tamil ? `${proposal.provider_display_name}-ஐ தேர்வு செய்தால் இந்த requirement award ஆகும்; மற்ற submitted proposals decline ஆகும். இந்த action payment-ஐ தொடங்காது.` : `Selecting ${proposal.provider_display_name} awards this requirement and declines the other submitted proposals. This action does not start a payment.`}</p>
+            <dl className="review-details"><div><dt>{tamil ? 'Provider' : 'Provider'}</dt><dd>{proposal.provider_display_name} · {status(proposal.provider_type)}</dd></div><div><dt>{t('common.service')}</dt><dd>{proposal.service_name}</dd></div><div><dt>{t('common.quote')}</dt><dd>{formatMoney(proposal.amount_minor, proposal.currency, locale)}</dd></div><div><dt>{tamil ? 'Quote basis' : 'Quote basis'}</dt><dd>{pricingBasisLabel(proposal.pricing_basis || 'per_occurrence')}</dd></div><div><dt>{t('common.estimatedStart')}</dt><dd>{proposal.estimated_start_date || t('common.flexible')}</dd></div></dl>
+            <div className="customer-proposal-confirm-actions"><Button type="button" loading={proposalBusyId === proposal.id} onClick={() => void decideProposal(proposal.id, 'accept')}>{tamil ? 'ஆம், இந்த Provider-ஐ தேர்வு செய்' : 'Yes, select this provider'}</Button><Button type="button" variant="quiet" disabled={proposalBusyId === proposal.id} onClick={() => setPendingAcceptId('')}>{tamil ? 'Compare செய்ய திரும்பு' : 'Keep comparing'}</Button></div>
+          </div> : null}
+          <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', alignItems: 'start' }}>{proposal.status === 'submitted' && canReviewProposals && !pendingAccept ? <><Button type="button" loading={proposalBusyId === proposal.id} onClick={() => setPendingAcceptId(proposal.id)}>{tamil ? 'இந்த Provider-ஐ தேர்வு செய்' : 'Select this provider'}</Button><Button type="button" variant="quiet" loading={proposalBusyId === proposal.id} onClick={() => void decideProposal(proposal.id, 'decline')}>{t('req.decline')}</Button></> : null}<MarketplaceReportForm targetType="proposal" targetId={proposal.id} label={t('req.reportProposal')} /></div>
           {proposal.status === 'accepted' ? <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center', flexWrap: 'wrap', marginTop: '.6rem' }}><Link className="button button-secondary" href="/messages">{t('req.openChat')}</Link><p className="summary-note">{t('req.privateOnly')}</p></div> : null}
-        </div>)}
+        </div>; })}
       </div>}
     </Card>
 
     {requirement.status === 'awarded' || requirement.status === 'fulfilled' ? <RequirementJobPanel requirementId={requirementId} requirementStatus={requirement.status} /> : null}
     <Card className="policy-card"><span className="eyebrow">{t('req.auditHistory')}</span><h2>{t('req.lifecycle')}</h2><div style={{ display: 'grid', gap: '.75rem', marginTop: '1rem' }}>{events.map((event) => <div key={event.id} style={{ borderBottom: '1px solid #ececf2', paddingBottom: '.75rem' }}><strong>{event.event_type === 'created' ? t('req.postedEvent') : `${t('req.statusChanged')} ${status(event.to_status)}`}</strong><p className="summary-note">{event.from_status ? `${status(event.from_status)} → ${status(event.to_status)} · ` : ''}{new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(event.created_at))}</p></div>)}</div></Card>
+    <style jsx global>{`
+      .customer-proposal-compare-guide { display: grid; gap: .55rem; margin-top: 1rem; padding: .9rem 1rem; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface-muted); }
+      .customer-proposal-compare-guide p { margin: 0; }
+      .customer-proposal-compare-badges, .customer-proposal-statuses { display: flex; gap: .45rem; flex-wrap: wrap; align-items: center; }
+      .customer-proposal-statuses { justify-content: flex-end; }
+      .customer-proposal-card { border: 1px solid var(--color-border); border-radius: 16px; padding: 1rem; }
+      .customer-proposal-card-selected { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-selected); }
+      .customer-proposal-message { margin: .85rem 0; padding: .8rem .9rem; border-radius: 12px; background: var(--color-surface-muted); }
+      .customer-proposal-message p { margin: .35rem 0 0; }
+      .customer-proposal-confirm { display: grid; gap: .75rem; margin: 1rem 0; padding: 1rem; border: 1px solid var(--color-primary); border-radius: 14px; background: var(--color-selected); }
+      .customer-proposal-confirm > p { margin: 0; }
+      .customer-proposal-confirm-actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+    `}</style>
   </div>;
 }
