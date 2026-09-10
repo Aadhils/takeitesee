@@ -26,12 +26,21 @@ export async function GET(request: Request) {
       if (businessError) throw new Error(businessError.message);
       if (!business) throw new Error('Business profile not found.');
 
-      const [{ count, error: countError }, { data: trust, error: trustError }] = await Promise.all([
+      const [
+        { count, error: countError },
+        { data: trust, error: trustError },
+        { count: unreadLeadCount, error: unreadLeadCountError },
+      ] = await Promise.all([
         supabase.from('bookings').select('id', { count: 'exact', head: true }).eq('business_id', business.id).eq('status', 'pending'),
         supabase.from('provider_trust_states').select('status,reason').eq('business_id', business.id).maybeSingle(),
+        supabase.from('notifications').select('id', { count: 'exact', head: true })
+          .eq('recipient_user_id', session.user_id)
+          .eq('event_type', 'provider_requirement_match')
+          .is('read_at', null),
       ]);
       if (countError) throw new Error(countError.message);
       if (trustError) throw new Error(trustError.message);
+      if (unreadLeadCountError) throw new Error(unreadLeadCountError.message);
 
       return NextResponse.json({
         provider: {
@@ -42,6 +51,7 @@ export async function GET(request: Request) {
           verified: business.verified,
           location: business.location,
           pending_booking_count: count ?? 0,
+          unread_lead_count: unreadLeadCount ?? 0,
           trust_status: (trust?.status ?? 'normal') as TrustStatus,
           trust_reason: trust?.reason ?? null,
         },
@@ -57,14 +67,24 @@ export async function GET(request: Request) {
     if (professionalError) throw new Error(professionalError.message);
     if (!professional) throw new Error('Professional profile not found.');
 
-    const [{ data: user, error: userError }, { count, error: countError }, { data: trust, error: trustError }] = await Promise.all([
+    const [
+      { data: user, error: userError },
+      { count, error: countError },
+      { data: trust, error: trustError },
+      { count: unreadLeadCount, error: unreadLeadCountError },
+    ] = await Promise.all([
       supabase.from('users').select('name').eq('id', session.user_id).maybeSingle(),
       supabase.from('bookings').select('id', { count: 'exact', head: true }).eq('professional_id', professional.id).eq('status', 'pending'),
       supabase.from('provider_trust_states').select('status,reason').eq('professional_id', professional.id).maybeSingle(),
+      supabase.from('notifications').select('id', { count: 'exact', head: true })
+        .eq('recipient_user_id', session.user_id)
+        .eq('event_type', 'provider_requirement_match')
+        .is('read_at', null),
     ]);
     if (userError) throw new Error(userError.message);
     if (countError) throw new Error(countError.message);
     if (trustError) throw new Error(trustError.message);
+    if (unreadLeadCountError) throw new Error(unreadLeadCountError.message);
 
     const displayName = professional.headline?.trim() || user?.name?.trim() || 'Professional';
     return NextResponse.json({
@@ -76,6 +96,7 @@ export async function GET(request: Request) {
         verified: professional.verified,
         location: professional.service_area,
         pending_booking_count: count ?? 0,
+        unread_lead_count: unreadLeadCount ?? 0,
         trust_status: (trust?.status ?? 'normal') as TrustStatus,
         trust_reason: trust?.reason ?? null,
       },
