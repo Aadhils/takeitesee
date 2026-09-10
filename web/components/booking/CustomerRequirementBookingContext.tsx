@@ -37,7 +37,7 @@ export default function CustomerRequirementBookingContext({ bookingId }: { booki
     ? `/messages?conversation=${encodeURIComponent(context.conversation_id)}`
     : '/messages';
 
-  return <Card className="policy-card">
+  return <Card id="requirement-completion" className="policy-card" tabIndex={-1}>
     <span className="eyebrow">Requirement coordination</span>
     <h2>{tamil ? 'Selected Provider உடன் coordination தொடருங்கள்' : 'Continue with your selected provider'}</h2>
     <p className="detail-copy">
