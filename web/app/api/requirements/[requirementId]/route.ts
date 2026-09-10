@@ -81,7 +81,12 @@ export async function GET(request: Request, context: RouteContext) {
     const session = await productionAuthProvider.requireCustomer(request);
     const { requirementId } = await context.params;
     const supabase = await createSupabaseServerClient();
-    const [{ data: requirement, error }, { data: events, error: eventError }, { data: proposals, error: proposalError }] = await Promise.all([
+    const [
+      { data: requirement, error },
+      { data: events, error: eventError },
+      { data: proposals, error: proposalError },
+      { data: conversation, error: conversationError },
+    ] = await Promise.all([
       supabase
         .from('customer_requirements')
         .select('id,requirement_reference,customer_id,category_id,location_id,title,description,service_mode,budget_type,budget_min_minor,budget_max_minor,currency,needed_by,preferred_start_time,expected_duration_minutes,schedule_pattern,recurrence_frequency,recurrence_interval,recurrence_count,recurrence_weekdays,status,published_at,closed_at,awarded_at,accepted_proposal_id,created_at,updated_at,platform_categories(name,code),platform_locations(name,code,timezone)')
@@ -94,13 +99,25 @@ export async function GET(request: Request, context: RouteContext) {
         .eq('requirement_id', requirementId)
         .order('created_at', { ascending: true }),
       supabase.rpc('get_customer_requirement_proposals', { target_requirement_id: requirementId }),
+      supabase
+        .from('marketplace_conversations')
+        .select('id,proposal_id,status')
+        .eq('requirement_id', requirementId)
+        .eq('customer_id', session.user_id)
+        .maybeSingle(),
     ]);
     if (error) throw new Error(error.message);
     if (!requirement) return NextResponse.json({ error: 'Requirement was not found.' }, { status: 404 });
     if (eventError) throw new Error(eventError.message);
     if (proposalError) throw new Error(proposalError.message);
+    if (conversationError) throw new Error(conversationError.message);
     const enrichedProposals = await enrichProposalMarketplaceContext(proposals ?? []);
-    return NextResponse.json({ requirement, events: events ?? [], proposals: enrichedProposals });
+    return NextResponse.json({
+      requirement,
+      events: events ?? [],
+      proposals: enrichedProposals,
+      conversation_id: conversation?.id ?? null,
+    });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to load requirement.' }, { status: 401 });
   }
