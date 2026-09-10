@@ -37,6 +37,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
   const proposalBadgeLabel = isTamil
     ? `${proposalUnreadCount} புதிய proposals`
     : `${proposalUnreadCount} new ${proposalUnreadCount === 1 ? 'proposal' : 'proposals'}`;
+  const accountAttentionHref = proposalUnreadCount > 0 ? '/account#proposal-attention' : '/account';
 
   useEffect(() => {
     let active = true;
@@ -93,7 +94,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
               </select>
             </label>
             <Link href="/requirements" className="header-requirement">{t('nav.postRequirement')}</Link>
-            <Link href="/account" className="header-login">
+            <Link href={accountAttentionHref} className="header-login">
               <span aria-hidden="true">◯</span>
               <span className="header-login-label">{currentUser ? currentUser.name : t('nav.account')}</span>
               {proposalUnreadCount > 0 ? <span className="global-proposal-attention-badge" aria-label={proposalBadgeLabel}>{proposalBadgeText}</span> : null}
@@ -136,7 +137,8 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
       <nav className="mobile-bottom-nav" aria-label={t('nav.mobilePrimary')}>
         {mobileLinks.map((link) => {
           const activeLink = pathname === link.href || pathname.startsWith(`${link.href}/`);
-          return <Link key={link.href} href={link.href} className={activeLink ? 'nav-active' : ''} aria-current={activeLink ? 'page' : undefined}>
+          const targetHref = link.href === '/account' && proposalUnreadCount > 0 ? accountAttentionHref : link.href;
+          return <Link key={link.href} href={targetHref} className={activeLink ? 'nav-active' : ''} aria-current={activeLink ? 'page' : undefined}>
             <span aria-hidden="true">{link.icon}</span>
             <span>{t(link.labelKey)}</span>
             {link.href === '/account' && proposalUnreadCount > 0 ? <span className="global-proposal-attention-badge global-proposal-attention-badge-mobile" aria-label={proposalBadgeLabel}>{proposalBadgeText}</span> : null}
