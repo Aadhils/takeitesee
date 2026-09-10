@@ -27,22 +27,51 @@ const mobileLinks: { href: string; labelKey: TranslationKey; icon: string }[] = 
 function AppShellContent({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<ReturnType<typeof localDevelopmentAuthAdapter.getCurrentUser>>();
+  const [proposalUnreadCount, setProposalUnreadCount] = useState(0);
   const pathname = usePathname();
   const isHomepage = pathname === '/';
   const { locale, setLocale, t } = useLanguage();
   const isTamil = locale === 'ta-IN';
   const productsActive = pathname === '/products' || pathname.startsWith('/products/');
+  const proposalBadgeText = proposalUnreadCount > 99 ? '99+' : String(proposalUnreadCount);
+  const proposalBadgeLabel = isTamil
+    ? `${proposalUnreadCount} புதிய proposals`
+    : `${proposalUnreadCount} new ${proposalUnreadCount === 1 ? 'proposal' : 'proposals'}`;
 
   useEffect(() => {
+    let active = true;
     const syncUser = async () => {
       if (isSupabaseConfigured()) {
         const user = await getSupabaseBrowserUser();
+        if (!active) return;
         setCurrentUser(user ? { id: user.id, name: user.user_metadata?.name ?? user.email ?? 'Account', email: user.email ?? '', phone: user.user_metadata?.phone, role: 'customer', createdAt: user.created_at, updatedAt: user.updated_at ?? user.created_at } satisfies User : undefined);
-      } else setCurrentUser(localDevelopmentAuthAdapter.getCurrentUser());
+        if (!user) {
+          setProposalUnreadCount(0);
+          return;
+        }
+        try {
+          const response = await fetch('/api/notifications?mode=proposal-unread-count', { cache: 'no-store' });
+          if (!active) return;
+          if (!response.ok) {
+            setProposalUnreadCount(0);
+            return;
+          }
+          const payload = await response.json() as { unread_count?: number };
+          setProposalUnreadCount(Math.max(0, Number(payload.unread_count ?? 0)));
+        } catch {
+          if (active) setProposalUnreadCount(0);
+        }
+      } else {
+        setCurrentUser(localDevelopmentAuthAdapter.getCurrentUser());
+        setProposalUnreadCount(0);
+      }
     };
     window.addEventListener('storage', syncUser);
-    syncUser();
-    return () => window.removeEventListener('storage', syncUser);
+    void syncUser();
+    return () => {
+      active = false;
+      window.removeEventListener('storage', syncUser);
+    };
   }, [pathname]);
 
   return (
@@ -64,7 +93,11 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
               </select>
             </label>
             <Link href="/requirements" className="header-requirement">{t('nav.postRequirement')}</Link>
-            <Link href="/account" className="header-login"><span aria-hidden="true">◯</span> {currentUser ? currentUser.name : t('nav.account')}</Link>
+            <Link href="/account" className="header-login">
+              <span aria-hidden="true">◯</span>
+              <span className="header-login-label">{currentUser ? currentUser.name : t('nav.account')}</span>
+              {proposalUnreadCount > 0 ? <span className="global-proposal-attention-badge" aria-label={proposalBadgeLabel}>{proposalBadgeText}</span> : null}
+            </Link>
             <button className="menu-trigger" type="button" aria-expanded={menuOpen} aria-controls="mobile-menu" aria-label={t('nav.toggleMenu')} onClick={() => setMenuOpen((value) => !value)}>
               <span /><span /><span />
             </button>
@@ -101,7 +134,14 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
       </footer>
 
       <nav className="mobile-bottom-nav" aria-label={t('nav.mobilePrimary')}>
-        {mobileLinks.map((link) => <Link key={link.href} href={link.href} className={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'nav-active' : ''} aria-current={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'page' : undefined}><span aria-hidden="true">{link.icon}</span><span>{t(link.labelKey)}</span></Link>)}
+        {mobileLinks.map((link) => {
+          const activeLink = pathname === link.href || pathname.startsWith(`${link.href}/`);
+          return <Link key={link.href} href={link.href} className={activeLink ? 'nav-active' : ''} aria-current={activeLink ? 'page' : undefined}>
+            <span aria-hidden="true">{link.icon}</span>
+            <span>{t(link.labelKey)}</span>
+            {link.href === '/account' && proposalUnreadCount > 0 ? <span className="global-proposal-attention-badge global-proposal-attention-badge-mobile" aria-label={proposalBadgeLabel}>{proposalBadgeText}</span> : null}
+          </Link>;
+        })}
       </nav>
       <BackToTop />
 
@@ -116,6 +156,9 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         .auth-page, .auth-card, .card, .field, .form-grid, .choice-row { min-width: 0; }
         .field-control, .button { max-width: 100%; }
         .language-switcher select { min-height: 38px; max-width: 105px; border: 1px solid var(--color-border); border-radius: 9px; background: #fff; color: var(--color-ink); padding: 0 28px 0 10px; font: inherit; font-size: .82rem; }
+        .header-login { position: relative; display: inline-flex; align-items: center; gap: .35rem; }
+        .header-login-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .global-proposal-attention-badge { display: inline-grid; min-width: 18px; height: 18px; place-items: center; border-radius: 999px; background: var(--color-primary-strong); color: #fff; padding: 0 5px; font-size: .62rem; font-weight: 850; line-height: 1; }
         .provider-onboarding-page { width: min(100%, 760px); }
         .provider-onboarding-form { padding: 0; }
         .provider-onboarding-form > .card { padding: 24px; }
@@ -157,7 +200,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
           .shell-bar { min-height: 64px; }
           .inner-page-brand, .inner-page-brand img { width: 70px; }
           .language-switcher select { max-width: 84px; min-height: 36px; padding-left: 8px; font-size: .76rem; }
-          .header-login { max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+          .header-login { max-width: 120px; overflow: visible; }
           .page-frame { padding: 28px 0 88px; }
           .page-intro h1, .account-page-heading h1, .provider-workspace h1 { font-size: clamp(2.1rem, 11vw, 3.2rem) !important; line-height: .98 !important; }
           .page-intro p { font-size: .95rem; line-height: 1.55; }
@@ -182,14 +225,15 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
           .footer-brand-column, .footer-legal { grid-column: 1 / -1; }
           .footer-connect { grid-column: 1 / -1; }
           .mobile-bottom-nav { display: grid !important; position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--color-border); background: rgb(255 255 255 / 96%); padding: 7px max(8px, env(safe-area-inset-right)) calc(7px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); backdrop-filter: blur(10px); }
-          .mobile-bottom-nav a { display: grid; justify-items: center; gap: 2px; min-width: 0; font-size: .7rem; }
+          .mobile-bottom-nav a { position: relative; display: grid; justify-items: center; gap: 2px; min-width: 0; font-size: .7rem; }
+          .mobile-bottom-nav .global-proposal-attention-badge-mobile { position: absolute; top: 1px; left: calc(50% + 8px); min-width: 17px; height: 17px; padding-inline: 4px; font-size: .58rem; }
           .back-to-top { bottom: 78px; right: 14px; }
         }
 
         @media (max-width: 390px) {
           .shell-bar, .page-frame, .footer-inner { width: min(100% - 18px, var(--content-width)); }
           .language-switcher select { max-width: 74px; }
-          .header-login { max-width: 78px; font-size: .8rem; }
+          .header-login { max-width: 96px; font-size: .8rem; }
           .provider-onboarding-form > .card { padding: 15px; }
           .account-provider-entry { padding: 16px; }
           .provider-draft-banner > .card { padding: 16px; }
