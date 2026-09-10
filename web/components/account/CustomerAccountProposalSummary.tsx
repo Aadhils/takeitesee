@@ -38,7 +38,10 @@ export default function CustomerAccountProposalSummary() {
     setLoading(true);
     try {
       const response = await fetch('/api/requirements', { cache: 'no-store' });
-      if (!response.ok) return;
+      if (!response.ok) {
+        setAvailable(false);
+        return;
+      }
       const payload = await response.json() as RequirementAttentionPayload;
       setRows(payload.requirements ?? []);
       setAvailable(payload.proposal_attention_status !== 'unavailable');
