@@ -25,7 +25,11 @@ type RequirementAttentionPayload = {
   error?: string;
 };
 
-export default function CustomerAccountProposalSummary() {
+type CustomerAccountProposalSummaryProps = {
+  onUnreadChange?: (count: number) => void;
+};
+
+export default function CustomerAccountProposalSummary({ onUnreadChange }: CustomerAccountProposalSummaryProps) {
   const router = useRouter();
   const { locale } = useOperationalTranslations();
   const tamil = locale.toLowerCase().startsWith('ta');
@@ -65,6 +69,10 @@ export default function CustomerAccountProposalSummary() {
   const attentionRows = useMemo(() => proposalRows.filter((row) => (row.unread_proposal_count ?? 0) > 0), [proposalRows]);
   const totalUnread = useMemo(() => attentionRows.reduce((sum, row) => sum + Math.max(0, row.unread_proposal_count ?? 0), 0), [attentionRows]);
   const visibleRows = proposalRows.slice(0, 3);
+
+  useEffect(() => {
+    onUnreadChange?.(available ? totalUnread : 0);
+  }, [available, onUnreadChange, totalUnread]);
 
   const review = async (row: RequirementAttentionRow) => {
     if (openingId) return;
