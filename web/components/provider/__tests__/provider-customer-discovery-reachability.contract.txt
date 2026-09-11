@@ -1,0 +1,11 @@
+Provider Customer Discovery Reachability Contract
+
+1. Provider-owned active Services and Business Products expose two independent read-only signals: direct anonymous RLS public visibility and presence in the actual customer marketplace listing API.
+2. Direct public visibility must continue to come from the anonymous Supabase/RLS path. Provider owner reads or service-role reads must never substitute for that public-eligibility decision.
+3. Service customer-list reachability is checked against /api/marketplace/services, the same listing API consumed by /explore. Business Product reachability is checked against /api/marketplace/products, the same listing API consumed by /products.
+4. A public-visible offering missing from the customer listing is a discovery reachability mismatch. The UI must surface that mismatch for review; it must not automatically pause, activate, republish, mutate, or broaden the offering.
+5. If the customer listing check is unavailable, listing reachability is Unknown rather than Hidden. Existing public-RLS visibility remains a separate signal and catalog state remains unchanged.
+6. Services that are customer-list reachable may deep-link to /explore?q=<service name>. Products open the existing /products discovery surface until Product search has equivalent URL-query continuity.
+7. Professional and Business Services remain unified in customer service discovery. Provider identity finality remains Customer + exactly one final Provider identity: Professional OR Business, never both.
+8. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD. Recurrence/recovery remain frozen.
+9. This contract introduces no database migration, no fake production fixtures, no automatic offering activation, and no change to public publication or review gates.
