@@ -1,0 +1,14 @@
+Precise-nearby Service discovery pagination contract
+
+1. Customer precise coordinates are accepted only in the POST request body for /api/marketplace/services/nearby. They are not placed in the Explore URL, persisted as a Customer location record, or returned in the response.
+2. The public nearby search RPC is SECURITY INVOKER and runs under the anonymous marketplace RLS boundary. Professional and Business Services remain in one unified result set.
+3. Private geo tables remain inaccessible as public marketplace read surfaces. A non-exposed marketplace_internal helper may read private geo data only to derive Service distance inputs; raw Provider or Service coordinates are never returned by the public RPC or API route.
+4. at_provider matching uses an active service_site point. at_customer matching prefers a matching-enabled, non-expired Provider live point and falls back to an active mobile_base only when no valid Provider live point exists.
+5. at_customer max_travel_distance_meters remains authoritative. Services without an eligible geo match are not hidden solely because of distance; they remain eligible for ordinary marketplace discovery with distance priority 0, preserving the no-fixed-radius behavior.
+6. Public responses expose only coarse distance_band, bounded distance_priority, and nearby_match_mode. Exact distance meters and raw coordinates are not exposed.
+7. Nearby relevance preserves live availability, taxonomy aliases/groups, Provider name, rating/review, and the existing near-me distance boost. nearest sort prioritizes coarse distance, then live availability, relevance, rating, and review count.
+8. Nearby discovery is bounded to 24 Services by default and uses a server cursor for additional pages. Query, category, named location, price, rating, Provider type, available-now, and supported sort filters are applied server-side.
+9. If the nearby RPC is unavailable, the endpoint falls back to the bounded normal Service discovery RPC and returns geo_status=unavailable instead of broadening access or failing the marketplace solely because geo enrichment is unavailable.
+10. No Service, Provider, review, availability, geo configuration, booking, order, finance, payment, payout, recurrence, recovery, or publication state is mutated by nearby discovery.
+11. Provider identity finality remains unchanged: one account may have one final Provider identity, Professional OR Business, while customer discovery remains unified across both.
+12. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD. Recurrence/recovery remain FROZEN.
