@@ -1,0 +1,5 @@
+Product discovery query literal contract
+
+1. Customer Product search text is treated as literal substring text, not as SQL LIKE wildcard syntax.
+2. Percent, underscore, and backslash characters in customer search input must not broaden the search beyond their literal characters.
+3. This contract applies before Product candidate pagination and does not change public visibility or Product state.

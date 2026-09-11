@@ -1,0 +1,14 @@
+Product discovery server-pagination contract
+
+1. Customer Product discovery must not load the full approved Product catalog into the browser before applying search/filter/sort.
+2. Product query, stock, Shop status, and sort are applied by the server before a bounded page is returned.
+3. Default relevance keeps the existing customer order: Shop Open first, then orderable Products, then Product name.
+4. search_business_product_discovery_candidates is service-role-only and must remain unavailable to anon/authenticated callers.
+5. Candidate search mirrors current Product launch, verification, profile, disclosure, and trust gates only to narrow work; it is not the final public authorization boundary.
+6. Every candidate returned to a customer must still be re-read through the anonymous business_products RLS path, and its Business must pass the anonymous public Business/disclosure read used by the marketplace.
+7. Pagination is bounded. The customer Product page loads the first page and uses an opaque next cursor / Load more flow rather than a global Product catalog download.
+8. URL q, stock, shop, and sort state must remain shareable and restorable; changing search/filter/sort resets pagination to the first page.
+9. Product image/shop enrichment must never broaden Product public eligibility.
+10. No pagination/search action may activate, pause, publish, unpublish, or otherwise mutate a Product or Provider trust state.
+11. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD; recurrence/recovery remain FROZEN.
+12. Service discovery semantics, including unified Professional + Business matching, taxonomy, availability, ratings, and nearby ranking, are outside this Product-only slice and remain unchanged.
