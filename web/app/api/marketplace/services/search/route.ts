@@ -13,6 +13,9 @@ import {
   marketplaceServicePriceFilters,
   marketplaceServiceProviderFilters,
   marketplaceServiceRatingFilters,
+  normalizeMarketplaceServiceCategory,
+  normalizeMarketplaceServiceLocation,
+  normalizeMarketplaceServiceQuery,
   parseMarketplaceServiceFilter,
 } from '../../../../../server/marketplace-service-discovery/requestParsing';
 
@@ -33,15 +36,10 @@ export async function GET(request: Request) {
   if (!supabase) return NextResponse.json({ error: 'Marketplace database is not configured.' }, { status: 500 });
 
   const url = new URL(request.url);
-  const query = (url.searchParams.get('q') ?? '').trim().slice(0, 180);
+  const query = normalizeMarketplaceServiceQuery(url.searchParams.get('q'));
   const { tokens: queryTokens, semanticQuery } = resolveMarketplaceServiceSearchSemantics(query);
-  const location = (url.searchParams.get('location') ?? '')
-    .trim()
-    .slice(0, 120)
-    .replace(/[%_\\]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  const category = (url.searchParams.get('category') ?? 'all').trim().slice(0, 120) || 'all';
+  const location = normalizeMarketplaceServiceLocation(url.searchParams.get('location'));
+  const category = normalizeMarketplaceServiceCategory(url.searchParams.get('category'));
   const price = parseMarketplaceServiceFilter(url.searchParams.get('price'), marketplaceServicePriceFilters, 'any');
   const rating = parseMarketplaceServiceFilter(url.searchParams.get('rating'), marketplaceServiceRatingFilters, 'any');
   const provider = parseMarketplaceServiceFilter(url.searchParams.get('provider'), marketplaceServiceProviderFilters, 'any');

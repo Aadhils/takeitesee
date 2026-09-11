@@ -1,0 +1,10 @@
+Shared canonical Service discovery input normalization contract
+
+1. Normal GET and precise-nearby POST normalize Service query text through the same helper: non-string/absent values become empty, then trim and cap at 180 characters.
+2. Both routes normalize category through the same helper: non-string/absent values use `all`, then trim, cap at 120 characters, and fall back to `all` when empty.
+3. Both routes normalize location through the same helper: non-string/absent values become empty, trim, cap at 120 characters, replace `%`, `_`, and backslash runs with spaces, collapse whitespace, and trim again.
+4. Normal GET query parameters and nearby POST body/origin remain transport-specific; origin latitude/longitude validation is unchanged.
+5. Semantic tokenization runs after the normalized query exactly as before; Tamil/Unicode-safe tokenization behavior is unchanged.
+6. Filter validation, cursor/limit bounds, availability/near_me flags, RPC names/arguments, ranking, geo fallback, response mapping, pagination shape, and caching remain unchanged.
+7. Unified Professional + Business discovery and canonical category behavior remain unchanged.
+8. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD; recurrence/recovery remain FROZEN.
