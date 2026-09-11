@@ -89,7 +89,14 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const query = (url.searchParams.get('q') ?? '').trim().slice(0, 180);
-  const location = (url.searchParams.get('location') ?? '').trim().slice(0, 120);
+  const queryTokens = semanticTokens(query);
+  const semanticQuery = queryTokens.join(' ');
+  const location = (url.searchParams.get('location') ?? '')
+    .trim()
+    .slice(0, 120)
+    .replace(/[%_\\]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   const category = (url.searchParams.get('category') ?? 'all').trim().slice(0, 120) || 'all';
   const price = parseFilter<PriceFilter>(url.searchParams.get('price'), ['any', 'under-1000', '1000-5000', 'over-5000'], 'any');
   const rating = parseFilter<RatingFilter>(url.searchParams.get('rating'), ['any', '4-plus', '4.5-plus'], 'any');
@@ -105,8 +112,8 @@ export async function GET(request: Request) {
 
   const [searchResult, categoryResult] = await Promise.all([
     supabase.rpc('search_marketplace_service_discovery_candidates', {
-      target_query: query || null,
-      target_tokens: semanticTokens(query),
+      target_query: semanticQuery || null,
+      target_tokens: queryTokens,
       target_category: category,
       target_location: location || null,
       target_price: price,

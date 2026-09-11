@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Card, EmptyState, Input, Select, Skeleton } from '../../components/ui/primitives';
 import { ServiceCard } from '../../components/discovery/MarketplaceCards';
 import { DiscoveryEmptyState } from '../../components/discovery/DiscoveryEnhancements';
@@ -18,6 +18,16 @@ type ProviderWorkMode = 'available' | 'busy' | 'offline' | 'paused';
 type GeoStatus = 'not_requested' | 'ready' | 'unavailable';
 type GeoOrigin = { latitude: number; longitude: number };
 type DistanceBand = 'under_1km' | '1_3km' | '3_7km' | '7_15km' | '15_30km' | '30_60km' | 'over_60km';
+type ServerCategory = { slug: string; name: string };
+type ServerPage = { limit: number; next_cursor: string | null; has_more: boolean };
+type ServerSearchPayload = {
+  services?: MarketplaceService[];
+  categories?: ServerCategory[];
+  total?: number;
+  geo_status?: GeoStatus;
+  page?: ServerPage;
+  error?: string;
+};
 
 type Filters = {
   category: string;
@@ -28,6 +38,7 @@ type Filters = {
   availability: AvailabilityFilter;
 };
 
+const serverPageSize = 24;
 const validSorts = ['relevance', 'rating', 'price', 'price-desc'];
 const priceValues: PriceFilter[] = ['any', 'under-1000', '1000-5000', 'over-5000'];
 const ratingValues: RatingFilter[] = ['any', '4-plus', '4.5-plus'];
@@ -98,6 +109,20 @@ function buildExploreParams(query: string, filters: Filters, sort: string) {
   if (filters.provider !== 'any') params.set('provider', filters.provider);
   if (filters.availability === 'available-now') params.set('availability', 'now');
   if (sort !== 'relevance' && sort !== 'nearest') params.set('sort', sort);
+  return params;
+}
+
+function buildServerSearchParams(query: string, filters: Filters, sort: string, location: string, availableNow: boolean, cursor?: string | null) {
+  const params = new URLSearchParams({ limit: String(serverPageSize) });
+  if (query.trim()) params.set('q', query.trim());
+  if (filters.category !== 'all') params.set('category', filters.category);
+  if (location.trim()) params.set('location', location.trim());
+  if (filters.price !== 'any') params.set('price', filters.price);
+  if (filters.rating !== 'any') params.set('rating', filters.rating);
+  if (filters.provider !== 'any') params.set('provider', filters.provider);
+  if (availableNow) params.set('availability', 'now');
+  if (sort !== 'relevance' && sort !== 'nearest') params.set('sort', sort);
+  if (cursor) params.set('cursor', cursor);
   return params;
 }
 
@@ -240,8 +265,14 @@ export default function ExplorePage() {
   const [sort, setSort] = useState('relevance');
   const [urlReady, setUrlReady] = useState(false);
   const [services, setServices] = useState<MarketplaceService[]>([]);
+  const [serverCategories, setServerCategories] = useState<string[]>([]);
+  const [serverTotal, setServerTotal] = useState(0);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState('');
+  const [loadMoreError, setLoadMoreError] = useState('');
   const [geoOrigin, setGeoOrigin] = useState<GeoOrigin | null>(null);
   const [geoStatus, setGeoStatus] = useState<GeoStatus>('not_requested');
   const [geoLocating, setGeoLocating] = useState(false);
@@ -268,51 +299,6 @@ export default function ExplorePage() {
     setUrlReady(true);
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      setLoadError('');
-      if (geoOrigin) setGeoError('');
-      try {
-        const response = await fetch('/api/marketplace/services', geoOrigin ? {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ origin: geoOrigin }),
-          cache: 'no-store',
-        } : { cache: 'no-store' });
-        if (!response.ok) throw new Error('Marketplace catalog unavailable');
-        const payload = await response.json() as { services?: MarketplaceService[]; geo_status?: GeoStatus };
-        if (!cancelled) {
-          setServices(Array.isArray(payload.services) ? payload.services.map(normalizeService) : []);
-          const nextGeoStatus = payload.geo_status ?? (geoOrigin ? 'unavailable' : 'not_requested');
-          setGeoStatus(nextGeoStatus);
-          if (geoOrigin && nextGeoStatus === 'unavailable') {
-            setGeoError('Precise nearby matching is temporarily unavailable. Showing the normal marketplace ranking instead.');
-          }
-        }
-      } catch (error) {
-        if (!cancelled) setLoadError(error instanceof Error ? error.message : 'Unable to load services');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [geoOrigin]);
-
-  const categories = useMemo(() => Array.from(new Set(services.map((service) => service.category_slug).filter(Boolean))).sort(), [services]);
-
-  useEffect(() => {
-    if (!loading && filters.category !== 'all' && !categories.includes(filters.category)) setFilters((current) => ({ ...current, category: 'all' }));
-  }, [categories, filters.category, loading]);
-
-  const contextQuery = useMemo(() => buildExploreParams(query, filters, sort).toString(), [filters, query, sort]);
-
-  useEffect(() => {
-    if (!urlReady) return;
-    window.history.replaceState(null, '', contextQuery ? `/explore?${contextQuery}` : '/explore');
-  }, [contextQuery, urlReady]);
-
   const searchIntent = useMemo(() => parseMarketplaceSearchIntent(query), [query]);
   const availableNowFromQuery = useMemo(() => hasAvailableNowIntent(query), [query]);
   const availableNowActive = filters.availability === 'available-now' || availableNowFromQuery;
@@ -331,12 +317,117 @@ export default function ExplorePage() {
     () => buildRequirementHref(query, effectiveSearchQuery, effectiveLocationQuery),
     [effectiveLocationQuery, effectiveSearchQuery, query],
   );
+  const serverSearchKey = useMemo(
+    () => buildServerSearchParams(effectiveSearchQuery, filters, sort, effectiveLocationQuery, availableNowActive).toString(),
+    [availableNowActive, effectiveLocationQuery, effectiveSearchQuery, filters, sort],
+  );
+  const serverSearchKeyRef = useRef(serverSearchKey);
+  serverSearchKeyRef.current = serverSearchKey;
+
+  useEffect(() => {
+    if (!urlReady || geoOrigin) return;
+    let cancelled = false;
+    const requestKey = serverSearchKey;
+    setLoading(true);
+    setLoadError('');
+    setLoadMoreError('');
+    setLoadingMore(false);
+
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const response = await fetch(`/api/marketplace/services/search?${requestKey}`, { cache: 'no-store' });
+          const payload = await response.json() as ServerSearchPayload;
+          if (!response.ok) throw new Error(payload.error || 'Marketplace catalog unavailable');
+          if (cancelled || serverSearchKeyRef.current !== requestKey) return;
+
+          const nextServices = Array.isArray(payload.services) ? payload.services.map(normalizeService) : [];
+          const nextCategories = Array.isArray(payload.categories)
+            ? Array.from(new Set(payload.categories.map((category) => String(category.slug || '')).filter(Boolean))).sort()
+            : [];
+          const totalValue = Number(payload.total ?? nextServices.length);
+          setServices(nextServices);
+          setServerCategories(nextCategories);
+          setServerTotal(Number.isFinite(totalValue) && totalValue >= 0 ? totalValue : nextServices.length);
+          setNextCursor(payload.page?.next_cursor ?? null);
+          setHasMore(Boolean(payload.page?.has_more));
+          setGeoStatus('not_requested');
+        } catch (error) {
+          if (!cancelled && serverSearchKeyRef.current === requestKey) {
+            setLoadError(error instanceof Error ? error.message : 'Unable to load services');
+          }
+        } finally {
+          if (!cancelled && serverSearchKeyRef.current === requestKey) setLoading(false);
+        }
+      })();
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [geoOrigin, serverSearchKey, urlReady]);
+
+  useEffect(() => {
+    if (!urlReady || !geoOrigin) return;
+    let cancelled = false;
+    void (async () => {
+      setLoading(true);
+      setLoadError('');
+      setLoadMoreError('');
+      setLoadingMore(false);
+      setGeoError('');
+      try {
+        const response = await fetch('/api/marketplace/services', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ origin: geoOrigin }),
+          cache: 'no-store',
+        });
+        const payload = await response.json() as { services?: MarketplaceService[]; geo_status?: GeoStatus; error?: string };
+        if (!response.ok) throw new Error(payload.error || 'Marketplace catalog unavailable');
+        if (!cancelled) {
+          const nextServices = Array.isArray(payload.services) ? payload.services.map(normalizeService) : [];
+          setServices(nextServices);
+          setServerTotal(nextServices.length);
+          setNextCursor(null);
+          setHasMore(false);
+          const nextGeoStatus = payload.geo_status ?? 'unavailable';
+          setGeoStatus(nextGeoStatus);
+          if (nextGeoStatus === 'unavailable') {
+            setGeoError('Precise nearby matching is temporarily unavailable. Showing the normal marketplace ranking instead.');
+          }
+        }
+      } catch (error) {
+        if (!cancelled) setLoadError(error instanceof Error ? error.message : 'Unable to load services');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [geoOrigin, urlReady]);
+
+  const geoCategories = useMemo(() => Array.from(new Set(services.map((service) => service.category_slug).filter(Boolean))).sort(), [services]);
+  const categories = geoOrigin ? geoCategories : serverCategories;
+
+  useEffect(() => {
+    if (loading || (geoOrigin && geoStatus === 'not_requested')) return;
+    if (filters.category !== 'all' && !categories.includes(filters.category)) setFilters((current) => ({ ...current, category: 'all' }));
+  }, [categories, filters.category, geoOrigin, geoStatus, loading]);
+
+  const contextQuery = useMemo(() => buildExploreParams(query, filters, sort).toString(), [filters, query, sort]);
+
+  useEffect(() => {
+    if (!urlReady) return;
+    window.history.replaceState(null, '', contextQuery ? `/explore?${contextQuery}` : '/explore');
+  }, [contextQuery, urlReady]);
 
   useEffect(() => {
     if (sort === 'nearest' && !preciseNearbyActive) setSort('relevance');
   }, [preciseNearbyActive, sort]);
 
   const filteredServices = useMemo(() => {
+    if (!geoOrigin) return services;
     const locationNeedle = normalized(effectiveLocationQuery);
     return services
       .filter((service) => filters.category === 'all' || service.category_slug === filters.category)
@@ -361,7 +452,39 @@ export default function ExplorePage() {
               : relevanceScore(b, effectiveSearchQuery, preciseNearbyActive, searchIntent.nearMe) - relevanceScore(a, effectiveSearchQuery, preciseNearbyActive, searchIntent.nearMe)
                 || b.rating - a.rating
                 || b.review_count - a.review_count);
-  }, [services, availableNowActive, effectiveLocationQuery, effectiveSearchQuery, filters, preciseNearbyActive, searchIntent.nearMe, sort]);
+  }, [services, availableNowActive, effectiveLocationQuery, effectiveSearchQuery, filters, geoOrigin, preciseNearbyActive, searchIntent.nearMe, sort]);
+
+  const loadMore = async () => {
+    if (geoOrigin || !hasMore || !nextCursor || loadingMore) return;
+    const requestKey = serverSearchKey;
+    const params = new URLSearchParams(requestKey);
+    params.set('cursor', nextCursor);
+    setLoadingMore(true);
+    setLoadMoreError('');
+    try {
+      const response = await fetch(`/api/marketplace/services/search?${params.toString()}`, { cache: 'no-store' });
+      const payload = await response.json() as ServerSearchPayload;
+      if (!response.ok) throw new Error(payload.error || 'Unable to load more services');
+      if (serverSearchKeyRef.current !== requestKey) return;
+
+      const incoming = Array.isArray(payload.services) ? payload.services.map(normalizeService) : [];
+      setServices((current) => {
+        const ids = new Set(current.map((service) => String(service.id)));
+        return [...current, ...incoming.filter((service) => !ids.has(String(service.id)))];
+      });
+      if (Array.isArray(payload.categories)) {
+        setServerCategories(Array.from(new Set(payload.categories.map((category) => String(category.slug || '')).filter(Boolean))).sort());
+      }
+      const totalValue = Number(payload.total);
+      if (Number.isFinite(totalValue) && totalValue >= 0) setServerTotal(totalValue);
+      setNextCursor(payload.page?.next_cursor ?? null);
+      setHasMore(Boolean(payload.page?.has_more));
+    } catch (error) {
+      if (serverSearchKeyRef.current === requestKey) setLoadMoreError(error instanceof Error ? error.message : 'Unable to load more services');
+    } finally {
+      if (serverSearchKeyRef.current === requestKey) setLoadingMore(false);
+    }
+  };
 
   const clearAll = () => { setQuery(''); setResolvedTaxonomyIntent(null); setFilters(defaultFilters()); setSort('relevance'); };
   const update = <K extends keyof Filters>(key: K, value: Filters[K]) => setFilters((current) => ({ ...current, [key]: value }));
@@ -422,13 +545,14 @@ export default function ExplorePage() {
     setResolvedTaxonomyIntent(categoryName);
   };
 
+  const resultCount = geoOrigin ? filteredServices.length : serverTotal;
   const resultHeading = loading
     ? t('explore.loading')
     : query.trim()
       ? locale === 'ta-IN'
-        ? `“${query.trim()}” ${t('explore.forQuery')} ${filteredServices.length} ${filteredServices.length === 1 ? t('explore.match') : t('explore.matches')}`
-        : `${filteredServices.length} ${filteredServices.length === 1 ? t('explore.match') : t('explore.matches')} ${t('explore.forQuery')} “${query.trim()}”`
-      : `${filteredServices.length} ${t('explore.servicesToExplore')}`;
+        ? `“${query.trim()}” ${t('explore.forQuery')} ${resultCount} ${resultCount === 1 ? t('explore.match') : t('explore.matches')}`
+        : `${resultCount} ${resultCount === 1 ? t('explore.match') : t('explore.matches')} ${t('explore.forQuery')} “${query.trim()}”`
+      : `${resultCount} ${t('explore.servicesToExplore')}`;
 
   const nearbyReady = preciseNearbyActive;
   const showRecoveryEmptyState = !loading && !loadError && filteredServices.length === 0
@@ -482,7 +606,7 @@ export default function ExplorePage() {
     </section>
 
     <div className="results-heading"><div><span className="eyebrow">{t('explore.marketplace')}</span><h2>{resultHeading}</h2></div></div>
-    {loading ? <div className="service-grid"><div className="loading-card"><Skeleton className="loading-art" /><Skeleton className="loading-line" /><Skeleton className="loading-line short" /></div></div> : loadError ? <DiscoveryEmptyState query={loadError} onClear={() => location.reload()} suggestions={[]} errorState /> : filteredServices.length ? <div className="service-grid">{filteredServices.map((service) => <ServiceCard service={preciseNearbyActive ? service : { ...service, distance_band: null, distance_priority: 0, nearby_match_mode: null }} contextQuery={contextQuery} key={service.id} />)}</div> : showRecoveryEmptyState ? <><div className="discovery-empty-wrap"><Card><EmptyState title={recoveryTitle}>{recoveryHelp}</EmptyState><div className="empty-actions">{effectiveLocationQuery ? <Button type="button" variant="secondary" onClick={broadenNamedLocation}>{tamil ? 'இந்த இடத்தைத் தாண்டி தேடு' : 'Search beyond this location'}</Button> : null}{hasNarrowingFilters ? <Button type="button" variant="secondary" onClick={broadenFilters}>{tamil ? 'Filters-ஐ தளர்த்து' : 'Broaden filters'}</Button> : null}<Link href="/categories" className="button button-quiet">{t('empty.browseCategories')}</Link></div></Card></div><div className="empty-actions"><Link href={requirementHref} className="button button-primary">{t('explore.postRequirement')}</Link></div></> : <><DiscoveryEmptyState query={query} onClear={clearAll} suggestions={[]} /><div className="empty-actions"><Link href={requirementHref} className="button button-primary">{t('explore.postRequirement')}</Link></div></>}
+    {loading ? <div className="service-grid"><div className="loading-card"><Skeleton className="loading-art" /><Skeleton className="loading-line" /><Skeleton className="loading-line short" /></div></div> : loadError ? <DiscoveryEmptyState query={loadError} onClear={() => location.reload()} suggestions={[]} errorState /> : filteredServices.length ? <><div className="service-grid">{filteredServices.map((service) => <ServiceCard service={preciseNearbyActive ? service : { ...service, distance_band: null, distance_priority: 0, nearby_match_mode: null }} contextQuery={contextQuery} key={service.id} />)}</div>{!geoOrigin && hasMore ? <div className="empty-actions" style={{ marginTop: '1rem' }}><Button type="button" variant="secondary" loading={loadingMore} onClick={() => void loadMore()}>{tamil ? 'மேலும் Services ஏற்று' : 'Load more services'}</Button></div> : null}{loadMoreError ? <p className="field-error" role="alert" style={{ marginTop: '1rem' }}>{loadMoreError}</p> : null}</> : showRecoveryEmptyState ? <><div className="discovery-empty-wrap"><Card><EmptyState title={recoveryTitle}>{recoveryHelp}</EmptyState><div className="empty-actions">{effectiveLocationQuery ? <Button type="button" variant="secondary" onClick={broadenNamedLocation}>{tamil ? 'இந்த இடத்தைத் தாண்டி தேடு' : 'Search beyond this location'}</Button> : null}{hasNarrowingFilters ? <Button type="button" variant="secondary" onClick={broadenFilters}>{tamil ? 'Filters-ஐ தளர்த்து' : 'Broaden filters'}</Button> : null}<Link href="/categories" className="button button-quiet">{t('empty.browseCategories')}</Link></div></Card></div><div className="empty-actions"><Link href={requirementHref} className="button button-primary">{t('explore.postRequirement')}</Link></div></> : <><DiscoveryEmptyState query={query} onClear={clearAll} suggestions={[]} /><div className="empty-actions"><Link href={requirementHref} className="button button-primary">{t('explore.postRequirement')}</Link></div></>}
     <p className="explore-disclaimer">{t('explore.disclaimer')}</p>
   </div>;
 }
