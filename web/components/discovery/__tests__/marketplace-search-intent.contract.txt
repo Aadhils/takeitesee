@@ -1,0 +1,15 @@
+Marketplace search intent hardening contract
+
+1. English current-location intent remains current-location intent:
+   - "plumber near me" => serviceQuery "plumber", locationQuery "", nearMe true.
+   - "nearest tyre puncture" => serviceQuery "tyre puncture", locationQuery "", nearMe true.
+2. Tamil current-location intent MUST be resolved before Tamil named-location parsing:
+   - "எனக்கு அருகில் பிளம்பர்" => serviceQuery "பிளம்பர்", locationQuery "", nearMe true.
+   - "பிளம்பர் என் அருகில்" => serviceQuery "பிளம்பர்", locationQuery "", nearMe true.
+3. Tamil named-location intent remains named-location intent when it does not contain the customer-current-location markers "எனக்கு" or "என்":
+   - "திருச்சி அருகில் பிளம்பர்" => serviceQuery "பிளம்பர்", locationQuery "திருச்சி", nearMe false.
+   - "பிளம்பர் திருச்சி அருகில்" => serviceQuery "பிளம்பர்", locationQuery "திருச்சி", nearMe false.
+4. English named-location intent remains unchanged:
+   - "plumber in Trichy" => serviceQuery "plumber", locationQuery "Trichy", nearMe false.
+5. Intent parsing does not persist coordinates, mutate Provider/Service state, or change finance/recurrence behavior.
+6. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD. Recurrence/recovery remain FROZEN.
