@@ -44,12 +44,6 @@ const priceValues: PriceFilter[] = ['any', 'under-1000', '1000-5000', 'over-5000
 const ratingValues: RatingFilter[] = ['any', '4-plus', '4.5-plus'];
 const workModes: ProviderWorkMode[] = ['available', 'busy', 'offline', 'paused'];
 const distanceBands: DistanceBand[] = ['under_1km', '1_3km', '3_7km', '7_15km', '15_30km', '30_60km', 'over_60km'];
-const searchIntentTokens = new Set([
-  'near', 'nearby', 'nearest', 'closest', 'around', 'me', 'my',
-  'available', 'now', 'service', 'services', 'provider', 'providers',
-  'அருகில்', 'அருகிலுள்ள', 'அருகாமை', 'எனக்கு', 'இப்போது', 'சேவை', 'சேவைகள்',
-  'கிடைக்கும்', 'கிடைக்கிறார்', 'கிடைக்கிறது',
-]);
 const tamilAvailabilityTokens = new Set(['கிடைக்கும்', 'கிடைக்கிறார்', 'கிடைக்கிறது']);
 
 function defaultFilters(): Filters {
@@ -76,12 +70,6 @@ function normalized(value: unknown) {
 function categoryAliasValues(service: MarketplaceService): string[] {
   if (!Array.isArray(service.category_aliases)) return [];
   return service.category_aliases.map((alias: unknown) => String(alias ?? '').trim()).filter(Boolean);
-}
-
-function semanticTokens(query: string) {
-  return normalized(query)
-    .split(/[^\p{L}\p{N}]+/u)
-    .filter((token) => token && !searchIntentTokens.has(token));
 }
 
 function hasAvailableNowIntent(query: string) {
@@ -132,83 +120,6 @@ function buildRequirementHref(search: string, service: string, location: string)
   if (service.trim()) params.set('service', service.trim().slice(0, 120));
   if (location.trim()) params.set('location', location.trim().slice(0, 120));
   return `/requirements?${params.toString()}`;
-}
-
-function searchText(service: MarketplaceService) {
-  return normalized([
-    localized(service.service_name),
-    service.provider_name,
-    localized(service.description),
-    service.location,
-    service.service_area,
-    labelFromSlug(service.category_slug || service.category_id || 'other'),
-    service.category_group,
-    ...categoryAliasValues(service),
-  ].filter(Boolean).join(' '));
-}
-
-function matchesSearch(service: MarketplaceService, query: string) {
-  const tokens = semanticTokens(query);
-  if (!tokens.length) return true;
-  const haystack = searchText(service);
-  return tokens.every((token) => haystack.includes(token));
-}
-
-function availabilityPriority(service: MarketplaceService) {
-  if (service.live_work_mode === 'available') return 3;
-  if (service.live_work_mode === 'busy') return 1;
-  return 0;
-}
-
-function distancePriority(service: MarketplaceService, preciseNearbyActive: boolean, nearMeIntent: boolean) {
-  if (!preciseNearbyActive) return 0;
-  const base = Number(service.distance_priority || 0);
-  if (!Number.isFinite(base) || base <= 0) return 0;
-  return nearMeIntent ? Math.min(30, Math.round(base * 1.25)) : base;
-}
-
-function relevanceScore(service: MarketplaceService, query: string, preciseNearbyActive = false, nearMeIntent = false) {
-  const tokens = semanticTokens(query);
-  const fullQuery = tokens.join(' ');
-  const name = normalized(localized(service.service_name));
-  const provider = normalized(service.provider_name);
-  const description = normalized(localized(service.description));
-  const location = normalized(`${service.location ?? ''} ${service.service_area ?? ''}`);
-  const category = normalized(labelFromSlug(service.category_slug || service.category_id || 'other'));
-  const categoryGroup = normalized(service.category_group);
-  const aliases = categoryAliasValues(service).map(normalized);
-  let score = 0;
-
-  if (fullQuery) {
-    if (name === fullQuery) score += 180;
-    else if (name.startsWith(fullQuery)) score += 130;
-    else if (name.includes(fullQuery)) score += 95;
-
-    if (category === fullQuery) score += 90;
-    else if (category.includes(fullQuery)) score += 55;
-    if (aliases.some((alias) => alias === fullQuery)) score += 88;
-    else if (aliases.some((alias) => alias.includes(fullQuery))) score += 52;
-    if (categoryGroup === fullQuery) score += 50;
-    else if (categoryGroup.includes(fullQuery)) score += 28;
-    if (provider.includes(fullQuery)) score += 45;
-    if (location.includes(fullQuery)) score += 35;
-
-    for (const token of tokens) {
-      if (name.includes(token)) score += 24;
-      if (category.includes(token)) score += 16;
-      if (aliases.some((alias) => alias.includes(token))) score += 15;
-      if (categoryGroup.includes(token)) score += 6;
-      if (provider.includes(token)) score += 10;
-      if (location.includes(token)) score += 8;
-      if (description.includes(token)) score += 4;
-    }
-  }
-
-  score += availabilityPriority(service) * 10;
-  score += distancePriority(service, preciseNearbyActive, nearMeIntent);
-  score += Math.min(Number(service.rating || 0), 5) * 2;
-  score += Math.min(Number(service.review_count || 0), 20) * 0.25;
-  return score;
 }
 
 function normalizeService(service: MarketplaceService) {
@@ -456,33 +367,11 @@ export default function ExplorePage() {
     if (sort === 'nearest' && !preciseNearbyActive) setSort('relevance');
   }, [preciseNearbyActive, sort]);
 
-  const filteredServices = useMemo(() => {
-    if (!geoOrigin) return services;
-    const locationNeedle = normalized(effectiveLocationQuery);
-    return services
-      .filter((service) => filters.category === 'all' || service.category_slug === filters.category)
-      .filter((service) => matchesSearch(service, effectiveSearchQuery))
-      .filter((service) => !availableNowActive || service.live_work_mode === 'available')
-      .filter((service) => !locationNeedle || normalized(`${service.location ?? ''} ${service.service_area ?? ''}`).includes(locationNeedle))
-      .filter((service) => filters.price === 'any' || (filters.price === 'under-1000' && service.pricing.base_price.amount < 100000) || (filters.price === '1000-5000' && service.pricing.base_price.amount >= 100000 && service.pricing.base_price.amount <= 500000) || (filters.price === 'over-5000' && service.pricing.base_price.amount > 500000))
-      .filter((service) => filters.rating === 'any' || (filters.rating === '4-plus' && service.rating >= 4) || (filters.rating === '4.5-plus' && service.rating >= 4.5))
-      .filter((service) => filters.provider === 'any' || service.provider_type === filters.provider)
-      .sort((a, b) => sort === 'nearest'
-        ? Number(b.distance_priority || 0) - Number(a.distance_priority || 0)
-          || availabilityPriority(b) - availabilityPriority(a)
-          || relevanceScore(b, effectiveSearchQuery, preciseNearbyActive, searchIntent.nearMe) - relevanceScore(a, effectiveSearchQuery, preciseNearbyActive, searchIntent.nearMe)
-          || b.rating - a.rating
-          || b.review_count - a.review_count
-        : sort === 'rating'
-          ? b.rating - a.rating
-          : sort === 'price'
-            ? a.pricing.base_price.amount - b.pricing.base_price.amount
-            : sort === 'price-desc'
-              ? b.pricing.base_price.amount - a.pricing.base_price.amount
-              : relevanceScore(b, effectiveSearchQuery, preciseNearbyActive, searchIntent.nearMe) - relevanceScore(a, effectiveSearchQuery, preciseNearbyActive, searchIntent.nearMe)
-                || b.rating - a.rating
-                || b.review_count - a.review_count);
-  }, [services, availableNowActive, effectiveLocationQuery, effectiveSearchQuery, filters, geoOrigin, preciseNearbyActive, searchIntent.nearMe, sort]);
+  // Search/filter/ranking/pagination are server-authoritative for both normal and
+  // precise-nearby discovery. Preserve the server page order exactly so client-side
+  // fallback logic cannot drift from canonical taxonomy, multilingual tokenization,
+  // availability/capability weighting, geo distance weighting, or deterministic ties.
+  const filteredServices = services;
 
   const loadMore = async () => {
     if (!hasMore || !nextCursor || loadingMore) return;
