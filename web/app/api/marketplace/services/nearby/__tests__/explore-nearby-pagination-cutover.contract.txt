@@ -1,0 +1,14 @@
+Explore precise-nearby pagination cutover contract
+
+1. Use my location is session-only: browser coordinates are kept in component state and sent only in POST bodies to /api/marketplace/services/nearby. Coordinates are never added to the Explore URL or persisted as a Customer location record.
+2. When a precise browser origin is active and no named location is active, Explore uses the bounded nearby endpoint for first-page and Load more requests.
+3. Nearby discovery loads 24 Services per page by default and preserves server-provided total, cursor, geo_status, coarse distance_band, distance_priority, and nearby_match_mode.
+4. Query, category, price, rating, Provider type, available-now, relevance/nearest/rating/price sorting, taxonomy intent, and Professional + Business unified matching are applied server-side in nearby mode.
+5. If a named location is entered while a browser origin exists, current-location distance ranking is paused and Explore uses the normal paginated Service search for that named-location query; precise coordinates are not sent for that request.
+6. If geo_status is unavailable, Explore keeps the bounded fallback results returned by the nearby endpoint, explains that precise matching is temporarily unavailable, and does not fail the marketplace solely because geo enrichment failed.
+7. The category selector uses the full public server facet response rather than categories inferred only from the current nearby page.
+8. Load more works in both normal and precise-nearby modes and de-duplicates Service ids while preserving the active request key so stale responses cannot overwrite newer filters.
+9. nearest sort is available only while precise nearby matching is ready; it falls back to relevance when precise nearby matching is not active.
+10. No Service, Provider, booking, order, finance, payment, payout, recurrence, recovery, or publication state is mutated by this UI cutover.
+11. Provider identity finality remains unchanged: one account has one final Provider identity, Professional OR Business, while customer discovery remains unified across both.
+12. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD. Recurrence/recovery remain FROZEN.
