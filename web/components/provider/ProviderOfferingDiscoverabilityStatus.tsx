@@ -26,8 +26,9 @@ type ProfileReadiness = {
 };
 type Mode = 'services' | 'products';
 type Blocker = { detail: string; href: string; action: string };
-type MarketplaceServiceSummary = { id: string };
-type MarketplaceProductSummary = { id: string };
+type ReachabilityPayload = { ids?: string[]; error?: string };
+
+const reachabilityChunkSize = 40;
 
 function visibilityTone(value: Visibility): 'success' | 'warning' | 'neutral' {
   if (value === true) return 'success';
@@ -39,6 +40,21 @@ function listingTone(value: Visibility): 'success' | 'warning' | 'neutral' {
   if (value === true) return 'success';
   if (value === false) return 'warning';
   return 'neutral';
+}
+
+async function loadTargetedReachability(endpoint: string, ids: string[]) {
+  const reachable = new Set<string>();
+  for (let start = 0; start < ids.length; start += reachabilityChunkSize) {
+    const chunk = ids.slice(start, start + reachabilityChunkSize);
+    const params = new URLSearchParams({ ids: chunk.join(',') });
+    const response = await fetch(`${endpoint}?${params.toString()}`, { cache: 'no-store' });
+    const payload = await response.json() as ReachabilityPayload;
+    if (!response.ok || !Array.isArray(payload.ids)) {
+      throw new Error(payload.error || 'Customer discovery reachability could not be confirmed.');
+    }
+    for (const id of payload.ids) if (id) reachable.add(String(id));
+  }
+  return reachable;
 }
 
 export default function ProviderOfferingDiscoverabilityStatus({ mode }: { mode: Mode }) {
@@ -63,46 +79,58 @@ export default function ProviderOfferingDiscoverabilityStatus({ mode }: { mode: 
     const load = async () => {
       try {
         if (mode === 'services') {
-          const [catalogResponse, setupResponse, listingResponse] = await Promise.all([
+          const [catalogResponse, setupResponse] = await Promise.all([
             fetch('/api/provider/services', { cache: 'no-store' }),
             fetch('/api/provider/setup', { cache: 'no-store' }),
-            fetch('/api/marketplace/services', { cache: 'no-store' }),
           ]);
           const catalogPayload = await catalogResponse.json() as { services?: Service[]; error?: string };
           const setupPayload = await setupResponse.json() as { readiness?: SetupReadiness; error?: string };
-          const listingPayload = await listingResponse.json() as { services?: MarketplaceServiceSummary[]; error?: string };
           if (!catalogResponse.ok || !catalogPayload.services) throw new Error(catalogPayload.error || 'Unable to confirm service discoverability.');
           if (!setupResponse.ok || !setupPayload.readiness) throw new Error(setupPayload.error || 'Unable to load service readiness.');
+
+          const nextServices = catalogPayload.services;
+          const activeIds = nextServices.filter((service) => service.status === 'active').map((service) => service.id).filter(Boolean);
+          let reachableIds: Set<string> | null = new Set<string>();
+          let reachabilityError = '';
+          try {
+            reachableIds = await loadTargetedReachability('/api/marketplace/services/reachability', activeIds);
+          } catch (cause) {
+            reachableIds = null;
+            reachabilityError = cause instanceof Error ? cause.message : 'Customer service discovery reachability could not be confirmed.';
+          }
+
           if (!cancelled) {
-            setServices(catalogPayload.services);
+            setServices(nextServices);
             setSetup(setupPayload.readiness);
-            if (listingResponse.ok && Array.isArray(listingPayload.services)) {
-              setCustomerListingIds(new Set(listingPayload.services.map((service) => String(service.id || '')).filter(Boolean)));
-            } else {
-              setCustomerListingIds(null);
-              setListingError(listingPayload.error || 'Customer service discovery listing could not be confirmed.');
-            }
+            setCustomerListingIds(reachableIds);
+            setListingError(reachabilityError);
           }
         } else {
-          const [catalogResponse, profileResponse, listingResponse] = await Promise.all([
+          const [catalogResponse, profileResponse] = await Promise.all([
             fetch('/api/provider/products', { cache: 'no-store' }),
             fetch('/api/provider/profile', { cache: 'no-store' }),
-            fetch('/api/marketplace/products', { cache: 'no-store' }),
           ]);
           const catalogPayload = await catalogResponse.json() as { products?: Product[]; error?: string };
           const profilePayload = await profileResponse.json() as { profile?: ProfileReadiness; error?: string };
-          const listingPayload = await listingResponse.json() as { products?: MarketplaceProductSummary[]; error?: string };
           if (!catalogResponse.ok || !catalogPayload.products) throw new Error(catalogPayload.error || 'Unable to confirm product discoverability.');
           if (!profileResponse.ok || !profilePayload.profile) throw new Error(profilePayload.error || 'Unable to load Business public readiness.');
+
+          const nextProducts = catalogPayload.products;
+          const activeIds = nextProducts.filter((product) => product.status === 'active').map((product) => product.id).filter(Boolean);
+          let reachableIds: Set<string> | null = new Set<string>();
+          let reachabilityError = '';
+          try {
+            reachableIds = await loadTargetedReachability('/api/marketplace/products/reachability', activeIds);
+          } catch (cause) {
+            reachableIds = null;
+            reachabilityError = cause instanceof Error ? cause.message : 'Customer product discovery reachability could not be confirmed.';
+          }
+
           if (!cancelled) {
-            setProducts(catalogPayload.products);
+            setProducts(nextProducts);
             setProfile(profilePayload.profile);
-            if (listingResponse.ok && Array.isArray(listingPayload.products)) {
-              setCustomerListingIds(new Set(listingPayload.products.map((product) => String(product.id || '')).filter(Boolean)));
-            } else {
-              setCustomerListingIds(null);
-              setListingError(listingPayload.error || 'Customer product discovery listing could not be confirmed.');
-            }
+            setCustomerListingIds(reachableIds);
+            setListingError(reachabilityError);
           }
         }
       } catch (cause) {
@@ -167,11 +195,11 @@ export default function ProviderOfferingDiscoverabilityStatus({ mode }: { mode: 
           <span className="eyebrow">{tamil ? 'Customer discoverability' : 'Customer discoverability'}</span>
           <h2 style={{ margin: '.35rem 0 0' }}>
             {tamil
-              ? `${visibleCount}/${activeCount} public · ${listingReachableCount === null ? '—' : listingReachableCount}/${activeCount} customer listing`
-              : `${visibleCount}/${activeCount} public · ${listingReachableCount === null ? '—' : listingReachableCount}/${activeCount} customer listing`}
+              ? `${visibleCount}/${activeCount} public · ${listingReachableCount === null ? '—' : listingReachableCount}/${activeCount} customer search`
+              : `${visibleCount}/${activeCount} public · ${listingReachableCount === null ? '—' : listingReachableCount}/${activeCount} customer search`}
           </h2>
-          <p className="muted" style={{ margin: '.4rem 0 0' }}>{tamil ? 'Direct anonymous RLS visibility மற்றும் customer பயன்படுத்தும் actual marketplace listing API இரண்டையும் தனித்தனியாக verify செய்கிறது.' : 'This independently verifies direct anonymous RLS visibility and the actual marketplace listing API used by customers.'}</p>
-          {listingError ? <p className="muted" style={{ margin: '.35rem 0 0' }}>{tamil ? `Customer listing check கிடைக்கவில்லை: ${listingError}` : `Customer listing check unavailable: ${listingError}`}</p> : null}
+          <p className="muted" style={{ margin: '.4rem 0 0' }}>{tamil ? 'Direct anonymous RLS visibility மற்றும் அதே marketplace eligibility rules பயன்படுத்தும் targeted customer discovery probe இரண்டையும் verify செய்கிறது.' : 'This verifies direct anonymous RLS visibility and a targeted customer-discovery probe using the same marketplace eligibility rules.'}</p>
+          {listingError ? <p className="muted" style={{ margin: '.35rem 0 0' }}>{tamil ? `Customer search check கிடைக்கவில்லை: ${listingError}` : `Customer search check unavailable: ${listingError}`}</p> : null}
         </div>
         <Badge tone={fullyReachable ? 'success' : 'warning'}>{fullyReachable ? (tamil ? 'Search reachable' : 'Search reachable') : (tamil ? 'Review needed' : 'Review needed')}</Badge>
       </div>
@@ -184,13 +212,15 @@ export default function ProviderOfferingDiscoverabilityStatus({ mode }: { mode: 
             ? (mode === 'services' ? serviceBlocker(entry as Service) : productBlocker(entry as Product))
             : null;
           const publicHref = mode === 'services' ? `/services/${encodeURIComponent(entry.id)}` : `/products/${encodeURIComponent(entry.id)}`;
-          const discoveryHref = mode === 'services' ? `/explore?q=${encodeURIComponent(entry.name)}` : '/products';
+          const discoveryHref = mode === 'services'
+            ? `/explore?q=${encodeURIComponent(entry.name)}`
+            : `/products?q=${encodeURIComponent(entry.name)}`;
           const detail = visible === true && listingReachable === true
-            ? (tamil ? 'Public RLS மற்றும் customer discovery listing இரண்டிலும் இந்த offering கிடைக்கிறது.' : 'Both the public RLS path and the customer discovery listing return this offering.')
+            ? (tamil ? 'Public RLS மற்றும் targeted customer discovery probe இரண்டிலும் இந்த offering கிடைக்கிறது.' : 'Both the public RLS path and the targeted customer-discovery probe return this offering.')
             : visible === true && listingReachable === false
-              ? (tamil ? 'Public RLS இந்த offering-ஐ பார்க்கிறது; ஆனால் current customer discovery listing அதை return செய்யவில்லை. இது search/list reachability mismatch — catalog state மாற்றாமல் Public Readiness-ஐ review செய்யுங்கள்.' : 'Public RLS can see this offering, but the current customer discovery listing did not return it. This is a search/list reachability mismatch; keep the catalog state unchanged and review Public Readiness.')
+              ? (tamil ? 'Public RLS இந்த offering-ஐ பார்க்கிறது; ஆனால் targeted customer discovery probe அதை return செய்யவில்லை. இது search reachability mismatch — catalog state மாற்றாமல் Public Readiness-ஐ review செய்யுங்கள்.' : 'Public RLS can see this offering, but the targeted customer-discovery probe did not return it. This is a search reachability mismatch; keep the catalog state unchanged and review Public Readiness.')
               : visible === true
-                ? (tamil ? 'Public RLS visibility confirm ஆகியுள்ளது; customer listing check தற்போது கிடைக்கவில்லை.' : 'Public RLS visibility is confirmed; the customer listing check is currently unavailable.')
+                ? (tamil ? 'Public RLS visibility confirm ஆகியுள்ளது; customer search check தற்போது கிடைக்கவில்லை.' : 'Public RLS visibility is confirmed; the customer search check is currently unavailable.')
                 : visible === false
                   ? blocker?.detail
                   : (tamil ? 'Anonymous public probe result கிடைக்கவில்லை; catalog state மாற்றப்படவில்லை.' : 'The anonymous public probe is unavailable; catalog state was not changed.');
@@ -201,9 +231,9 @@ export default function ProviderOfferingDiscoverabilityStatus({ mode }: { mode: 
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem', flexWrap: 'wrap' }}>
               <Badge tone={visibilityTone(visible)}>{visible === true ? (tamil ? 'Public-visible' : 'Public-visible') : visible === false ? (tamil ? 'Hidden' : 'Hidden') : (tamil ? 'Public unknown' : 'Public unknown')}</Badge>
-              <Badge tone={listingTone(listingReachable)}>{listingReachable === true ? (tamil ? 'Customer listing' : 'Customer listing') : listingReachable === false ? (tamil ? 'Listing missing' : 'Listing missing') : (tamil ? 'Listing unknown' : 'Listing unknown')}</Badge>
+              <Badge tone={listingTone(listingReachable)}>{listingReachable === true ? (tamil ? 'Search reachable' : 'Search reachable') : listingReachable === false ? (tamil ? 'Search missing' : 'Search missing') : (tamil ? 'Search unknown' : 'Search unknown')}</Badge>
               {visible === true ? <Link href={publicHref} target="_blank" rel="noreferrer" className="text-link">{tamil ? 'Public view பார்க்க ↗' : 'View public page ↗'}</Link> : null}
-              {listingReachable === true ? <Link href={discoveryHref} target="_blank" rel="noreferrer" className="text-link">{mode === 'services' ? (tamil ? 'Customer search-ல் பார்க்க ↗' : 'Find in customer search ↗') : (tamil ? 'Product discovery திறக்க ↗' : 'Open product discovery ↗')}</Link> : null}
+              {listingReachable === true ? <Link href={discoveryHref} target="_blank" rel="noreferrer" className="text-link">{mode === 'services' ? (tamil ? 'Customer search-ல் பார்க்க ↗' : 'Find in customer search ↗') : (tamil ? 'Product search-ல் பார்க்க ↗' : 'Find in product search ↗')}</Link> : null}
               {visible === true && listingReachable === false ? <Link href="/provider/public-readiness" className="text-link">{tamil ? 'Public Readiness review செய்ய →' : 'Review Public Readiness →'}</Link> : null}
               {blocker ? <Link href={blocker.href} className="text-link">{blocker.action} →</Link> : null}
             </div>
