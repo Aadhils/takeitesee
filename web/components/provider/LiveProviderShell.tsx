@@ -6,6 +6,7 @@ import { Alert } from '../ui/primitives';
 import { WorkspaceSwitcher } from '../account/WorkspaceSwitcher';
 import RoleIdentityMediaHeader from '../identity/RoleIdentityMediaHeader';
 import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
+import ProviderOfferingDiscoverabilityStatus from './ProviderOfferingDiscoverabilityStatus';
 
 type TrustStatus = 'normal' | 'reverification_required' | 'suspended';
 type ProviderContext = {
@@ -253,6 +254,8 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
 
       {provider?.trust_status === 'suspended' ? <Alert title={t('provider.suspended')} tone="danger">{t('provider.suspendedBody')} {provider.trust_reason || t('provider.contactSupport')}</Alert> : null}
       {provider?.trust_status === 'reverification_required' ? <Alert title={t('provider.reverify')} tone="warning">{t('provider.reverifyBody')} {provider.trust_reason || ''} <Link href="/provider/verification">{t('provider.openVerification')}</Link></Alert> : null}
+      {active === '/provider/services' ? <ProviderOfferingDiscoverabilityStatus mode="services" /> : null}
+      {active === '/provider/products' ? <ProviderOfferingDiscoverabilityStatus mode="products" /> : null}
       {children}
     </main>
     <style jsx global>{`

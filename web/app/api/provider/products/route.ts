@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { productionAuthProvider } from '../../../../server/auth/session';
+import { loadPublicProductIds } from '../../../../server/marketplace/provider-public-discoverability';
 import {
   productionProviderProductRepository,
   type CreateBusinessProductInput,
@@ -12,7 +13,12 @@ export async function GET(request: Request) {
   try {
     const session = await productionAuthProvider.requireProvider(request);
     const products = await productionProviderProductRepository.list(session);
-    return NextResponse.json({ products }, { headers: { 'Cache-Control': 'no-store' } });
+    const publicIds = await loadPublicProductIds(products.map((product) => product.id));
+    const enriched = products.map((product) => ({
+      ...product,
+      public_discoverable: publicIds ? publicIds.has(product.id) : null,
+    }));
+    return NextResponse.json({ products: enriched }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unable to load Business products.' },
