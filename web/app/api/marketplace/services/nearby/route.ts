@@ -1,17 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { resolveMarketplaceServiceSearchSemantics } from '../../../../../server/marketplace-service-discovery/searchSemantics';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const defaultPageSize = 24;
 const maxPageSize = 48;
-const searchIntentTokens = new Set([
-  'near', 'nearby', 'nearest', 'closest', 'around', 'me', 'my',
-  'available', 'now', 'service', 'services', 'provider', 'providers',
-  'அருகில்', 'அருகிலுள்ள', 'அருகாமை', 'எனக்கு', 'இப்போது', 'சேவை', 'சேவைகள்',
-  'கிடைக்கும்', 'கிடைக்கிறார்', 'கிடைக்கிறது',
-]);
 const distanceBands = new Set(['under_1km', '1_3km', '3_7km', '7_15km', '15_30km', '30_60km', 'over_60km']);
 const nearbyMatchModes = new Set(['at_provider', 'at_customer']);
 
@@ -69,17 +64,6 @@ function publicSupabase() {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
-}
-
-function normalized(value: unknown) {
-  return String(value ?? '').normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, ' ').trim();
-}
-
-function semanticTokens(query: string) {
-  return normalized(query)
-    // Unicode marks are part of Tamil graphemes (for example the vowel mark in “பிளம்பர்”).
-    .split(/[^\p{L}\p{M}\p{N}]+/u)
-    .filter((token) => token && !searchIntentTokens.has(token));
 }
 
 function parseOrigin(value: unknown): MarketplaceOrigin {
@@ -189,8 +173,7 @@ export async function POST(request: Request) {
   }
 
   const query = stringValue(body.q).trim().slice(0, 180);
-  const queryTokens = semanticTokens(query);
-  const semanticQuery = queryTokens.join(' ');
+  const { tokens: queryTokens, semanticQuery } = resolveMarketplaceServiceSearchSemantics(query);
   const category = stringValue(body.category, 'all').trim().slice(0, 120) || 'all';
   const location = stringValue(body.location)
     .trim()

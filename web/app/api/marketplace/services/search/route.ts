@@ -1,17 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { resolveMarketplaceServiceSearchSemantics } from '../../../../../server/marketplace-service-discovery/searchSemantics';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const defaultPageSize = 24;
 const maxPageSize = 48;
-const searchIntentTokens = new Set([
-  'near', 'nearby', 'nearest', 'closest', 'around', 'me', 'my',
-  'available', 'now', 'service', 'services', 'provider', 'providers',
-  'அருகில்', 'அருகிலுள்ள', 'அருகாமை', 'எனக்கு', 'இப்போது', 'சேவை', 'சேவைகள்',
-  'கிடைக்கும்', 'கிடைக்கிறார்', 'கிடைக்கிறது',
-]);
 
 type PriceFilter = 'any' | 'under-1000' | '1000-5000' | 'over-5000';
 type RatingFilter = 'any' | '4-plus' | '4.5-plus';
@@ -51,17 +46,6 @@ function publicSupabase() {
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
-function normalized(value: unknown) {
-  return String(value ?? '').normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, ' ').trim();
-}
-
-function semanticTokens(query: string) {
-  return normalized(query)
-    // Unicode marks are part of Tamil graphemes (for example the vowel mark in “பிளம்பர்”).
-    .split(/[^\p{L}\p{M}\p{N}]+/u)
-    .filter((token) => token && !searchIntentTokens.has(token));
-}
-
 function boundedInteger(value: string | null, fallback: number, minimum: number, maximum: number) {
   const parsed = Number.parseInt(value ?? '', 10);
   if (!Number.isFinite(parsed)) return fallback;
@@ -98,8 +82,7 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const query = (url.searchParams.get('q') ?? '').trim().slice(0, 180);
-  const queryTokens = semanticTokens(query);
-  const semanticQuery = queryTokens.join(' ');
+  const { tokens: queryTokens, semanticQuery } = resolveMarketplaceServiceSearchSemantics(query);
   const location = (url.searchParams.get('location') ?? '')
     .trim()
     .slice(0, 120)
