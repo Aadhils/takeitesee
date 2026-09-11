@@ -1,0 +1,16 @@
+Service search aliases / multilingual matching contract
+
+1. Canonical Services taxonomy metadata remains the source of truth for search aliases. The public marketplace_search_taxonomy_public table remains a read-only projection refreshed by the existing canonical taxonomy trigger.
+2. Existing aliases are preserved. New multilingual aliases are deduplicated by normalized case/whitespace before storage.
+3. After migration 20260911203247_service_search_alias_multilingual_coverage, all 57 active Service leaf categories have at least one Tamil search alias and no category has an empty alias set.
+4. The migration introduces no normalized alias shared by two different canonical categories, preventing a new cross-category exact-alias ambiguity.
+5. AC Service, Appliance Repair and Pest Control no longer have empty alias sets; they receive common English and Tamil discovery phrases.
+6. Normal Service discovery semantic tokenization treats Unicode combining marks (General Category M) as part of a search word. Tamil graphemes such as “பிளம்பர்” must remain one semantic token rather than being split around vowel/virama marks.
+7. Precise-nearby Service discovery uses the same Unicode letter + mark + number token boundary rule as normal discovery.
+8. Tamil search-quality modifier cleanup preserves combining marks before comparing modifiers, so terms such as “சிறந்த” can be removed as modifiers without corrupting the remaining service intent.
+9. Existing search-intent words, canonical category weights, alias weights, provider/name/location/description weights, live-availability weights, rating/review weights and nearby distance weights are unchanged in this slice.
+10. Professional and Business Service results remain unified unless an explicit provider filter is supplied.
+11. Precise customer coordinates remain session-only nearby-search inputs; no coordinate persistence or response exposure is introduced.
+12. No Provider identity/state, Service publication, booking/order, trust, payment or recurrence state is mutated by search matching.
+13. One account remains Customer + exactly one final Provider identity: Professional OR Business, never both.
+14. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD. Recurrence/recovery remain FROZEN. Supabase leaked-password protection remains HOLD.
