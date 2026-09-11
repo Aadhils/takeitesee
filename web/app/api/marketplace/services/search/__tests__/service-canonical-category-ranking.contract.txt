@@ -1,0 +1,19 @@
+Canonical Service category ranking contract
+
+1. services.category_code is the authoritative taxonomy identity whenever it is present; search taxonomy joins by category_code before any mutable display label.
+2. Legacy exact normalized category-name taxonomy resolution is allowed only when services.category_code is null. A non-null category_code is never silently guessed into another category by label.
+3. Human-facing services.category remains unchanged for display and backward compatibility.
+4. Canonical taxonomy category_name receives the existing primary category relevance weights: exact 90, contains 55, token 16.
+5. If a stored display category differs from the canonical taxonomy name, it remains searchable only as a lower-weight compatibility fallback: exact 36, contains 20, token 8.
+6. Existing taxonomy alias weights remain unchanged in this step: exact 88, contains 52, token 15. Broader alias/multilingual hardening is a separate next phase.
+7. Existing service-name, provider-name, location, description, category-group, rating, review-count and live-availability weights remain unchanged.
+8. Precise-nearby distance bands, distance weights and near-me boost remain unchanged in this step.
+9. Normal and precise-nearby discovery use the same canonical category identity, taxonomy join, canonical category score and legacy fallback semantics.
+10. v2 normal and nearby discovery RPCs pass canonical category-code slugs directly into the hardened core instead of translating them back through mutable category labels.
+11. The hardened core accepts both canonical category-code slugs and legacy display-label slugs so previously shared Explore category URLs remain compatible.
+12. Category-code slugs normalize underscores to hyphens and remain stable when human category labels are renamed.
+13. Professional and Business services continue to be searched together unless an explicit provider-type filter is supplied.
+14. Precise customer coordinates remain session-only input to nearby discovery and are not persisted or returned.
+15. No Service, Provider, trust, publication, booking, order, finance, payment or recurrence state is mutated by this ranking hardening.
+16. One account remains Customer + exactly one final Provider identity: Professional OR Business, never both.
+17. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD. Recurrence/recovery remain FROZEN. Supabase leaked-password protection remains HOLD.
