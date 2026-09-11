@@ -37,7 +37,9 @@ function stripSearchQualityModifiers(value: string) {
   return tidy(value
     .split(/\s+/u)
     .filter((token) => {
-      const normalizedToken = normalize(token).replace(/[^\p{L}\p{N}]+/gu, '');
+      // Unicode combining marks are part of Tamil graphemes. Removing them turns
+      // words such as “சிறந்த” into a different token and defeats modifier removal.
+      const normalizedToken = normalize(token).replace(/[^\p{L}\p{M}\p{N}]+/gu, '');
       return normalizedToken && !searchQualityModifiers.has(normalizedToken);
     })
     .join(' '));
