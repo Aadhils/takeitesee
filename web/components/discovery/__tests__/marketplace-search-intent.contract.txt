@@ -11,5 +11,12 @@ Marketplace search intent hardening contract
    - "பிளம்பர் திருச்சி அருகில்" => serviceQuery "பிளம்பர்", locationQuery "திருச்சி", nearMe false.
 4. English named-location intent remains unchanged:
    - "plumber in Trichy" => serviceQuery "plumber", locationQuery "Trichy", nearMe false.
-5. Intent parsing does not persist coordinates, mutate Provider/Service state, or change finance/recurrence behavior.
-6. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD. Recurrence/recovery remain FROZEN.
+5. Customer quality/ranking modifiers MUST NOT become mandatory Service match tokens:
+   - "best trusted plumber near me" => serviceQuery "plumber", locationQuery "", nearMe true.
+   - "top recommended tyre puncture in Trichy" => serviceQuery "tyre puncture", locationQuery "Trichy", nearMe false.
+   - "சிறந்த நம்பகமான பிளம்பர் எனக்கு அருகில்" => serviceQuery "பிளம்பர்", locationQuery "", nearMe true.
+   - "நல்ல பரிந்துரைக்கப்பட்ட பிளம்பர் திருச்சி அருகில்" => serviceQuery "பிளம்பர்", locationQuery "திருச்சி", nearMe false.
+6. Quality-modifier normalization affects only the Service-intent portion; named locations are not rewritten. For example, "good plumber in Good Shepherd" keeps locationQuery "Good Shepherd" while serviceQuery becomes "plumber".
+7. Intent parsing does not persist coordinates, mutate Provider/Service state, or change finance/recurrence behavior.
+8. Provider identity finality and unified Professional + Business discovery remain unchanged.
+9. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD. Recurrence/recovery remain FROZEN.
