@@ -5,17 +5,19 @@ import {
   mapMarketplaceServiceDiscoveryServices,
   type MarketplaceServiceDiscoveryCandidateRow,
 } from '../../../../../server/marketplace-service-discovery/responseMapping';
+import {
+  boundedMarketplaceServiceInteger,
+  marketplaceServiceDefaultPageSize,
+  marketplaceServiceMaxPageSize,
+  marketplaceServiceNormalSortModes,
+  marketplaceServicePriceFilters,
+  marketplaceServiceProviderFilters,
+  marketplaceServiceRatingFilters,
+  parseMarketplaceServiceFilter,
+} from '../../../../../server/marketplace-service-discovery/requestParsing';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
-const defaultPageSize = 24;
-const maxPageSize = 48;
-
-type PriceFilter = 'any' | 'under-1000' | '1000-5000' | 'over-5000';
-type RatingFilter = 'any' | '4-plus' | '4.5-plus';
-type ProviderFilter = 'any' | 'professional' | 'business';
-type SortMode = 'relevance' | 'rating' | 'price' | 'price-desc';
 
 type CategoryRow = { category_slug: string; category_name: string };
 
@@ -24,17 +26,6 @@ function publicSupabase() {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
-}
-
-function boundedInteger(value: string | null, fallback: number, minimum: number, maximum: number) {
-  const parsed = Number.parseInt(value ?? '', 10);
-  if (!Number.isFinite(parsed)) return fallback;
-  return Math.min(Math.max(parsed, minimum), maximum);
-}
-
-function parseFilter<T extends string>(value: string | null, allowed: readonly T[], fallback: T): T | null {
-  if (!value) return fallback;
-  return allowed.includes(value as T) ? value as T : null;
 }
 
 export async function GET(request: Request) {
@@ -51,17 +42,22 @@ export async function GET(request: Request) {
     .replace(/\s+/g, ' ')
     .trim();
   const category = (url.searchParams.get('category') ?? 'all').trim().slice(0, 120) || 'all';
-  const price = parseFilter<PriceFilter>(url.searchParams.get('price'), ['any', 'under-1000', '1000-5000', 'over-5000'], 'any');
-  const rating = parseFilter<RatingFilter>(url.searchParams.get('rating'), ['any', '4-plus', '4.5-plus'], 'any');
-  const provider = parseFilter<ProviderFilter>(url.searchParams.get('provider'), ['any', 'professional', 'business'], 'any');
-  const sort = parseFilter<SortMode>(url.searchParams.get('sort'), ['relevance', 'rating', 'price', 'price-desc'], 'relevance');
+  const price = parseMarketplaceServiceFilter(url.searchParams.get('price'), marketplaceServicePriceFilters, 'any');
+  const rating = parseMarketplaceServiceFilter(url.searchParams.get('rating'), marketplaceServiceRatingFilters, 'any');
+  const provider = parseMarketplaceServiceFilter(url.searchParams.get('provider'), marketplaceServiceProviderFilters, 'any');
+  const sort = parseMarketplaceServiceFilter(url.searchParams.get('sort'), marketplaceServiceNormalSortModes, 'relevance');
   const availableNow = url.searchParams.get('availability') === 'now';
   if (!price || !rating || !provider || !sort) {
     return NextResponse.json({ error: 'Service discovery filters are invalid.' }, { status: 400 });
   }
 
-  const cursor = boundedInteger(url.searchParams.get('cursor'), 0, 0, 1_000_000_000);
-  const limit = boundedInteger(url.searchParams.get('limit'), defaultPageSize, 1, maxPageSize);
+  const cursor = boundedMarketplaceServiceInteger(url.searchParams.get('cursor'), 0, 0, 1_000_000_000);
+  const limit = boundedMarketplaceServiceInteger(
+    url.searchParams.get('limit'),
+    marketplaceServiceDefaultPageSize,
+    1,
+    marketplaceServiceMaxPageSize,
+  );
 
   const [searchResult, categoryResult] = await Promise.all([
     supabase.rpc('search_marketplace_service_discovery_candidates_v2', {
