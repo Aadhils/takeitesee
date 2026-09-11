@@ -1,0 +1,10 @@
+Shared canonical Service discovery request parsing contract
+
+1. Normal GET and precise-nearby POST use the same allowed price, rating, and provider filter sets and the same default values.
+2. Normal sort remains exactly relevance/rating/price/price-desc; nearby additionally allows nearest and no other new sort value.
+3. Empty or absent filter values keep their existing defaults; non-string or unsupported values remain invalid and must return the existing route-specific 400 response.
+4. Cursor remains bounded to 0..1,000,000,000 with fallback 0.
+5. Limit remains bounded to 1..48 with fallback/default 24; numeric POST inputs are truncated exactly as before and string inputs keep parseInt behavior.
+6. GET query-string extraction and POST JSON/origin parsing remain transport-specific and are not centralized by this slice.
+7. Semantic tokenization, category/location cleanup, availability/near_me flags, RPC names/arguments, ranking, geo fallback, response mapping, pagination shape, and caching remain unchanged.
+8. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD; recurrence/recovery remain FROZEN.
