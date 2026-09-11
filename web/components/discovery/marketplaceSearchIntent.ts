@@ -41,6 +41,19 @@ export function parseMarketplaceSearchIntent(rawQuery: string): MarketplaceSearc
     }
   }
 
+  // Resolve explicit current-location intent before Tamil named-location parsing.
+  // Otherwise phrases such as “எனக்கு அருகில் பிளம்பர்” can be misread as if
+  // “எனக்கு” were a literal place name instead of the customer's current location.
+  const normalizedQuery = normalize(query);
+  const nearMe = nearMePatterns.some((pattern) => pattern.test(normalizedQuery));
+  if (nearMe) {
+    return {
+      serviceQuery: stripNearMe(query),
+      locationQuery: '',
+      nearMe: true,
+    };
+  }
+
   const tamilFirstMatch = query.match(tamilLocationFirstPattern);
   if (tamilFirstMatch) {
     const locationQuery = tidy(tamilFirstMatch[1] || '');
@@ -53,16 +66,6 @@ export function parseMarketplaceSearchIntent(rawQuery: string): MarketplaceSearc
     const serviceQuery = tidy(tamilLastMatch[1] || '');
     const locationQuery = tidy(tamilLastMatch[2] || '');
     if (serviceQuery && locationQuery) return { serviceQuery, locationQuery, nearMe: false };
-  }
-
-  const normalizedQuery = normalize(query);
-  const nearMe = nearMePatterns.some((pattern) => pattern.test(normalizedQuery));
-  if (nearMe) {
-    return {
-      serviceQuery: stripNearMe(query),
-      locationQuery: '',
-      nearMe: true,
-    };
   }
 
   return { serviceQuery: query, locationQuery: '', nearMe: false };
