@@ -26,8 +26,16 @@ type ProfileReadiness = {
 };
 type Mode = 'services' | 'products';
 type Blocker = { detail: string; href: string; action: string };
+type MarketplaceServiceSummary = { id: string };
+type MarketplaceProductSummary = { id: string };
 
 function visibilityTone(value: Visibility): 'success' | 'warning' | 'neutral' {
+  if (value === true) return 'success';
+  if (value === false) return 'warning';
+  return 'neutral';
+}
+
+function listingTone(value: Visibility): 'success' | 'warning' | 'neutral' {
   if (value === true) return 'success';
   if (value === false) return 'warning';
   return 'neutral';
@@ -40,6 +48,8 @@ export default function ProviderOfferingDiscoverabilityStatus({ mode }: { mode: 
   const [products, setProducts] = useState<Product[]>([]);
   const [setup, setSetup] = useState<SetupReadiness | null>(null);
   const [profile, setProfile] = useState<ProfileReadiness | null>(null);
+  const [customerListingIds, setCustomerListingIds] = useState<Set<string> | null>(null);
+  const [listingError, setListingError] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -47,34 +57,52 @@ export default function ProviderOfferingDiscoverabilityStatus({ mode }: { mode: 
     let cancelled = false;
     setLoading(true);
     setError('');
+    setListingError('');
+    setCustomerListingIds(null);
 
     const load = async () => {
       try {
         if (mode === 'services') {
-          const [catalogResponse, setupResponse] = await Promise.all([
+          const [catalogResponse, setupResponse, listingResponse] = await Promise.all([
             fetch('/api/provider/services', { cache: 'no-store' }),
             fetch('/api/provider/setup', { cache: 'no-store' }),
+            fetch('/api/marketplace/services', { cache: 'no-store' }),
           ]);
           const catalogPayload = await catalogResponse.json() as { services?: Service[]; error?: string };
           const setupPayload = await setupResponse.json() as { readiness?: SetupReadiness; error?: string };
+          const listingPayload = await listingResponse.json() as { services?: MarketplaceServiceSummary[]; error?: string };
           if (!catalogResponse.ok || !catalogPayload.services) throw new Error(catalogPayload.error || 'Unable to confirm service discoverability.');
           if (!setupResponse.ok || !setupPayload.readiness) throw new Error(setupPayload.error || 'Unable to load service readiness.');
           if (!cancelled) {
             setServices(catalogPayload.services);
             setSetup(setupPayload.readiness);
+            if (listingResponse.ok && Array.isArray(listingPayload.services)) {
+              setCustomerListingIds(new Set(listingPayload.services.map((service) => String(service.id || '')).filter(Boolean)));
+            } else {
+              setCustomerListingIds(null);
+              setListingError(listingPayload.error || 'Customer service discovery listing could not be confirmed.');
+            }
           }
         } else {
-          const [catalogResponse, profileResponse] = await Promise.all([
+          const [catalogResponse, profileResponse, listingResponse] = await Promise.all([
             fetch('/api/provider/products', { cache: 'no-store' }),
             fetch('/api/provider/profile', { cache: 'no-store' }),
+            fetch('/api/marketplace/products', { cache: 'no-store' }),
           ]);
           const catalogPayload = await catalogResponse.json() as { products?: Product[]; error?: string };
           const profilePayload = await profileResponse.json() as { profile?: ProfileReadiness; error?: string };
+          const listingPayload = await listingResponse.json() as { products?: MarketplaceProductSummary[]; error?: string };
           if (!catalogResponse.ok || !catalogPayload.products) throw new Error(catalogPayload.error || 'Unable to confirm product discoverability.');
           if (!profileResponse.ok || !profilePayload.profile) throw new Error(profilePayload.error || 'Unable to load Business public readiness.');
           if (!cancelled) {
             setProducts(catalogPayload.products);
             setProfile(profilePayload.profile);
+            if (listingResponse.ok && Array.isArray(listingPayload.products)) {
+              setCustomerListingIds(new Set(listingPayload.products.map((product) => String(product.id || '')).filter(Boolean)));
+            } else {
+              setCustomerListingIds(null);
+              setListingError(listingPayload.error || 'Customer product discovery listing could not be confirmed.');
+            }
           }
         }
       } catch (cause) {
@@ -95,6 +123,13 @@ export default function ProviderOfferingDiscoverabilityStatus({ mode }: { mode: 
   const visibleCount = mode === 'services'
     ? activeServices.filter((service) => service.public_discoverable === true).length
     : activeProducts.filter((product) => product.public_discoverable === true).length;
+  const entries = mode === 'services' ? activeServices : activeProducts;
+  const listingReachableCount = customerListingIds
+    ? entries.filter((entry) => customerListingIds.has(entry.id)).length
+    : null;
+  const fullyReachable = visibleCount === activeCount
+    && listingReachableCount !== null
+    && listingReachableCount === activeCount;
 
   const serviceBlocker = (service: Service): Blocker => {
     const current = serviceReadyById.get(service.id);
@@ -125,39 +160,51 @@ export default function ProviderOfferingDiscoverabilityStatus({ mode }: { mode: 
   if (error) return <Alert title={tamil ? 'Public visibility confirmation unavailable' : 'Public visibility confirmation unavailable'} tone="warning">{error}</Alert>;
   if (!activeCount) return <Alert title={tamil ? 'Active offering இல்லை' : 'No active offering to confirm'} tone="info">{tamil ? 'Service/Product manual-ஆ Active ஆன பிறகு customer-facing discoverability confirmation இங்கே காட்டப்படும்.' : 'Customer-facing discoverability confirmation will appear here after a Service or Product is manually Active.'}</Alert>;
 
-  const entries = mode === 'services' ? activeServices : activeProducts;
   return <Card className="mb-5 overflow-hidden">
     <div style={{ display: 'grid', gap: '1rem', padding: '20px' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
         <div>
           <span className="eyebrow">{tamil ? 'Customer discoverability' : 'Customer discoverability'}</span>
-          <h2 style={{ margin: '.35rem 0 0' }}>{tamil ? `${visibleCount}/${activeCount} public-ஆ confirm ஆகியுள்ளது` : `${visibleCount}/${activeCount} confirmed public`}</h2>
-          <p className="muted" style={{ margin: '.4rem 0 0' }}>{tamil ? 'இந்த status Provider owner view அல்ல; customer பயன்படுத்தும் anonymous RLS public path-ஐ நேரடியாக verify செய்கிறது.' : 'This status does not trust the Provider owner view; it verifies the same anonymous RLS public path used by customer-facing marketplace surfaces.'}</p>
+          <h2 style={{ margin: '.35rem 0 0' }}>
+            {tamil
+              ? `${visibleCount}/${activeCount} public · ${listingReachableCount === null ? '—' : listingReachableCount}/${activeCount} customer listing`
+              : `${visibleCount}/${activeCount} public · ${listingReachableCount === null ? '—' : listingReachableCount}/${activeCount} customer listing`}
+          </h2>
+          <p className="muted" style={{ margin: '.4rem 0 0' }}>{tamil ? 'Direct anonymous RLS visibility மற்றும் customer பயன்படுத்தும் actual marketplace listing API இரண்டையும் தனித்தனியாக verify செய்கிறது.' : 'This independently verifies direct anonymous RLS visibility and the actual marketplace listing API used by customers.'}</p>
+          {listingError ? <p className="muted" style={{ margin: '.35rem 0 0' }}>{tamil ? `Customer listing check கிடைக்கவில்லை: ${listingError}` : `Customer listing check unavailable: ${listingError}`}</p> : null}
         </div>
-        <Badge tone={visibleCount === activeCount ? 'success' : 'warning'}>{visibleCount === activeCount ? (tamil ? 'Public confirmed' : 'Public confirmed') : (tamil ? 'Review needed' : 'Review needed')}</Badge>
+        <Badge tone={fullyReachable ? 'success' : 'warning'}>{fullyReachable ? (tamil ? 'Search reachable' : 'Search reachable') : (tamil ? 'Review needed' : 'Review needed')}</Badge>
       </div>
 
       <div style={{ display: 'grid', gap: '.7rem' }}>
         {entries.map((entry) => {
           const visible = entry.public_discoverable;
+          const listingReachable: Visibility = customerListingIds ? customerListingIds.has(entry.id) : null;
           const blocker = visible === false
             ? (mode === 'services' ? serviceBlocker(entry as Service) : productBlocker(entry as Product))
             : null;
           const publicHref = mode === 'services' ? `/services/${encodeURIComponent(entry.id)}` : `/products/${encodeURIComponent(entry.id)}`;
+          const discoveryHref = mode === 'services' ? `/explore?q=${encodeURIComponent(entry.name)}` : '/products';
+          const detail = visible === true && listingReachable === true
+            ? (tamil ? 'Public RLS மற்றும் customer discovery listing இரண்டிலும் இந்த offering கிடைக்கிறது.' : 'Both the public RLS path and the customer discovery listing return this offering.')
+            : visible === true && listingReachable === false
+              ? (tamil ? 'Public RLS இந்த offering-ஐ பார்க்கிறது; ஆனால் current customer discovery listing அதை return செய்யவில்லை. இது search/list reachability mismatch — catalog state மாற்றாமல் Public Readiness-ஐ review செய்யுங்கள்.' : 'Public RLS can see this offering, but the current customer discovery listing did not return it. This is a search/list reachability mismatch; keep the catalog state unchanged and review Public Readiness.')
+              : visible === true
+                ? (tamil ? 'Public RLS visibility confirm ஆகியுள்ளது; customer listing check தற்போது கிடைக்கவில்லை.' : 'Public RLS visibility is confirmed; the customer listing check is currently unavailable.')
+                : visible === false
+                  ? blocker?.detail
+                  : (tamil ? 'Anonymous public probe result கிடைக்கவில்லை; catalog state மாற்றப்படவில்லை.' : 'The anonymous public probe is unavailable; catalog state was not changed.');
           return <div key={entry.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '.8rem', flexWrap: 'wrap', padding: '.8rem 0', borderTop: '1px solid var(--color-border)' }}>
             <div style={{ minWidth: 0 }}>
               <strong>{entry.name}</strong>
-              <p className="muted" style={{ margin: '.25rem 0 0' }}>
-                {visible === true
-                  ? (tamil ? 'Customer marketplace public path இந்த offering-ஐ பார்க்கிறது.' : 'The customer marketplace public path can see this offering.')
-                  : visible === false
-                    ? blocker?.detail
-                    : (tamil ? 'Anonymous public probe result கிடைக்கவில்லை; catalog state மாற்றப்படவில்லை.' : 'The anonymous public probe is unavailable; catalog state was not changed.')}
-              </p>
+              <p className="muted" style={{ margin: '.25rem 0 0' }}>{detail}</p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem', flexWrap: 'wrap' }}>
-              <Badge tone={visibilityTone(visible)}>{visible === true ? (tamil ? 'Customer-visible' : 'Customer-visible') : visible === false ? (tamil ? 'Hidden' : 'Hidden') : (tamil ? 'Unknown' : 'Unknown')}</Badge>
+              <Badge tone={visibilityTone(visible)}>{visible === true ? (tamil ? 'Public-visible' : 'Public-visible') : visible === false ? (tamil ? 'Hidden' : 'Hidden') : (tamil ? 'Public unknown' : 'Public unknown')}</Badge>
+              <Badge tone={listingTone(listingReachable)}>{listingReachable === true ? (tamil ? 'Customer listing' : 'Customer listing') : listingReachable === false ? (tamil ? 'Listing missing' : 'Listing missing') : (tamil ? 'Listing unknown' : 'Listing unknown')}</Badge>
               {visible === true ? <Link href={publicHref} target="_blank" rel="noreferrer" className="text-link">{tamil ? 'Public view பார்க்க ↗' : 'View public page ↗'}</Link> : null}
+              {listingReachable === true ? <Link href={discoveryHref} target="_blank" rel="noreferrer" className="text-link">{mode === 'services' ? (tamil ? 'Customer search-ல் பார்க்க ↗' : 'Find in customer search ↗') : (tamil ? 'Product discovery திறக்க ↗' : 'Open product discovery ↗')}</Link> : null}
+              {visible === true && listingReachable === false ? <Link href="/provider/public-readiness" className="text-link">{tamil ? 'Public Readiness review செய்ய →' : 'Review Public Readiness →'}</Link> : null}
               {blocker ? <Link href={blocker.href} className="text-link">{blocker.action} →</Link> : null}
             </div>
           </div>;
