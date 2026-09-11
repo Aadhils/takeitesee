@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { createSupabaseServiceClient } from '../../../../lib/supabase/service';
 import { hasMarketplaceDisclosure } from '../../../../server/marketplace/public-directory';
 import { loadProductImagePresence } from '../../../../server/marketplace/public-product-media';
 
@@ -106,7 +105,6 @@ export async function GET(request: Request) {
 
   const cursor = boundedInteger(url.searchParams.get('cursor'), 0, 0, 1_000_000_000);
   const limit = boundedInteger(url.searchParams.get('limit'), defaultPageSize, 1, maxPageSize);
-  const serviceRole = createSupabaseServiceClient();
   const products: Array<{
     id: string;
     business_id: string;
@@ -130,7 +128,7 @@ export async function GET(request: Request) {
 
   for (let batch = 0; batch < maxCandidateScanBatches && products.length < limit; batch += 1) {
     const batchStart = scanOffset;
-    const { data: candidateData, error: candidateError } = await serviceRole.rpc(
+    const { data: candidateData, error: candidateError } = await supabase.rpc(
       'search_business_product_discovery_candidates',
       {
         target_query: query || null,
