@@ -1,0 +1,13 @@
+Service discovery availability/capability weighting contract
+
+- Preserve all existing normal and precise-nearby search request/response fields.
+- Preserve canonical category, alias, multilingual, price, rating, provider, availability filter and pagination semantics.
+- Existing live provider status weights remain: available > busy > offline/paused.
+- Service availability configuration contributes only a modest relevance tie-break: always_available=8, scheduled=5, on_request/default=2.
+- Active fulfillment capability breadth contributes 3 points per active mode, capped at 9 across at_provider / at_customer / remote.
+- Nearby distance priority remains independent and unchanged.
+- Professional and Business providers use identical availability/capability weighting rules.
+- Raw protected fulfillment-mode rows are not exposed; the internal helper returns only coarse integer priorities.
+- Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD.
+- Recurrence/recovery remains FROZEN.
+- Supabase leaked-password protection remains HOLD.
