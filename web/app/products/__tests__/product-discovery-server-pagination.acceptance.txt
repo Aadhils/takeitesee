@@ -1,7 +1,0 @@
-Product discovery pagination acceptance
-
-- First customer request is bounded to 24 Products by the Product page.
-- Load more uses the server-provided next cursor and appends without duplicate Product ids.
-- Changing q, stock, shop, or sort returns to the first page.
-- Public Product authorization remains anonymous business_products RLS plus public Business/disclosure verification.
-- Customer Product discovery does not require or activate payment/Cashfree.
