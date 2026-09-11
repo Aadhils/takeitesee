@@ -1,0 +1,10 @@
+Native Service discovery normal / precise-nearby deterministic parity contract
+
+1. Normal search and precise-nearby search MUST send the same semantic query text and semantic token array for the same customer phrase. Tamil grapheme marks are preserved by both routes.
+2. Normal and precise-nearby relevance scoring MUST keep identical non-geo signals and weights: service text, canonical category, legacy category fallback, multilingual aliases, category group, provider/location/description token matches, effective Provider live-work mode, Service availability configuration, active fulfillment-capability breadth, rating and review count.
+3. Precise-nearby relevance may add ONLY geo-derived distance priority to the shared relevance score. target_near_me may strengthen that distance contribution; it MUST NOT change text/category/availability/capability/rating weights.
+4. For sort=relevance, both paths MUST use the same deterministic post-score tie-break chain: rating DESC, review_count DESC, updated_at DESC, id ASC. Nearby may differ before that chain only because its relevance_score includes geo distance.
+5. Explicit sort=rating / price / price-desc MUST preserve the same primary sort semantics in normal and nearby paths. Nearby-only sort=nearest is allowed and uses distance priority first, then live availability, relevance, rating, reviews, updated_at and id.
+6. If precise geo enrichment fails, nearby API MUST fall back to the normal v2 search RPC with identical semantic/filter arguments; nearest falls back to relevance because normal search has no distance signal.
+7. Both paths MUST use the same canonical category v2 facet and preserve unified Professional + Business discovery. Provider identity finality remains unchanged.
+8. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD. Recurrence/recovery remains FROZEN. Supabase leaked-password protection remains HOLD.
