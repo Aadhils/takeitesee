@@ -76,6 +76,14 @@ function categorySlug(category: string) {
   return category.toLocaleLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'other';
 }
 
+function canonicalCategorySlug(code: unknown, fallbackName: string) {
+  const value = String(code ?? '').trim().toLocaleLowerCase()
+    .replace(/[_\s]+/g, '-')
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return value || categorySlug(fallbackName);
+}
+
 function availabilityLabel(mode: CandidateRow['live_work_mode']) {
   if (mode === 'available') return 'Available now';
   if (mode === 'busy') return 'Busy now';
@@ -111,7 +119,7 @@ export async function GET(request: Request) {
   const limit = boundedInteger(url.searchParams.get('limit'), defaultPageSize, 1, maxPageSize);
 
   const [searchResult, categoryResult] = await Promise.all([
-    supabase.rpc('search_marketplace_service_discovery_candidates', {
+    supabase.rpc('search_marketplace_service_discovery_candidates_v2', {
       target_query: semanticQuery || null,
       target_tokens: queryTokens,
       target_category: category,
@@ -124,7 +132,7 @@ export async function GET(request: Request) {
       target_offset: cursor,
       target_limit: limit + 1,
     }),
-    supabase.rpc('get_marketplace_service_discovery_categories'),
+    supabase.rpc('get_marketplace_service_discovery_categories_v2'),
   ]);
 
   if (searchResult.error) return NextResponse.json({ error: searchResult.error.message }, { status: 500 });
@@ -137,6 +145,7 @@ export async function GET(request: Request) {
 
   const services = pageRows.map((row) => {
     const categoryName = String(row.category || 'Other');
+    const categoryId = canonicalCategorySlug(row.category_code, categoryName);
     const providerId = row.provider_type === 'business' ? row.business_id : row.professional_id;
     const workMode = ['available', 'busy', 'offline', 'paused'].includes(String(row.live_work_mode))
       ? row.live_work_mode
@@ -150,8 +159,8 @@ export async function GET(request: Request) {
       provider_id: providerId,
       location: String(row.service_location || row.service_area || ''),
       service_area: String(row.service_area || row.service_location || ''),
-      category_id: categorySlug(categoryName),
-      category_slug: categorySlug(categoryName),
+      category_id: categoryId,
+      category_slug: categoryId,
       category_code: row.category_code || null,
       category_group: String(row.category_group || ''),
       category_aliases: Array.isArray(row.category_aliases) ? row.category_aliases : [],

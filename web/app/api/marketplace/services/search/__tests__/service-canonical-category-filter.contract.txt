@@ -1,0 +1,14 @@
+Canonical Service category filter cutover contract
+
+1. Public Service category filter identity prefers the stable canonical platform category code normalized as a hyphen slug; mutable display labels are not the authoritative public filter identity.
+2. Normal Service discovery uses search_marketplace_service_discovery_candidates_v2 and get_marketplace_service_discovery_categories_v2.
+3. Precise nearby Service discovery uses search_marketplace_service_nearby_candidates_v2 and the same v2 category facet. If geo enrichment fails, its bounded normal-search fallback also uses the v2 normal discovery wrapper.
+4. v2 wrappers preserve the proven core search/ranking/filter functions and only translate canonical category-code slugs to the current legacy display-label slug expected by those core functions.
+5. Existing legacy display-label category slugs remain accepted as fallback input so previously shared Explore URLs do not break during the transition.
+6. Service responses expose category_id/category_slug from category_code when available; unresolved legacy rows fall back to the previous display-label slug. The human display category label remains unchanged.
+7. Category facets prefer canonical category_code slugs and current canonical category names; unresolved legacy rows may safely fall back to the legacy display label instead of being guessed into a leaf category.
+8. Normal and nearby pagination, query intent, taxonomy aliases, provider type, live availability, location, price, rating, relevance/nearest sorting, coarse distance metadata, and Professional + Business unified matching remain unchanged.
+9. Precise customer coordinates remain session-only POST data for nearby discovery; this cutover does not persist or expose raw coordinates.
+10. No Service, Provider, trust, publication, booking, order, finance, or recurrence state is mutated by category filtering.
+11. Provider identity finality remains one final Provider identity per account: Professional OR Business, while customer discovery remains unified.
+12. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD. Recurrence/recovery remain FROZEN.
