@@ -5,17 +5,20 @@ import {
   mapMarketplaceServiceDiscoveryServices,
   type MarketplaceServiceDiscoveryCandidateRow,
 } from '../../../../../server/marketplace-service-discovery/responseMapping';
+import {
+  boundedMarketplaceServiceInteger,
+  marketplaceServiceDefaultPageSize,
+  marketplaceServiceMaxPageSize,
+  marketplaceServiceNearbySortModes,
+  marketplaceServicePriceFilters,
+  marketplaceServiceProviderFilters,
+  marketplaceServiceRatingFilters,
+  parseMarketplaceServiceFilter,
+} from '../../../../../server/marketplace-service-discovery/requestParsing';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const defaultPageSize = 24;
-const maxPageSize = 48;
-
-type PriceFilter = 'any' | 'under-1000' | '1000-5000' | 'over-5000';
-type RatingFilter = 'any' | '4-plus' | '4.5-plus';
-type ProviderFilter = 'any' | 'professional' | 'business';
-type SortMode = 'relevance' | 'nearest' | 'rating' | 'price' | 'price-desc';
 type MarketplaceOrigin = { latitude: number; longitude: number };
 
 type CategoryRow = { category_slug: string; category_name: string };
@@ -51,19 +54,8 @@ function parseOrigin(value: unknown): MarketplaceOrigin {
   return { latitude, longitude };
 }
 
-function boundedInteger(value: unknown, fallback: number, minimum: number, maximum: number) {
-  const parsed = typeof value === 'number' ? Math.trunc(value) : Number.parseInt(String(value ?? ''), 10);
-  if (!Number.isFinite(parsed)) return fallback;
-  return Math.min(Math.max(parsed, minimum), maximum);
-}
-
 function stringValue(value: unknown, fallback = '') {
   return typeof value === 'string' ? value : fallback;
-}
-
-function parseFilter<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T | null {
-  if (value == null || value === '') return fallback;
-  return typeof value === 'string' && allowed.includes(value as T) ? value as T : null;
 }
 
 export async function POST(request: Request) {
@@ -93,18 +85,23 @@ export async function POST(request: Request) {
     .replace(/[%_\\]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
-  const price = parseFilter<PriceFilter>(body.price, ['any', 'under-1000', '1000-5000', 'over-5000'], 'any');
-  const rating = parseFilter<RatingFilter>(body.rating, ['any', '4-plus', '4.5-plus'], 'any');
-  const provider = parseFilter<ProviderFilter>(body.provider, ['any', 'professional', 'business'], 'any');
-  const sort = parseFilter<SortMode>(body.sort, ['relevance', 'nearest', 'rating', 'price', 'price-desc'], 'relevance');
+  const price = parseMarketplaceServiceFilter(body.price, marketplaceServicePriceFilters, 'any');
+  const rating = parseMarketplaceServiceFilter(body.rating, marketplaceServiceRatingFilters, 'any');
+  const provider = parseMarketplaceServiceFilter(body.provider, marketplaceServiceProviderFilters, 'any');
+  const sort = parseMarketplaceServiceFilter(body.sort, marketplaceServiceNearbySortModes, 'relevance');
   if (!price || !rating || !provider || !sort) {
     return NextResponse.json({ error: 'Nearby Service discovery filters are invalid.' }, { status: 400 });
   }
 
   const availableNow = body.available_now === true;
   const nearMe = body.near_me === true;
-  const cursor = boundedInteger(body.cursor, 0, 0, 1_000_000_000);
-  const limit = boundedInteger(body.limit, defaultPageSize, 1, maxPageSize);
+  const cursor = boundedMarketplaceServiceInteger(body.cursor, 0, 0, 1_000_000_000);
+  const limit = boundedMarketplaceServiceInteger(
+    body.limit,
+    marketplaceServiceDefaultPageSize,
+    1,
+    marketplaceServiceMaxPageSize,
+  );
 
   const nearbyArgs = {
     origin_lat: origin.latitude,
