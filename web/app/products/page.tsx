@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Badge, Button, Card, EmptyState, Input, Select, Skeleton } from '../../components/ui/primitives';
 import { useLanguage } from '../../components/i18n/LanguageProvider';
 
@@ -14,6 +14,7 @@ type SortMode = 'relevance' | 'price' | 'price-desc' | 'name';
 const stockFilters: StockFilter[] = ['any', 'orderable', 'in_stock', 'made_to_order'];
 const shopFilters: ShopFilter[] = ['any', 'open'];
 const sortModes: SortMode[] = ['relevance', 'price', 'price-desc', 'name'];
+const productPageSize = 24;
 
 type Product = {
   id: string;
@@ -31,11 +32,13 @@ type Product = {
   verified_business: boolean;
 };
 
-type SavedProductSummary = { product_id: string };
+type ProductPagePayload = {
+  products?: Product[];
+  page?: { next_cursor?: string | null; has_more?: boolean };
+  error?: string;
+};
 
-function normalized(value: unknown) {
-  return String(value ?? '').normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, ' ').trim();
-}
+type SavedProductSummary = { product_id: string };
 
 function productDetailHref(product: Product) {
   return `/products/${encodeURIComponent(product.id)}`;
@@ -54,17 +57,29 @@ function buildProductParams(query: string, stock: StockFilter, shop: ShopFilter,
   return params;
 }
 
+function buildProductApiParams(query: string, stock: StockFilter, shop: ShopFilter, sort: SortMode, cursor?: string | null) {
+  const params = buildProductParams(query, stock, shop, sort);
+  params.set('limit', String(productPageSize));
+  if (cursor) params.set('cursor', cursor);
+  return params;
+}
+
 export default function ProductsPage() {
   const { locale } = useLanguage();
   const tamil = locale === 'ta-IN';
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
+  const [loadMoreError, setLoadMoreError] = useState('');
   const [query, setQuery] = useState('');
+  const [serverQuery, setServerQuery] = useState('');
   const [stock, setStock] = useState<StockFilter>('any');
   const [shop, setShop] = useState<ShopFilter>('any');
   const [sort, setSort] = useState<SortMode>('relevance');
   const [urlReady, setUrlReady] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
   const [saveAuthenticated, setSaveAuthenticated] = useState<boolean | null>(null);
   const [savedProductIds, setSavedProductIds] = useState<Set<string>>(() => new Set());
   const [saveBusyId, setSaveBusyId] = useState('');
@@ -75,12 +90,20 @@ export default function ProductsPage() {
     const stockParam = params.get('stock') as StockFilter;
     const shopParam = params.get('shop') as ShopFilter;
     const sortParam = params.get('sort') as SortMode;
-    setQuery(params.get('q')?.trim() ?? '');
+    const initialQuery = params.get('q')?.trim() ?? '';
+    setQuery(initialQuery);
+    setServerQuery(initialQuery);
     setStock(stockFilters.includes(stockParam) ? stockParam : 'any');
     setShop(shopFilters.includes(shopParam) ? shopParam : 'any');
     setSort(sortModes.includes(sortParam) ? sortParam : 'relevance');
     setUrlReady(true);
   }, []);
+
+  useEffect(() => {
+    if (!urlReady) return;
+    const timer = window.setTimeout(() => setServerQuery(query.trim()), 250);
+    return () => window.clearTimeout(timer);
+  }, [query, urlReady]);
 
   useEffect(() => {
     if (!urlReady) return;
@@ -90,19 +113,33 @@ export default function ProductsPage() {
   }, [query, shop, sort, stock, urlReady]);
 
   useEffect(() => {
-    let cancelled = false;
-    void fetch('/api/marketplace/products', { cache: 'no-store' })
+    if (!urlReady) return;
+    const controller = new AbortController();
+    setLoading(true);
+    setError('');
+    setLoadMoreError('');
+    setProducts([]);
+    setNextCursor(null);
+    setHasMore(false);
+
+    const params = buildProductApiParams(serverQuery, stock, shop, sort);
+    void fetch(`/api/marketplace/products?${params.toString()}`, { cache: 'no-store', signal: controller.signal })
       .then(async (response) => {
-        const payload = await response.json() as { products?: Product[]; error?: string };
+        const payload = await response.json() as ProductPagePayload;
         if (!response.ok) throw new Error(payload.error || 'Product marketplace unavailable.');
-        if (!cancelled) setProducts(Array.isArray(payload.products) ? payload.products : []);
+        setProducts(Array.isArray(payload.products) ? payload.products : []);
+        const cursor = payload.page?.next_cursor ?? null;
+        setNextCursor(cursor);
+        setHasMore(Boolean(payload.page?.has_more && cursor));
       })
       .catch((loadError) => {
-        if (!cancelled) setError(loadError instanceof Error ? loadError.message : 'Product marketplace unavailable.');
+        if (controller.signal.aborted) return;
+        setError(loadError instanceof Error ? loadError.message : 'Product marketplace unavailable.');
       })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, []);
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+
+    return () => controller.abort();
+  }, [serverQuery, shop, sort, stock, urlReady]);
 
   useEffect(() => {
     let cancelled = false;
@@ -126,30 +163,6 @@ export default function ProductsPage() {
     return () => { cancelled = true; };
   }, []);
 
-  const filteredProducts = useMemo(() => {
-    const needle = normalized(query);
-    return products
-      .filter((product) => !needle || normalized([
-        product.name,
-        product.description,
-        product.business_name,
-        product.business_location,
-      ].join(' ')).includes(needle))
-      .filter((product) => stock === 'any'
-        || (stock === 'orderable' && product.stock_mode !== 'out_of_stock')
-        || product.stock_mode === stock)
-      .filter((product) => shop === 'any' || product.business_shop_state === 'open')
-      .sort((a, b) => sort === 'price'
-        ? a.price - b.price
-        : sort === 'price-desc'
-          ? b.price - a.price
-          : sort === 'name'
-            ? a.name.localeCompare(b.name)
-            : Number(b.business_shop_state === 'open') - Number(a.business_shop_state === 'open')
-              || Number(b.stock_mode !== 'out_of_stock') - Number(a.stock_mode !== 'out_of_stock')
-              || a.name.localeCompare(b.name));
-  }, [products, query, shop, sort, stock]);
-
   const money = (product: Product) => {
     try {
       return new Intl.NumberFormat(locale, {
@@ -168,6 +181,11 @@ export default function ProductsPage() {
     return { label: tamil ? 'Stock இல்லை' : 'Out of stock', tone: 'neutral' as const };
   };
 
+  const currentContext = (() => {
+    const params = buildProductParams(query, stock, shop, sort).toString();
+    return params ? `/products?${params}` : '/products';
+  })();
+
   const toggleSavedProduct = async (productId: string) => {
     if (saveBusyId) return;
     const saved = savedProductIds.has(productId);
@@ -180,7 +198,7 @@ export default function ProductsPage() {
         body: JSON.stringify({ product_id: productId }),
       });
       if (response.status === 401) {
-        window.location.assign(`/login?returnTo=${encodeURIComponent('/products')}`);
+        window.location.assign(`/login?returnTo=${encodeURIComponent(currentContext)}`);
         return;
       }
       const payload = await response.json() as { error?: string };
@@ -198,6 +216,31 @@ export default function ProductsPage() {
     }
   };
 
+  const loadMore = async () => {
+    if (!hasMore || !nextCursor || loadingMore) return;
+    const cursor = nextCursor;
+    setLoadingMore(true);
+    setLoadMoreError('');
+    try {
+      const params = buildProductApiParams(serverQuery, stock, shop, sort, cursor);
+      const response = await fetch(`/api/marketplace/products?${params.toString()}`, { cache: 'no-store' });
+      const payload = await response.json() as ProductPagePayload;
+      if (!response.ok) throw new Error(payload.error || 'Unable to load more Products.');
+      const nextProducts = Array.isArray(payload.products) ? payload.products : [];
+      setProducts((current) => {
+        const ids = new Set(current.map((product) => product.id));
+        return [...current, ...nextProducts.filter((product) => !ids.has(product.id))];
+      });
+      const next = payload.page?.next_cursor ?? null;
+      setNextCursor(next);
+      setHasMore(Boolean(payload.page?.has_more && next));
+    } catch (cause) {
+      setLoadMoreError(cause instanceof Error ? cause.message : 'Unable to load more Products.');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
   const clear = () => {
     setQuery('');
     setStock('any');
@@ -210,8 +253,8 @@ export default function ProductsPage() {
       <span className="eyebrow">{tamil ? 'Business marketplace' : 'Business marketplace'}</span>
       <h1>{tamil ? 'Products கண்டுபிடிக்கவும்' : 'Discover products'}</h1>
       <p>{tamil
-        ? 'Platform review செய்யப்பட்ட current product revisions மட்டும் இங்கே தெரியும். Stock மற்றும் Shop status பார்க்கலாம்; order request Business storefront-ல் existing flow மூலம் அனுப்பலாம்.'
-        : 'Browse only current product revisions approved for public launch. See stock and Shop status here, then use the existing Business storefront flow to request an order.'}</p>
+        ? 'Platform review செய்யப்பட்ட current product revisions மட்டும் இங்கே தெரியும். Search மற்றும் filters server-side apply ஆகும்; approved catalog-ஐ page-by-page load செய்யலாம்.'
+        : 'Browse only current product revisions approved for public launch. Search and filters run server-side, and the approved catalog loads page by page.'}</p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.75rem', marginTop: '1rem' }}>
         <Link href="/explore" className="button button-secondary">{tamil ? 'Services பார்க்க' : 'Browse services'}</Link>
         <Link href="/businesses" className="button button-quiet">{tamil ? 'Businesses பார்க்க' : 'Browse Businesses'}</Link>
@@ -256,51 +299,63 @@ export default function ProductsPage() {
     <div className="results-heading">
       <div>
         <span className="eyebrow">{tamil ? 'Approved products' : 'Approved products'}</span>
-        <h2>{loading ? (tamil ? 'Products ஏற்றப்படுகிறது…' : 'Loading products…') : `${filteredProducts.length} ${tamil ? 'products' : 'products'}`}</h2>
+        <h2>{loading
+          ? (tamil ? 'Products ஏற்றப்படுகிறது…' : 'Loading products…')
+          : serverQuery
+            ? (tamil ? `“${serverQuery}” க்கு ${products.length} products loaded` : `${products.length} products loaded for “${serverQuery}”`)
+            : (tamil ? `${products.length} products loaded` : `${products.length} products loaded`)}</h2>
       </div>
     </div>
 
     {loading ? <div className="service-grid"><div className="loading-card"><Skeleton className="loading-art" /><Skeleton className="loading-line" /><Skeleton className="loading-line short" /></div></div>
       : error ? <Card><EmptyState title={tamil ? 'Product marketplace தற்போது கிடைக்கவில்லை' : 'Product marketplace unavailable'}>{error}</EmptyState></Card>
-        : filteredProducts.length ? <div className="service-grid">{filteredProducts.map((product) => {
-          const stockState = stockPresentation(product.stock_mode);
-          const shopOpen = product.business_shop_state === 'open';
-          const productHref = productDetailHref(product);
-          const saved = savedProductIds.has(product.id);
-          return <Card className="discovery-card service-discovery-card" key={product.id}>
-            {product.has_primary_image ? <div className="service-card-art" style={{ padding: 0, overflow: 'hidden' }}>
-              <img
-                src={productImageHref(product.id)}
-                alt={`${product.name} product`}
-                style={{ width: '100%', height: '100%', minHeight: '160px', objectFit: 'cover', display: 'block' }}
-              />
-              <span className="art-label" style={{ position: 'absolute', left: '.75rem', bottom: '.75rem' }}>{tamil ? 'Product' : 'Product'}</span>
-            </div> : <div className="service-card-art" aria-hidden="true"><span>{product.name.slice(0, 1)}</span><span className="art-label">{tamil ? 'Product' : 'Product'}</span></div>}
-            <div className="discovery-card-content">
-              <div className="card-meta">
-                <Badge tone={stockState.tone}>{stockState.label}</Badge>
-                <Badge tone={shopOpen ? 'success' : 'neutral'}>{shopOpen ? (tamil ? 'Shop Open' : 'Shop Open') : (tamil ? 'Shop Closed' : 'Shop Closed')}</Badge>
-                {product.verified_business ? <Badge tone="info">{tamil ? 'Verified Business' : 'Verified Business'}</Badge> : null}
-                {saved ? <Badge tone="success">{tamil ? 'Saved' : 'Saved'}</Badge> : null}
-              </div>
-              <h3><Link href={productHref}>{product.name}</Link></h3>
-              {product.description ? <p className="card-description">{product.description}</p> : null}
-              <p className="card-provider"><Link href={`/businesses/${encodeURIComponent(product.business_id)}`}>{product.business_name}</Link>{product.business_location ? <> <span aria-hidden="true">·</span> {product.business_location}</> : null}</p>
-              <div className="card-footer">
-                <div>
-                  <span className="price">{money(product)} / {product.unit_label}</span>
-                  <small style={{ display: 'block', marginTop: '.35rem' }}>{tamil ? 'Order request மட்டும்; online payment இல்லை.' : 'Order request only; no online payment.'}</small>
+        : products.length ? <>
+          <div className="service-grid">{products.map((product) => {
+            const stockState = stockPresentation(product.stock_mode);
+            const shopOpen = product.business_shop_state === 'open';
+            const productHref = productDetailHref(product);
+            const saved = savedProductIds.has(product.id);
+            return <Card className="discovery-card service-discovery-card" key={product.id}>
+              {product.has_primary_image ? <div className="service-card-art" style={{ padding: 0, overflow: 'hidden' }}>
+                <img
+                  src={productImageHref(product.id)}
+                  alt={`${product.name} product`}
+                  style={{ width: '100%', height: '100%', minHeight: '160px', objectFit: 'cover', display: 'block' }}
+                />
+                <span className="art-label" style={{ position: 'absolute', left: '.75rem', bottom: '.75rem' }}>{tamil ? 'Product' : 'Product'}</span>
+              </div> : <div className="service-card-art" aria-hidden="true"><span>{product.name.slice(0, 1)}</span><span className="art-label">{tamil ? 'Product' : 'Product'}</span></div>}
+              <div className="discovery-card-content">
+                <div className="card-meta">
+                  <Badge tone={stockState.tone}>{stockState.label}</Badge>
+                  <Badge tone={shopOpen ? 'success' : 'neutral'}>{shopOpen ? (tamil ? 'Shop Open' : 'Shop Open') : (tamil ? 'Shop Closed' : 'Shop Closed')}</Badge>
+                  {product.verified_business ? <Badge tone="info">{tamil ? 'Verified Business' : 'Verified Business'}</Badge> : null}
+                  {saved ? <Badge tone="success">{tamil ? 'Saved' : 'Saved'}</Badge> : null}
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.5rem', justifyContent: 'flex-end' }}>
-                  {saveAuthenticated === false ? <Link href={`/login?returnTo=${encodeURIComponent('/products')}`} className="button button-quiet">{tamil ? 'Save செய்ய Sign in' : 'Sign in to save'}</Link>
-                    : saveAuthenticated === true ? <Button type="button" variant={saved ? 'secondary' : 'quiet'} loading={saveBusyId === product.id} disabled={Boolean(saveBusyId && saveBusyId !== product.id)} aria-pressed={saved} onClick={() => void toggleSavedProduct(product.id)}>{saved ? (tamil ? 'Saved ✓' : 'Saved ✓') : (tamil ? 'Save Product' : 'Save Product')}</Button>
-                      : null}
-                  <Link href={productHref} className="button button-secondary">{product.stock_mode === 'out_of_stock' ? (tamil ? 'Product பார்க்க' : 'View product') : (tamil ? 'இந்த product order கேள்' : 'Request this product')}</Link>
+                <h3><Link href={productHref}>{product.name}</Link></h3>
+                {product.description ? <p className="card-description">{product.description}</p> : null}
+                <p className="card-provider"><Link href={`/businesses/${encodeURIComponent(product.business_id)}`}>{product.business_name}</Link>{product.business_location ? <> <span aria-hidden="true">·</span> {product.business_location}</> : null}</p>
+                <div className="card-footer">
+                  <div>
+                    <span className="price">{money(product)} / {product.unit_label}</span>
+                    <small style={{ display: 'block', marginTop: '.35rem' }}>{tamil ? 'Order request மட்டும்; online payment இல்லை.' : 'Order request only; no online payment.'}</small>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.5rem', justifyContent: 'flex-end' }}>
+                    {saveAuthenticated === false ? <Link href={`/login?returnTo=${encodeURIComponent(currentContext)}`} className="button button-quiet">{tamil ? 'Save செய்ய Sign in' : 'Sign in to save'}</Link>
+                      : saveAuthenticated === true ? <Button type="button" variant={saved ? 'secondary' : 'quiet'} loading={saveBusyId === product.id} disabled={Boolean(saveBusyId && saveBusyId !== product.id)} aria-pressed={saved} onClick={() => void toggleSavedProduct(product.id)}>{saved ? (tamil ? 'Saved ✓' : 'Saved ✓') : (tamil ? 'Save Product' : 'Save Product')}</Button>
+                        : null}
+                    <Link href={productHref} className="button button-secondary">{product.stock_mode === 'out_of_stock' ? (tamil ? 'Product பார்க்க' : 'View product') : (tamil ? 'இந்த product order கேள்' : 'Request this product')}</Link>
+                  </div>
                 </div>
               </div>
-            </div>
-          </Card>;
-        })}</div>
+            </Card>;
+          })}</div>
+          {loadMoreError ? <p className="field-error" role="alert" style={{ marginTop: '1rem' }}>{loadMoreError}</p> : null}
+          {hasMore ? <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.25rem' }}>
+            <Button type="button" variant="secondary" loading={loadingMore} onClick={() => void loadMore()}>
+              {tamil ? 'மேலும் Products ஏற்று' : 'Load more products'}
+            </Button>
+          </div> : <p className="muted" style={{ textAlign: 'center', marginTop: '1.25rem' }}>{tamil ? 'இந்த search/filter-க்கு approved catalog முடிந்தது.' : 'You have reached the end of this approved catalog view.'}</p>}
+        </>
           : <Card><EmptyState title={tamil ? 'இந்த filters-க்கு products இல்லை' : 'No products match these filters'}>{tamil ? 'Filters clear செய்து மீண்டும் பார்க்கவும்.' : 'Clear the filters and browse the approved catalog again.'}</EmptyState></Card>}
 
     <p className="explore-disclaimer">{tamil
