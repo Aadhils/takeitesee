@@ -13,6 +13,9 @@ import {
   marketplaceServicePriceFilters,
   marketplaceServiceProviderFilters,
   marketplaceServiceRatingFilters,
+  normalizeMarketplaceServiceCategory,
+  normalizeMarketplaceServiceLocation,
+  normalizeMarketplaceServiceQuery,
   parseMarketplaceServiceFilter,
 } from '../../../../../server/marketplace-service-discovery/requestParsing';
 
@@ -54,10 +57,6 @@ function parseOrigin(value: unknown): MarketplaceOrigin {
   return { latitude, longitude };
 }
 
-function stringValue(value: unknown, fallback = '') {
-  return typeof value === 'string' ? value : fallback;
-}
-
 export async function POST(request: Request) {
   const supabase = publicSupabase();
   if (!supabase) return NextResponse.json({ error: 'Marketplace database is not configured.' }, { status: 500 });
@@ -76,15 +75,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Customer location is invalid.' }, { status: 400 });
   }
 
-  const query = stringValue(body.q).trim().slice(0, 180);
+  const query = normalizeMarketplaceServiceQuery(body.q);
   const { tokens: queryTokens, semanticQuery } = resolveMarketplaceServiceSearchSemantics(query);
-  const category = stringValue(body.category, 'all').trim().slice(0, 120) || 'all';
-  const location = stringValue(body.location)
-    .trim()
-    .slice(0, 120)
-    .replace(/[%_\\]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  const category = normalizeMarketplaceServiceCategory(body.category);
+  const location = normalizeMarketplaceServiceLocation(body.location);
   const price = parseMarketplaceServiceFilter(body.price, marketplaceServicePriceFilters, 'any');
   const rating = parseMarketplaceServiceFilter(body.rating, marketplaceServiceRatingFilters, 'any');
   const provider = parseMarketplaceServiceFilter(body.provider, marketplaceServiceProviderFilters, 'any');
