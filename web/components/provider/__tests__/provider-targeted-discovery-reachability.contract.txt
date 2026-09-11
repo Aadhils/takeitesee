@@ -1,0 +1,15 @@
+Provider targeted discovery reachability contract
+
+- Provider discoverability checks MUST NOT download the full customer Service/Product catalog only to confirm Provider-owned active offering ids.
+- Targeted reachability probes MUST use the anonymous Supabase/RLS path; service/product owner credentials MUST NOT broaden customer eligibility.
+- Service reachability MUST require active + active status, a verified Provider, marketplace disclosure, and a valid Professional/Business provider identity.
+- Product reachability MUST require anonymous-RLS visibility plus a verified Business with marketplace disclosure.
+- Probe requests MUST be bounded and Provider UI MUST chunk large active-offering sets instead of relying on global 10k/15k listing caps.
+- Probe failure MUST render reachability as unknown; it MUST NOT pause, activate, republish, or otherwise mutate an offering.
+- A public-visible but probe-missing offering MUST be shown as a search-reachability mismatch for review without automatic catalog mutation.
+- Product discovery MUST hydrate q/stock/shop/sort from the URL and preserve current search/filter state in the URL.
+- A reachable Provider Product MUST deep-link to /products?q=<product name>; a reachable Service MUST continue to deep-link to /explore?q=<service name>.
+- Professional + Business Services remain unified in customer discovery.
+- Provider identity finality remains unchanged.
+- Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD.
+- Recurrence/recovery remain FROZEN.

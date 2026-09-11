@@ -11,6 +11,10 @@ type StockFilter = 'any' | 'orderable' | 'in_stock' | 'made_to_order';
 type ShopFilter = 'any' | 'open';
 type SortMode = 'relevance' | 'price' | 'price-desc' | 'name';
 
+const stockFilters: StockFilter[] = ['any', 'orderable', 'in_stock', 'made_to_order'];
+const shopFilters: ShopFilter[] = ['any', 'open'];
+const sortModes: SortMode[] = ['relevance', 'price', 'price-desc', 'name'];
+
 type Product = {
   id: string;
   business_id: string;
@@ -41,6 +45,15 @@ function productImageHref(productId: string) {
   return `/api/marketplace/products/${encodeURIComponent(productId)}/image`;
 }
 
+function buildProductParams(query: string, stock: StockFilter, shop: ShopFilter, sort: SortMode) {
+  const params = new URLSearchParams();
+  if (query.trim()) params.set('q', query.trim());
+  if (stock !== 'any') params.set('stock', stock);
+  if (shop !== 'any') params.set('shop', shop);
+  if (sort !== 'relevance') params.set('sort', sort);
+  return params;
+}
+
 export default function ProductsPage() {
   const { locale } = useLanguage();
   const tamil = locale === 'ta-IN';
@@ -51,10 +64,30 @@ export default function ProductsPage() {
   const [stock, setStock] = useState<StockFilter>('any');
   const [shop, setShop] = useState<ShopFilter>('any');
   const [sort, setSort] = useState<SortMode>('relevance');
+  const [urlReady, setUrlReady] = useState(false);
   const [saveAuthenticated, setSaveAuthenticated] = useState<boolean | null>(null);
   const [savedProductIds, setSavedProductIds] = useState<Set<string>>(() => new Set());
   const [saveBusyId, setSaveBusyId] = useState('');
   const [saveError, setSaveError] = useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const stockParam = params.get('stock') as StockFilter;
+    const shopParam = params.get('shop') as ShopFilter;
+    const sortParam = params.get('sort') as SortMode;
+    setQuery(params.get('q')?.trim() ?? '');
+    setStock(stockFilters.includes(stockParam) ? stockParam : 'any');
+    setShop(shopFilters.includes(shopParam) ? shopParam : 'any');
+    setSort(sortModes.includes(sortParam) ? sortParam : 'relevance');
+    setUrlReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!urlReady) return;
+    const params = buildProductParams(query, stock, shop, sort);
+    const search = params.toString();
+    window.history.replaceState(null, '', search ? `/products?${search}` : '/products');
+  }, [query, shop, sort, stock, urlReady]);
 
   useEffect(() => {
     let cancelled = false;
