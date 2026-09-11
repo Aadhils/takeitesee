@@ -110,6 +110,14 @@ function categorySlug(category: string) {
   return category.toLocaleLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'other';
 }
 
+function canonicalCategorySlug(code: unknown, fallbackName: string) {
+  const value = String(code ?? '').trim().toLocaleLowerCase()
+    .replace(/[_\s]+/g, '-')
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return value || categorySlug(fallbackName);
+}
+
 function availabilityLabel(mode: CandidateRow['live_work_mode']) {
   if (mode === 'available') return 'Available now';
   if (mode === 'busy') return 'Busy now';
@@ -120,6 +128,7 @@ function availabilityLabel(mode: CandidateRow['live_work_mode']) {
 function mapServices(rows: CandidateRow[]) {
   return rows.map((row) => {
     const categoryName = String(row.category || 'Other');
+    const categoryId = canonicalCategorySlug(row.category_code, categoryName);
     const providerId = row.provider_type === 'business' ? row.business_id : row.professional_id;
     const workMode = ['available', 'busy', 'offline', 'paused'].includes(String(row.live_work_mode))
       ? row.live_work_mode
@@ -140,8 +149,8 @@ function mapServices(rows: CandidateRow[]) {
       provider_id: providerId,
       location: String(row.service_location || row.service_area || ''),
       service_area: String(row.service_area || row.service_location || ''),
-      category_id: categorySlug(categoryName),
-      category_slug: categorySlug(categoryName),
+      category_id: categoryId,
+      category_slug: categoryId,
       category_code: row.category_code || null,
       category_group: String(row.category_group || ''),
       category_aliases: Array.isArray(row.category_aliases) ? row.category_aliases : [],
@@ -218,13 +227,13 @@ export async function POST(request: Request) {
     target_limit: limit + 1,
   };
 
-  const categoryPromise = supabase.rpc('get_marketplace_service_discovery_categories');
+  const categoryPromise = supabase.rpc('get_marketplace_service_discovery_categories_v2');
   let geoStatus: 'ready' | 'unavailable' = 'ready';
-  let searchResult = await supabase.rpc('search_marketplace_service_nearby_candidates', nearbyArgs);
+  let searchResult = await supabase.rpc('search_marketplace_service_nearby_candidates_v2', nearbyArgs);
 
   if (searchResult.error) {
     geoStatus = 'unavailable';
-    searchResult = await supabase.rpc('search_marketplace_service_discovery_candidates', {
+    searchResult = await supabase.rpc('search_marketplace_service_discovery_candidates_v2', {
       target_query: semanticQuery || null,
       target_tokens: queryTokens,
       target_category: category,
