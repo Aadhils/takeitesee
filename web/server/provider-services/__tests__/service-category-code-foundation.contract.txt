@@ -1,0 +1,11 @@
+Service category code identity foundation contract
+
+1. Provider Service create/update accepts only an active canonical leaf category from the Services application; category groups remain invalid selections.
+2. New or recategorized Services persist both the current display label in services.category and the stable machine identity in services.category_code.
+3. services.category_code uses the canonical platform category code and must not be derived from a mutable display label.
+4. The migration backfills category_code only when a legacy services.category value exactly matches a canonical public leaf category name after whitespace/case normalization.
+5. Legacy null or group-level values such as "Home Services" remain unresolved instead of being guessed into an arbitrary child category.
+6. The foundation does not alter existing Service status, active/publication state, provider ownership, booking/order state, or trust state.
+7. Provider identity finality remains unchanged: one account has one final Provider identity, Professional OR Business; customer discovery remains unified across both.
+8. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD. Recurrence/recovery remain FROZEN.
+9. This foundation does not yet switch customer category filtering to category_code; that cutover is a separate guarded slice after production verification.
