@@ -54,7 +54,7 @@ type ResolvedOwner = {
   marketplace_disclosure_complete: boolean;
   trust_status: ProviderTrustStatus;
 };
-type CanonicalCategory = { id: EntityId; name: string; application_id: EntityId };
+type CanonicalCategory = { id: EntityId; name: string; code: string; application_id: EntityId };
 
 function marketplaceDisclosureComplete(provider: MarketplaceDisclosure) {
   return Boolean(
@@ -83,23 +83,30 @@ async function resolveCanonicalCategory(categoryId: EntityId): Promise<Canonical
   const supabase = await createSupabaseServerClient();
   const { data: category, error: categoryError } = await supabase
     .from('platform_categories')
-    .select('id,name,application_id')
+    .select('id,name,code,application_id')
     .eq('id', categoryId)
     .eq('active', true)
     .maybeSingle();
   if (categoryError) throw new Error(categoryError.message);
   if (!category) throw new Error('Selected platform category is not available.');
+  if (!category.code?.trim()) throw new Error('Selected platform category does not have a stable category code.');
 
   const [{ data: application, error: applicationError }, { data: child, error: childError }] = await Promise.all([
-    supabase.from('platform_applications').select('id').eq('id', category.application_id).eq('status', 'active').maybeSingle(),
+    supabase.from('platform_applications').select('id,code').eq('id', category.application_id).eq('status', 'active').maybeSingle(),
     supabase.from('platform_categories').select('id').eq('parent_id', category.id).eq('active', true).limit(1).maybeSingle(),
   ]);
   if (applicationError) throw new Error(applicationError.message);
   if (childError) throw new Error(childError.message);
   if (!application) throw new Error('Selected platform category belongs to an inactive application.');
+  if (application.code !== 'services') throw new Error('Choose a category from the Services marketplace.');
   if (child) throw new Error('Choose a specific specialty category instead of a category group.');
 
-  return { id: category.id as EntityId, name: category.name, application_id: category.application_id as EntityId };
+  return {
+    id: category.id as EntityId,
+    name: category.name,
+    code: category.code.trim(),
+    application_id: category.application_id as EntityId,
+  };
 }
 
 async function resolveTrustStatus(owner: Pick<ResolvedOwner, 'provider_type' | 'professional_id' | 'business_id'>): Promise<ProviderTrustStatus> {
@@ -187,7 +194,7 @@ export const productionProviderServiceRepository = {
     await assertPublishAllowed(owner, status);
     const category = await resolveCanonicalCategory(input.category_id);
     const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.from('services').insert({ ...ownerFields(owner), name: input.name.trim(), description: input.description.trim(), category: category.name, location: input.location?.trim() || null, duration_minutes: input.duration_minutes, base_price: input.base_price, currency: input.currency ?? 'INR', status, active: status === 'active' }).select('*').single();
+    const { data, error } = await supabase.from('services').insert({ ...ownerFields(owner), name: input.name.trim(), description: input.description.trim(), category: category.name, category_code: category.code, location: input.location?.trim() || null, duration_minutes: input.duration_minutes, base_price: input.base_price, currency: input.currency ?? 'INR', status, active: status === 'active' }).select('*').single();
     if (error || !data) throw new Error(error?.message ?? 'Service could not be created.');
     return mapService(data as Record<string, unknown>);
   },
@@ -198,7 +205,11 @@ export const productionProviderServiceRepository = {
     const supabase = await createSupabaseServerClient(); const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (input.name !== undefined) patch.name = input.name.trim();
     if (input.description !== undefined) patch.description = input.description.trim();
-    if (input.category_id !== undefined) patch.category = (await resolveCanonicalCategory(input.category_id)).name;
+    if (input.category_id !== undefined) {
+      const category = await resolveCanonicalCategory(input.category_id);
+      patch.category = category.name;
+      patch.category_code = category.code;
+    }
     if (input.location !== undefined) patch.location = input.location.trim() || null;
     if (input.duration_minutes !== undefined) patch.duration_minutes = input.duration_minutes;
     if (input.base_price !== undefined) patch.base_price = input.base_price;
