@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { createSupabaseServiceClient } from '../../../../lib/supabase/service';
 import { hasMarketplaceDisclosure } from '../../../../server/marketplace/public-directory';
 import { loadProductImagePresence } from '../../../../server/marketplace/public-product-media';
@@ -68,7 +68,7 @@ function parseFilter<T extends string>(value: string | null, allowed: readonly T
   return allowed.includes(value as T) ? value as T : null;
 }
 
-async function loadPublicBusinesses(supabase: ReturnType<typeof createClient>, businessIds: string[]) {
+async function loadPublicBusinesses(supabase: SupabaseClient, businessIds: string[]) {
   const businesses = new Map<string, PublicBusiness>();
   const uniqueIds = Array.from(new Set(businessIds.filter(Boolean)));
 
