@@ -77,7 +77,8 @@ function normalized(value: unknown) {
 
 function semanticTokens(query: string) {
   return normalized(query)
-    .split(/[^\p{L}\p{N}]+/u)
+    // Unicode marks are part of Tamil graphemes (for example the vowel mark in “பிளம்பர்”).
+    .split(/[^\p{L}\p{M}\p{N}]+/u)
     .filter((token) => token && !searchIntentTokens.has(token));
 }
 
