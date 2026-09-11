@@ -1,0 +1,10 @@
+Shared canonical Service discovery response mapping contract
+
+1. Normal and precise-nearby Service discovery map shared service/provider/category/pricing/availability fields through one canonical server helper.
+2. Provider identity output remains unified Professional + Business; provider_id still resolves from professional_id or business_id according to provider_type.
+3. Canonical category_code remains authoritative for category_id/category_slug, with the existing display-category slug fallback only when code is absent or unusable.
+4. Pricing amount, currency fallback, duration, rating, review count, live work mode, availability label, business shop state, aliases, localized wrappers, and verified=true preserve the existing API shape.
+5. Normal search must always expose distance_band=null, distance_priority=0, nearby_match_mode=null.
+6. Precise-nearby search keeps the existing distance-band whitelist, nearby-match-mode whitelist, and distance_priority integer clamp to 0..24; fallback rows without geo fields sanitize to null/0/null.
+7. This refactor must not change request parsing, semantic tokenization, filters, RPC names/arguments, ranking, geo behavior, pagination, categories response, caching, or response status behavior.
+8. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD; recurrence/recovery remain FROZEN.

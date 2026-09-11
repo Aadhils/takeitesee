@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { resolveMarketplaceServiceSearchSemantics } from '../../../../../server/marketplace-service-discovery/searchSemantics';
+import {
+  mapMarketplaceServiceDiscoveryServices,
+  type MarketplaceServiceDiscoveryCandidateRow,
+} from '../../../../../server/marketplace-service-discovery/responseMapping';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -12,30 +16,6 @@ type PriceFilter = 'any' | 'under-1000' | '1000-5000' | 'over-5000';
 type RatingFilter = 'any' | '4-plus' | '4.5-plus';
 type ProviderFilter = 'any' | 'professional' | 'business';
 type SortMode = 'relevance' | 'rating' | 'price' | 'price-desc';
-
-type CandidateRow = {
-  id: string;
-  provider_type: 'professional' | 'business';
-  professional_id: string | null;
-  business_id: string | null;
-  service_name: string;
-  description: string | null;
-  service_location: string | null;
-  duration_minutes: number | null;
-  base_price: number | string | null;
-  currency: string | null;
-  category: string | null;
-  provider_name: string | null;
-  service_area: string | null;
-  category_code: string | null;
-  category_group: string | null;
-  category_aliases: string[] | null;
-  rating: number | string | null;
-  review_count: number | string | null;
-  live_work_mode: 'available' | 'busy' | 'offline' | 'paused' | null;
-  business_shop_state: 'open' | 'closed' | null;
-  total_count: number | string | null;
-};
 
 type CategoryRow = { category_slug: string; category_name: string };
 
@@ -55,25 +35,6 @@ function boundedInteger(value: string | null, fallback: number, minimum: number,
 function parseFilter<T extends string>(value: string | null, allowed: readonly T[], fallback: T): T | null {
   if (!value) return fallback;
   return allowed.includes(value as T) ? value as T : null;
-}
-
-function categorySlug(category: string) {
-  return category.toLocaleLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'other';
-}
-
-function canonicalCategorySlug(code: unknown, fallbackName: string) {
-  const value = String(code ?? '').trim().toLocaleLowerCase()
-    .replace(/[_\s]+/g, '-')
-    .replace(/[^a-z0-9-]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-  return value || categorySlug(fallbackName);
-}
-
-function availabilityLabel(mode: CandidateRow['live_work_mode']) {
-  if (mode === 'available') return 'Available now';
-  if (mode === 'busy') return 'Busy now';
-  if (mode === 'paused') return 'Paused';
-  return 'Offline';
 }
 
 export async function GET(request: Request) {
@@ -122,45 +83,11 @@ export async function GET(request: Request) {
   if (searchResult.error) return NextResponse.json({ error: searchResult.error.message }, { status: 500 });
   if (categoryResult.error) return NextResponse.json({ error: categoryResult.error.message }, { status: 500 });
 
-  const rows = (searchResult.data ?? []) as CandidateRow[];
+  const rows = (searchResult.data ?? []) as MarketplaceServiceDiscoveryCandidateRow[];
   const hasMore = rows.length > limit;
   const pageRows = hasMore ? rows.slice(0, limit) : rows;
   const total = pageRows.length ? Number(pageRows[0].total_count ?? 0) : 0;
-
-  const services = pageRows.map((row) => {
-    const categoryName = String(row.category || 'Other');
-    const categoryId = canonicalCategorySlug(row.category_code, categoryName);
-    const providerId = row.provider_type === 'business' ? row.business_id : row.professional_id;
-    const workMode = ['available', 'busy', 'offline', 'paused'].includes(String(row.live_work_mode))
-      ? row.live_work_mode
-      : 'offline';
-    return {
-      id: row.id,
-      service_name: { en: String(row.service_name || '') },
-      description: { en: String(row.description || '') },
-      provider_name: String(row.provider_name || (row.provider_type === 'business' ? 'Business provider' : 'Professional provider')),
-      provider_type: row.provider_type,
-      provider_id: providerId,
-      location: String(row.service_location || row.service_area || ''),
-      service_area: String(row.service_area || row.service_location || ''),
-      category_id: categoryId,
-      category_slug: categoryId,
-      category_code: row.category_code || null,
-      category_group: String(row.category_group || ''),
-      category_aliases: Array.isArray(row.category_aliases) ? row.category_aliases : [],
-      pricing: { base_price: { amount: Math.round(Number(row.base_price || 0) * 100), currency: String(row.currency || 'INR') } },
-      duration_minutes: Number(row.duration_minutes || 0),
-      rating: Number(row.rating || 0),
-      review_count: Number(row.review_count || 0),
-      live_work_mode: workMode,
-      availability: availabilityLabel(workMode),
-      business_shop_state: row.provider_type === 'business' ? (row.business_shop_state === 'open' ? 'open' : 'closed') : null,
-      distance_band: null,
-      distance_priority: 0,
-      nearby_match_mode: null,
-      verified: true,
-    };
-  });
+  const services = mapMarketplaceServiceDiscoveryServices(pageRows, { nearby: false });
 
   const categories = ((categoryResult.data ?? []) as CategoryRow[]).map((row) => ({
     slug: String(row.category_slug || 'other'),
