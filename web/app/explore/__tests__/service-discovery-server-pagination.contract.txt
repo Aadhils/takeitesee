@@ -1,0 +1,11 @@
+Service discovery server-pagination foundation contract
+
+1. Normal customer Service discovery has a bounded public search endpoint that returns at most the requested page size and a server cursor instead of requiring the full Service catalog in browser memory.
+2. Public eligibility is governed by the existing anonymous Services, Provider, Reviews, live-availability, Shop-state, and taxonomy RLS paths. The search RPC is SECURITY INVOKER and is callable by anon, not directly by authenticated users.
+3. Professional and Business Services remain in one unified discovery result set. Provider identity finality is unchanged.
+4. Query, category, named location, price, rating, Provider type, available-now, and relevance/rating/price sort semantics are represented in the server search foundation.
+5. Taxonomy aliases and category groups come from the existing public marketplace taxonomy projection.
+6. Current-location precise nearby matching is intentionally not moved in this slice. The existing POST /api/marketplace/services geo path remains authoritative for precise distance bands and nearest ranking until the later UI cutover.
+7. The existing /api/marketplace/services endpoint and /explore UI remain unchanged in this foundation slice; the new /api/marketplace/services/search endpoint is additive and must pass production smoke tests before customer UI cutover.
+8. No Service, Provider, review, availability, booking, order, finance, payment, payout, recurrence, or publication state is mutated by discovery search.
+9. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD and recurrence/recovery remain FROZEN.
