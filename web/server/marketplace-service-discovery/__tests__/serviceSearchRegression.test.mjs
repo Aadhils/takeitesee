@@ -20,6 +20,7 @@ async function loadTypeScriptModule(relativePath) {
 const intentModule = await loadTypeScriptModule('../../../components/discovery/marketplaceSearchIntent.ts');
 const semanticsModule = await loadTypeScriptModule('../searchSemantics.ts');
 const parsingModule = await loadTypeScriptModule('../requestParsing.ts');
+const responseMappingModule = await loadTypeScriptModule('../responseMapping.ts');
 
 const { parseMarketplaceSearchIntent } = intentModule;
 const { resolveMarketplaceServiceSearchSemantics } = semanticsModule;
@@ -35,6 +36,7 @@ const {
   normalizeMarketplaceServiceQuery,
   parseMarketplaceServiceFilter,
 } = parsingModule;
+const { mapMarketplaceServiceDiscoveryServices } = responseMappingModule;
 
 function resolvePipeline(rawQuery) {
   const intent = parseMarketplaceSearchIntent(rawQuery);
@@ -43,6 +45,36 @@ function resolvePipeline(rawQuery) {
     ...intent,
     tokens: semantics.tokens,
     semanticQuery: semantics.semanticQuery,
+  };
+}
+
+function serviceCandidate(overrides = {}) {
+  return {
+    id: 'service-1',
+    provider_type: 'professional',
+    professional_id: 'professional-1',
+    business_id: null,
+    service_name: 'Plumbing Repair',
+    description: 'Leak and pipe repair',
+    service_location: null,
+    duration_minutes: 60,
+    base_price: '499.50',
+    currency: 'INR',
+    category: 'Plumbing Services',
+    provider_name: null,
+    service_area: 'Trichy',
+    category_code: 'HOME_REPAIR_PLUMBING',
+    category_group: 'Home Services',
+    category_aliases: ['plumber', 'பிளம்பர்'],
+    rating: '4.7',
+    review_count: '12',
+    live_work_mode: 'available',
+    business_shop_state: null,
+    distance_band: '3_7km',
+    distance_priority: '18',
+    nearby_match_mode: 'at_customer',
+    total_count: 1,
+    ...overrides,
   };
 }
 
@@ -153,4 +185,111 @@ test('shared request normalization keeps production limits and wildcard cleanup 
     boundedMarketplaceServiceInteger(0, marketplaceServiceDefaultPageSize, 1, marketplaceServiceMaxPageSize),
     1,
   );
+});
+
+test('normal Service response mapping locks canonical Professional output and strips geo fields', () => {
+  const [service] = mapMarketplaceServiceDiscoveryServices([serviceCandidate()], { nearby: false });
+
+  assert.deepEqual(service, {
+    id: 'service-1',
+    service_name: { en: 'Plumbing Repair' },
+    description: { en: 'Leak and pipe repair' },
+    provider_name: 'Professional provider',
+    provider_type: 'professional',
+    provider_id: 'professional-1',
+    location: 'Trichy',
+    service_area: 'Trichy',
+    category_id: 'home-repair-plumbing',
+    category_slug: 'home-repair-plumbing',
+    category_code: 'HOME_REPAIR_PLUMBING',
+    category_group: 'Home Services',
+    category_aliases: ['plumber', 'பிளம்பர்'],
+    pricing: {
+      base_price: {
+        amount: 49950,
+        currency: 'INR',
+      },
+    },
+    duration_minutes: 60,
+    rating: 4.7,
+    review_count: 12,
+    live_work_mode: 'available',
+    availability: 'Available now',
+    business_shop_state: null,
+    distance_band: null,
+    distance_priority: 0,
+    nearby_match_mode: null,
+    verified: true,
+  });
+});
+
+test('nearby Service response mapping locks Business provider identity and valid geo sanitization', () => {
+  const [service] = mapMarketplaceServiceDiscoveryServices([
+    serviceCandidate({
+      id: 'service-2',
+      provider_type: 'business',
+      professional_id: null,
+      business_id: 'business-1',
+      service_name: 'AC Repair',
+      description: null,
+      service_location: 'Cantonment',
+      service_area: null,
+      duration_minutes: null,
+      base_price: 1200,
+      currency: null,
+      category: 'AC Repair & Service',
+      category_code: null,
+      category_group: null,
+      category_aliases: null,
+      provider_name: 'Cool Air Services',
+      rating: null,
+      review_count: null,
+      live_work_mode: 'busy',
+      business_shop_state: 'open',
+      distance_band: '3_7km',
+      distance_priority: '99',
+      nearby_match_mode: 'at_provider',
+    }),
+  ], { nearby: true });
+
+  assert.equal(service.provider_type, 'business');
+  assert.equal(service.provider_id, 'business-1');
+  assert.equal(service.provider_name, 'Cool Air Services');
+  assert.equal(service.location, 'Cantonment');
+  assert.equal(service.service_area, 'Cantonment');
+  assert.equal(service.category_id, 'ac-repair-service');
+  assert.equal(service.category_slug, 'ac-repair-service');
+  assert.equal(service.category_code, null);
+  assert.deepEqual(service.category_aliases, []);
+  assert.deepEqual(service.pricing, { base_price: { amount: 120000, currency: 'INR' } });
+  assert.equal(service.duration_minutes, 0);
+  assert.equal(service.rating, 0);
+  assert.equal(service.review_count, 0);
+  assert.equal(service.live_work_mode, 'busy');
+  assert.equal(service.availability, 'Busy now');
+  assert.equal(service.business_shop_state, 'open');
+  assert.equal(service.distance_band, '3_7km');
+  assert.equal(service.distance_priority, 24);
+  assert.equal(service.nearby_match_mode, 'at_provider');
+  assert.equal(service.verified, true);
+});
+
+test('nearby Service response mapping rejects invalid geo values and preserves safe fallbacks', () => {
+  const [service] = mapMarketplaceServiceDiscoveryServices([
+    serviceCandidate({
+      distance_band: 'unknown-band',
+      distance_priority: 'not-a-number',
+      nearby_match_mode: 'somewhere-else',
+      live_work_mode: 'unexpected-mode',
+      business_shop_state: 'unexpected-state',
+      category_aliases: 'not-an-array',
+    }),
+  ], { nearby: true });
+
+  assert.equal(service.live_work_mode, 'offline');
+  assert.equal(service.availability, 'Offline');
+  assert.deepEqual(service.category_aliases, []);
+  assert.equal(service.distance_band, null);
+  assert.equal(service.distance_priority, 0);
+  assert.equal(service.nearby_match_mode, null);
 });
