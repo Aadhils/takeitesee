@@ -1,0 +1,10 @@
+Shared Service search semantics contract
+
+1. Normal and precise-nearby Service APIs must use the same canonical semantic tokenizer.
+2. Search text normalization is NFKC, locale-lowercased, whitespace-collapsed, and trimmed.
+3. Token splitting must preserve Unicode Letter, Mark, and Number code points so Tamil combining marks remain inside graphemes.
+4. The same English and Tamil marketplace intent tokens are excluded from semantic service tokens for normal and nearby requests.
+5. The shared semantic query is the canonical token array joined by a single space.
+6. This refactor must not change category filters, availability filters, sort modes, ranking weights, pagination, geo matching, or API response shape.
+7. Professional and Business Service discovery remains unified.
+8. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD. Recurrence/recovery remains FROZEN. Supabase leaked-password protection remains HOLD.
