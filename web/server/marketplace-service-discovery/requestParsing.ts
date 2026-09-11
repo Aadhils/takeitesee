@@ -13,6 +13,27 @@ export type MarketplaceServiceProviderFilter = typeof marketplaceServiceProvider
 export type MarketplaceServiceNormalSortMode = typeof marketplaceServiceNormalSortModes[number];
 export type MarketplaceServiceNearbySortMode = typeof marketplaceServiceNearbySortModes[number];
 
+function marketplaceServiceStringValue(value: unknown, fallback = '') {
+  return typeof value === 'string' ? value : fallback;
+}
+
+export function normalizeMarketplaceServiceQuery(value: unknown) {
+  return marketplaceServiceStringValue(value).trim().slice(0, 180);
+}
+
+export function normalizeMarketplaceServiceCategory(value: unknown) {
+  return marketplaceServiceStringValue(value, 'all').trim().slice(0, 120) || 'all';
+}
+
+export function normalizeMarketplaceServiceLocation(value: unknown) {
+  return marketplaceServiceStringValue(value)
+    .trim()
+    .slice(0, 120)
+    .replace(/[%_\\]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export function parseMarketplaceServiceFilter<T extends string>(
   value: unknown,
   allowed: readonly T[],
