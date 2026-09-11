@@ -1,0 +1,10 @@
+Explore Service discovery server-authoritative ranking contract
+
+1. /api/marketplace/services/search owns normal and named-location filtering, ranking, deterministic tie-breaks, and pagination.
+2. /api/marketplace/services/nearby owns precise current-location filtering, ranking, geo distance contribution, deterministic tie-breaks, and pagination.
+3. Explore must render returned Service pages in server order and must not run a second client-side semantic filter or relevance sort after a geo origin has been captured.
+4. Load-more appends the next server page without re-sorting already returned rows.
+5. Canonical taxonomy, multilingual aliases/Tamil grapheme handling, live availability, Service availability configuration, fulfillment-capability weighting, rating/review signals, and nearby distance weighting remain server-owned.
+6. Named-location searches after a browser-session location was captured still use the normal server search path and preserve that server order.
+7. Professional and Business results remain unified under the same server ranking rules.
+8. Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD. Recurrence/recovery remains FROZEN. Supabase leaked-password protection remains HOLD.
