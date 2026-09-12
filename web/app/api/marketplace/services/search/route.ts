@@ -76,7 +76,7 @@ export async function GET(request: Request) {
 
   const [searchResult, categoryResult] = await Promise.all([
     supabase.rpc('search_marketplace_service_discovery_candidates_v2', searchArgs),
-    supabase.rpc('get_marketplace_service_discovery_categories_v2'),
+    supabase.rpc('get_marketplace_service_discovery_categories_v3', { target_category: category }),
   ]);
 
   if (searchResult.error) return NextResponse.json({ error: searchResult.error.message }, { status: 500 });
