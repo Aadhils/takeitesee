@@ -13,6 +13,17 @@ const [providerSource, exploreSource, presentationSource] = await Promise.all([
   readFile(presentationUrl, 'utf8'),
 ]);
 
+function unwrapExpression(expression) {
+  let current = expression;
+  while (
+    ts.isAsExpression(current)
+    || ts.isTypeAssertionExpression(current)
+    || ts.isParenthesizedExpression(current)
+    || ts.isSatisfiesExpression(current)
+  ) current = current.expression;
+  return current;
+}
+
 function catalogKeys(source, declarationName) {
   const sourceFile = ts.createSourceFile('LanguageProvider.tsx', source, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TSX);
   let keys = null;
@@ -23,15 +34,17 @@ function catalogKeys(source, declarationName) {
       && ts.isIdentifier(node.name)
       && node.name.text === declarationName
       && node.initializer
-      && ts.isObjectLiteralExpression(node.initializer)
     ) {
-      keys = node.initializer.properties.flatMap((property) => {
-        if (!ts.isPropertyAssignment(property)) return [];
-        if (ts.isStringLiteral(property.name) || ts.isNoSubstitutionTemplateLiteral(property.name)) return [property.name.text];
-        if (ts.isIdentifier(property.name)) return [property.name.text];
-        return [];
-      });
-      return;
+      const initializer = unwrapExpression(node.initializer);
+      if (ts.isObjectLiteralExpression(initializer)) {
+        keys = initializer.properties.flatMap((property) => {
+          if (!ts.isPropertyAssignment(property)) return [];
+          if (ts.isStringLiteral(property.name) || ts.isNoSubstitutionTemplateLiteral(property.name)) return [property.name.text];
+          if (ts.isIdentifier(property.name)) return [property.name.text];
+          return [];
+        });
+        return;
+      }
     }
     ts.forEachChild(node, visit);
   }
