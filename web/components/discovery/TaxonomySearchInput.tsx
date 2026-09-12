@@ -8,14 +8,14 @@ import {
 } from './marketplaceTaxonomyPresentation';
 import styles from './TaxonomySearchInput.module.css';
 
-type TaxonomyCategory = {
+export type MarketplaceSearchTaxonomyCategory = {
   code: string;
   name: string;
   group_name: string;
   aliases: string[];
 };
 
-type RankedSuggestion = TaxonomyCategory & {
+type RankedSuggestion = MarketplaceSearchTaxonomyCategory & {
   score: number;
   matched_alias: string;
 };
@@ -26,6 +26,7 @@ type Props = {
   value: string;
   intentValue?: string;
   locale: string;
+  taxonomy?: MarketplaceSearchTaxonomyCategory[];
   onChange: (value: string) => void;
   onResolvedIntent?: (categoryName: string | null) => void;
   onSuggestionSelect?: (categoryName: string) => void;
@@ -49,11 +50,11 @@ function semanticNeedle(value: string) {
     .join(' ');
 }
 
-function aliasValues(category: TaxonomyCategory) {
+function aliasValues(category: MarketplaceSearchTaxonomyCategory) {
   return Array.isArray(category.aliases) ? category.aliases.map(normalized).filter(Boolean) : [];
 }
 
-function rankCategory(category: TaxonomyCategory, needle: string): RankedSuggestion | null {
+function rankCategory(category: MarketplaceSearchTaxonomyCategory, needle: string): RankedSuggestion | null {
   if (!needle || needle.length < 2) return null;
 
   const name = normalized(category.name);
@@ -91,26 +92,28 @@ function rankCategory(category: TaxonomyCategory, needle: string): RankedSuggest
   return { ...category, score, matched_alias: matchedAlias };
 }
 
-export function TaxonomySearchInput({ label, placeholder, value, intentValue, locale, onChange, onResolvedIntent, onSuggestionSelect }: Props) {
-  const [taxonomy, setTaxonomy] = useState<TaxonomyCategory[]>([]);
+export function TaxonomySearchInput({ label, placeholder, value, intentValue, locale, taxonomy: providedTaxonomy, onChange, onResolvedIntent, onSuggestionSelect }: Props) {
+  const [fetchedTaxonomy, setFetchedTaxonomy] = useState<MarketplaceSearchTaxonomyCategory[]>([]);
   const [focused, setFocused] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
 
   useEffect(() => {
+    if (providedTaxonomy !== undefined) return;
     let cancelled = false;
     (async () => {
       try {
         const response = await fetch('/api/marketplace/search-taxonomy', { cache: 'no-store' });
         if (!response.ok) return;
-        const payload = await response.json() as { categories?: TaxonomyCategory[] };
-        if (!cancelled && Array.isArray(payload.categories)) setTaxonomy(payload.categories);
+        const payload = await response.json() as { categories?: MarketplaceSearchTaxonomyCategory[] };
+        if (!cancelled && Array.isArray(payload.categories)) setFetchedTaxonomy(payload.categories);
       } catch {
         // Suggestions are optional. Normal marketplace text search remains available.
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [providedTaxonomy]);
 
+  const taxonomy = providedTaxonomy ?? fetchedTaxonomy;
   const needle = useMemo(() => semanticNeedle(intentValue ?? value), [intentValue, value]);
   const suggestions = useMemo(() => taxonomy
     .map((category) => rankCategory(category, needle))
@@ -135,7 +138,7 @@ export function TaxonomySearchInput({ label, placeholder, value, intentValue, lo
   const showSuggestions = focused && suggestions.length > 0;
   const listId = 'marketplace-search-suggestions';
 
-  const applySuggestion = (suggestion: TaxonomyCategory) => {
+  const applySuggestion = (suggestion: MarketplaceSearchTaxonomyCategory) => {
     // Keep the canonical taxonomy name as the query/filter value. Localization here is
     // presentation-only and must never change search semantics or backend category identity.
     if (onSuggestionSelect) onSuggestionSelect(suggestion.name);
