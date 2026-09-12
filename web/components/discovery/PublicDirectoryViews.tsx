@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useLanguage } from '../i18n/LanguageProvider';
 import { Alert, Badge, Card } from '../ui/primitives';
+import styles from './PublicDirectoryViews.module.css';
 
 type DirectoryEntry = {
   id: string;
@@ -151,13 +152,27 @@ export function PublicProfessionalsDirectory({ professionals }: { professionals:
           </div>
         </>
       ) : (
-        <Card>
-          <h2>{text('No public-ready professionals yet.', 'இன்னும் public-ready professionals இல்லை.')}</h2>
-          <p>{text(
-            'Professionals appear here after verification, complete marketplace disclosure, complete profile basics, and at least one active service, public talent, or published career profile.',
-            'Verification, complete marketplace disclosure, profile basics மற்றும் குறைந்தது ஒரு active service, public talent அல்லது published career profile முடிந்ததும் professionals இங்கே தோன்றுவர்.',
-          )}</p>
-          <div className="button-row"><Link href="/explore" className="button button-primary">{text('Explore live services', 'Live சேவைகளை பார்க்க')}</Link></div>
+        <Card className={styles.professionalEmpty}>
+          <div className={styles.emptyLead}>
+            <div className={styles.emptyMark} aria-hidden="true">P</div>
+            <div>
+              <span className="eyebrow">{text('Growing directory', 'வளரும் நிபுணர் அடைவு')}</span>
+              <h2>{text('No public-ready professionals yet.', 'இன்னும் public-ready professionals இல்லை.')}</h2>
+              <p>{text(
+                'Professionals appear here after verification, complete marketplace disclosure, complete profile basics, and at least one active service, public talent, or published career profile.',
+                'Verification, complete marketplace disclosure, profile basics மற்றும் குறைந்தது ஒரு active service, public talent அல்லது published career profile முடிந்ததும் professionals இங்கே தோன்றுவர்.',
+              )}</p>
+            </div>
+          </div>
+          <div className={styles.emptyHighlights} aria-label={text('What appears in this directory', 'இந்த அடைவில் என்ன காட்டப்படும்')}>
+            <span>{text('Verified identity', 'சரிபார்க்கப்பட்ட அடையாளம்')}</span>
+            <span>{text('Services & public talents', 'சேவைகள் & public talents')}</span>
+            <span>{text('Published career profiles', 'Published career profiles')}</span>
+          </div>
+          <div className={styles.emptyActions}>
+            <Link href="/explore" className="button button-primary">{text('Explore live services', 'Live சேவைகளை பார்க்க')}</Link>
+            <Link href="/provider/onboarding" className="button button-secondary">{text('Join as a professional', 'நிபுணராக சேரவும்')}</Link>
+          </div>
         </Card>
       )}
     </div>
