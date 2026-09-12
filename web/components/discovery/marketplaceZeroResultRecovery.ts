@@ -16,6 +16,7 @@ export type MarketplaceZeroResultRecovery = {
   showBroadenLocation: boolean;
   showClearNearby: boolean;
   showBroadenFilters: boolean;
+  showClearQuery: boolean;
 };
 
 export function resolveMarketplaceZeroResultRecovery(
@@ -34,6 +35,7 @@ export function resolveMarketplaceZeroResultRecovery(
       showBroadenLocation: false,
       showClearNearby: false,
       showBroadenFilters: false,
+      showClearQuery: false,
     };
   }
 
@@ -51,5 +53,6 @@ export function resolveMarketplaceZeroResultRecovery(
     showBroadenLocation: input.locationPresent,
     showClearNearby: input.preciseNearbyActive && !input.locationPresent,
     showBroadenFilters: input.hasNarrowingFilters,
+    showClearQuery: mode === 'query',
   };
 }
