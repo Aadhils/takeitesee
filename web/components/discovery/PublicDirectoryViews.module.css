@@ -1,0 +1,128 @@
+.professionalEmpty {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px 28px;
+  padding: 22px;
+  border-color: color-mix(in srgb, var(--color-primary) 16%, var(--color-border));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-selected) 28%, var(--color-surface)) 0%, var(--color-surface) 68%);
+}
+
+.emptyLead {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: start;
+  gap: 14px;
+  min-width: 0;
+}
+
+.emptyMark {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 16px;
+  background: var(--color-selected);
+  color: var(--color-primary-strong);
+  font-weight: 850;
+  line-height: 1;
+}
+
+.emptyLead h2 {
+  margin: 5px 0 7px;
+  font-size: clamp(1.35rem, 2.1vw, 1.75rem);
+  line-height: 1.12;
+}
+
+.emptyLead p {
+  max-width: 68ch;
+  margin: 0;
+  color: var(--color-ink-muted);
+}
+
+.emptyHighlights {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.emptyHighlights span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 7px 11px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-ink-muted);
+  font-size: .78rem;
+  font-weight: 720;
+}
+
+.emptyActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  grid-column: 2;
+  grid-row: 1;
+  min-width: max-content;
+}
+
+@media (max-width: 760px) {
+  .professionalEmpty {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .emptyActions {
+    grid-column: 1;
+    grid-row: auto;
+    justify-content: flex-start;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .professionalEmpty {
+    gap: 14px;
+    padding: 17px;
+  }
+
+  .emptyLead {
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 11px;
+  }
+
+  .emptyMark {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+  }
+
+  .emptyLead h2 {
+    font-size: 1.25rem;
+  }
+
+  .emptyHighlights {
+    gap: 6px;
+  }
+
+  .emptyHighlights span {
+    min-height: 34px;
+    padding: 6px 9px;
+    font-size: .73rem;
+  }
+
+  .emptyActions {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .emptyActions > * {
+    width: 100%;
+    justify-content: center;
+  }
+}
