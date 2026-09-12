@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Card, EmptyState, Input, Select, Skeleton } from '../../components/ui/primitives';
+import { Button, Card, EmptyState, Skeleton } from '../../components/ui/primitives';
 import { ServiceCard } from '../../components/discovery/MarketplaceCards';
 import { DiscoveryEmptyState } from '../../components/discovery/DiscoveryEnhancements';
 import { TaxonomySearchInput, type MarketplaceSearchTaxonomyCategory } from '../../components/discovery/TaxonomySearchInput';
+import ExploreSmartFilters from '../../components/discovery/ExploreSmartFilters';
 import {
   buildMarketplaceTaxonomyPresentationIndex,
   localizedMarketplaceCategoryLabelForKey,
@@ -399,10 +400,6 @@ export default function ExplorePage() {
     if (sort === 'nearest' && !preciseNearbyActive) setSort('relevance');
   }, [preciseNearbyActive, sort]);
 
-  // Search/filter/ranking/pagination are server-authoritative for both normal and
-  // precise-nearby discovery. Preserve the server page order exactly so client-side
-  // fallback logic cannot drift from canonical taxonomy, multilingual tokenization,
-  // availability/capability weighting, geo distance weighting, or deterministic ties.
   const filteredServices = services;
 
   const loadMore = async () => {
@@ -562,29 +559,45 @@ export default function ExplorePage() {
         : zeroResultRecovery.mode === 'category'
           ? categoryRecoveryCopy.help
           : t('explore.recoveryFiltersHelp');
+  const smartCategoryOptions = useMemo(
+    () => categories.map((category) => ({
+      value: category,
+      label: localizedMarketplaceCategoryLabelForKey(category, taxonomyPresentationIndex, locale),
+    })),
+    [categories, locale, taxonomyPresentationIndex],
+  );
 
   return <div className="discovery-page discovery-workspace">
     <section className="page-intro"><span className="eyebrow">{t('explore.eyebrow')}</span><h1>{t('explore.title')}</h1><p>{t('explore.subtitle')}</p></section>
 
     <section className="discovery-search-panel">
       <div className="discovery-search-row"><TaxonomySearchInput label={t('explore.searchLabel')} placeholder={t('explore.searchPlaceholder')} value={query} intentValue={searchIntent.serviceQuery} locale={locale} taxonomy={taxonomyCategories} onChange={(value) => { setQuery(value); setResolvedTaxonomyIntent(null); }} onResolvedIntent={setResolvedTaxonomyIntent} onSuggestionSelect={applyTaxonomySuggestion} /></div>
-      <div className="discovery-filter-fields">
-        <Select label={t('explore.category')} value={filters.category} onChange={(e) => update('category', e.target.value)}><option value="all">{t('explore.allCategories')}</option>{categories.map((category) => <option value={category} key={category}>{localizedMarketplaceCategoryLabelForKey(category, taxonomyPresentationIndex, locale)}</option>)}</Select>
-        <Input label={t('explore.location')} placeholder={t('explore.locationPlaceholder')} value={filters.location === 'Anywhere' ? '' : filters.location} onChange={(e) => update('location', e.target.value.trim() ? e.target.value : 'Anywhere')} />
-        <Select label={t('explore.price')} value={filters.price} onChange={(e) => update('price', e.target.value as PriceFilter)}><option value="any">{t('explore.anyPrice')}</option><option value="under-1000">{t('explore.under1000')}</option><option value="1000-5000">{t('explore.range1000to5000')}</option><option value="over-5000">{t('explore.over5000')}</option></Select>
-        <Select label={t('explore.rating')} value={filters.rating} onChange={(e) => update('rating', e.target.value as RatingFilter)}><option value="any">{t('explore.anyRating')}</option><option value="4-plus">{t('explore.rating4')}</option><option value="4.5-plus">{t('explore.rating45')}</option></Select>
-        <Select label={t('explore.providerType')} value={filters.provider} onChange={(e) => update('provider', e.target.value as ProviderFilter)}><option value="any">{t('explore.anyProvider')}</option><option value="professional">{t('explore.professional')}</option><option value="business">{t('explore.business')}</option></Select>
-        <Select label={t('explore.availabilityLabel')} value={filters.availability} onChange={(e) => update('availability', e.target.value as AvailabilityFilter)}><option value="any">{t('explore.availabilityAny')}</option><option value="available-now">{t('explore.availabilityNowOnly')}</option></Select>
-      </div>
-      <div className="discovery-search-footer">
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-          <Button type="button" variant="quiet" onClick={clearAll}>{t('explore.clearFilters')}</Button>
-          {geoOrigin
-            ? <Button type="button" variant="secondary" onClick={clearNearbyLocation}>{nearbyReady ? t('explore.nearbyRankingClear') : t('explore.clearCurrentLocation')}</Button>
-            : <Button type="button" variant="secondary" loading={geoLocating} onClick={useCurrentLocation}>{searchIntent.nearMe ? t('explore.useMyLocationNearby') : t('explore.useMyLocation')}</Button>}
-        </div>
-        <div className="sort-control"><Select label={t('explore.sort')} value={sort} onChange={(e) => setSort(e.target.value)}><option value="relevance">{t('explore.relevance')}</option>{preciseNearbyActive ? <option value="nearest">{t('explore.nearestFirst')}</option> : null}<option value="rating">{t('explore.highestRated')}</option><option value="price">{t('explore.lowestPrice')}</option><option value="price-desc">{t('explore.highestPrice')}</option></Select></div>
-      </div>
+      <ExploreSmartFilters
+        categories={smartCategoryOptions}
+        category={filters.category}
+        location={filters.location}
+        price={filters.price}
+        rating={filters.rating}
+        provider={filters.provider}
+        availability={filters.availability}
+        sort={sort}
+        preciseNearbyActive={preciseNearbyActive}
+        geoActive={Boolean(geoOrigin)}
+        geoLocating={geoLocating}
+        nearMeIntent={searchIntent.nearMe}
+        resultCount={resultCount}
+        loading={loading}
+        onCategoryChange={(value) => update('category', value)}
+        onLocationChange={(value) => update('location', value)}
+        onPriceChange={(value) => update('price', value as PriceFilter)}
+        onRatingChange={(value) => update('rating', value as RatingFilter)}
+        onProviderChange={(value) => update('provider', value as ProviderFilter)}
+        onAvailabilityChange={(value) => update('availability', value as AvailabilityFilter)}
+        onSortChange={setSort}
+        onClearAll={clearAll}
+        onUseCurrentLocation={useCurrentLocation}
+        onClearCurrentLocation={clearNearbyLocation}
+      />
       {searchIntent.locationQuery && !manualLocationQuery ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{t('explore.locationIntentDetected')} <strong>{searchIntent.locationQuery}</strong>. {t('explore.locationIntentOnly')}</p> : null}
       {searchIntent.nearMe && !geoOrigin ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{t('explore.nearMeIntent')}</p> : null}
       {availableNowFromQuery ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{t('explore.availableNowIntent')}</p> : null}

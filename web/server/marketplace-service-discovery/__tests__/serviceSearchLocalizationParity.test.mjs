@@ -5,11 +5,13 @@ import ts from 'typescript';
 
 const providerUrl = new URL('../../../components/i18n/LanguageProvider.tsx', import.meta.url);
 const exploreUrl = new URL('../../../app/explore/page.tsx', import.meta.url);
+const smartFiltersUrl = new URL('../../../components/discovery/ExploreSmartFilters.tsx', import.meta.url);
 const presentationUrl = new URL('../../../components/discovery/LiveMarketplacePresentation.tsx', import.meta.url);
 
-const [providerSource, exploreSource, presentationSource] = await Promise.all([
+const [providerSource, exploreSource, smartFiltersSource, presentationSource] = await Promise.all([
   readFile(providerUrl, 'utf8'),
   readFile(exploreUrl, 'utf8'),
+  readFile(smartFiltersUrl, 'utf8'),
   readFile(presentationUrl, 'utf8'),
 ]);
 
@@ -133,7 +135,7 @@ test('Explore/Search localization catalog contains the hardened controls, recove
   }
 });
 
-test('Explore page no longer embeds the high-visibility bilingual copy that belongs in the catalog', () => {
+test('Explore surfaces no longer embed the high-visibility bilingual copy that belongs in the catalog', () => {
   const forbidden = [
     'Live availability',
     'Any live status',
@@ -147,9 +149,10 @@ test('Explore page no longer embeds the high-visibility bilingual copy that belo
     'Load more services',
     'Nearby ranking is active for this browser session',
   ];
-  for (const phrase of forbidden) assert.equal(exploreSource.includes(phrase), false, `Explore page still embeds: ${phrase}`);
+  const explorePresentationSource = `${exploreSource}\n${smartFiltersSource}`;
+  for (const phrase of forbidden) assert.equal(explorePresentationSource.includes(phrase), false, `Explore surface still embeds: ${phrase}`);
 
-  assert.ok(exploreSource.includes("t('explore.availabilityLabel')"));
+  assert.ok(smartFiltersSource.includes("t('explore.availabilityLabel')"));
   assert.ok(exploreSource.includes("t('explore.nearbyPrivacy')"));
   assert.ok(exploreSource.includes("t('explore.recoveryBroadenCurrentLocation')"));
 });
