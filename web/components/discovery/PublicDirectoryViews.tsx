@@ -85,13 +85,27 @@ export function PublicBusinessesDirectory({ businesses }: { businesses: Director
           </div>
         </>
       ) : (
-        <Card>
-          <h2>{text('No verified businesses are publishing services right now.', 'இப்போது சரிபார்க்கப்பட்ட எந்த வணிகமும் சேவைகளை வெளியிடவில்லை.')}</h2>
-          <p>{text(
-            'New businesses will appear here automatically after verification and after at least one service becomes active.',
-            'Verification முடிந்து குறைந்தது ஒரு சேவை active ஆனதும் புதிய வணிகங்கள் இங்கே தானாக தோன்றும்.',
-          )}</p>
-          <div className="button-row"><Link href="/explore" className="button button-primary">{text('Explore live services', 'Live சேவைகளை பார்க்க')}</Link></div>
+        <Card className={styles.businessEmpty}>
+          <div className={styles.emptyLead}>
+            <div className={styles.emptyMark} aria-hidden="true">B</div>
+            <div>
+              <span className="eyebrow">{text('Growing business marketplace', 'வளரும் வணிக marketplace')}</span>
+              <h2>{text('No verified businesses are publishing services right now.', 'இப்போது சரிபார்க்கப்பட்ட எந்த வணிகமும் சேவைகளை வெளியிடவில்லை.')}</h2>
+              <p>{text(
+                'New businesses will appear here automatically after verification and after at least one service becomes active.',
+                'Verification முடிந்து குறைந்தது ஒரு சேவை active ஆனதும் புதிய வணிகங்கள் இங்கே தானாக தோன்றும்.',
+              )}</p>
+            </div>
+          </div>
+          <div className={styles.emptyHighlights} aria-label={text('What appears in this directory', 'இந்த அடைவில் என்ன காட்டப்படும்')}>
+            <span>{text('Verified business identity', 'சரிபார்க்கப்பட்ட வணிக அடையாளம்')}</span>
+            <span>{text('Active service listings', 'Active service listings')}</span>
+            <span>{text('Products & storefront discovery', 'Products & storefront discovery')}</span>
+          </div>
+          <div className={styles.emptyActions}>
+            <Link href="/explore" className="button button-primary">{text('Explore live services', 'Live சேவைகளை பார்க்க')}</Link>
+            <Link href="/provider/onboarding" className="button button-secondary">{text('List your business', 'உங்கள் வணிகத்தை பட்டியலிடவும்')}</Link>
+          </div>
         </Card>
       )}
     </div>
