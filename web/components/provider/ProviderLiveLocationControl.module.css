@@ -1,6 +1,7 @@
 .section {
   display: grid;
   gap: 10px;
+  min-width: 0;
   margin-top: 14px;
   padding-top: 14px;
   border-top: 1px solid var(--color-border);
@@ -11,11 +12,13 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
+  min-width: 0;
 }
 
 .headerCopy {
   display: grid;
   gap: 3px;
+  min-width: 0;
 }
 
 .headerCopy span {
@@ -28,16 +31,20 @@
 
 .headerCopy strong {
   font-size: .84rem;
+  overflow-wrap: anywhere;
 }
 
 .status {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  max-width: 100%;
   padding: 4px 7px;
   border-radius: 999px;
   background: var(--color-surface-muted);
   color: var(--color-ink-muted);
   font-size: .67rem;
   font-weight: 800;
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 
 .statusActive {
@@ -51,6 +58,7 @@
   color: var(--color-ink-muted);
   font-size: .7rem;
   line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .controls {
@@ -58,18 +66,20 @@
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
   align-items: end;
+  min-width: 0;
 }
 
 .selectWrap {
   display: grid;
   gap: 4px;
+  min-width: 0;
   color: var(--color-ink-muted);
   font-size: .67rem;
   font-weight: 700;
 }
 
 .select {
-  min-height: 36px;
+  min-height: 44px;
   width: 100%;
   border: 1px solid var(--color-border);
   border-radius: 10px;
@@ -82,9 +92,9 @@
 .primaryButton,
 .stopButton,
 .retryButton {
-  min-height: 36px;
+  min-height: 44px;
   border-radius: 10px;
-  padding: 0 11px;
+  padding: 0 12px;
   cursor: pointer;
   font-size: .7rem;
   font-weight: 800;
@@ -116,19 +126,27 @@
   color: #9a2c2c;
   font-size: .7rem;
   line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .retryButton {
-  min-height: 28px;
   margin-left: 4px;
   border: 0;
   background: transparent;
   color: inherit;
-  padding: 0 3px;
+  padding: 0 6px;
   text-decoration: underline;
 }
 
 @media (max-width: 430px) {
+  .header {
+    flex-direction: column;
+  }
+
+  .status {
+    align-self: flex-start;
+  }
+
   .controls {
     grid-template-columns: 1fr;
   }
@@ -136,5 +154,9 @@
   .primaryButton,
   .stopButton {
     width: 100%;
+  }
+
+  .retryButton {
+    margin-left: 0;
   }
 }
