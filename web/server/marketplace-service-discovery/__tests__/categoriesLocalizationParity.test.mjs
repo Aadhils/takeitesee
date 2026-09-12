@@ -5,10 +5,12 @@ import ts from 'typescript';
 
 const localizationUrl = new URL('../../../components/discovery/categoriesLocalization.ts', import.meta.url);
 const directoryUrl = new URL('../../../components/discovery/CanonicalPublicCategoriesDirectory.tsx', import.meta.url);
+const stylesUrl = new URL('../../../components/discovery/CanonicalPublicCategoriesDirectory.module.css', import.meta.url);
 
-const [localizationSource, directorySource] = await Promise.all([
+const [localizationSource, directorySource, stylesSource] = await Promise.all([
   readFile(localizationUrl, 'utf8'),
   readFile(directoryUrl, 'utf8'),
+  readFile(stylesUrl, 'utf8'),
 ]);
 
 function unwrapExpression(expression) {
@@ -129,9 +131,27 @@ test('Categories directory consumes centralized copy and preserves canonical tax
 
   assert.ok(directorySource.includes("ct('eyebrow')"));
   assert.ok(directorySource.includes("ct('summary')"));
-  assert.ok(directorySource.includes("ct('liveDescription')"));
+  assert.ok(directorySource.includes("ct('activeServiceOne')") || directorySource.includes("'activeServiceOne'"));
   assert.ok(directorySource.includes('localizedMarketplaceCategoryLabel(category, locale)'));
   assert.ok(directorySource.includes('localizedMarketplaceGroupLabel(groupName, locale)'));
   assert.ok(directorySource.includes('`/explore?category=${encodeURIComponent(category.slug)}`'));
   assert.equal(directorySource.includes('const text ='), false);
+});
+
+test('Categories directory uses a compact responsive group browser instead of repeated full cards', () => {
+  assert.ok(directorySource.includes("import styles from './CanonicalPublicCategoriesDirectory.module.css'"));
+  assert.ok(directorySource.includes('styles.groupNav'));
+  assert.ok(directorySource.includes('styles.groupNavLink'));
+  assert.ok(directorySource.includes('styles.categoryGrid'));
+  assert.ok(directorySource.includes('styles.categoryTile'));
+  assert.ok(directorySource.includes('categoryGroupId(groupName)'));
+  assert.equal(directorySource.includes('card-description'), false);
+  assert.equal(directorySource.includes('button button-secondary'), false);
+
+  assert.ok(stylesSource.includes('grid-template-columns: repeat(3, minmax(0, 1fr))'));
+  assert.ok(stylesSource.includes('@media (max-width: 900px)'));
+  assert.ok(stylesSource.includes('@media (max-width: 640px)'));
+  assert.ok(stylesSource.includes('grid-template-columns: 1fr;'));
+  assert.ok(stylesSource.includes('min-height: 44px;'));
+  assert.ok(stylesSource.includes('scroll-margin-top: 104px;'));
 });
