@@ -6,11 +6,13 @@ import ts from 'typescript';
 const providerUrl = new URL('../../../components/i18n/LanguageProvider.tsx', import.meta.url);
 const exploreUrl = new URL('../../../app/explore/page.tsx', import.meta.url);
 const presentationUrl = new URL('../../../components/discovery/LiveMarketplacePresentation.tsx', import.meta.url);
+const categoriesUrl = new URL('../../../components/discovery/CanonicalPublicCategoriesDirectory.tsx', import.meta.url);
 
-const [providerSource, exploreSource, presentationSource] = await Promise.all([
+const [providerSource, exploreSource, presentationSource, categoriesSource] = await Promise.all([
   readFile(providerUrl, 'utf8'),
   readFile(exploreUrl, 'utf8'),
   readFile(presentationUrl, 'utf8'),
+  readFile(categoriesUrl, 'utf8'),
 ]);
 
 function unwrapExpression(expression) {
@@ -56,7 +58,9 @@ function catalogKeys(source, declarationName) {
 
 const englishKeys = catalogKeys(providerSource, 'english');
 const tamilKeys = catalogKeys(providerSource, 'tamil');
-const localizedMarketplaceKeys = (keys) => keys.filter((key) => key.startsWith('explore.') || key.startsWith('empty.')).sort();
+const localizedMarketplaceKeys = (keys) => keys
+  .filter((key) => key.startsWith('explore.') || key.startsWith('empty.') || key.startsWith('categories.'))
+  .sort();
 
 const requiredExploreKeys = [
   'explore.availabilityLabel',
@@ -122,12 +126,42 @@ const requiredExploreKeys = [
   'empty.tryAgain',
 ];
 
-test('English and Tamil Explore/Search translation catalogs keep exact key parity', () => {
+const requiredCategoryKeys = [
+  'categories.eyebrow',
+  'categories.title',
+  'categories.unavailableTitle',
+  'categories.subtitle',
+  'categories.unavailableAlertTitle',
+  'categories.unavailableAlertBody',
+  'categories.canonicalEyebrow',
+  'categories.summary',
+  'categories.groupEyebrow',
+  'categories.liveCategory',
+  'categories.approvedCategory',
+  'categories.liveCountUnavailable',
+  'categories.activeServiceOne',
+  'categories.activeServiceMany',
+  'categories.liveDescription',
+  'categories.readyDescription',
+  'categories.unifiedSearch',
+  'categories.searchCategory',
+  'categories.emptyTitle',
+  'categories.exploreMarketplace',
+];
+
+test('English and Tamil marketplace translation catalogs keep exact key parity', () => {
   assert.deepEqual(localizedMarketplaceKeys(tamilKeys), localizedMarketplaceKeys(englishKeys));
 });
 
 test('Explore/Search localization catalog contains the hardened controls, recovery, geo and card keys', () => {
   for (const key of requiredExploreKeys) {
+    assert.ok(englishKeys.includes(key), `English catalog missing ${key}`);
+    assert.ok(tamilKeys.includes(key), `Tamil catalog missing ${key}`);
+  }
+});
+
+test('Categories localization catalog contains every directory presentation key in English and Tamil', () => {
+  for (const key of requiredCategoryKeys) {
     assert.ok(englishKeys.includes(key), `English catalog missing ${key}`);
     assert.ok(tamilKeys.includes(key), `Tamil catalog missing ${key}`);
   }
@@ -169,4 +203,24 @@ test('Service card and discovery empty-state presentation use centralized locali
   assert.ok(presentationSource.includes("t('explore.card.availableNow')"));
   assert.ok(presentationSource.includes("t('explore.card.ratingLabel')"));
   assert.ok(presentationSource.includes("t('empty.catalogUnavailable')"));
+});
+
+test('Categories directory uses centralized translations instead of embedded English/Tamil copy', () => {
+  const forbidden = [
+    'Browse approved TakeItEsee service categories.',
+    'Category directory temporarily unavailable',
+    'Canonical marketplace taxonomy',
+    'Approved category',
+    'Professional + Business unified search',
+    'No approved service categories are available yet.',
+    'அங்கீகரிக்கப்பட்ட TakeItEsee சேவை வகைகளை பார்க்கவும்.',
+    'அங்கீகரிக்கப்பட்ட வகை',
+  ];
+  for (const phrase of forbidden) assert.equal(categoriesSource.includes(phrase), false, `Categories directory still embeds: ${phrase}`);
+
+  assert.equal(categoriesSource.includes('const text ='), false, 'Categories directory still defines a local bilingual text helper');
+  assert.ok(categoriesSource.includes("t('categories.eyebrow')"));
+  assert.ok(categoriesSource.includes("t('categories.summary')"));
+  assert.ok(categoriesSource.includes("t('categories.liveDescription')"));
+  assert.ok(categoriesSource.includes("t('categories.searchCategory')"));
 });
