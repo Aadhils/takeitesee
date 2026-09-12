@@ -19,6 +19,7 @@ async function loadTypeScriptModule(relativePath) {
 
 const copyModule = await loadTypeScriptModule('../../../components/discovery/marketplaceCategoryZeroResultCopy.ts');
 const { marketplaceCategoryZeroResultCopy } = copyModule;
+const exploreSource = await readFile(new URL('../../../app/explore/page.tsx', import.meta.url), 'utf8');
 
 test('category zero-result copy renders canonical category labels in English and Tamil', () => {
   assert.deepEqual(marketplaceCategoryZeroResultCopy('en-IN', 'Custom Software & IT Support'), {
@@ -42,4 +43,15 @@ test('category zero-result copy keeps the same semantic surface in both locales'
     assert.ok(copy.help.length > 20);
     assert.ok(copy.browseRelated.length > 5);
   }
+});
+
+test('Explore wires category-aware recovery without hard-coded bilingual copy', () => {
+  assert.ok(exploreSource.includes("marketplaceCategoryZeroResultCopy(locale, selectedCategoryLabel)"));
+  assert.ok(exploreSource.includes('categoryPresent: categoryFilterActive'));
+  assert.ok(exploreSource.includes('otherNarrowingFiltersPresent'));
+  assert.ok(exploreSource.includes('zeroResultRecovery.showClearCategory'));
+  assert.ok(exploreSource.includes('onClick={clearCategory}'));
+  assert.ok(exploreSource.includes('categoryRecoveryCopy.browseRelated'));
+  assert.equal(exploreSource.includes('No live providers yet for'), false);
+  assert.equal(exploreSource.includes('இன்னும் நேரடி சேவை வழங்குநர்கள் இல்லை'), false);
 });
