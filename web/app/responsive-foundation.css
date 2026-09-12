@@ -90,6 +90,25 @@ html {
   min-width: 0;
 }
 
+:where(.card, .service-card, .product-card, .category-card, .professional-card, .business-card) {
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+:where(.card, .service-card, .product-card, .category-card, .professional-card, .business-card):focus-within {
+  border-color: color-mix(in srgb, var(--color-primary) 28%, var(--color-border));
+  box-shadow: var(--shadow-md);
+}
+
+:where(.discovery-card, .service-card, .product-card, .category-card, .professional-card, .business-card):hover {
+  border-color: color-mix(in srgb, var(--color-primary) 22%, var(--color-border));
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+:where(.card-footer, .admin-actions, .provider-actions, .account-actions) {
+  flex-wrap: wrap;
+}
+
 .admin-table-wrap {
   max-width: 100%;
   overflow-x: auto;
@@ -415,9 +434,12 @@ html {
   }
 
   .card:hover,
+  .discovery-card:hover,
   .service-card:hover,
   .product-card:hover,
-  .category-card:hover {
+  .category-card:hover,
+  .professional-card:hover,
+  .business-card:hover {
     transform: none;
   }
 }

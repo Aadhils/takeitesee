@@ -8,21 +8,39 @@ import { LanguageProvider, useLanguage, type TranslationKey } from '../i18n/Lang
 import { getSupabaseBrowserUser, isSupabaseConfigured, localDevelopmentAuthAdapter } from '../../services/auth-adapter';
 import type { User } from '../../types/auth-domain';
 
-const primaryLinks: { href: string; labelKey: TranslationKey }[] = [
-  { href: '/explore', labelKey: 'nav.explore' },
-  { href: '/bookings', labelKey: 'nav.bookings' },
-  { href: '/notifications', labelKey: 'nav.notifications' },
-  { href: '/categories', labelKey: 'nav.categories' },
-  { href: '/professionals', labelKey: 'nav.professionals' },
-  { href: '/businesses', labelKey: 'nav.businesses' },
+type ShellIconKey = 'home' | 'search' | 'calendar' | 'bell' | 'grid' | 'professional' | 'business' | 'products' | 'account' | 'userPlus';
+type ShellLink = { href: string; labelKey: TranslationKey; icon: ShellIconKey };
+
+const primaryLinks: ShellLink[] = [
+  { href: '/explore', labelKey: 'nav.explore', icon: 'search' },
+  { href: '/bookings', labelKey: 'nav.bookings', icon: 'calendar' },
+  { href: '/notifications', labelKey: 'nav.notifications', icon: 'bell' },
+  { href: '/categories', labelKey: 'nav.categories', icon: 'grid' },
+  { href: '/professionals', labelKey: 'nav.professionals', icon: 'professional' },
+  { href: '/businesses', labelKey: 'nav.businesses', icon: 'business' },
 ];
 
-const mobileLinks: { href: string; labelKey: TranslationKey; icon: string }[] = [
-  { href: '/', labelKey: 'nav.home', icon: '⌂' },
-  { href: '/explore', labelKey: 'nav.explore', icon: '⌕' },
-  { href: '/bookings', labelKey: 'nav.bookings', icon: '▣' },
-  { href: '/account', labelKey: 'nav.account', icon: '◯' },
+const mobileLinks: ShellLink[] = [
+  { href: '/', labelKey: 'nav.home', icon: 'home' },
+  { href: '/explore', labelKey: 'nav.explore', icon: 'search' },
+  { href: '/bookings', labelKey: 'nav.bookings', icon: 'calendar' },
+  { href: '/account', labelKey: 'nav.account', icon: 'account' },
 ];
+
+function ShellIcon({ name }: { name: ShellIconKey }) {
+  return <svg className="shell-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    {name === 'home' ? <><path d="m3.5 11 8.5-7 8.5 7" /><path d="M5.5 10v10h13V10" /><path d="M9.5 20v-6h5v6" /></> : null}
+    {name === 'search' ? <><circle cx="10.8" cy="10.8" r="6.4" /><path d="m15.6 15.6 4.4 4.4" /></> : null}
+    {name === 'calendar' ? <><rect x="4" y="5" width="16" height="15" rx="2.5" /><path d="M8 3v4M16 3v4M4 10h16" /><path d="M8 14h3M13 14h3M8 17h3" /></> : null}
+    {name === 'bell' ? <><path d="M6.5 9.5a5.5 5.5 0 0 1 11 0c0 5 2 5.5 2 5.5h-15s2-.5 2-5.5" /><path d="M10 19h4" /></> : null}
+    {name === 'grid' ? <><rect x="4" y="4" width="6" height="6" rx="1.5" /><rect x="14" y="4" width="6" height="6" rx="1.5" /><rect x="4" y="14" width="6" height="6" rx="1.5" /><rect x="14" y="14" width="6" height="6" rx="1.5" /></> : null}
+    {name === 'professional' ? <><circle cx="10" cy="8" r="3" /><path d="M4.5 20c.8-4 2.7-6 5.5-6s4.7 2 5.5 6" /><path d="M17 8h4M19 6v4" /></> : null}
+    {name === 'business' ? <><path d="M5 21V5l7-2v18" /><path d="M12 8h7v13" /><path d="M8 8h1M8 12h1M8 16h1M15 11h1M15 15h1" /></> : null}
+    {name === 'products' ? <><path d="m12 3 8 4.5-8 4.5-8-4.5L12 3Z" /><path d="M4 7.5V16l8 5 8-5V7.5M12 12v9" /></> : null}
+    {name === 'account' ? <><circle cx="12" cy="8" r="3.25" /><path d="M5.5 20c.8-4.2 3-6.2 6.5-6.2s5.7 2 6.5 6.2" /></> : null}
+    {name === 'userPlus' ? <><circle cx="9" cy="8" r="3" /><path d="M3.5 20c.7-4 2.6-6 5.5-6 1.9 0 3.4.8 4.4 2.3" /><path d="M17.5 12.5v6M14.5 15.5h6" /></> : null}
+  </svg>;
+}
 
 function AppShellContent({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -95,20 +113,20 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
             </label>
             <Link href="/requirements" className="header-requirement">{t('nav.postRequirement')}</Link>
             <Link href={accountAttentionHref} className="header-login">
-              <span aria-hidden="true">◯</span>
+              <span className="header-account-icon" aria-hidden="true"><ShellIcon name="account" /></span>
               <span className="header-login-label">{currentUser ? currentUser.name : t('nav.account')}</span>
               {proposalUnreadCount > 0 ? <span className="global-proposal-attention-badge" aria-label={proposalBadgeLabel}>{proposalBadgeText}</span> : null}
             </Link>
-            <button className="menu-trigger" type="button" aria-expanded={menuOpen} aria-controls="mobile-menu" aria-label={t('nav.toggleMenu')} onClick={() => setMenuOpen((value) => !value)}>
+            <button className={`menu-trigger${menuOpen ? ' menu-trigger-open' : ''}`} type="button" aria-expanded={menuOpen} aria-controls="mobile-menu" aria-label={t('nav.toggleMenu')} onClick={() => setMenuOpen((value) => !value)}>
               <span /><span /><span />
             </button>
           </div>
         </div>
         {menuOpen ? (
           <nav id="mobile-menu" className="mobile-menu" aria-label={t('nav.mobile')}>
-            {primaryLinks.map((link) => <Link key={link.href} href={link.href} className={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'nav-active' : ''} aria-current={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'page' : undefined} onClick={() => setMenuOpen(false)}>{t(link.labelKey)}</Link>)}
-            <Link href="/products" className={productsActive ? 'nav-active' : ''} aria-current={productsActive ? 'page' : undefined} onClick={() => setMenuOpen(false)}>{isTamil ? 'பொருட்கள்' : 'Products'}</Link>
-            <Link href="/register" className="mobile-menu-join" onClick={() => setMenuOpen(false)}>{t('nav.createAccount')}</Link>
+            {primaryLinks.map((link) => <Link key={link.href} href={link.href} className={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'nav-active' : ''} aria-current={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'page' : undefined} onClick={() => setMenuOpen(false)}><span className="mobile-menu-icon" aria-hidden="true"><ShellIcon name={link.icon} /></span><span className="mobile-menu-label">{t(link.labelKey)}</span></Link>)}
+            <Link href="/products" className={productsActive ? 'nav-active' : ''} aria-current={productsActive ? 'page' : undefined} onClick={() => setMenuOpen(false)}><span className="mobile-menu-icon" aria-hidden="true"><ShellIcon name="products" /></span><span className="mobile-menu-label">{isTamil ? 'பொருட்கள்' : 'Products'}</span></Link>
+            <Link href="/register" className="mobile-menu-join" onClick={() => setMenuOpen(false)}><span className="mobile-menu-icon" aria-hidden="true"><ShellIcon name="userPlus" /></span><span className="mobile-menu-label">{t('nav.createAccount')}</span></Link>
           </nav>
         ) : null}
       </header>
@@ -139,8 +157,8 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
           const activeLink = pathname === link.href || pathname.startsWith(`${link.href}/`);
           const targetHref = link.href === '/account' && proposalUnreadCount > 0 ? accountAttentionHref : link.href;
           return <Link key={link.href} href={targetHref} className={activeLink ? 'nav-active' : ''} aria-current={activeLink ? 'page' : undefined}>
-            <span aria-hidden="true">{link.icon}</span>
-            <span>{t(link.labelKey)}</span>
+            <span className="mobile-nav-icon" aria-hidden="true"><ShellIcon name={link.icon} /></span>
+            <span className="mobile-nav-label">{t(link.labelKey)}</span>
             {link.href === '/account' && proposalUnreadCount > 0 ? <span className="global-proposal-attention-badge global-proposal-attention-badge-mobile" aria-label={proposalBadgeLabel}>{proposalBadgeText}</span> : null}
           </Link>;
         })}
@@ -150,6 +168,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
       <style jsx global>{`
         *, *::before, *::after { box-sizing: border-box; }
         img, svg, video, canvas { max-width: 100%; height: auto; }
+        .shell-icon { display: block; width: 20px; height: 20px; }
         .skip-link { position: fixed; top: 10px; left: 10px; z-index: 100; border-radius: 8px; background: var(--color-primary-strong); color: #fff; padding: 10px 14px; font-weight: 700; transform: translateY(-160%); transition: transform .15s ease; }
         .skip-link:focus { transform: translateY(0); }
         .page-frame:focus { outline: none; }
@@ -159,8 +178,11 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         .field-control, .button { max-width: 100%; }
         .language-switcher select { min-height: 38px; max-width: 105px; border: 1px solid var(--color-border); border-radius: 9px; background: #fff; color: var(--color-ink); padding: 0 28px 0 10px; font: inherit; font-size: .82rem; }
         .header-login { position: relative; display: inline-flex; align-items: center; gap: .35rem; }
+        .header-account-icon { display: grid; width: 24px; height: 24px; flex: 0 0 24px; place-items: center; border-radius: 8px; color: var(--color-primary-strong); }
+        .header-account-icon .shell-icon { width: 18px; height: 18px; }
         .header-login-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .global-proposal-attention-badge { display: inline-grid; min-width: 18px; height: 18px; place-items: center; border-radius: 999px; background: var(--color-primary-strong); color: #fff; padding: 0 5px; font-size: .62rem; font-weight: 850; line-height: 1; }
+        .header-login:focus-visible, .menu-trigger:focus-visible, .mobile-menu a:focus-visible, .mobile-bottom-nav a:focus-visible { outline: 3px solid color-mix(in srgb, var(--color-primary) 32%, transparent); outline-offset: 2px; }
         .provider-onboarding-page { width: min(100%, 760px); }
         .provider-onboarding-form { padding: 0; }
         .provider-onboarding-form > .card { padding: 24px; }
@@ -187,9 +209,18 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         @media (max-width: 900px) {
           .desktop-nav { display: none !important; }
           .menu-trigger { display: inline-flex !important; flex-direction: column; justify-content: center; gap: 4px; width: 42px; height: 42px; border: 1px solid var(--color-border); border-radius: 10px; background: #fff; }
-          .menu-trigger span { display: block; width: 18px; height: 2px; margin: 0 auto; background: var(--color-ink); }
+          .menu-trigger span { display: block; width: 18px; height: 2px; margin: 0 auto; border-radius: 999px; background: var(--color-ink); transition: transform .18s ease, opacity .18s ease; }
+          .menu-trigger-open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+          .menu-trigger-open span:nth-child(2) { opacity: 0; }
+          .menu-trigger-open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
           .mobile-menu { display: grid !important; width: min(calc(100% - 32px), 560px); gap: 4px; margin: 0 auto 12px; border: 1px solid var(--color-border); border-radius: 14px; background: #fff; padding: 10px; box-shadow: var(--shadow-md); }
-          .mobile-menu a { padding: 12px 14px; border-radius: 9px; }
+          .mobile-menu a { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 8px 10px; border-radius: 11px; }
+          .mobile-menu-icon { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; border-radius: 10px; background: var(--color-surface-muted); color: var(--color-ink-muted); transition: background .18s ease, color .18s ease, transform .18s ease; }
+          .mobile-menu-icon .shell-icon { width: 19px; height: 19px; }
+          .mobile-menu-label { min-width: 0; font-weight: 720; }
+          .mobile-menu a:hover, .mobile-menu a.nav-active { background: var(--color-selected); color: var(--color-primary-strong); }
+          .mobile-menu a:hover .mobile-menu-icon, .mobile-menu a.nav-active .mobile-menu-icon { background: color-mix(in srgb, var(--color-primary) 12%, white); color: var(--color-primary-strong); transform: translateY(-1px); }
+          .mobile-menu-join { margin-top: 4px; border-top: 1px solid var(--color-border); border-radius: 0 0 11px 11px !important; }
           .header-requirement { display: none; }
           .page-frame { padding-top: 36px; }
           .provider-onboarding-page { width: min(100%, 680px); }
@@ -203,6 +234,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
           .inner-page-brand, .inner-page-brand img { width: 70px; }
           .language-switcher select { max-width: 84px; min-height: 36px; padding-left: 8px; font-size: .76rem; }
           .header-login { max-width: 120px; overflow: visible; }
+          .header-account-icon { width: 30px; height: 30px; border-radius: 10px; background: var(--color-selected); }
           .page-frame { padding: 28px 0 88px; }
           .page-intro h1, .account-page-heading h1, .provider-workspace h1 { font-size: clamp(2.1rem, 11vw, 3.2rem) !important; line-height: .98 !important; }
           .page-intro p { font-size: .95rem; line-height: 1.55; }
@@ -228,6 +260,9 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
           .footer-connect { grid-column: 1 / -1; }
           .mobile-bottom-nav { display: grid !important; position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--color-border); background: rgb(255 255 255 / 96%); padding: 7px max(8px, env(safe-area-inset-right)) calc(7px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); backdrop-filter: blur(10px); }
           .mobile-bottom-nav a { position: relative; display: grid; justify-items: center; gap: 2px; min-width: 0; font-size: .7rem; }
+          .mobile-nav-icon { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 10px; color: var(--color-ink-muted); }
+          .mobile-nav-icon .shell-icon { width: 19px; height: 19px; }
+          .mobile-nav-label { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
           .mobile-bottom-nav .global-proposal-attention-badge-mobile { position: absolute; top: 1px; left: calc(50% + 8px); min-width: 17px; height: 17px; padding-inline: 4px; font-size: .58rem; }
           .back-to-top { bottom: 78px; right: 14px; }
         }

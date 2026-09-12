@@ -35,7 +35,8 @@ test('touch, safe-area and mobile input ergonomics are locked', () => {
 
 test('mobile navigation remains fixed and menu becomes viewport-safe', () => {
   assert.ok(appShellSource.includes('className="mobile-bottom-nav"'));
-  assert.ok(appShellSource.includes('className="menu-trigger"'));
+  assert.ok(appShellSource.includes('menu-trigger'));
+  assert.ok(appShellSource.includes('aria-expanded={menuOpen}'));
   assert.ok(foundationSource.includes('max-height: min(72dvh, 560px)'));
   assert.ok(foundationSource.includes('position: absolute'));
   assert.ok(foundationSource.includes('overscroll-behavior: contain'));
