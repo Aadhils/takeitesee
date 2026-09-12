@@ -24,14 +24,15 @@ const {
   localizedMarketplaceCategoryLabelForKey,
   localizedMarketplaceGroupLabel,
   marketplaceTamilAlias,
-  marketplaceTaxonomyFallbackLabel,
   marketplaceTaxonomyKey,
 } = presentationModule;
 
-const [taxonomyInputSource, livePresentationSource, exploreSource] = await Promise.all([
+const [taxonomyInputSource, livePresentationSource, exploreSource, categoriesDirectorySource, publicCategoriesSource] = await Promise.all([
   readFile(new URL('../../../components/discovery/TaxonomySearchInput.tsx', import.meta.url), 'utf8'),
   readFile(new URL('../../../components/discovery/LiveMarketplacePresentation.tsx', import.meta.url), 'utf8'),
   readFile(new URL('../../../app/explore/page.tsx', import.meta.url), 'utf8'),
+  readFile(new URL('../../../components/discovery/CanonicalPublicCategoriesDirectory.tsx', import.meta.url), 'utf8'),
+  readFile(new URL('../../marketplace/public-categories.ts', import.meta.url), 'utf8'),
 ]);
 
 test('taxonomy presentation keeps canonical English labels and uses the first Tamil alias only for Tamil display', () => {
@@ -56,6 +57,7 @@ test('canonical taxonomy key treats category code, slug, and name forms determin
   assert.equal(marketplaceTaxonomyKey('ac_service'), 'ac-service');
   assert.equal(marketplaceTaxonomyKey('AC Service'), 'ac-service');
   assert.equal(marketplaceTaxonomyKey('ac-service'), 'ac-service');
+  assert.equal(marketplaceTaxonomyKey('software_it_support'), 'software-it-support');
   assert.equal(marketplaceTaxonomyKey('Tyre & Puncture Repair'), 'tyre-puncture-repair');
 });
 
@@ -66,31 +68,6 @@ test('Tamil taxonomy group presentation localizes known groups and preserves unk
   assert.equal(localizedMarketplaceGroupLabel('Future Services', 'ta-IN'), 'Future Services');
 });
 
-test('taxonomy presentation index bridges canonical code slugs to localized dropdown labels without changing values', () => {
-  const index = buildMarketplaceTaxonomyPresentationIndex([
-    {
-      code: 'plumbing',
-      name: 'Plumbing',
-      group_name: 'Home Services',
-      aliases: ['plumber', 'பிளம்பர்'],
-    },
-    {
-      code: 'ac_service',
-      name: 'AC Service',
-      group_name: 'Home Services',
-      aliases: ['ac repair', 'ஏசி சர்வீஸ்'],
-    },
-  ]);
-
-  assert.equal(index.plumbing?.name, 'Plumbing');
-  assert.equal(index['ac-service']?.code, 'ac_service');
-  assert.equal(localizedMarketplaceCategoryLabelForKey('plumbing', index, 'ta-IN'), 'பிளம்பர்');
-  assert.equal(localizedMarketplaceCategoryLabelForKey('ac-service', index, 'ta-IN'), 'ஏசி சர்வீஸ்');
-  assert.equal(localizedMarketplaceCategoryLabelForKey('ac-service', index, 'en-IN'), 'AC Service');
-  assert.equal(localizedMarketplaceCategoryLabelForKey('future-services', index, 'ta-IN'), 'Future Services');
-  assert.equal(marketplaceTaxonomyFallbackLabel('tyre-puncture-repair'), 'Tyre Puncture Repair');
-});
-
 test('taxonomy suggestion localization remains presentation-only and preserves canonical selection semantics', () => {
   assert.ok(taxonomyInputSource.includes('localizedMarketplaceCategoryLabel(suggestion, locale)'));
   assert.ok(taxonomyInputSource.includes('localizedMarketplaceGroupLabel(suggestion.group_name, locale)'));
@@ -98,17 +75,37 @@ test('taxonomy suggestion localization remains presentation-only and preserves c
   assert.ok(taxonomyInputSource.includes('onResolvedIntent?.(resolvedIntent?.name ?? null)'));
 });
 
-test('Explore owns one taxonomy payload for suggestions and localized category dropdown presentation', () => {
-  assert.ok(exploreSource.includes("fetch('/api/marketplace/search-taxonomy', { cache: 'no-store' })"));
-  assert.ok(exploreSource.includes('taxonomy={taxonomyCategories}'));
-  assert.ok(exploreSource.includes('localizedMarketplaceCategoryLabelForKey(category, taxonomyPresentationIndex, locale)'));
-  assert.ok(exploreSource.includes('<option value={category} key={category}>'));
-  assert.ok(taxonomyInputSource.includes('if (providedTaxonomy !== undefined) return;'));
-  assert.ok(taxonomyInputSource.includes('const taxonomy = providedTaxonomy ?? fetchedTaxonomy;'));
-});
-
 test('Service cards consume search-response category aliases through the same presentation helper', () => {
   assert.ok(livePresentationSource.includes('category_aliases?: string[]'));
   assert.ok(livePresentationSource.includes('localizedMarketplaceCategoryLabel({'));
   assert.ok(livePresentationSource.includes('aliases: service.category_aliases'));
+});
+
+test('Explore category dropdown localizes labels while preserving canonical server category slug values', () => {
+  const taxonomy = [
+    { code: 'plumbing', name: 'Plumbing', group_name: 'Home Services', aliases: ['plumber', 'பிளம்பர்'] },
+    { code: 'software_it_support', name: 'Custom Software & IT Support', group_name: 'Technology & Digital', aliases: ['custom software', 'கஸ்டம் சாப்ட்வேர்'] },
+  ];
+  const index = buildMarketplaceTaxonomyPresentationIndex(taxonomy);
+
+  assert.equal(localizedMarketplaceCategoryLabelForKey('plumbing', index, 'ta-IN'), 'பிளம்பர்');
+  assert.equal(localizedMarketplaceCategoryLabelForKey('software-it-support', index, 'ta-IN'), 'கஸ்டம் சாப்ட்வேர்');
+  assert.equal(localizedMarketplaceCategoryLabelForKey('software-it-support', index, 'en-IN'), 'Custom Software & IT Support');
+  assert.equal(localizedMarketplaceCategoryLabelForKey('legacy-category', index, 'ta-IN'), 'Legacy Category');
+
+  assert.ok(exploreSource.includes('value={category} key={category}'));
+  assert.ok(exploreSource.includes('localizedMarketplaceCategoryLabelForKey(category, taxonomyPresentationIndex, locale)'));
+  assert.ok(exploreSource.includes('taxonomy={taxonomyCategories}'));
+});
+
+test('public Categories directory uses canonical category-code identity, Tamil aliases, and canonical Explore filters', () => {
+  assert.ok(publicCategoriesSource.includes(".select('id,category,category_code,provider_type"));
+  assert.ok(publicCategoriesSource.includes('search_aliases'));
+  assert.ok(publicCategoriesSource.includes('marketplaceTaxonomyKey(code || name)'));
+  assert.ok(publicCategoriesSource.includes('canonicalSlugByLegacyNameSlug'));
+
+  assert.ok(categoriesDirectorySource.includes('localizedMarketplaceCategoryLabel(category, locale)'));
+  assert.ok(categoriesDirectorySource.includes('localizedMarketplaceGroupLabel(groupName, locale)'));
+  assert.ok(categoriesDirectorySource.includes('`/explore?category=${encodeURIComponent(category.slug)}`'));
+  assert.ok(!categoriesDirectorySource.includes('`/explore?q=${encodeURIComponent(category.name)}`'));
 });
