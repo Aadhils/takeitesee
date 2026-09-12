@@ -6,6 +6,7 @@ import LocalizedAccountShell from '../../components/account/LocalizedAccountShel
 import CustomerRequirementProposalAttention from '../../components/requirements/CustomerRequirementProposalAttention';
 import CustomerRequirementLifecycleOverview from '../../components/requirements/CustomerRequirementLifecycleOverview';
 import CustomerRequirementsManager, { type RequirementPrefill } from '../../components/requirements/CustomerRequirementsManager';
+import { resolveRequirementExploreContext } from '../../components/requirements/requirementExplorePrefill';
 import { parseMarketplaceSearchIntent } from '../../components/discovery/marketplaceSearchIntent';
 import { Card, EmptyState } from '../../components/ui/primitives';
 import { useOperationalTranslations } from '../../components/i18n/OperationalTranslations';
@@ -22,24 +23,12 @@ function normalized(value: string) {
 }
 
 async function readRequirementPrefill(): Promise<RequirementPrefill> {
-  const current = new URL(window.location.href);
-  let sourceExplore = current.searchParams.get('source') === 'explore';
-  let rawSearch = tidy(current.searchParams.get('search') || current.searchParams.get('q') || '', 180);
-  let explicitService = tidy(current.searchParams.get('service') || '', 120);
-  let explicitLocation = tidy(current.searchParams.get('location') || '', 120);
-
-  if (!sourceExplore && !rawSearch && !explicitService && !explicitLocation && document.referrer) {
-    try {
-      const referrer = new URL(document.referrer);
-      if (referrer.origin === window.location.origin && referrer.pathname === '/explore') {
-        sourceExplore = true;
-        rawSearch = tidy(referrer.searchParams.get('q') || '', 180);
-        explicitLocation = tidy(referrer.searchParams.get('location') || '', 120);
-      }
-    } catch {
-      // Referrer recovery is optional. A normal requirement post remains available.
-    }
-  }
+  const {
+    sourceExplore,
+    rawSearch,
+    explicitService,
+    explicitLocation,
+  } = resolveRequirementExploreContext(window.location.href, document.referrer);
 
   if (!sourceExplore && !rawSearch && !explicitService && !explicitLocation) return {};
 
