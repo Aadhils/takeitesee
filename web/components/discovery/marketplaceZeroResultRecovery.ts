@@ -1,4 +1,4 @@
-export type MarketplaceZeroResultRecoveryMode = 'none' | 'named_location' | 'nearby' | 'query' | 'filters';
+export type MarketplaceZeroResultRecoveryMode = 'none' | 'named_location' | 'nearby' | 'query' | 'category' | 'filters';
 
 export type MarketplaceZeroResultRecoveryInput = {
   loading: boolean;
@@ -6,7 +6,9 @@ export type MarketplaceZeroResultRecoveryInput = {
   resultCount: number;
   queryPresent: boolean;
   locationPresent: boolean;
+  categoryPresent: boolean;
   hasNarrowingFilters: boolean;
+  otherNarrowingFiltersPresent: boolean;
   preciseNearbyActive: boolean;
 };
 
@@ -15,6 +17,7 @@ export type MarketplaceZeroResultRecovery = {
   mode: MarketplaceZeroResultRecoveryMode;
   showBroadenLocation: boolean;
   showClearNearby: boolean;
+  showClearCategory: boolean;
   showBroadenFilters: boolean;
   showClearQuery: boolean;
 };
@@ -24,6 +27,7 @@ export function resolveMarketplaceZeroResultRecovery(
 ): MarketplaceZeroResultRecovery {
   const hasRecoveryContext = input.queryPresent
     || input.locationPresent
+    || input.categoryPresent
     || input.hasNarrowingFilters
     || input.preciseNearbyActive;
   const show = !input.loading && !input.hasError && input.resultCount === 0 && hasRecoveryContext;
@@ -34,6 +38,7 @@ export function resolveMarketplaceZeroResultRecovery(
       mode: 'none',
       showBroadenLocation: false,
       showClearNearby: false,
+      showClearCategory: false,
       showBroadenFilters: false,
       showClearQuery: false,
     };
@@ -45,14 +50,17 @@ export function resolveMarketplaceZeroResultRecovery(
       ? 'nearby'
       : input.queryPresent
         ? 'query'
-        : 'filters';
+        : input.categoryPresent
+          ? 'category'
+          : 'filters';
 
   return {
     show: true,
     mode,
     showBroadenLocation: input.locationPresent,
     showClearNearby: input.preciseNearbyActive && !input.locationPresent,
-    showBroadenFilters: input.hasNarrowingFilters,
+    showClearCategory: mode === 'category',
+    showBroadenFilters: mode === 'category' ? input.otherNarrowingFiltersPresent : input.hasNarrowingFilters,
     showClearQuery: mode === 'query',
   };
 }
