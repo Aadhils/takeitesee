@@ -44,6 +44,7 @@ export default function HomepageSearchForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const [query, setQuery] = useState('');
   const [listening, setListening] = useState(false);
+  const [voiceActivating, setVoiceActivating] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState<boolean | null>(null);
   const [voiceStatus, setVoiceStatus] = useState('');
 
@@ -67,7 +68,7 @@ export default function HomepageSearchForm() {
   };
 
   const startVoiceSearch = async () => {
-    if (listening) return;
+    if (listening || voiceActivating) return;
 
     const voiceWindow = window as VoiceWindow;
     const Recognition = voiceWindow.SpeechRecognition || voiceWindow.webkitSpeechRecognition;
@@ -76,6 +77,9 @@ export default function HomepageSearchForm() {
       setVoiceStatus(locale === 'ta-IN' ? 'இந்த browser-ல் குரல் தேடல் கிடைக்கவில்லை.' : 'Voice search is not available in this browser.');
       return;
     }
+
+    setVoiceActivating(true);
+    setVoiceStatus(locale === 'ta-IN' ? 'Microphone தொடங்குகிறது…' : 'Starting microphone…');
 
     try {
       if (navigator.mediaDevices?.getUserMedia) {
@@ -98,29 +102,47 @@ export default function HomepageSearchForm() {
       };
       recognition.onerror = () => {
         setVoiceStatus(locale === 'ta-IN' ? 'குரல் தேடலை பயன்படுத்த முடியவில்லை. Microphone permission-ஐ சரிபார்க்கவும்.' : 'Voice search could not be used. Check microphone permission.');
+        setVoiceActivating(false);
         setListening(false);
       };
-      recognition.onend = () => setListening(false);
+      recognition.onend = () => {
+        setVoiceActivating(false);
+        setListening(false);
+      };
       setVoiceSupported(true);
+      recognition.start();
+      setVoiceActivating(false);
       setVoiceStatus(locale === 'ta-IN' ? 'கேட்கிறோம்…' : 'Listening…');
       setListening(true);
-      recognition.start();
     } catch {
       setVoiceStatus(locale === 'ta-IN' ? 'Microphone permission தேவை. Browser site settings-ல் microphone access-ஐ Allow செய்யவும்.' : 'Microphone permission is required. Allow microphone access in your browser site settings.');
+      setVoiceActivating(false);
       setListening(false);
     }
   };
 
+  const voiceState = listening ? 'listening' : voiceActivating ? 'starting' : 'idle';
   const voiceTitle = voiceSupported === false
     ? (locale === 'ta-IN' ? 'இந்த browser-ல் குரல் தேடல் கிடைக்கவில்லை' : 'Voice search is not available in this browser')
-    : (locale === 'ta-IN' ? 'குரல் தேடல்' : 'Voice search');
+    : voiceActivating
+      ? (locale === 'ta-IN' ? 'Microphone தொடங்குகிறது' : 'Starting microphone')
+      : listening
+        ? (locale === 'ta-IN' ? 'கேட்கிறோம்' : 'Listening')
+        : (locale === 'ta-IN' ? 'குரல் தேடல்' : 'Voice search');
+  const voiceLabel = voiceActivating
+    ? (locale === 'ta-IN' ? 'Microphone தொடங்குகிறது' : 'Starting microphone')
+    : listening
+      ? (locale === 'ta-IN' ? 'குரல் தேடல் கேட்கிறது' : 'Voice search is listening')
+      : (locale === 'ta-IN' ? 'குரல் மூலம் சேவை தேடவும்' : 'Search services by voice');
 
   const voiceButton = (className: string) => (
     <button
       type="button"
       className={`voice-search-button ${className}`}
-      aria-label={locale === 'ta-IN' ? 'குரல் மூலம் சேவை தேடவும்' : 'Search services by voice'}
+      data-voice-state={voiceState}
+      aria-label={voiceLabel}
       aria-pressed={listening}
+      aria-busy={voiceActivating || undefined}
       onClick={startVoiceSearch}
       title={voiceTitle}
     >
