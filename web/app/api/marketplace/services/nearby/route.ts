@@ -20,6 +20,10 @@ import {
   parseMarketplaceServiceFilter,
   resolveMarketplaceServicePage,
 } from '../../../../../server/marketplace-service-discovery/requestParsing';
+import {
+  buildMarketplaceServiceDiscoveryRpcArgs,
+  buildMarketplaceServiceNearbyRpcArgs,
+} from '../../../../../server/marketplace-service-discovery/rpcArguments';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -98,23 +102,24 @@ export async function POST(request: Request) {
     1,
     marketplaceServiceMaxPageSize,
   );
-
-  const nearbyArgs = {
-    origin_lat: origin.latitude,
-    origin_long: origin.longitude,
-    target_query: semanticQuery || null,
-    target_tokens: queryTokens,
-    target_category: category,
-    target_location: location || null,
-    target_price: price,
-    target_rating: rating,
-    target_provider: provider,
-    target_available_now: availableNow,
-    target_sort: sort,
-    target_near_me: nearMe,
-    target_offset: cursor,
-    target_limit: limit + 1,
+  const rpcInput = {
+    semanticQuery,
+    queryTokens,
+    category,
+    location,
+    price,
+    rating,
+    provider,
+    availableNow,
+    sort,
+    cursor,
+    limit,
   };
+  const nearbyArgs = buildMarketplaceServiceNearbyRpcArgs({
+    ...rpcInput,
+    origin,
+    nearMe,
+  });
 
   const categoryPromise = supabase.rpc('get_marketplace_service_discovery_categories_v2');
   let geoStatus: 'ready' | 'unavailable' = 'ready';
@@ -122,19 +127,11 @@ export async function POST(request: Request) {
 
   if (searchResult.error) {
     geoStatus = 'unavailable';
-    searchResult = await supabase.rpc('search_marketplace_service_discovery_candidates_v2', {
-      target_query: semanticQuery || null,
-      target_tokens: queryTokens,
-      target_category: category,
-      target_location: location || null,
-      target_price: price,
-      target_rating: rating,
-      target_provider: provider,
-      target_available_now: availableNow,
-      target_sort: marketplaceServiceFallbackNormalSort(sort),
-      target_offset: cursor,
-      target_limit: limit + 1,
+    const fallbackArgs = buildMarketplaceServiceDiscoveryRpcArgs({
+      ...rpcInput,
+      sort: marketplaceServiceFallbackNormalSort(sort),
     });
+    searchResult = await supabase.rpc('search_marketplace_service_discovery_candidates_v2', fallbackArgs);
   }
 
   const categoryResult = await categoryPromise;
