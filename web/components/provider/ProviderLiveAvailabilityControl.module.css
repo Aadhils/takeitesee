@@ -18,9 +18,10 @@
 .trigger {
   display: flex;
   min-width: 174px;
+  min-height: 44px;
   align-items: center;
   gap: 10px;
-  padding: 9px 12px;
+  padding: 7px 12px;
   border: 1px solid var(--color-border);
   border-radius: 999px;
   background: rgb(255 255 255 / 96%);
@@ -54,6 +55,11 @@
   gap: 1px;
 }
 
+.triggerCopy small,
+.triggerCopy strong {
+  overflow-wrap: anywhere;
+}
+
 .triggerCopy small {
   color: var(--color-ink-muted);
   font-size: .67rem;
@@ -71,6 +77,7 @@
 
 .panel {
   width: 100%;
+  min-width: 0;
   padding: 16px;
   border: 1px solid var(--color-border);
   border-radius: 20px;
@@ -84,15 +91,18 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  min-width: 0;
 }
 
 .panelHeader > div {
   display: grid;
   gap: 3px;
+  min-width: 0;
 }
 
 .panelHeader strong {
   font-size: 1rem;
+  overflow-wrap: anywhere;
 }
 
 .eyebrow {
@@ -105,9 +115,9 @@
 
 .closeButton {
   display: grid;
-  width: 30px;
-  height: 30px;
-  flex: 0 0 30px;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
   place-items: center;
   border: 1px solid var(--color-border);
   border-radius: 50%;
@@ -122,6 +132,7 @@
   margin: 10px 0 0;
   color: var(--color-ink-muted);
   line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .boundaryCopy {
@@ -142,6 +153,7 @@
 .modeButton {
   display: flex;
   min-width: 0;
+  min-height: 44px;
   align-items: flex-start;
   gap: 9px;
   padding: 11px;
@@ -186,6 +198,11 @@
   gap: 3px;
 }
 
+.modeCopy strong,
+.modeCopy small {
+  overflow-wrap: anywhere;
+}
+
 .modeCopy strong {
   font-size: .78rem;
 }
@@ -223,9 +240,11 @@
   background: #fff1f1;
   color: #9a2c2c;
   font-size: .73rem;
+  overflow-wrap: anywhere;
 }
 
 .error button {
+  min-height: 44px;
   margin-left: 5px;
   border: 0;
   background: transparent;
@@ -244,11 +263,24 @@
 
   .trigger {
     min-width: 154px;
-    padding: 8px 10px;
+    min-height: 44px;
+    padding: 7px 10px;
   }
 
   .panel {
     padding: 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  .anchor {
+    right: max(10px, env(safe-area-inset-right));
+    bottom: calc(var(--responsive-mobile-nav-height, 72px) + 14px + env(safe-area-inset-bottom));
+    width: min(370px, calc(100vw - 20px - env(safe-area-inset-left) - env(safe-area-inset-right)));
+  }
+
+  .trigger {
+    max-width: 100%;
   }
 }
 
@@ -258,7 +290,8 @@
   }
 
   .panel {
-    max-height: min(70vh, 520px);
+    max-height: min(62dvh, 520px);
     overflow: auto;
+    overscroll-behavior: contain;
   }
 }
