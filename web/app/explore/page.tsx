@@ -8,7 +8,7 @@ import { DiscoveryEmptyState } from '../../components/discovery/DiscoveryEnhance
 import { TaxonomySearchInput } from '../../components/discovery/TaxonomySearchInput';
 import { parseMarketplaceSearchIntent } from '../../components/discovery/marketplaceSearchIntent';
 import { resolveMarketplaceZeroResultRecovery } from '../../components/discovery/marketplaceZeroResultRecovery';
-import { useLanguage } from '../../components/i18n/LanguageProvider';
+import { useLanguage, type TranslationKey } from '../../components/i18n/LanguageProvider';
 
 type MarketplaceService = any;
 type PriceFilter = 'any' | 'under-1000' | '1000-5000' | 'over-5000';
@@ -88,6 +88,12 @@ function withoutAvailabilityIntent(value: string) {
     .trim();
 }
 
+function formatLocalized(template: string, values: Record<string, string | number>) {
+  return template.replace(/\{([a-z_]+)\}/gi, (match, key: string) => (
+    Object.prototype.hasOwnProperty.call(values, key) ? String(values[key]) : match
+  ));
+}
+
 function buildExploreParams(query: string, filters: Filters, sort: string) {
   const params = new URLSearchParams();
   if (query.trim()) params.set('q', query.trim());
@@ -163,11 +169,11 @@ function normalizeService(service: MarketplaceService) {
   };
 }
 
-function geolocationMessage(error: GeolocationPositionError) {
-  if (error.code === error.PERMISSION_DENIED) return 'Location permission was not granted. Allow location access to rank useful nearby services.';
-  if (error.code === error.POSITION_UNAVAILABLE) return 'Your current location could not be determined.';
-  if (error.code === error.TIMEOUT) return 'Location lookup timed out. Please try again.';
-  return error.message || 'Unable to read your current location.';
+function geolocationMessage(error: GeolocationPositionError, translate: (key: TranslationKey) => string) {
+  if (error.code === error.PERMISSION_DENIED) return translate('explore.geoPermissionDenied');
+  if (error.code === error.POSITION_UNAVAILABLE) return translate('explore.geoPositionUnavailable');
+  if (error.code === error.TIMEOUT) return translate('explore.geoTimeout');
+  return translate('explore.geoUnable');
 }
 
 export default function ExplorePage() {
@@ -266,7 +272,7 @@ export default function ExplorePage() {
         try {
           const response = await fetch(`/api/marketplace/services/search?${requestKey}`, { cache: 'no-store' });
           const payload = await response.json() as ServerSearchPayload;
-          if (!response.ok) throw new Error(payload.error || 'Marketplace catalog unavailable');
+          if (!response.ok) throw new Error(payload.error || t('explore.catalogUnavailable'));
           if (cancelled || serverSearchKeyRef.current !== requestKey) return;
 
           const nextServices = Array.isArray(payload.services) ? payload.services.map(normalizeService) : [];
@@ -282,7 +288,7 @@ export default function ExplorePage() {
           setGeoStatus('not_requested');
         } catch (error) {
           if (!cancelled && serverSearchKeyRef.current === requestKey) {
-            setLoadError(error instanceof Error ? error.message : 'Unable to load services');
+            setLoadError(error instanceof Error ? error.message : t('explore.loadServicesError'));
           }
         } finally {
           if (!cancelled && serverSearchKeyRef.current === requestKey) setLoading(false);
@@ -294,7 +300,7 @@ export default function ExplorePage() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [effectiveLocationQuery, geoOrigin, serverSearchKey, urlReady]);
+  }, [effectiveLocationQuery, geoOrigin, serverSearchKey, t, urlReady]);
 
   useEffect(() => {
     if (!urlReady || !nearbySearchBody || !nearbySearchKey) return;
@@ -316,7 +322,7 @@ export default function ExplorePage() {
             cache: 'no-store',
           });
           const payload = await response.json() as ServerSearchPayload;
-          if (!response.ok) throw new Error(payload.error || 'Marketplace catalog unavailable');
+          if (!response.ok) throw new Error(payload.error || t('explore.catalogUnavailable'));
           if (cancelled || nearbySearchKeyRef.current !== requestKey) return;
 
           const nextServices = Array.isArray(payload.services) ? payload.services.map(normalizeService) : [];
@@ -332,11 +338,11 @@ export default function ExplorePage() {
           const nextGeoStatus = payload.geo_status ?? 'unavailable';
           setGeoStatus(nextGeoStatus);
           if (nextGeoStatus === 'unavailable') {
-            setGeoError('Precise nearby matching is temporarily unavailable. Showing the normal marketplace ranking instead.');
+            setGeoError(t('explore.geoFallback'));
           }
         } catch (error) {
           if (!cancelled && nearbySearchKeyRef.current === requestKey) {
-            setLoadError(error instanceof Error ? error.message : 'Unable to load services');
+            setLoadError(error instanceof Error ? error.message : t('explore.loadServicesError'));
           }
         } finally {
           if (!cancelled && nearbySearchKeyRef.current === requestKey) setLoading(false);
@@ -348,7 +354,7 @@ export default function ExplorePage() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [nearbySearchBody, nearbySearchKey, urlReady]);
+  }, [nearbySearchBody, nearbySearchKey, t, urlReady]);
 
   const categories = serverCategories;
 
@@ -396,7 +402,7 @@ export default function ExplorePage() {
       }
 
       const payload = await response.json() as ServerSearchPayload;
-      if (!response.ok) throw new Error(payload.error || 'Unable to load more services');
+      if (!response.ok) throw new Error(payload.error || t('explore.loadMoreError'));
       const currentRequest = nearbyMode ? nearbySearchKeyRef.current === requestKey : serverSearchKeyRef.current === requestKey;
       if (!currentRequest) return;
 
@@ -415,13 +421,11 @@ export default function ExplorePage() {
       if (nearbyMode) {
         const nextGeoStatus = payload.geo_status ?? 'unavailable';
         setGeoStatus(nextGeoStatus);
-        setGeoError(nextGeoStatus === 'unavailable'
-          ? 'Precise nearby matching is temporarily unavailable. Showing the normal marketplace ranking instead.'
-          : '');
+        setGeoError(nextGeoStatus === 'unavailable' ? t('explore.geoFallback') : '');
       }
     } catch (error) {
       const currentRequest = nearbyMode ? nearbySearchKeyRef.current === requestKey : serverSearchKeyRef.current === requestKey;
-      if (currentRequest) setLoadMoreError(error instanceof Error ? error.message : 'Unable to load more services');
+      if (currentRequest) setLoadMoreError(error instanceof Error ? error.message : t('explore.loadMoreError'));
     } finally {
       const currentRequest = nearbyMode ? nearbySearchKeyRef.current === requestKey : serverSearchKeyRef.current === requestKey;
       if (currentRequest) setLoadingMore(false);
@@ -457,7 +461,7 @@ export default function ExplorePage() {
   const useCurrentLocation = () => {
     if (geoLocating) return;
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      setGeoError('Location matching is not supported by this browser.');
+      setGeoError(t('explore.geoUnsupported'));
       return;
     }
     setGeoLocating(true);
@@ -468,7 +472,7 @@ export default function ExplorePage() {
         setGeoLocating(false);
       },
       (positionError) => {
-        setGeoError(geolocationMessage(positionError));
+        setGeoError(geolocationMessage(positionError, t));
         setGeoLocating(false);
       },
       { enableHighAccuracy: true, timeout: 12_000, maximumAge: 0 },
@@ -492,10 +496,11 @@ export default function ExplorePage() {
   const resultHeading = loading
     ? t('explore.loading')
     : query.trim()
-      ? locale === 'ta-IN'
-        ? `“${query.trim()}” ${t('explore.forQuery')} ${resultCount} ${resultCount === 1 ? t('explore.match') : t('explore.matches')}`
-        : `${resultCount} ${resultCount === 1 ? t('explore.match') : t('explore.matches')} ${t('explore.forQuery')} “${query.trim()}”`
-      : `${resultCount} ${t('explore.servicesToExplore')}`;
+      ? formatLocalized(
+        t(resultCount === 1 ? 'explore.resultsQueryOne' : 'explore.resultsQueryMany'),
+        { query: query.trim(), count: resultCount },
+      )
+      : formatLocalized(t('explore.resultsCount'), { count: resultCount });
 
   const nearbyReady = preciseNearbyActive;
   const zeroResultRecovery = resolveMarketplaceZeroResultRecovery({
@@ -508,31 +513,22 @@ export default function ExplorePage() {
     preciseNearbyActive,
   });
   const showRecoveryEmptyState = zeroResultRecovery.show;
-  const tamil = locale === 'ta-IN';
   const recoveryTitle = zeroResultRecovery.mode === 'named_location'
-    ? (tamil ? `“${effectiveLocationQuery}” பகுதியில் live match இல்லை` : `No live match in “${effectiveLocationQuery}”`)
+    ? formatLocalized(t('explore.recoveryNamedTitle'), { location: effectiveLocationQuery })
     : zeroResultRecovery.mode === 'nearby' && query.trim()
-      ? (tamil ? `“${query.trim()}” க்கு nearby live match இல்லை` : `No live nearby match for “${query.trim()}”`)
+      ? formatLocalized(t('explore.recoveryNearbyQueryTitle'), { query: query.trim() })
       : zeroResultRecovery.mode === 'nearby'
-        ? (tamil ? 'உங்கள் தற்போதைய இடத்திற்கு அருகில் live services கிடைக்கவில்லை' : 'No live services found near your current location')
+        ? t('explore.recoveryNearbyTitle')
         : zeroResultRecovery.mode === 'query'
-          ? (tamil ? `“${query.trim()}” க்கு live match இல்லை` : `No live match for “${query.trim()}”`)
-          : (tamil ? 'தற்போதைய filters-க்கு live match இல்லை' : 'No live match with the current filters');
+          ? formatLocalized(t('explore.recoveryQueryTitle'), { query: query.trim() })
+          : t('explore.recoveryFiltersTitle');
   const recoveryHelp = zeroResultRecovery.mode === 'named_location'
-    ? (tamil
-      ? 'இந்த இடத்தைத் தாண்டி தேடலாம், filters-ஐ தளர்த்தலாம், approved category-களை பார்க்கலாம் அல்லது requirement post செய்யலாம்.'
-      : 'Search beyond this location, broaden the filters, browse approved categories, or post a requirement.')
+    ? t('explore.recoveryNamedHelp')
     : zeroResultRecovery.mode === 'nearby'
-      ? (tamil
-        ? 'Current-location ranking-ஐ நீக்கி முழு marketplace-ல் தேடலாம், filters-ஐ தளர்த்தலாம், approved category-களை பார்க்கலாம் அல்லது requirement post செய்யலாம்.'
-        : 'Search without current-location ranking, broaden the filters, browse an approved category, or post a requirement.')
+      ? t('explore.recoveryNearbyHelp')
       : zeroResultRecovery.mode === 'query'
-        ? (tamil
-          ? 'தேடல் சொல்லை மாற்றி முயற்சிக்கலாம், active filters இருந்தால் தளர்த்தலாம், approved category-களை பார்க்கலாம் அல்லது requirement post செய்யலாம்.'
-          : 'Try a broader service phrase, loosen any active filters, browse approved categories, or post a requirement.')
-        : (tamil
-          ? 'ஒரு filter-ஐ தளர்த்தி மீண்டும் முயற்சிக்கலாம், approved category-களை பார்க்கலாம் அல்லது requirement post செய்யலாம்.'
-          : 'Try broader filters, browse approved categories, or post a requirement so providers can respond.');
+        ? t('explore.recoveryQueryHelp')
+        : t('explore.recoveryFiltersHelp');
 
   return <div className="discovery-page discovery-workspace">
     <section className="page-intro"><span className="eyebrow">{t('explore.eyebrow')}</span><h1>{t('explore.title')}</h1><p>{t('explore.subtitle')}</p></section>
@@ -545,27 +541,27 @@ export default function ExplorePage() {
         <Select label={t('explore.price')} value={filters.price} onChange={(e) => update('price', e.target.value as PriceFilter)}><option value="any">{t('explore.anyPrice')}</option><option value="under-1000">{t('explore.under1000')}</option><option value="1000-5000">{t('explore.range1000to5000')}</option><option value="over-5000">{t('explore.over5000')}</option></Select>
         <Select label={t('explore.rating')} value={filters.rating} onChange={(e) => update('rating', e.target.value as RatingFilter)}><option value="any">{t('explore.anyRating')}</option><option value="4-plus">{t('explore.rating4')}</option><option value="4.5-plus">{t('explore.rating45')}</option></Select>
         <Select label={t('explore.providerType')} value={filters.provider} onChange={(e) => update('provider', e.target.value as ProviderFilter)}><option value="any">{t('explore.anyProvider')}</option><option value="professional">{t('explore.professional')}</option><option value="business">{t('explore.business')}</option></Select>
-        <Select label={locale === 'ta-IN' ? 'நேரடி கிடைப்பாடு' : 'Live availability'} value={filters.availability} onChange={(e) => update('availability', e.target.value as AvailabilityFilter)}><option value="any">{locale === 'ta-IN' ? 'எந்த live நிலையும்' : 'Any live status'}</option><option value="available-now">{locale === 'ta-IN' ? 'இப்போது கிடைப்பவர்கள் மட்டும்' : 'Available now only'}</option></Select>
+        <Select label={t('explore.availabilityLabel')} value={filters.availability} onChange={(e) => update('availability', e.target.value as AvailabilityFilter)}><option value="any">{t('explore.availabilityAny')}</option><option value="available-now">{t('explore.availabilityNowOnly')}</option></Select>
       </div>
       <div className="discovery-search-footer">
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
           <Button type="button" variant="quiet" onClick={clearAll}>{t('explore.clearFilters')}</Button>
           {geoOrigin
-            ? <Button type="button" variant="secondary" onClick={clearNearbyLocation}>{nearbyReady ? 'Nearby ranking on · Clear' : 'Clear current location'}</Button>
-            : <Button type="button" variant="secondary" loading={geoLocating} onClick={useCurrentLocation}>{searchIntent.nearMe ? 'Use my location for nearby results' : 'Use my location'}</Button>}
+            ? <Button type="button" variant="secondary" onClick={clearNearbyLocation}>{nearbyReady ? t('explore.nearbyRankingClear') : t('explore.clearCurrentLocation')}</Button>
+            : <Button type="button" variant="secondary" loading={geoLocating} onClick={useCurrentLocation}>{searchIntent.nearMe ? t('explore.useMyLocationNearby') : t('explore.useMyLocation')}</Button>}
         </div>
-        <div className="sort-control"><Select label={t('explore.sort')} value={sort} onChange={(e) => setSort(e.target.value)}><option value="relevance">{t('explore.relevance')}</option>{preciseNearbyActive ? <option value="nearest">{locale === 'ta-IN' ? 'அருகிலுள்ளவை முதலில்' : 'Nearest first'}</option> : null}<option value="rating">{t('explore.highestRated')}</option><option value="price">{t('explore.lowestPrice')}</option><option value="price-desc">{t('explore.highestPrice')}</option></Select></div>
+        <div className="sort-control"><Select label={t('explore.sort')} value={sort} onChange={(e) => setSort(e.target.value)}><option value="relevance">{t('explore.relevance')}</option>{preciseNearbyActive ? <option value="nearest">{t('explore.nearestFirst')}</option> : null}<option value="rating">{t('explore.highestRated')}</option><option value="price">{t('explore.lowestPrice')}</option><option value="price-desc">{t('explore.highestPrice')}</option></Select></div>
       </div>
-      {searchIntent.locationQuery && !manualLocationQuery ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{locale === 'ta-IN' ? 'தேடலில் இடம் கண்டறியப்பட்டது:' : 'Location intent detected:'} <strong>{searchIntent.locationQuery}</strong>. {locale === 'ta-IN' ? 'இந்த இடத்துடன் பொருந்தும் சேவைகள் மட்டும் காட்டப்படும்.' : 'Only services matching this location are shown.'}</p> : null}
-      {searchIntent.nearMe && !geoOrigin ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{locale === 'ta-IN' ? '“எனக்கு அருகில்” intent கண்டறியப்பட்டது. துல்லியமான அருகாமை ranking-க்கு Use my location தேர்வு செய்யவும்.' : '“Near me” intent was detected. Choose Use my location to enable precise nearby ranking.'}</p> : null}
-      {availableNowFromQuery ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{locale === 'ta-IN' ? 'உங்கள் தேடலில் “இப்போது கிடைக்கும்” intent கண்டறியப்பட்டது. Available Providers மட்டும் காட்டப்படுகிறார்கள்.' : '“Available now” was detected in your search. Only currently Available Providers are shown.'}</p> : null}
-      {namedLocationOverridesNearby ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{locale === 'ta-IN' ? 'Named location தேடல் active ஆக இருப்பதால் current-location distance ranking தற்காலிகமாக பயன்படுத்தப்படவில்லை.' : 'A named location is active, so current-location distance ranking is paused for these results.'}</p> : null}
-      {nearbyReady ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>Nearby ranking is active for this browser session. Your precise location is used for this marketplace request only; the public response contains only coarse distance bands and is not added to the page URL or saved as a customer location record.</p> : null}
+      {searchIntent.locationQuery && !manualLocationQuery ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{t('explore.locationIntentDetected')} <strong>{searchIntent.locationQuery}</strong>. {t('explore.locationIntentOnly')}</p> : null}
+      {searchIntent.nearMe && !geoOrigin ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{t('explore.nearMeIntent')}</p> : null}
+      {availableNowFromQuery ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{t('explore.availableNowIntent')}</p> : null}
+      {namedLocationOverridesNearby ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{t('explore.namedLocationPause')}</p> : null}
+      {nearbyReady ? <p style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{t('explore.nearbyPrivacy')}</p> : null}
       {geoError ? <p role="alert" style={{ margin: 0, fontSize: '.78rem', lineHeight: 1.5 }}>{geoError}</p> : null}
     </section>
 
     <div className="results-heading"><div><span className="eyebrow">{t('explore.marketplace')}</span><h2>{resultHeading}</h2></div></div>
-    {loading ? <div className="service-grid"><div className="loading-card"><Skeleton className="loading-art" /><Skeleton className="loading-line" /><Skeleton className="loading-line short" /></div></div> : loadError ? <DiscoveryEmptyState query={loadError} onClear={() => location.reload()} suggestions={[]} errorState /> : filteredServices.length ? <><div className="service-grid">{filteredServices.map((service) => <ServiceCard service={preciseNearbyActive ? service : { ...service, distance_band: null, distance_priority: 0, nearby_match_mode: null }} contextQuery={contextQuery} key={service.id} />)}</div>{hasMore ? <div className="empty-actions" style={{ marginTop: '1rem' }}><Button type="button" variant="secondary" loading={loadingMore} onClick={() => void loadMore()}>{tamil ? 'மேலும் Services ஏற்று' : 'Load more services'}</Button></div> : null}{loadMoreError ? <p className="field-error" role="alert" style={{ marginTop: '1rem' }}>{loadMoreError}</p> : null}</> : showRecoveryEmptyState ? <><div className="discovery-empty-wrap"><Card><EmptyState title={recoveryTitle}>{recoveryHelp}</EmptyState><div className="empty-actions">{zeroResultRecovery.showBroadenLocation ? <Button type="button" variant="secondary" onClick={broadenNamedLocation}>{tamil ? 'இந்த இடத்தைத் தாண்டி தேடு' : 'Search beyond this location'}</Button> : null}{zeroResultRecovery.showClearNearby ? <Button type="button" variant="secondary" onClick={clearNearbyLocation}>{tamil ? 'தற்போதைய இடத்தைத் தாண்டி தேடு' : 'Search beyond current location'}</Button> : null}{zeroResultRecovery.showBroadenFilters ? <Button type="button" variant="secondary" onClick={broadenFilters}>{tamil ? 'Filters-ஐ தளர்த்து' : 'Broaden filters'}</Button> : null}{zeroResultRecovery.showClearQuery ? <Button type="button" variant="secondary" onClick={clearSearch}>{tamil ? 'தேடலை நீக்கு' : 'Clear search'}</Button> : null}<Link href="/categories" className="button button-quiet">{t('empty.browseCategories')}</Link></div></Card></div><div className="empty-actions"><Link href={requirementHref} className="button button-primary">{t('explore.postRequirement')}</Link></div></> : <><DiscoveryEmptyState query={query} onClear={clearAll} suggestions={[]} /><div className="empty-actions"><Link href={requirementHref} className="button button-primary">{t('explore.postRequirement')}</Link></div></>}
+    {loading ? <div className="service-grid"><div className="loading-card"><Skeleton className="loading-art" /><Skeleton className="loading-line" /><Skeleton className="loading-line short" /></div></div> : loadError ? <DiscoveryEmptyState query={loadError} onClear={() => location.reload()} suggestions={[]} errorState /> : filteredServices.length ? <><div className="service-grid">{filteredServices.map((service) => <ServiceCard service={preciseNearbyActive ? service : { ...service, distance_band: null, distance_priority: 0, nearby_match_mode: null }} contextQuery={contextQuery} key={service.id} />)}</div>{hasMore ? <div className="empty-actions" style={{ marginTop: '1rem' }}><Button type="button" variant="secondary" loading={loadingMore} onClick={() => void loadMore()}>{t('explore.loadMore')}</Button></div> : null}{loadMoreError ? <p className="field-error" role="alert" style={{ marginTop: '1rem' }}>{loadMoreError}</p> : null}</> : showRecoveryEmptyState ? <><div className="discovery-empty-wrap"><Card><EmptyState title={recoveryTitle}>{recoveryHelp}</EmptyState><div className="empty-actions">{zeroResultRecovery.showBroadenLocation ? <Button type="button" variant="secondary" onClick={broadenNamedLocation}>{t('explore.recoveryBroadenLocation')}</Button> : null}{zeroResultRecovery.showClearNearby ? <Button type="button" variant="secondary" onClick={clearNearbyLocation}>{t('explore.recoveryBroadenCurrentLocation')}</Button> : null}{zeroResultRecovery.showBroadenFilters ? <Button type="button" variant="secondary" onClick={broadenFilters}>{t('explore.recoveryBroadenFilters')}</Button> : null}{zeroResultRecovery.showClearQuery ? <Button type="button" variant="secondary" onClick={clearSearch}>{t('explore.recoveryClearSearch')}</Button> : null}<Link href="/categories" className="button button-quiet">{t('empty.browseCategories')}</Link></div></Card></div><div className="empty-actions"><Link href={requirementHref} className="button button-primary">{t('explore.postRequirement')}</Link></div></> : <><DiscoveryEmptyState query={query} onClear={clearAll} suggestions={[]} /><div className="empty-actions"><Link href={requirementHref} className="button button-primary">{t('explore.postRequirement')}</Link></div></>}
     <p className="explore-disclaimer">{t('explore.disclaimer')}</p>
   </div>;
 }
