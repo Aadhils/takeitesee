@@ -33,9 +33,11 @@ test('touch, safe-area and mobile input ergonomics are locked', () => {
   assert.ok(foundationSource.includes('.back-to-top'));
 });
 
-test('mobile language selector keeps enough width for readable locale labels', () => {
-  assert.ok(foundationSource.includes('width: 92px;\n    max-width: 92px;'));
-  assert.ok(foundationSource.includes('width: 88px;\n    max-width: 88px;'));
+test('mobile language selector resists flex shrink and keeps locale label readable', () => {
+  assert.ok(foundationSource.includes('.language-switcher {\n    flex: 0 0 auto;\n    min-width: 108px;'));
+  assert.ok(foundationSource.includes('display: block;\n    width: 108px;\n    min-width: 108px;\n    max-width: 108px;'));
+  assert.ok(foundationSource.includes('padding-right: 24px;'));
+  assert.ok(!foundationSource.includes('width: 88px;'), 'narrow-phone locale control must not fall back to the clipped width');
   assert.ok(!foundationSource.includes('max-width: 76px;'), 'narrow-phone locale control must not clip English');
 });
 
