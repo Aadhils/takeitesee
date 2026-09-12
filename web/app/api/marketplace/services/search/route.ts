@@ -19,6 +19,7 @@ import {
   parseMarketplaceServiceFilter,
   resolveMarketplaceServicePage,
 } from '../../../../../server/marketplace-service-discovery/requestParsing';
+import { buildMarketplaceServiceDiscoveryRpcArgs } from '../../../../../server/marketplace-service-discovery/rpcArguments';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -57,21 +58,22 @@ export async function GET(request: Request) {
     1,
     marketplaceServiceMaxPageSize,
   );
+  const searchArgs = buildMarketplaceServiceDiscoveryRpcArgs({
+    semanticQuery,
+    queryTokens,
+    category,
+    location,
+    price,
+    rating,
+    provider,
+    availableNow,
+    sort,
+    cursor,
+    limit,
+  });
 
   const [searchResult, categoryResult] = await Promise.all([
-    supabase.rpc('search_marketplace_service_discovery_candidates_v2', {
-      target_query: semanticQuery || null,
-      target_tokens: queryTokens,
-      target_category: category,
-      target_location: location || null,
-      target_price: price,
-      target_rating: rating,
-      target_provider: provider,
-      target_available_now: availableNow,
-      target_sort: sort,
-      target_offset: cursor,
-      target_limit: limit + 1,
-    }),
+    supabase.rpc('search_marketplace_service_discovery_candidates_v2', searchArgs),
     supabase.rpc('get_marketplace_service_discovery_categories_v2'),
   ]);
 
