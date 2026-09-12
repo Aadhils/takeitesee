@@ -150,27 +150,29 @@ export async function POST(request: Request) {
     name: String(row.category_name || 'Other'),
   }));
 
-  emitMarketplaceServiceSearchObservation({
-    mode: 'nearby',
-    queryPresent: query.length > 0,
-    queryTokenCount: queryTokens.length,
-    locationPresent: location.length > 0,
-    categoryFilterApplied: category !== 'all',
-    price,
-    rating,
-    provider,
-    availableNow,
-    sort,
-    cursor,
-    limit,
-    returnedCount: services.length,
-    total,
-    hasMore: page.has_more,
-    geoStatus,
-    nearMe,
-    fallbackUsed,
-    durationMs: Date.now() - startedAt,
-  });
+  if (cursor === 0) {
+    emitMarketplaceServiceSearchObservation({
+      mode: 'nearby',
+      queryPresent: query.length > 0,
+      queryTokenCount: queryTokens.length,
+      locationPresent: location.length > 0,
+      categoryFilterApplied: category !== 'all',
+      price,
+      rating,
+      provider,
+      availableNow,
+      sort,
+      cursor,
+      limit,
+      returnedCount: services.length,
+      total,
+      hasMore: page.has_more,
+      geoStatus,
+      nearMe,
+      fallbackUsed,
+      durationMs: Date.now() - startedAt,
+    });
+  }
 
   return NextResponse.json(
     {
