@@ -33,6 +33,12 @@ test('touch, safe-area and mobile input ergonomics are locked', () => {
   assert.ok(foundationSource.includes('.back-to-top'));
 });
 
+test('mobile language selector keeps enough width for readable locale labels', () => {
+  assert.ok(foundationSource.includes('width: 92px;\n    max-width: 92px;'));
+  assert.ok(foundationSource.includes('width: 88px;\n    max-width: 88px;'));
+  assert.ok(!foundationSource.includes('max-width: 76px;'), 'narrow-phone locale control must not clip English');
+});
+
 test('mobile navigation remains fixed and menu becomes viewport-safe', () => {
   assert.ok(appShellSource.includes('className="mobile-bottom-nav"'));
   assert.ok(appShellSource.includes('menu-trigger'));
