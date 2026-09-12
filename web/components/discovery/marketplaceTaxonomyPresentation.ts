@@ -1,8 +1,11 @@
 export type MarketplaceTaxonomyPresentationCategory = {
+  code?: string | null;
   name?: string | null;
   group_name?: string | null;
   aliases?: string[] | null;
 };
+
+export type MarketplaceTaxonomyPresentationIndex = Record<string, MarketplaceTaxonomyPresentationCategory>;
 
 const tamilScriptPattern = /[\u0B80-\u0BFF]/u;
 
@@ -54,4 +57,46 @@ export function localizedMarketplaceGroupLabel(groupName: unknown, locale: strin
   const canonicalGroup = normalizedLabel(groupName);
   if (!canonicalGroup || locale !== 'ta-IN') return canonicalGroup;
   return tamilGroupLabels[canonicalGroup] || canonicalGroup;
+}
+
+export function buildMarketplaceTaxonomyPresentationIndex(categories: unknown): MarketplaceTaxonomyPresentationIndex {
+  if (!Array.isArray(categories)) return {};
+
+  const index: MarketplaceTaxonomyPresentationIndex = {};
+  for (const candidate of categories) {
+    if (!candidate || typeof candidate !== 'object') continue;
+    const record = candidate as Record<string, unknown>;
+    const category: MarketplaceTaxonomyPresentationCategory = {
+      code: normalizedLabel(record.code),
+      name: normalizedLabel(record.name),
+      group_name: normalizedLabel(record.group_name),
+      aliases: Array.isArray(record.aliases)
+        ? record.aliases.map(normalizedLabel).filter(Boolean)
+        : [],
+    };
+    if (!category.name) continue;
+
+    const keys = [marketplaceTaxonomyKey(category.code), marketplaceTaxonomyKey(category.name)].filter(Boolean);
+    for (const key of keys) {
+      if (!index[key]) index[key] = category;
+    }
+  }
+  return index;
+}
+
+export function marketplaceTaxonomyFallbackLabel(value: unknown) {
+  const words = normalizedLabel(value).replace(/[_-]+/g, ' ').split(' ').filter(Boolean);
+  if (!words.length) return 'Other';
+  return words.map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
+}
+
+export function localizedMarketplaceCategoryLabelForKey(
+  value: unknown,
+  index: MarketplaceTaxonomyPresentationIndex,
+  locale: string,
+) {
+  const category = index[marketplaceTaxonomyKey(value)];
+  return category
+    ? localizedMarketplaceCategoryLabel(category, locale)
+    : marketplaceTaxonomyFallbackLabel(value);
 }

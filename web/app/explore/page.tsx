@@ -5,7 +5,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Card, EmptyState, Input, Select, Skeleton } from '../../components/ui/primitives';
 import { ServiceCard } from '../../components/discovery/MarketplaceCards';
 import { DiscoveryEmptyState } from '../../components/discovery/DiscoveryEnhancements';
-import { TaxonomySearchInput } from '../../components/discovery/TaxonomySearchInput';
+import { TaxonomySearchInput, type MarketplaceSearchTaxonomyCategory } from '../../components/discovery/TaxonomySearchInput';
+import {
+  buildMarketplaceTaxonomyPresentationIndex,
+  localizedMarketplaceCategoryLabelForKey,
+} from '../../components/discovery/marketplaceTaxonomyPresentation';
 import { parseMarketplaceSearchIntent } from '../../components/discovery/marketplaceSearchIntent';
 import { resolveMarketplaceZeroResultRecovery } from '../../components/discovery/marketplaceZeroResultRecovery';
 import { useLanguage, type TranslationKey } from '../../components/i18n/LanguageProvider';
@@ -58,10 +62,6 @@ function localized(value: unknown) {
     return record.en ?? record.values?.en ?? record.values?.[record.default_locale] ?? '';
   }
   return '';
-}
-
-function labelFromSlug(value: string) {
-  return value.split('-').filter(Boolean).map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ') || 'Other';
 }
 
 function normalized(value: unknown) {
@@ -184,6 +184,7 @@ export default function ExplorePage() {
   const [urlReady, setUrlReady] = useState(false);
   const [services, setServices] = useState<MarketplaceService[]>([]);
   const [serverCategories, setServerCategories] = useState<string[]>([]);
+  const [taxonomyCategories, setTaxonomyCategories] = useState<MarketplaceSearchTaxonomyCategory[]>([]);
   const [serverTotal, setServerTotal] = useState(0);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
@@ -196,6 +197,21 @@ export default function ExplorePage() {
   const [geoLocating, setGeoLocating] = useState(false);
   const [geoError, setGeoError] = useState('');
   const { locale, t } = useLanguage();
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch('/api/marketplace/search-taxonomy', { cache: 'no-store' });
+        if (!response.ok) return;
+        const payload = await response.json() as { categories?: MarketplaceSearchTaxonomyCategory[] };
+        if (!cancelled && Array.isArray(payload.categories)) setTaxonomyCategories(payload.categories);
+      } catch {
+        // Taxonomy labels are presentation enrichment only. Canonical Service search remains available.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -357,6 +373,10 @@ export default function ExplorePage() {
   }, [nearbySearchBody, nearbySearchKey, t, urlReady]);
 
   const categories = serverCategories;
+  const taxonomyPresentationIndex = useMemo(
+    () => buildMarketplaceTaxonomyPresentationIndex(taxonomyCategories),
+    [taxonomyCategories],
+  );
 
   useEffect(() => {
     if (loading) return;
@@ -534,9 +554,9 @@ export default function ExplorePage() {
     <section className="page-intro"><span className="eyebrow">{t('explore.eyebrow')}</span><h1>{t('explore.title')}</h1><p>{t('explore.subtitle')}</p></section>
 
     <section className="discovery-search-panel">
-      <div className="discovery-search-row"><TaxonomySearchInput label={t('explore.searchLabel')} placeholder={t('explore.searchPlaceholder')} value={query} intentValue={searchIntent.serviceQuery} locale={locale} onChange={(value) => { setQuery(value); setResolvedTaxonomyIntent(null); }} onResolvedIntent={setResolvedTaxonomyIntent} onSuggestionSelect={applyTaxonomySuggestion} /></div>
+      <div className="discovery-search-row"><TaxonomySearchInput label={t('explore.searchLabel')} placeholder={t('explore.searchPlaceholder')} value={query} intentValue={searchIntent.serviceQuery} locale={locale} taxonomy={taxonomyCategories} onChange={(value) => { setQuery(value); setResolvedTaxonomyIntent(null); }} onResolvedIntent={setResolvedTaxonomyIntent} onSuggestionSelect={applyTaxonomySuggestion} /></div>
       <div className="discovery-filter-fields">
-        <Select label={t('explore.category')} value={filters.category} onChange={(e) => update('category', e.target.value)}><option value="all">{t('explore.allCategories')}</option>{categories.map((category) => <option value={category} key={category}>{labelFromSlug(category)}</option>)}</Select>
+        <Select label={t('explore.category')} value={filters.category} onChange={(e) => update('category', e.target.value)}><option value="all">{t('explore.allCategories')}</option>{categories.map((category) => <option value={category} key={category}>{localizedMarketplaceCategoryLabelForKey(category, taxonomyPresentationIndex, locale)}</option>)}</Select>
         <Input label={t('explore.location')} placeholder={t('explore.locationPlaceholder')} value={filters.location === 'Anywhere' ? '' : filters.location} onChange={(e) => update('location', e.target.value.trim() ? e.target.value : 'Anywhere')} />
         <Select label={t('explore.price')} value={filters.price} onChange={(e) => update('price', e.target.value as PriceFilter)}><option value="any">{t('explore.anyPrice')}</option><option value="under-1000">{t('explore.under1000')}</option><option value="1000-5000">{t('explore.range1000to5000')}</option><option value="over-5000">{t('explore.over5000')}</option></Select>
         <Select label={t('explore.rating')} value={filters.rating} onChange={(e) => update('rating', e.target.value as RatingFilter)}><option value="any">{t('explore.anyRating')}</option><option value="4-plus">{t('explore.rating4')}</option><option value="4.5-plus">{t('explore.rating45')}</option></Select>
