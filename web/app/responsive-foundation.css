@@ -242,7 +242,8 @@ html {
   }
 
   .language-switcher select {
-    max-width: 82px;
+    width: 92px;
+    max-width: 92px;
   }
 
   .header-login {
@@ -406,7 +407,8 @@ html {
   }
 
   .language-switcher select {
-    max-width: 76px;
+    width: 88px;
+    max-width: 88px;
     padding-right: 22px;
     font-size: .74rem;
   }
