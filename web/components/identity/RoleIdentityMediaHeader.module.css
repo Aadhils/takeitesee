@@ -1,5 +1,6 @@
 .shell {
   position: relative;
+  min-width: 0;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
   border-radius: 24px;
@@ -53,6 +54,7 @@
   position: absolute;
   top: 16px;
   right: 16px;
+  left: 16px;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -62,7 +64,8 @@
 
 .mediaButton,
 .mediaButtonDanger {
-  min-height: 38px;
+  min-height: 44px;
+  max-width: 100%;
   padding: 8px 12px;
   border: 1px solid rgba(255,255,255,.58);
   border-radius: 999px;
@@ -71,6 +74,8 @@
   font: inherit;
   font-size: .78rem;
   font-weight: 700;
+  overflow-wrap: anywhere;
+  white-space: normal;
   cursor: pointer;
   backdrop-filter: blur(8px);
 }
@@ -100,6 +105,7 @@
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: end;
   gap: 18px;
+  min-width: 0;
   padding: 0 24px 22px;
 }
 
@@ -140,8 +146,8 @@
   position: absolute;
   right: -7px;
   bottom: -7px;
-  min-width: 38px;
-  min-height: 38px;
+  min-width: 44px;
+  min-height: 44px;
   padding: 8px;
   border: 3px solid var(--color-surface);
   border-radius: 999px;
@@ -164,18 +170,21 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 9px;
+  min-width: 0;
 }
 
 .identity h2 {
   margin: 0;
   font-size: clamp(1.3rem, 2vw, 1.75rem);
   line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
 .scopePill {
   display: inline-flex;
   align-items: center;
   min-height: 26px;
+  max-width: 100%;
   padding: 4px 9px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--color-primary) 10%, transparent);
@@ -183,6 +192,7 @@
   font-size: .7rem;
   font-weight: 800;
   letter-spacing: .04em;
+  overflow-wrap: anywhere;
   text-transform: uppercase;
 }
 
@@ -190,6 +200,7 @@
   margin: 7px 0 0;
   font-size: .9rem;
   font-weight: 650;
+  overflow-wrap: anywhere;
 }
 
 .meta {
@@ -205,12 +216,14 @@
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
+  min-width: 0;
   padding-top: 14px;
 }
 
 .secondaryButton,
 .removeButton {
-  min-height: 38px;
+  min-height: 44px;
+  max-width: 100%;
   padding: 8px 11px;
   border-radius: 10px;
   border: 1px solid var(--color-border);
@@ -219,6 +232,7 @@
   font: inherit;
   font-size: .75rem;
   font-weight: 750;
+  overflow-wrap: anywhere;
   cursor: pointer;
 }
 
@@ -243,6 +257,7 @@
   margin: -7px 0 0;
   color: var(--color-text-muted);
   font-size: .72rem;
+  overflow-wrap: anywhere;
 }
 
 .status {
@@ -253,6 +268,7 @@
   background: color-mix(in srgb, var(--color-primary) 8%, transparent);
   color: var(--color-text);
   font-size: .8rem;
+  overflow-wrap: anywhere;
 }
 
 .error {
@@ -278,12 +294,14 @@
   .bannerActions {
     top: 10px;
     right: 10px;
+    left: 10px;
+    gap: 6px;
   }
 
   .mediaButton,
   .mediaButtonDanger {
-    min-height: 34px;
-    padding: 6px 9px;
+    min-height: 44px;
+    padding: 7px 10px;
     font-size: .7rem;
   }
 
@@ -318,8 +336,8 @@
   .avatarEdit {
     right: -5px;
     bottom: -5px;
-    min-width: 33px;
-    min-height: 33px;
+    min-width: 44px;
+    min-height: 44px;
     border-width: 2px;
     font-size: .68rem;
   }
@@ -345,5 +363,43 @@
 
   .status {
     margin: 0 16px 14px;
+  }
+}
+
+@media (max-width: 390px) {
+  .banner {
+    min-height: 132px;
+  }
+
+  .content {
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: 10px;
+    padding: 0 12px 14px;
+  }
+
+  .avatarWrap,
+  .avatar,
+  .avatarFallback {
+    width: 72px;
+    height: 72px;
+  }
+
+  .avatarWrap {
+    margin-top: -32px;
+  }
+
+  .avatarControls {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .secondaryButton,
+  .removeButton {
+    width: 100%;
+  }
+
+  .status {
+    margin: 0 12px 12px;
   }
 }
