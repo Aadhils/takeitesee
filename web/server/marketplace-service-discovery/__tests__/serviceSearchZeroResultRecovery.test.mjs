@@ -27,7 +27,9 @@ function recovery(overrides = {}) {
     resultCount: 0,
     queryPresent: false,
     locationPresent: false,
+    categoryPresent: false,
     hasNarrowingFilters: false,
+    otherNarrowingFiltersPresent: false,
     preciseNearbyActive: false,
     ...overrides,
   });
@@ -39,6 +41,7 @@ test('named-location zero result exposes broaden-location recovery', () => {
     mode: 'named_location',
     showBroadenLocation: true,
     showClearNearby: false,
+    showClearCategory: false,
     showBroadenFilters: false,
     showClearQuery: false,
   });
@@ -50,6 +53,7 @@ test('precise-nearby zero result can broaden back to normal marketplace ranking'
     mode: 'nearby',
     showBroadenLocation: false,
     showClearNearby: true,
+    showClearCategory: false,
     showBroadenFilters: false,
     showClearQuery: false,
   });
@@ -61,28 +65,63 @@ test('query-only zero result gets query-specific clear-search recovery', () => {
     mode: 'query',
     showBroadenLocation: false,
     showClearNearby: false,
+    showClearCategory: false,
     showBroadenFilters: false,
     showClearQuery: true,
   });
 });
 
-test('filter-only zero result keeps broaden-filter recovery', () => {
-  assert.deepEqual(recovery({ hasNarrowingFilters: true }), {
+test('approved category-only zero result gets category-specific recovery', () => {
+  assert.deepEqual(recovery({ categoryPresent: true, hasNarrowingFilters: true }), {
     show: true,
-    mode: 'filters',
+    mode: 'category',
     showBroadenLocation: false,
     showClearNearby: false,
+    showClearCategory: true,
+    showBroadenFilters: false,
+    showClearQuery: false,
+  });
+});
+
+test('category plus other filters offers related-service and broad-filter recovery', () => {
+  assert.deepEqual(recovery({
+    categoryPresent: true,
+    hasNarrowingFilters: true,
+    otherNarrowingFiltersPresent: true,
+  }), {
+    show: true,
+    mode: 'category',
+    showBroadenLocation: false,
+    showClearNearby: false,
+    showClearCategory: true,
     showBroadenFilters: true,
     showClearQuery: false,
   });
 });
 
-test('query plus filters keeps query context and offers both useful recovery actions', () => {
-  assert.deepEqual(recovery({ queryPresent: true, hasNarrowingFilters: true }), {
+test('filter-only zero result keeps broaden-filter recovery', () => {
+  assert.deepEqual(recovery({ hasNarrowingFilters: true, otherNarrowingFiltersPresent: true }), {
+    show: true,
+    mode: 'filters',
+    showBroadenLocation: false,
+    showClearNearby: false,
+    showClearCategory: false,
+    showBroadenFilters: true,
+    showClearQuery: false,
+  });
+});
+
+test('query plus category keeps query context and still offers broad-filter recovery', () => {
+  assert.deepEqual(recovery({
+    queryPresent: true,
+    categoryPresent: true,
+    hasNarrowingFilters: true,
+  }), {
     show: true,
     mode: 'query',
     showBroadenLocation: false,
     showClearNearby: false,
+    showClearCategory: false,
     showBroadenFilters: true,
     showClearQuery: true,
   });
