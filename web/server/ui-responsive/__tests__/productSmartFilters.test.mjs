@@ -45,3 +45,12 @@ test('Products smart filters stay compact across desktop tablet and narrow phone
   assert.ok(stylesSource.includes('min-height: 44px'));
   assert.ok(stylesSource.includes('env(safe-area-inset-bottom)'));
 });
+
+test('Products hero actions stay in one swipeable compact rail on narrow phones', () => {
+  assert.ok(stylesSource.includes(':global(.discovery-page:has(.product-smart-filters) > .page-intro > div)'));
+  assert.ok(stylesSource.includes('flex-wrap: nowrap !important'));
+  assert.ok(stylesSource.includes('overflow-x: auto'));
+  assert.ok(stylesSource.includes('-webkit-overflow-scrolling: touch'));
+  assert.ok(stylesSource.includes('> .page-intro > div > a)'));
+  assert.ok(stylesSource.includes('white-space: nowrap'));
+});

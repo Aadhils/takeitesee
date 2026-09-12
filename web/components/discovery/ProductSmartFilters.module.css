@@ -452,6 +452,28 @@
     line-height: .98 !important;
   }
 
+  :global(.discovery-page:has(.product-smart-filters) > .page-intro > div) {
+    flex-wrap: nowrap !important;
+    gap: .5rem !important;
+    margin-top: .8rem !important;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    padding: 0 0 3px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  :global(.discovery-page:has(.product-smart-filters) > .page-intro > div::-webkit-scrollbar) {
+    display: none;
+  }
+
+  :global(.discovery-page:has(.product-smart-filters) > .page-intro > div > a) {
+    flex: 0 0 auto;
+    min-height: 42px;
+    padding-inline: 14px;
+    white-space: nowrap;
+  }
+
   .drawerHeading,
   .drawerFields,
   .drawerFooter {
