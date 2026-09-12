@@ -123,7 +123,7 @@ export async function POST(request: Request) {
     nearMe,
   });
 
-  const categoryPromise = supabase.rpc('get_marketplace_service_discovery_categories_v2');
+  const categoryPromise = supabase.rpc('get_marketplace_service_discovery_categories_v3', { target_category: category });
   let geoStatus: 'ready' | 'unavailable' = 'ready';
   let fallbackUsed = false;
   let searchResult = await supabase.rpc('search_marketplace_service_nearby_candidates_v2', nearbyArgs);
