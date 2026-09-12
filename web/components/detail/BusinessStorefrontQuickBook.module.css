@@ -26,6 +26,7 @@
   font-size: clamp(1.6rem, 3vw, 2.35rem);
   line-height: 1.08;
   letter-spacing: -.025em;
+  overflow-wrap: anywhere;
 }
 
 .headingRow p {
@@ -33,16 +34,20 @@
   margin: 0;
   color: var(--color-ink-muted);
   line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .locationLine {
   width: fit-content;
+  max-width: 100%;
   padding: 8px 12px;
   border-radius: 999px;
   background: var(--color-selected);
   color: var(--color-primary-strong);
   font-size: .82rem;
   font-weight: 750;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .statusNote {
@@ -54,6 +59,7 @@
   color: var(--color-ink-muted);
   font-size: .78rem;
   line-height: 1.55;
+  overflow-wrap: anywhere;
 }
 
 .serviceGrid {
@@ -76,16 +82,19 @@
 .serviceCopy {
   display: grid;
   gap: 8px;
+  min-width: 0;
 }
 
 .signalRow {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  min-width: 0;
 }
 
 .signal {
   width: fit-content;
+  max-width: 100%;
   padding: 5px 8px;
   border: 1px solid var(--color-border);
   border-radius: 999px;
@@ -94,6 +103,8 @@
   font-size: .67rem;
   font-weight: 800;
   line-height: 1.15;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .positive {
@@ -117,6 +128,7 @@
   margin: 0;
   font-size: 1.08rem;
   line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .serviceCopy p {
@@ -133,6 +145,7 @@
 .serviceFacts {
   display: grid;
   gap: 8px;
+  min-width: 0;
   margin: 0;
 }
 
@@ -141,14 +154,17 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
+  min-width: 0;
   border-bottom: 1px solid var(--color-border);
   padding-bottom: 7px;
 }
 
 .serviceFacts dt,
 .serviceFacts dd {
+  min-width: 0;
   margin: 0;
   font-size: .78rem;
+  overflow-wrap: anywhere;
 }
 
 .serviceFacts dt {
@@ -166,6 +182,7 @@
   color: var(--color-ink-muted);
   font-size: .76rem;
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .actions {
@@ -177,7 +194,7 @@
 
 .actions :global(.button) {
   width: 100%;
-  min-height: 42px;
+  min-height: 44px;
   padding-inline: 10px;
   text-align: center;
 }
@@ -216,6 +233,7 @@
 
   .headingRow :global(.button) {
     width: 100%;
+    min-height: 44px;
   }
 
   .serviceGrid {
@@ -224,5 +242,25 @@
 
   .actions {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 390px) {
+  .storefront {
+    width: min(100% - 16px, 1180px);
+    padding: 14px;
+  }
+
+  .serviceCard {
+    padding: 15px;
+  }
+
+  .serviceFacts div {
+    display: grid;
+    gap: 3px;
+  }
+
+  .serviceFacts dd {
+    text-align: left;
   }
 }
