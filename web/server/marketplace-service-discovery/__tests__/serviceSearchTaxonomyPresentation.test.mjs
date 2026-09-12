@@ -19,12 +19,12 @@ async function loadTypeScriptModule(relativePath) {
 
 const presentationModule = await loadTypeScriptModule('../../../components/discovery/marketplaceTaxonomyPresentation.ts');
 const {
+  buildMarketplaceTaxonomyPresentationIndex,
   localizedMarketplaceCategoryLabel,
-  localizedMarketplaceCategoryLabelForSlug,
+  localizedMarketplaceCategoryLabelForKey,
   localizedMarketplaceGroupLabel,
   marketplaceTamilAlias,
   marketplaceTaxonomyKey,
-  marketplaceTaxonomyLookup,
 } = presentationModule;
 
 const [taxonomyInputSource, livePresentationSource, exploreSource, categoriesDirectorySource, publicCategoriesSource] = await Promise.all([
@@ -86,16 +86,16 @@ test('Explore category dropdown localizes labels while preserving canonical serv
     { code: 'plumbing', name: 'Plumbing', group_name: 'Home Services', aliases: ['plumber', 'பிளம்பர்'] },
     { code: 'software_it_support', name: 'Custom Software & IT Support', group_name: 'Technology & Digital', aliases: ['custom software', 'கஸ்டம் சாப்ட்வேர்'] },
   ];
-  const lookup = marketplaceTaxonomyLookup(taxonomy);
+  const index = buildMarketplaceTaxonomyPresentationIndex(taxonomy);
 
-  assert.equal(localizedMarketplaceCategoryLabelForSlug('plumbing', lookup, 'ta-IN'), 'பிளம்பர்');
-  assert.equal(localizedMarketplaceCategoryLabelForSlug('software-it-support', lookup, 'ta-IN'), 'கஸ்டம் சாப்ட்வேர்');
-  assert.equal(localizedMarketplaceCategoryLabelForSlug('software-it-support', lookup, 'en-IN'), 'Custom Software & IT Support');
-  assert.equal(localizedMarketplaceCategoryLabelForSlug('legacy-category', lookup, 'ta-IN'), 'Legacy Category');
+  assert.equal(localizedMarketplaceCategoryLabelForKey('plumbing', index, 'ta-IN'), 'பிளம்பர்');
+  assert.equal(localizedMarketplaceCategoryLabelForKey('software-it-support', index, 'ta-IN'), 'கஸ்டம் சாப்ட்வேர்');
+  assert.equal(localizedMarketplaceCategoryLabelForKey('software-it-support', index, 'en-IN'), 'Custom Software & IT Support');
+  assert.equal(localizedMarketplaceCategoryLabelForKey('legacy-category', index, 'ta-IN'), 'Legacy Category');
 
   assert.ok(exploreSource.includes('value={category} key={category}'));
-  assert.ok(exploreSource.includes('localizedMarketplaceCategoryLabelForSlug(category, taxonomyLookup, locale)'));
-  assert.ok(exploreSource.includes('<TaxonomySearchInput taxonomy={taxonomy}'));
+  assert.ok(exploreSource.includes('localizedMarketplaceCategoryLabelForKey(category, taxonomyPresentationIndex, locale)'));
+  assert.ok(exploreSource.includes('taxonomy={taxonomyCategories}'));
 });
 
 test('public Categories directory uses canonical category-code identity, Tamil aliases, and canonical Explore filters', () => {
