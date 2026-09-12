@@ -8,6 +8,7 @@ import {
 import {
   boundedMarketplaceServiceInteger,
   marketplaceServiceDefaultPageSize,
+  marketplaceServiceFallbackNormalSort,
   marketplaceServiceMaxPageSize,
   marketplaceServiceNearbySortModes,
   marketplaceServicePriceFilters,
@@ -17,6 +18,7 @@ import {
   normalizeMarketplaceServiceLocation,
   normalizeMarketplaceServiceQuery,
   parseMarketplaceServiceFilter,
+  resolveMarketplaceServicePage,
 } from '../../../../../server/marketplace-service-discovery/requestParsing';
 
 export const runtime = 'nodejs';
@@ -129,7 +131,7 @@ export async function POST(request: Request) {
       target_rating: rating,
       target_provider: provider,
       target_available_now: availableNow,
-      target_sort: sort === 'nearest' ? 'relevance' : sort,
+      target_sort: marketplaceServiceFallbackNormalSort(sort),
       target_offset: cursor,
       target_limit: limit + 1,
     });
@@ -140,9 +142,7 @@ export async function POST(request: Request) {
   if (categoryResult.error) return NextResponse.json({ error: categoryResult.error.message }, { status: 500 });
 
   const rows = (searchResult.data ?? []) as MarketplaceServiceDiscoveryCandidateRow[];
-  const hasMore = rows.length > limit;
-  const pageRows = hasMore ? rows.slice(0, limit) : rows;
-  const total = pageRows.length ? Number(pageRows[0].total_count ?? 0) : 0;
+  const { pageRows, total, page } = resolveMarketplaceServicePage(rows, cursor, limit);
   const services = mapMarketplaceServiceDiscoveryServices(pageRows, { nearby: true });
   const categories = ((categoryResult.data ?? []) as CategoryRow[]).map((row) => ({
     slug: String(row.category_slug || 'other'),
@@ -155,11 +155,7 @@ export async function POST(request: Request) {
       categories,
       total,
       geo_status: geoStatus,
-      page: {
-        limit,
-        next_cursor: hasMore ? String(cursor + limit) : null,
-        has_more: hasMore,
-      },
+      page,
     },
     { headers: { 'Cache-Control': 'no-store' } },
   );
