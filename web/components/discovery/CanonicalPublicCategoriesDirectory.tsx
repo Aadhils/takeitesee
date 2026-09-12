@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { useLanguage } from '../i18n/LanguageProvider';
-import { Alert, Badge, Card } from '../ui/primitives';
+import { Alert, Card } from '../ui/primitives';
 import {
   categoriesTranslation,
   formatCategoriesTranslation,
 } from './categoriesLocalization';
+import styles from './CanonicalPublicCategoriesDirectory.module.css';
 import {
   localizedMarketplaceCategoryLabel,
   localizedMarketplaceGroupLabel,
@@ -20,6 +21,14 @@ type CategoryEntry = {
   aliases: string[];
   service_count: number | null;
 };
+
+function categoryGroupId(groupName: string) {
+  return `category-group-${groupName
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')}`;
+}
 
 export function CanonicalPublicCategoriesDirectory({ categories }: { categories: CategoryEntry[] | null }) {
   const { locale } = useLanguage();
@@ -43,6 +52,7 @@ export function CanonicalPublicCategoriesDirectory({ categories }: { categories:
     current.push(category);
     groups.set(category.group_name, current);
   }
+  const groupEntries = Array.from(groups.entries());
   const liveCategoryCount = categories.filter((category) => (category.service_count ?? 0) > 0).length;
 
   return <div className="discovery-page">
@@ -54,11 +64,23 @@ export function CanonicalPublicCategoriesDirectory({ categories }: { categories:
 
     <div className="results-heading"><div><span className="eyebrow">{ct('canonicalEyebrow')}</span><h2>{formatCategoriesTranslation(ct('summary'), { approved: categories.length, live: liveCategoryCount })}</h2></div></div>
 
-    {Array.from(groups.entries()).map(([groupName, groupCategories]) => {
+    {groupEntries.length ? <nav className={styles.groupNav} aria-label={ct('serviceGroup')}>
+      {groupEntries.map(([groupName]) => <a
+        className={styles.groupNavLink}
+        href={`#${categoryGroupId(groupName)}`}
+        key={groupName}
+      >
+        {localizedMarketplaceGroupLabel(groupName, locale)}
+      </a>)}
+    </nav> : null}
+
+    {groupEntries.map(([groupName, groupCategories]) => {
       const displayGroupName = localizedMarketplaceGroupLabel(groupName, locale);
-      return <section className="section-stack" key={groupName}>
-        <div><span className="eyebrow">{ct('serviceGroup')}</span><h2>{displayGroupName}</h2></div>
-        <div className="service-grid">
+      return <section className={styles.groupSection} id={categoryGroupId(groupName)} key={groupName}>
+        <div className={styles.groupHeading}>
+          <div><span className="eyebrow">{ct('serviceGroup')}</span><h2>{displayGroupName}</h2></div>
+        </div>
+        <div className={styles.categoryGrid}>
           {groupCategories.map((category) => {
             const liveCount = category.service_count;
             const hasLiveSupply = typeof liveCount === 'number' && liveCount > 0;
@@ -67,24 +89,19 @@ export function CanonicalPublicCategoriesDirectory({ categories }: { categories:
             const liveCountLabel = liveCount === null
               ? ct('liveCountUnavailable')
               : formatCategoriesTranslation(ct(liveCount === 1 ? 'activeServiceOne' : 'activeServiceMany'), { count: liveCount });
-            const description = hasLiveSupply
-              ? formatCategoriesTranslation(ct('liveDescription'), { category: displayName })
-              : ct('approvedDescription');
 
-            return <Card className="discovery-card" key={category.code}>
-              <div className="discovery-card-content">
-                <div className="card-meta">
-                  <Badge tone={hasLiveSupply ? 'success' : 'info'}>{ct(hasLiveSupply ? 'liveCategory' : 'approvedCategory')}</Badge>
-                  <Badge tone="neutral">{liveCountLabel}</Badge>
-                </div>
-                <h2><Link href={exploreHref}>{displayName}</Link></h2>
-                <p className="card-description">{description}</p>
-                <div className="card-footer">
-                  <span>{ct('unifiedSearch')}</span>
-                  <Link href={exploreHref} className="button button-secondary">{ct('searchCategory')}</Link>
-                </div>
-              </div>
-            </Card>;
+            return <Link href={exploreHref} className={styles.categoryTile} key={category.code}>
+              <span className={styles.categoryCopy}>
+                <strong>{displayName}</strong>
+                <span className={styles.countRow}>
+                  <span className={`${styles.statusDot} ${hasLiveSupply ? styles.statusDotLive : ''}`} aria-hidden="true" />
+                  <span>{liveCountLabel}</span>
+                </span>
+              </span>
+              <svg className={styles.arrow} aria-hidden="true" viewBox="0 0 24 24">
+                <path d="m9 6 6 6-6 6" />
+              </svg>
+            </Link>;
           })}
         </div>
       </section>;
