@@ -17,9 +17,14 @@
 .admin-provider-meta,
 .admin-section-heading,
 .admin-table-wrap,
+.admin-settings-grid,
+.admin-settings-save-row,
+.detail-list,
+.dashboard-grid,
 .super-admin-shell,
 .super-admin-sidebar,
-.super-admin-content {
+.super-admin-content,
+.super-admin-content .container {
   min-width: 0;
 }
 
@@ -33,16 +38,20 @@
 .admin-heading-action :where(.button, a),
 .admin-actions :where(.button, .text-link, a),
 .admin-quick-actions :where(.button, a),
+.admin-settings-save-row :where(.button, button),
 .super-admin-nav-group a,
-.super-admin-handoff a {
+.super-admin-handoff a,
+.super-admin-content .card a:not(.button) {
   min-height: 44px;
 }
 
 .admin-heading-action :where(.button, a),
 .admin-actions :where(.button, .text-link, a),
 .admin-quick-actions :where(.button, a),
+.admin-settings-save-row :where(.button, button),
 .super-admin-nav-group a,
-.super-admin-handoff a {
+.super-admin-handoff a,
+.super-admin-content .card a:not(.button) {
   display: inline-flex;
   align-items: center;
 }
@@ -65,6 +74,15 @@
   overflow-wrap: anywhere;
 }
 
+.super-admin-content .container {
+  width: 100%;
+  max-width: 100%;
+}
+
+.super-admin-handoff-panel {
+  min-width: 0;
+}
+
 @media (max-width: 1100px) {
   .admin-metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -84,7 +102,7 @@
 
   .admin-sidebar {
     position: sticky;
-    top: 64px;
+    top: calc(64px + env(safe-area-inset-top));
     z-index: 22;
     display: grid;
     gap: 10px;
@@ -104,8 +122,11 @@
     display: flex;
     gap: 8px;
     min-width: 0;
+    max-width: 100%;
     overflow-x: auto;
+    overflow-y: hidden;
     overscroll-behavior-inline: contain;
+    scroll-padding-inline: 10px;
     padding: 2px 0 5px;
     border-top: 0;
     scrollbar-width: thin;
@@ -153,15 +174,32 @@
   .admin-dashboard-grid,
   .admin-record-grid,
   .admin-record-details,
-  .admin-metric-grid {
+  .admin-metric-grid,
+  .admin-settings-grid,
+  .dashboard-grid,
+  .detail-list {
     grid-template-columns: 1fr !important;
   }
 
   .admin-record-top,
   .admin-section-heading,
-  .admin-queue-banner {
+  .admin-queue-banner,
+  .admin-settings-save-row {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .admin-settings-save-row {
+    width: 100%;
+  }
+
+  .admin-settings-save-row > div {
+    min-width: 0;
+  }
+
+  .admin-settings-save-row :where(.button, button) {
+    width: 100%;
+    justify-content: center;
   }
 
   .admin-provider-meta {
@@ -229,6 +267,22 @@
   .admin-table td {
     padding-inline: 10px;
   }
+
+  .admin-live-moderation-shortcut {
+    right: 12px;
+    bottom: calc(var(--responsive-mobile-nav-height, 68px) + env(safe-area-inset-bottom) + 12px);
+    min-height: 44px;
+  }
+
+  .super-admin-handoff-panel {
+    grid-template-columns: 1fr !important;
+    align-items: stretch !important;
+  }
+
+  .super-admin-handoff-panel > .button {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 @media (max-width: 390px) {
@@ -243,7 +297,8 @@
 
   .admin-record-grid .card,
   .admin-dashboard-grid .card,
-  .admin-metric-grid .card {
+  .admin-metric-grid .card,
+  .super-admin-content .card {
     padding: 16px;
   }
 }
