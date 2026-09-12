@@ -241,9 +241,16 @@ html {
     margin-left: auto;
   }
 
+  .language-switcher {
+    flex: 0 0 auto;
+    min-width: 108px;
+  }
+
   .language-switcher select {
-    width: 92px;
-    max-width: 92px;
+    display: block;
+    width: 108px;
+    min-width: 108px;
+    max-width: 108px;
   }
 
   .header-login {
@@ -406,10 +413,15 @@ html {
     width: 64px !important;
   }
 
+  .language-switcher {
+    min-width: 108px;
+  }
+
   .language-switcher select {
-    width: 88px;
-    max-width: 88px;
-    padding-right: 22px;
+    width: 108px;
+    min-width: 108px;
+    max-width: 108px;
+    padding-right: 24px;
     font-size: .74rem;
   }
 
