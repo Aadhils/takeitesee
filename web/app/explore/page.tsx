@@ -11,6 +11,7 @@ import {
   localizedMarketplaceCategoryLabelForKey,
 } from '../../components/discovery/marketplaceTaxonomyPresentation';
 import { parseMarketplaceSearchIntent } from '../../components/discovery/marketplaceSearchIntent';
+import { marketplaceCategoryZeroResultCopy } from '../../components/discovery/marketplaceCategoryZeroResultCopy';
 import { resolveMarketplaceZeroResultRecovery } from '../../components/discovery/marketplaceZeroResultRecovery';
 import { useLanguage, type TranslationKey } from '../../components/i18n/LanguageProvider';
 
@@ -241,12 +242,13 @@ export default function ExplorePage() {
   const effectiveLocationQuery = manualLocationQuery || searchIntent.locationQuery;
   const preciseNearbyActive = Boolean(geoOrigin && geoStatus === 'ready' && !effectiveLocationQuery);
   const namedLocationOverridesNearby = Boolean(geoOrigin && effectiveLocationQuery);
-  const hasNarrowingFilters = filters.category !== 'all'
-    || filters.price !== 'any'
+  const categoryFilterActive = filters.category !== 'all';
+  const otherNarrowingFiltersPresent = filters.price !== 'any'
     || filters.rating !== 'any'
     || filters.provider !== 'any'
     || filters.availability !== 'any'
     || availableNowFromQuery;
+  const hasNarrowingFilters = categoryFilterActive || otherNarrowingFiltersPresent;
   const requirementHref = useMemo(
     () => buildRequirementHref(query, effectiveSearchQuery, effectiveLocationQuery),
     [effectiveLocationQuery, effectiveSearchQuery, query],
@@ -377,6 +379,9 @@ export default function ExplorePage() {
     () => buildMarketplaceTaxonomyPresentationIndex(taxonomyCategories),
     [taxonomyCategories],
   );
+  const selectedCategoryLabel = categoryFilterActive
+    ? localizedMarketplaceCategoryLabelForKey(filters.category, taxonomyPresentationIndex, locale)
+    : '';
 
   useEffect(() => {
     if (loading) return;
@@ -454,6 +459,7 @@ export default function ExplorePage() {
 
   const clearAll = () => { setQuery(''); setResolvedTaxonomyIntent(null); setFilters(defaultFilters()); setSort('relevance'); };
   const clearSearch = () => { setQuery(''); setResolvedTaxonomyIntent(null); setSort('relevance'); };
+  const clearCategory = () => { setFilters((current) => ({ ...current, category: 'all' })); setSort('relevance'); };
   const update = <K extends keyof Filters>(key: K, value: Filters[K]) => setFilters((current) => ({ ...current, [key]: value }));
 
   const broadenFilters = () => {
@@ -529,9 +535,12 @@ export default function ExplorePage() {
     resultCount: filteredServices.length,
     queryPresent: Boolean(query.trim()),
     locationPresent: Boolean(effectiveLocationQuery),
+    categoryPresent: categoryFilterActive,
     hasNarrowingFilters,
+    otherNarrowingFiltersPresent,
     preciseNearbyActive,
   });
+  const categoryRecoveryCopy = marketplaceCategoryZeroResultCopy(locale, selectedCategoryLabel);
   const showRecoveryEmptyState = zeroResultRecovery.show;
   const recoveryTitle = zeroResultRecovery.mode === 'named_location'
     ? formatLocalized(t('explore.recoveryNamedTitle'), { location: effectiveLocationQuery })
@@ -541,14 +550,18 @@ export default function ExplorePage() {
         ? t('explore.recoveryNearbyTitle')
         : zeroResultRecovery.mode === 'query'
           ? formatLocalized(t('explore.recoveryQueryTitle'), { query: query.trim() })
-          : t('explore.recoveryFiltersTitle');
+          : zeroResultRecovery.mode === 'category'
+            ? categoryRecoveryCopy.title
+            : t('explore.recoveryFiltersTitle');
   const recoveryHelp = zeroResultRecovery.mode === 'named_location'
     ? t('explore.recoveryNamedHelp')
     : zeroResultRecovery.mode === 'nearby'
       ? t('explore.recoveryNearbyHelp')
       : zeroResultRecovery.mode === 'query'
         ? t('explore.recoveryQueryHelp')
-        : t('explore.recoveryFiltersHelp');
+        : zeroResultRecovery.mode === 'category'
+          ? categoryRecoveryCopy.help
+          : t('explore.recoveryFiltersHelp');
 
   return <div className="discovery-page discovery-workspace">
     <section className="page-intro"><span className="eyebrow">{t('explore.eyebrow')}</span><h1>{t('explore.title')}</h1><p>{t('explore.subtitle')}</p></section>
@@ -581,7 +594,7 @@ export default function ExplorePage() {
     </section>
 
     <div className="results-heading"><div><span className="eyebrow">{t('explore.marketplace')}</span><h2>{resultHeading}</h2></div></div>
-    {loading ? <div className="service-grid"><div className="loading-card"><Skeleton className="loading-art" /><Skeleton className="loading-line" /><Skeleton className="loading-line short" /></div></div> : loadError ? <DiscoveryEmptyState query={loadError} onClear={() => location.reload()} suggestions={[]} errorState /> : filteredServices.length ? <><div className="service-grid">{filteredServices.map((service) => <ServiceCard service={preciseNearbyActive ? service : { ...service, distance_band: null, distance_priority: 0, nearby_match_mode: null }} contextQuery={contextQuery} key={service.id} />)}</div>{hasMore ? <div className="empty-actions" style={{ marginTop: '1rem' }}><Button type="button" variant="secondary" loading={loadingMore} onClick={() => void loadMore()}>{t('explore.loadMore')}</Button></div> : null}{loadMoreError ? <p className="field-error" role="alert" style={{ marginTop: '1rem' }}>{loadMoreError}</p> : null}</> : showRecoveryEmptyState ? <><div className="discovery-empty-wrap"><Card><EmptyState title={recoveryTitle}>{recoveryHelp}</EmptyState><div className="empty-actions">{zeroResultRecovery.showBroadenLocation ? <Button type="button" variant="secondary" onClick={broadenNamedLocation}>{t('explore.recoveryBroadenLocation')}</Button> : null}{zeroResultRecovery.showClearNearby ? <Button type="button" variant="secondary" onClick={clearNearbyLocation}>{t('explore.recoveryBroadenCurrentLocation')}</Button> : null}{zeroResultRecovery.showBroadenFilters ? <Button type="button" variant="secondary" onClick={broadenFilters}>{t('explore.recoveryBroadenFilters')}</Button> : null}{zeroResultRecovery.showClearQuery ? <Button type="button" variant="secondary" onClick={clearSearch}>{t('explore.recoveryClearSearch')}</Button> : null}<Link href="/categories" className="button button-quiet">{t('empty.browseCategories')}</Link></div></Card></div><div className="empty-actions"><Link href={requirementHref} className="button button-primary">{t('explore.postRequirement')}</Link></div></> : <><DiscoveryEmptyState query={query} onClear={clearAll} suggestions={[]} /><div className="empty-actions"><Link href={requirementHref} className="button button-primary">{t('explore.postRequirement')}</Link></div></>}
+    {loading ? <div className="service-grid"><div className="loading-card"><Skeleton className="loading-art" /><Skeleton className="loading-line" /><Skeleton className="loading-line short" /></div></div> : loadError ? <DiscoveryEmptyState query={loadError} onClear={() => location.reload()} suggestions={[]} errorState /> : filteredServices.length ? <><div className="service-grid">{filteredServices.map((service) => <ServiceCard service={preciseNearbyActive ? service : { ...service, distance_band: null, distance_priority: 0, nearby_match_mode: null }} contextQuery={contextQuery} key={service.id} />)}</div>{hasMore ? <div className="empty-actions" style={{ marginTop: '1rem' }}><Button type="button" variant="secondary" loading={loadingMore} onClick={() => void loadMore()}>{t('explore.loadMore')}</Button></div> : null}{loadMoreError ? <p className="field-error" role="alert" style={{ marginTop: '1rem' }}>{loadMoreError}</p> : null}</> : showRecoveryEmptyState ? <><div className="discovery-empty-wrap"><Card><EmptyState title={recoveryTitle}>{recoveryHelp}</EmptyState><div className="empty-actions">{zeroResultRecovery.showBroadenLocation ? <Button type="button" variant="secondary" onClick={broadenNamedLocation}>{t('explore.recoveryBroadenLocation')}</Button> : null}{zeroResultRecovery.showClearNearby ? <Button type="button" variant="secondary" onClick={clearNearbyLocation}>{t('explore.recoveryBroadenCurrentLocation')}</Button> : null}{zeroResultRecovery.showClearCategory ? <Button type="button" variant="secondary" onClick={clearCategory}>{categoryRecoveryCopy.browseRelated}</Button> : null}{zeroResultRecovery.showBroadenFilters ? <Button type="button" variant="secondary" onClick={broadenFilters}>{t('explore.recoveryBroadenFilters')}</Button> : null}{zeroResultRecovery.showClearQuery ? <Button type="button" variant="secondary" onClick={clearSearch}>{t('explore.recoveryClearSearch')}</Button> : null}<Link href="/categories" className="button button-quiet">{t('empty.browseCategories')}</Link></div></Card></div><div className="empty-actions"><Link href={requirementHref} className="button button-primary">{t('explore.postRequirement')}</Link></div></> : <><DiscoveryEmptyState query={query} onClear={clearAll} suggestions={[]} /><div className="empty-actions"><Link href={requirementHref} className="button button-primary">{t('explore.postRequirement')}</Link></div></>}
     <p className="explore-disclaimer">{t('explore.disclaimer')}</p>
   </div>;
 }
