@@ -32,6 +32,8 @@ jobs:
         run: npm ci
       - name: Service search regression
         run: npm run test:service-search-regression
+      - name: Responsive UI regression
+        run: npm run test:responsive-regression
       - name: Type check
         run: npm run type-check
       - name: Lint
