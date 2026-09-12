@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Badge, Button, Card, EmptyState } from '../ui/primitives';
 import { useLanguage, type TranslationKey } from '../i18n/LanguageProvider';
+import { localizedMarketplaceCategoryLabel } from './marketplaceTaxonomyPresentation';
 
 type LocalizedValue = string | { default_locale?: string; values?: Record<string, string> } | null | undefined;
 type ProviderWorkMode = 'available' | 'busy' | 'offline' | 'paused';
@@ -20,6 +21,7 @@ type LiveMarketplaceService = {
   description: LocalizedValue;
   category_id?: string;
   category_slug?: string;
+  category_aliases?: string[];
   pricing: {
     base_price: { amount: number; currency: string };
     pricing_model?: string;
@@ -87,7 +89,11 @@ export function LiveMarketplaceServiceCard({ service, contextQuery = '' }: { ser
   const { locale, t } = useLanguage();
   const serviceName = sourceText(service.service_name);
   const description = sourceText(service.description);
-  const category = labelFromSlug(service.category_slug || service.category_id || 'other');
+  const canonicalCategory = labelFromSlug(service.category_slug || service.category_id || 'other');
+  const category = localizedMarketplaceCategoryLabel({
+    name: canonicalCategory,
+    aliases: service.category_aliases,
+  }, locale);
   const serviceHref = `/services/${service.id}${contextQuery ? `?${contextQuery}` : ''}`;
   const providerDirectory = service.provider_type === 'professional' ? '/professionals' : '/businesses';
   const providerBaseHref = service.provider_id ? `${providerDirectory}/${service.provider_id}` : providerDirectory;

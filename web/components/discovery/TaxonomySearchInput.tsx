@@ -2,6 +2,10 @@
 
 import { KeyboardEvent, useEffect, useMemo, useState } from 'react';
 import { Input } from '../ui/primitives';
+import {
+  localizedMarketplaceCategoryLabel,
+  localizedMarketplaceGroupLabel,
+} from './marketplaceTaxonomyPresentation';
 import styles from './TaxonomySearchInput.module.css';
 
 type TaxonomyCategory = {
@@ -132,6 +136,8 @@ export function TaxonomySearchInput({ label, placeholder, value, intentValue, lo
   const listId = 'marketplace-search-suggestions';
 
   const applySuggestion = (suggestion: TaxonomyCategory) => {
+    // Keep the canonical taxonomy name as the query/filter value. Localization here is
+    // presentation-only and must never change search semantics or backend category identity.
     if (onSuggestionSelect) onSuggestionSelect(suggestion.name);
     else onChange(suggestion.name);
     setFocused(false);
@@ -155,6 +161,13 @@ export function TaxonomySearchInput({ label, placeholder, value, intentValue, lo
     }
   };
 
+  const resolvedIntentName = resolvedIntent
+    ? localizedMarketplaceCategoryLabel(resolvedIntent, locale)
+    : '';
+  const resolvedIntentGroup = resolvedIntent
+    ? localizedMarketplaceGroupLabel(resolvedIntent.group_name, locale)
+    : '';
+
   return <div className={styles.wrap}>
     <Input
       id="explore-service-search"
@@ -175,28 +188,32 @@ export function TaxonomySearchInput({ label, placeholder, value, intentValue, lo
 
     {showSuggestions ? <div id={listId} className={styles.list} role="listbox" aria-label={locale === 'ta-IN' ? 'தேடல் பரிந்துரைகள்' : 'Search suggestions'}>
       <div className={styles.heading}>{locale === 'ta-IN' ? 'பொருந்தும் சேவை வகைகள்' : 'Matching service categories'}</div>
-      {suggestions.map((suggestion, index) => <button
-        id={`${listId}-${index}`}
-        key={suggestion.code}
-        type="button"
-        role="option"
-        aria-selected={index === activeIndex}
-        className={`${styles.option} ${index === activeIndex ? styles.active : ''}`}
-        onMouseDown={(event) => {
-          event.preventDefault();
-          applySuggestion(suggestion);
-        }}
-      >
-        <span className={styles.optionText}><strong>{suggestion.name}</strong><small>{suggestion.group_name}</small></span>
-        {suggestion.matched_alias && normalized(suggestion.matched_alias) !== normalized(suggestion.name)
-          ? <span className={styles.alias}>{suggestion.matched_alias}</span>
-          : null}
-      </button>)}
+      {suggestions.map((suggestion, index) => {
+        const displayName = localizedMarketplaceCategoryLabel(suggestion, locale);
+        const displayGroup = localizedMarketplaceGroupLabel(suggestion.group_name, locale);
+        const showMatchedAlias = suggestion.matched_alias
+          && normalized(suggestion.matched_alias) !== normalized(displayName);
+        return <button
+          id={`${listId}-${index}`}
+          key={suggestion.code}
+          type="button"
+          role="option"
+          aria-selected={index === activeIndex}
+          className={`${styles.option} ${index === activeIndex ? styles.active : ''}`}
+          onMouseDown={(event) => {
+            event.preventDefault();
+            applySuggestion(suggestion);
+          }}
+        >
+          <span className={styles.optionText}><strong>{displayName}</strong><small>{displayGroup}</small></span>
+          {showMatchedAlias ? <span className={styles.alias}>{suggestion.matched_alias}</span> : null}
+        </button>;
+      })}
     </div> : null}
 
     {resolvedIntent ? <p className={styles.intent} aria-live="polite">
-      {locale === 'ta-IN' ? 'தேடல் பொருள்:' : 'Search intent:'} <strong>{resolvedIntent.name}</strong>
-      {resolvedIntent.group_name ? ` · ${resolvedIntent.group_name}` : ''}
+      {locale === 'ta-IN' ? 'தேடல் பொருள்:' : 'Search intent:'} <strong>{resolvedIntentName}</strong>
+      {resolvedIntentGroup ? ` · ${resolvedIntentGroup}` : ''}
     </p> : null}
   </div>;
 }
