@@ -79,10 +79,6 @@
   max-width: 100%;
 }
 
-.super-admin-handoff-panel {
-  min-width: 0;
-}
-
 @media (max-width: 1100px) {
   .admin-metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -274,12 +270,13 @@
     min-height: 44px;
   }
 
-  .super-admin-handoff-panel {
+  .super-admin-content section[aria-label='Super Admin workspaces'],
+  .super-admin-content .container > section.card {
     grid-template-columns: 1fr !important;
     align-items: stretch !important;
   }
 
-  .super-admin-handoff-panel > .button {
+  .super-admin-content .container > section.card > .button {
     width: 100%;
     justify-content: center;
   }
