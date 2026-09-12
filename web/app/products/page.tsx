@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Badge, Button, Card, EmptyState, Input, Select, Skeleton } from '../../components/ui/primitives';
+import { Badge, Button, Card, EmptyState, Input, Skeleton } from '../../components/ui/primitives';
 import { useLanguage } from '../../components/i18n/LanguageProvider';
+import ProductSmartFilters from '../../components/discovery/ProductSmartFilters';
 
 type StockMode = 'in_stock' | 'out_of_stock' | 'made_to_order';
 type ShopState = 'open' | 'closed';
@@ -271,27 +272,17 @@ export default function ProductsPage() {
           onChange={(event) => setQuery(event.target.value)}
         />
       </div>
-      <div className="discovery-filter-fields">
-        <Select label={tamil ? 'Stock நிலை' : 'Stock'} value={stock} onChange={(event) => setStock(event.target.value as StockFilter)}>
-          <option value="any">{tamil ? 'எந்த stock நிலையும்' : 'Any stock status'}</option>
-          <option value="orderable">{tamil ? 'Order செய்யக்கூடியவை' : 'Orderable only'}</option>
-          <option value="in_stock">{tamil ? 'Stock உள்ளவை' : 'In stock'}</option>
-          <option value="made_to_order">{tamil ? 'Order அடிப்படையில்' : 'Made to order'}</option>
-        </Select>
-        <Select label={tamil ? 'Shop நிலை' : 'Shop status'} value={shop} onChange={(event) => setShop(event.target.value as ShopFilter)}>
-          <option value="any">{tamil ? 'Open/Closed அனைத்தும்' : 'Open or Closed'}</option>
-          <option value="open">{tamil ? 'Shop Open மட்டும்' : 'Shop Open only'}</option>
-        </Select>
-        <Select label={tamil ? 'Sort' : 'Sort'} value={sort} onChange={(event) => setSort(event.target.value as SortMode)}>
-          <option value="relevance">{tamil ? 'Useful முதலில்' : 'Useful first'}</option>
-          <option value="price">{tamil ? 'குறைந்த விலை' : 'Lowest price'}</option>
-          <option value="price-desc">{tamil ? 'அதிக விலை' : 'Highest price'}</option>
-          <option value="name">{tamil ? 'பெயர்' : 'Name'}</option>
-        </Select>
-      </div>
-      <div className="discovery-search-footer">
-        <Button type="button" variant="quiet" onClick={clear}>{tamil ? 'Filters clear செய்' : 'Clear filters'}</Button>
-      </div>
+      <ProductSmartFilters
+        stock={stock}
+        shop={shop}
+        sort={sort}
+        resultCount={products.length}
+        loading={loading}
+        onStockChange={(value) => setStock(value as StockFilter)}
+        onShopChange={(value) => setShop(value as ShopFilter)}
+        onSortChange={(value) => setSort(value as SortMode)}
+        onClearAll={clear}
+      />
     </section>
 
     {saveError ? <p className="field-error" role="alert" style={{ marginBottom: '1rem' }}>{saveError}</p> : null}

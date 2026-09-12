@@ -1,0 +1,499 @@
+.root {
+  position: relative;
+  display: grid;
+  gap: 9px;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.desktopToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 1px 0 2px;
+}
+
+.compactControl {
+  flex: 1 1 170px;
+  min-width: 150px;
+  max-width: 220px;
+}
+
+.compactControl select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 36px 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  box-shadow: 0 2px 8px rgb(28 35 82 / 5%);
+  font: inherit;
+  font-size: .82rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.compactControl select:focus-visible,
+.sortButton:focus-visible,
+.filterButton:focus-visible,
+.clearButton:focus-visible,
+.closeButton:focus-visible,
+.activeChips button:focus-visible,
+.sortOptions button:focus-visible,
+.drawerClear:focus-visible,
+.drawerApply:focus-visible {
+  outline: 3px solid rgb(76 79 227 / 15%);
+  outline-offset: 2px;
+}
+
+.sortButton,
+.filterButton,
+.clearButton {
+  min-height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  box-shadow: 0 2px 8px rgb(28 35 82 / 5%);
+  font: inherit;
+  font-size: .82rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.sortButton {
+  flex: 1 1 180px;
+  min-width: 150px;
+  max-width: 230px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  padding: 0 13px 0 15px;
+  text-align: left;
+}
+
+.sortButton > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filterButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 13px;
+}
+
+.filterButton b {
+  min-width: 21px;
+  height: 21px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: .68rem;
+}
+
+.clearButton {
+  flex: 0 0 auto;
+  padding: 0 13px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--color-primary);
+  box-shadow: none;
+}
+
+.sortButton:hover,
+.filterButton:hover,
+.clearButton:hover,
+.sortButton.active,
+.filterButton.active {
+  border-color: rgb(76 79 227 / 28%);
+  background: var(--color-selected);
+  color: var(--color-primary-strong);
+}
+
+.sortButton svg,
+.filterButton svg,
+.closeButton svg,
+.activeChips svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.mobileToolbar {
+  display: none;
+}
+
+.activeChips {
+  display: flex;
+  gap: 7px;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 1px 0 2px;
+  scrollbar-width: none;
+}
+
+.activeChips::-webkit-scrollbar {
+  display: none;
+}
+
+.activeChips button {
+  flex: 0 0 auto;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 230px;
+  padding: 5px 9px 5px 11px;
+  border: 1px solid rgb(76 79 227 / 20%);
+  border-radius: 999px;
+  background: var(--color-selected);
+  color: var(--color-primary-strong);
+  font: inherit;
+  font-size: .75rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.activeChips button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activeChips svg {
+  width: 14px;
+  height: 14px;
+}
+
+.drawerBackdrop,
+.sortBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 94;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgb(8 21 46 / 42%);
+}
+
+.drawerBackdrop {
+  z-index: 90;
+  align-items: end;
+  padding: 0;
+  background: rgb(8 21 46 / 58%);
+}
+
+.drawer {
+  width: min(100%, 720px);
+  max-height: min(84dvh, 650px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-bottom: 0;
+  border-radius: 24px 24px 0 0;
+  background: var(--color-surface);
+  box-shadow: 0 -18px 54px rgb(8 21 46 / 24%);
+}
+
+.drawerHeading,
+.sortHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.drawerHeading {
+  padding: 18px 18px 0;
+}
+
+.drawerHeading h2 {
+  margin: 3px 0 4px;
+  font-size: 1.22rem;
+  line-height: 1.15;
+}
+
+.drawerHeading p {
+  max-width: 52ch;
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: .78rem;
+  line-height: 1.4;
+}
+
+.closeButton {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+.drawerFields {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  overflow-y: auto;
+  padding: 2px 18px 8px;
+  overscroll-behavior: contain;
+}
+
+.drawerFields label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: var(--color-ink);
+  font-size: .8rem;
+  font-weight: 800;
+}
+
+.drawerFields select {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 13px;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: inherit;
+  font-size: .9rem;
+}
+
+.drawerFooter {
+  display: grid;
+  grid-template-columns: minmax(0, .72fr) minmax(0, 1.28fr);
+  gap: 10px;
+  padding: 11px 18px calc(13px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--color-border);
+  background: rgb(255 255 255 / 96%);
+}
+
+.drawerClear,
+.drawerApply {
+  min-height: 48px;
+  border-radius: 14px;
+  font: inherit;
+  font-size: .88rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.drawerClear {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+.drawerApply {
+  border: 1px solid var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+  box-shadow: 0 8px 20px rgb(76 79 227 / 18%);
+}
+
+.sortPanel {
+  width: min(420px, calc(100vw - 32px));
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  background: var(--color-surface);
+  box-shadow: 0 18px 52px rgb(8 21 46 / 22%);
+}
+
+.sortHeading {
+  align-items: center;
+  padding: 13px 13px 9px 17px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sortHeading strong {
+  font-size: .86rem;
+}
+
+.sortOptions {
+  display: grid;
+}
+
+.sortOptions button {
+  width: 100%;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 0 17px;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: inherit;
+  font-size: .92rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sortOptions button:last-child {
+  border-bottom: 0;
+}
+
+.sortOptions button:hover,
+.sortOptions button.selectedSort {
+  background: var(--color-selected);
+  color: var(--color-primary-strong);
+}
+
+.sortRadio {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  opacity: .66;
+}
+
+.selectedSort .sortRadio {
+  opacity: 1;
+}
+
+.selectedSort .sortRadio i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+@media (min-width: 901px) {
+  .drawerBackdrop {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .root {
+    gap: 8px;
+  }
+
+  .desktopToolbar {
+    display: none;
+  }
+
+  .mobileToolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 1px 0 2px;
+  }
+
+  .filterButton {
+    flex: 0 0 auto;
+  }
+
+  .mobileToolbar .sortButton {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .sortBackdrop {
+    place-items: end center;
+    padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+    background: rgb(8 21 46 / 52%);
+  }
+
+  .sortPanel {
+    width: min(100%, 620px);
+  }
+}
+
+@media (max-width: 640px) {
+  :global(.discovery-page:has(.product-smart-filters)) {
+    gap: 20px;
+  }
+
+  :global(.discovery-page:has(.product-smart-filters) > .page-intro h1) {
+    margin: 8px 0 10px;
+    font-size: clamp(1.95rem, 8.6vw, 2.65rem) !important;
+    line-height: .98 !important;
+  }
+
+  .drawerHeading,
+  .drawerFields,
+  .drawerFooter {
+    padding-inline: 16px;
+  }
+
+  .drawerFields {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 380px) {
+  .filterButton > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .filterButton {
+    width: 48px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .filterButton b {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sortButton,
+  .filterButton,
+  .clearButton {
+    transition: none;
+  }
+}
