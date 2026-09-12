@@ -155,3 +155,13 @@ test('Categories directory uses a compact responsive group browser instead of re
   assert.ok(stylesSource.includes('min-height: 44px;'));
   assert.ok(stylesSource.includes('scroll-margin-top: 104px;'));
 });
+
+test('Categories mobile real-device polish keeps the jump rail anchored and tiles dense', () => {
+  assert.ok(stylesSource.includes('scroll-snap-type: x proximity;'));
+  assert.ok(stylesSource.includes('scroll-snap-align: start;'));
+  assert.ok(stylesSource.includes('margin-right: -12px;'));
+  assert.ok(stylesSource.includes('scroll-padding-inline: 0 12px;'));
+  assert.ok(stylesSource.includes('min-height: 58px;'));
+  assert.ok(stylesSource.includes('padding: 9px 12px;'));
+  assert.ok(stylesSource.includes('gap: 7px;'));
+});
