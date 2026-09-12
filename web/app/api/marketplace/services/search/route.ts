@@ -17,6 +17,7 @@ import {
   normalizeMarketplaceServiceLocation,
   normalizeMarketplaceServiceQuery,
   parseMarketplaceServiceFilter,
+  resolveMarketplaceServicePage,
 } from '../../../../../server/marketplace-service-discovery/requestParsing';
 
 export const runtime = 'nodejs';
@@ -78,9 +79,7 @@ export async function GET(request: Request) {
   if (categoryResult.error) return NextResponse.json({ error: categoryResult.error.message }, { status: 500 });
 
   const rows = (searchResult.data ?? []) as MarketplaceServiceDiscoveryCandidateRow[];
-  const hasMore = rows.length > limit;
-  const pageRows = hasMore ? rows.slice(0, limit) : rows;
-  const total = pageRows.length ? Number(pageRows[0].total_count ?? 0) : 0;
+  const { pageRows, total, page } = resolveMarketplaceServicePage(rows, cursor, limit);
   const services = mapMarketplaceServiceDiscoveryServices(pageRows, { nearby: false });
 
   const categories = ((categoryResult.data ?? []) as CategoryRow[]).map((row) => ({
@@ -94,11 +93,7 @@ export async function GET(request: Request) {
       categories,
       total,
       geo_status: 'not_requested',
-      page: {
-        limit,
-        next_cursor: hasMore ? String(cursor + limit) : null,
-        has_more: hasMore,
-      },
+      page,
     },
     { headers: { 'Cache-Control': 'no-store' } },
   );
