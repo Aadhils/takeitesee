@@ -13,6 +13,10 @@ export type MarketplaceServiceProviderFilter = typeof marketplaceServiceProvider
 export type MarketplaceServiceNormalSortMode = typeof marketplaceServiceNormalSortModes[number];
 export type MarketplaceServiceNearbySortMode = typeof marketplaceServiceNearbySortModes[number];
 
+type MarketplaceServicePageRow = {
+  total_count?: number | string | null;
+};
+
 function marketplaceServiceStringValue(value: unknown, fallback = '') {
   return typeof value === 'string' ? value : fallback;
 }
@@ -54,4 +58,30 @@ export function boundedMarketplaceServiceInteger(
     : Number.parseInt(String(value ?? ''), 10);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.min(Math.max(parsed, minimum), maximum);
+}
+
+export function marketplaceServiceFallbackNormalSort(
+  sort: MarketplaceServiceNearbySortMode,
+): MarketplaceServiceNormalSortMode {
+  return sort === 'nearest' ? 'relevance' : sort;
+}
+
+export function resolveMarketplaceServicePage<T extends MarketplaceServicePageRow>(
+  rows: T[],
+  cursor: number,
+  limit: number,
+) {
+  const hasMore = rows.length > limit;
+  const pageRows = hasMore ? rows.slice(0, limit) : rows;
+  const total = pageRows.length ? Number(pageRows[0].total_count ?? 0) : 0;
+
+  return {
+    pageRows,
+    total,
+    page: {
+      limit,
+      next_cursor: hasMore ? String(cursor + limit) : null,
+      has_more: hasMore,
+    },
+  };
 }

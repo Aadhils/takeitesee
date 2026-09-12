@@ -27,14 +27,18 @@ const { resolveMarketplaceServiceSearchSemantics } = semanticsModule;
 const {
   boundedMarketplaceServiceInteger,
   marketplaceServiceDefaultPageSize,
+  marketplaceServiceFallbackNormalSort,
   marketplaceServiceMaxPageSize,
   marketplaceServiceNearbySortModes,
   marketplaceServiceNormalSortModes,
+  marketplaceServicePriceFilters,
   marketplaceServiceProviderFilters,
+  marketplaceServiceRatingFilters,
   normalizeMarketplaceServiceCategory,
   normalizeMarketplaceServiceLocation,
   normalizeMarketplaceServiceQuery,
   parseMarketplaceServiceFilter,
+  resolveMarketplaceServicePage,
 } = parsingModule;
 const { mapMarketplaceServiceDiscoveryServices } = responseMappingModule;
 
@@ -185,6 +189,90 @@ test('shared request normalization keeps production limits and wildcard cleanup 
     boundedMarketplaceServiceInteger(0, marketplaceServiceDefaultPageSize, 1, marketplaceServiceMaxPageSize),
     1,
   );
+});
+
+test('normal and nearby Service filter catalogs stay in parity with nearby-only nearest sorting', () => {
+  assert.deepEqual([...marketplaceServicePriceFilters], ['any', 'under-1000', '1000-5000', 'over-5000']);
+  assert.deepEqual([...marketplaceServiceRatingFilters], ['any', '4-plus', '4.5-plus']);
+  assert.deepEqual([...marketplaceServiceProviderFilters], ['any', 'professional', 'business']);
+  assert.deepEqual([...marketplaceServiceNormalSortModes], ['relevance', 'rating', 'price', 'price-desc']);
+  assert.deepEqual([...marketplaceServiceNearbySortModes], ['relevance', 'nearest', 'rating', 'price', 'price-desc']);
+
+  for (const value of marketplaceServicePriceFilters) {
+    assert.equal(parseMarketplaceServiceFilter(value, marketplaceServicePriceFilters, 'any'), value);
+  }
+  for (const value of marketplaceServiceRatingFilters) {
+    assert.equal(parseMarketplaceServiceFilter(value, marketplaceServiceRatingFilters, 'any'), value);
+  }
+  for (const value of marketplaceServiceProviderFilters) {
+    assert.equal(parseMarketplaceServiceFilter(value, marketplaceServiceProviderFilters, 'any'), value);
+  }
+  for (const value of marketplaceServiceNormalSortModes) {
+    assert.equal(parseMarketplaceServiceFilter(value, marketplaceServiceNormalSortModes, 'relevance'), value);
+  }
+
+  assert.equal(parseMarketplaceServiceFilter(undefined, marketplaceServicePriceFilters, 'any'), 'any');
+  assert.equal(parseMarketplaceServiceFilter('', marketplaceServiceRatingFilters, 'any'), 'any');
+  assert.equal(parseMarketplaceServiceFilter('invalid', marketplaceServiceProviderFilters, 'any'), null);
+  assert.equal(parseMarketplaceServiceFilter('nearest', marketplaceServiceNormalSortModes, 'relevance'), null);
+  assert.equal(parseMarketplaceServiceFilter('nearest', marketplaceServiceNearbySortModes, 'relevance'), 'nearest');
+
+  assert.equal(marketplaceServiceFallbackNormalSort('nearest'), 'relevance');
+  assert.equal(marketplaceServiceFallbackNormalSort('relevance'), 'relevance');
+  assert.equal(marketplaceServiceFallbackNormalSort('rating'), 'rating');
+  assert.equal(marketplaceServiceFallbackNormalSort('price'), 'price');
+  assert.equal(marketplaceServiceFallbackNormalSort('price-desc'), 'price-desc');
+});
+
+test('shared Service pagination keeps cursor and limit boundaries deterministic', () => {
+  assert.equal(boundedMarketplaceServiceInteger(undefined, 0, 0, 1_000_000_000), 0);
+  assert.equal(boundedMarketplaceServiceInteger(-50, 0, 0, 1_000_000_000), 0);
+  assert.equal(boundedMarketplaceServiceInteger('27abc', 0, 0, 1_000_000_000), 27);
+  assert.equal(boundedMarketplaceServiceInteger(2_000_000_000, 0, 0, 1_000_000_000), 1_000_000_000);
+  assert.equal(boundedMarketplaceServiceInteger('not-a-number', 0, 0, 1_000_000_000), 0);
+
+  assert.equal(boundedMarketplaceServiceInteger(undefined, 24, 1, 48), 24);
+  assert.equal(boundedMarketplaceServiceInteger(-5, 24, 1, 48), 1);
+  assert.equal(boundedMarketplaceServiceInteger('12items', 24, 1, 48), 12);
+  assert.equal(boundedMarketplaceServiceInteger(99, 24, 1, 48), 48);
+});
+
+test('shared Service pagination returns the same has-more, total, and next-cursor contract for both routes', () => {
+  const rows = [
+    { id: 'service-1', total_count: '37' },
+    { id: 'service-2', total_count: '37' },
+    { id: 'service-3', total_count: '37' },
+  ];
+
+  assert.deepEqual(resolveMarketplaceServicePage(rows, 24, 2), {
+    pageRows: rows.slice(0, 2),
+    total: 37,
+    page: {
+      limit: 2,
+      next_cursor: '26',
+      has_more: true,
+    },
+  });
+
+  assert.deepEqual(resolveMarketplaceServicePage(rows.slice(0, 2), 24, 2), {
+    pageRows: rows.slice(0, 2),
+    total: 37,
+    page: {
+      limit: 2,
+      next_cursor: null,
+      has_more: false,
+    },
+  });
+
+  assert.deepEqual(resolveMarketplaceServicePage([], 0, 24), {
+    pageRows: [],
+    total: 0,
+    page: {
+      limit: 24,
+      next_cursor: null,
+      has_more: false,
+    },
+  });
 });
 
 test('normal Service response mapping locks canonical Professional output and strips geo fields', () => {
