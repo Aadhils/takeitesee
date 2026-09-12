@@ -1,0 +1,31 @@
+@media (max-width: 640px) {
+  .discovery-page:has(.product-smart-filters) > .page-intro {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  .discovery-page:has(.product-smart-filters) > .page-intro > div {
+    display: grid !important;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    gap: 6px !important;
+    margin-top: .8rem !important;
+    overflow: hidden !important;
+  }
+
+  .discovery-page:has(.product-smart-filters) > .page-intro > div > a {
+    width: auto;
+    min-width: 0;
+    min-height: 42px;
+    padding-inline: 6px !important;
+    justify-content: center;
+    text-align: center;
+    white-space: normal !important;
+    font-size: .72rem;
+    line-height: 1.15;
+  }
+}
