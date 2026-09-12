@@ -7,6 +7,7 @@ import { ServiceCard } from '../../components/discovery/MarketplaceCards';
 import { DiscoveryEmptyState } from '../../components/discovery/DiscoveryEnhancements';
 import { TaxonomySearchInput } from '../../components/discovery/TaxonomySearchInput';
 import { parseMarketplaceSearchIntent } from '../../components/discovery/marketplaceSearchIntent';
+import { resolveMarketplaceZeroResultRecovery } from '../../components/discovery/marketplaceZeroResultRecovery';
 import { useLanguage } from '../../components/i18n/LanguageProvider';
 
 type MarketplaceService = any;
@@ -428,6 +429,7 @@ export default function ExplorePage() {
   };
 
   const clearAll = () => { setQuery(''); setResolvedTaxonomyIntent(null); setFilters(defaultFilters()); setSort('relevance'); };
+  const clearSearch = () => { setQuery(''); setResolvedTaxonomyIntent(null); setSort('relevance'); };
   const update = <K extends keyof Filters>(key: K, value: Filters[K]) => setFilters((current) => ({ ...current, [key]: value }));
 
   const broadenFilters = () => {
@@ -496,25 +498,41 @@ export default function ExplorePage() {
       : `${resultCount} ${t('explore.servicesToExplore')}`;
 
   const nearbyReady = preciseNearbyActive;
-  const showRecoveryEmptyState = !loading && !loadError && filteredServices.length === 0
-    && Boolean(query.trim() || effectiveLocationQuery || hasNarrowingFilters);
+  const zeroResultRecovery = resolveMarketplaceZeroResultRecovery({
+    loading,
+    hasError: Boolean(loadError),
+    resultCount: filteredServices.length,
+    queryPresent: Boolean(query.trim()),
+    locationPresent: Boolean(effectiveLocationQuery),
+    hasNarrowingFilters,
+    preciseNearbyActive,
+  });
+  const showRecoveryEmptyState = zeroResultRecovery.show;
   const tamil = locale === 'ta-IN';
-  const recoveryTitle = effectiveLocationQuery
+  const recoveryTitle = zeroResultRecovery.mode === 'named_location'
     ? (tamil ? `“${effectiveLocationQuery}” பகுதியில் live match இல்லை` : `No live match in “${effectiveLocationQuery}”`)
-    : preciseNearbyActive && query.trim()
+    : zeroResultRecovery.mode === 'nearby' && query.trim()
       ? (tamil ? `“${query.trim()}” க்கு nearby live match இல்லை` : `No live nearby match for “${query.trim()}”`)
-      : (tamil ? 'தற்போதைய filters-க்கு live match இல்லை' : 'No live match with the current filters');
-  const recoveryHelp = effectiveLocationQuery
+      : zeroResultRecovery.mode === 'nearby'
+        ? (tamil ? 'உங்கள் தற்போதைய இடத்திற்கு அருகில் live services கிடைக்கவில்லை' : 'No live services found near your current location')
+        : zeroResultRecovery.mode === 'query'
+          ? (tamil ? `“${query.trim()}” க்கு live match இல்லை` : `No live match for “${query.trim()}”`)
+          : (tamil ? 'தற்போதைய filters-க்கு live match இல்லை' : 'No live match with the current filters');
+  const recoveryHelp = zeroResultRecovery.mode === 'named_location'
     ? (tamil
       ? 'இந்த இடத்தைத் தாண்டி தேடலாம், filters-ஐ தளர்த்தலாம், approved category-களை பார்க்கலாம் அல்லது requirement post செய்யலாம்.'
       : 'Search beyond this location, broaden the filters, browse approved categories, or post a requirement.')
-    : preciseNearbyActive
+    : zeroResultRecovery.mode === 'nearby'
       ? (tamil
-        ? 'Nearby ranking எல்லா returned distance bands-யும் கருதுகிறது; fixed radius காரணமாக provider மறைக்கப்படவில்லை. Filters-ஐ தளர்த்தலாம் அல்லது requirement post செய்யலாம்.'
-        : 'Nearby ranking already considers every returned coarse distance band; no fixed radius is hiding a provider. Broaden the filters, browse an approved category, or post a requirement.')
-      : (tamil
-        ? 'ஒரு filter-ஐ தளர்த்தி மீண்டும் முயற்சிக்கலாம், approved category-களை பார்க்கலாம் அல்லது requirement post செய்யலாம்.'
-        : 'Try broader filters, browse approved categories, or post a requirement so providers can respond.');
+        ? 'Current-location ranking-ஐ நீக்கி முழு marketplace-ல் தேடலாம், filters-ஐ தளர்த்தலாம், approved category-களை பார்க்கலாம் அல்லது requirement post செய்யலாம்.'
+        : 'Search without current-location ranking, broaden the filters, browse an approved category, or post a requirement.')
+      : zeroResultRecovery.mode === 'query'
+        ? (tamil
+          ? 'தேடல் சொல்லை மாற்றி முயற்சிக்கலாம், active filters இருந்தால் தளர்த்தலாம், approved category-களை பார்க்கலாம் அல்லது requirement post செய்யலாம்.'
+          : 'Try a broader service phrase, loosen any active filters, browse approved categories, or post a requirement.')
+        : (tamil
+          ? 'ஒரு filter-ஐ தளர்த்தி மீண்டும் முயற்சிக்கலாம், approved category-களை பார்க்கலாம் அல்லது requirement post செய்யலாம்.'
+          : 'Try broader filters, browse approved categories, or post a requirement so providers can respond.');
 
   return <div className="discovery-page discovery-workspace">
     <section className="page-intro"><span className="eyebrow">{t('explore.eyebrow')}</span><h1>{t('explore.title')}</h1><p>{t('explore.subtitle')}</p></section>
@@ -547,7 +565,7 @@ export default function ExplorePage() {
     </section>
 
     <div className="results-heading"><div><span className="eyebrow">{t('explore.marketplace')}</span><h2>{resultHeading}</h2></div></div>
-    {loading ? <div className="service-grid"><div className="loading-card"><Skeleton className="loading-art" /><Skeleton className="loading-line" /><Skeleton className="loading-line short" /></div></div> : loadError ? <DiscoveryEmptyState query={loadError} onClear={() => location.reload()} suggestions={[]} errorState /> : filteredServices.length ? <><div className="service-grid">{filteredServices.map((service) => <ServiceCard service={preciseNearbyActive ? service : { ...service, distance_band: null, distance_priority: 0, nearby_match_mode: null }} contextQuery={contextQuery} key={service.id} />)}</div>{hasMore ? <div className="empty-actions" style={{ marginTop: '1rem' }}><Button type="button" variant="secondary" loading={loadingMore} onClick={() => void loadMore()}>{tamil ? 'மேலும் Services ஏற்று' : 'Load more services'}</Button></div> : null}{loadMoreError ? <p className="field-error" role="alert" style={{ marginTop: '1rem' }}>{loadMoreError}</p> : null}</> : showRecoveryEmptyState ? <><div className="discovery-empty-wrap"><Card><EmptyState title={recoveryTitle}>{recoveryHelp}</EmptyState><div className="empty-actions">{effectiveLocationQuery ? <Button type="button" variant="secondary" onClick={broadenNamedLocation}>{tamil ? 'இந்த இடத்தைத் தாண்டி தேடு' : 'Search beyond this location'}</Button> : null}{hasNarrowingFilters ? <Button type="button" variant="secondary" onClick={broadenFilters}>{tamil ? 'Filters-ஐ தளர்த்து' : 'Broaden filters'}</Button> : null}<Link href="/categories" className="button button-quiet">{t('empty.browseCategories')}</Link></div></Card></div><div className="empty-actions"><Link href={requirementHref} className="button button-primary">{t('explore.postRequirement')}</Link></div></> : <><DiscoveryEmptyState query={query} onClear={clearAll} suggestions={[]} /><div className="empty-actions"><Link href={requirementHref} className="button button-primary">{t('explore.postRequirement')}</Link></div></>}
+    {loading ? <div className="service-grid"><div className="loading-card"><Skeleton className="loading-art" /><Skeleton className="loading-line" /><Skeleton className="loading-line short" /></div></div> : loadError ? <DiscoveryEmptyState query={loadError} onClear={() => location.reload()} suggestions={[]} errorState /> : filteredServices.length ? <><div className="service-grid">{filteredServices.map((service) => <ServiceCard service={preciseNearbyActive ? service : { ...service, distance_band: null, distance_priority: 0, nearby_match_mode: null }} contextQuery={contextQuery} key={service.id} />)}</div>{hasMore ? <div className="empty-actions" style={{ marginTop: '1rem' }}><Button type="button" variant="secondary" loading={loadingMore} onClick={() => void loadMore()}>{tamil ? 'மேலும் Services ஏற்று' : 'Load more services'}</Button></div> : null}{loadMoreError ? <p className="field-error" role="alert" style={{ marginTop: '1rem' }}>{loadMoreError}</p> : null}</> : showRecoveryEmptyState ? <><div className="discovery-empty-wrap"><Card><EmptyState title={recoveryTitle}>{recoveryHelp}</EmptyState><div className="empty-actions">{zeroResultRecovery.showBroadenLocation ? <Button type="button" variant="secondary" onClick={broadenNamedLocation}>{tamil ? 'இந்த இடத்தைத் தாண்டி தேடு' : 'Search beyond this location'}</Button> : null}{zeroResultRecovery.showClearNearby ? <Button type="button" variant="secondary" onClick={clearNearbyLocation}>{tamil ? 'தற்போதைய இடத்தைத் தாண்டி தேடு' : 'Search beyond current location'}</Button> : null}{zeroResultRecovery.showBroadenFilters ? <Button type="button" variant="secondary" onClick={broadenFilters}>{tamil ? 'Filters-ஐ தளர்த்து' : 'Broaden filters'}</Button> : null}{zeroResultRecovery.showClearQuery ? <Button type="button" variant="secondary" onClick={clearSearch}>{tamil ? 'தேடலை நீக்கு' : 'Clear search'}</Button> : null}<Link href="/categories" className="button button-quiet">{t('empty.browseCategories')}</Link></div></Card></div><div className="empty-actions"><Link href={requirementHref} className="button button-primary">{t('explore.postRequirement')}</Link></div></> : <><DiscoveryEmptyState query={query} onClear={clearAll} suggestions={[]} /><div className="empty-actions"><Link href={requirementHref} className="button button-primary">{t('explore.postRequirement')}</Link></div></>}
     <p className="explore-disclaimer">{t('explore.disclaimer')}</p>
   </div>;
 }
