@@ -24,6 +24,7 @@ import {
   buildMarketplaceServiceDiscoveryRpcArgs,
   buildMarketplaceServiceNearbyRpcArgs,
 } from '../../../../../server/marketplace-service-discovery/rpcArguments';
+import { emitMarketplaceServiceSearchObservation } from '../../../../../server/marketplace-service-discovery/observability';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -64,6 +65,7 @@ function parseOrigin(value: unknown): MarketplaceOrigin {
 }
 
 export async function POST(request: Request) {
+  const startedAt = Date.now();
   const supabase = publicSupabase();
   if (!supabase) return NextResponse.json({ error: 'Marketplace database is not configured.' }, { status: 500 });
 
@@ -123,10 +125,12 @@ export async function POST(request: Request) {
 
   const categoryPromise = supabase.rpc('get_marketplace_service_discovery_categories_v2');
   let geoStatus: 'ready' | 'unavailable' = 'ready';
+  let fallbackUsed = false;
   let searchResult = await supabase.rpc('search_marketplace_service_nearby_candidates_v2', nearbyArgs);
 
   if (searchResult.error) {
     geoStatus = 'unavailable';
+    fallbackUsed = true;
     const fallbackArgs = buildMarketplaceServiceDiscoveryRpcArgs({
       ...rpcInput,
       sort: marketplaceServiceFallbackNormalSort(sort),
@@ -145,6 +149,28 @@ export async function POST(request: Request) {
     slug: String(row.category_slug || 'other'),
     name: String(row.category_name || 'Other'),
   }));
+
+  emitMarketplaceServiceSearchObservation({
+    mode: 'nearby',
+    queryPresent: query.length > 0,
+    queryTokenCount: queryTokens.length,
+    locationPresent: location.length > 0,
+    categoryFilterApplied: category !== 'all',
+    price,
+    rating,
+    provider,
+    availableNow,
+    sort,
+    cursor,
+    limit,
+    returnedCount: services.length,
+    total,
+    hasMore: page.has_more,
+    geoStatus,
+    nearMe,
+    fallbackUsed,
+    durationMs: Date.now() - startedAt,
+  });
 
   return NextResponse.json(
     {
