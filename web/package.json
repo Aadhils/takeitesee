@@ -9,6 +9,7 @@
     "lint": "eslint app components server services types",
     "type-check": "tsc --noEmit",
     "test:service-search-regression": "node --test server/marketplace-service-discovery/__tests__/*.test.mjs",
+    "test:responsive-regression": "node --test server/ui-responsive/__tests__/*.test.mjs",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
   },
   "dependencies": {
