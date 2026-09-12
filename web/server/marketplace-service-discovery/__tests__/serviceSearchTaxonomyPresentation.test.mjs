@@ -27,10 +27,11 @@ const {
   marketplaceTaxonomyKey,
 } = presentationModule;
 
-const [taxonomyInputSource, livePresentationSource, exploreSource, categoriesDirectorySource, publicCategoriesSource] = await Promise.all([
+const [taxonomyInputSource, livePresentationSource, exploreSource, smartFiltersSource, categoriesDirectorySource, publicCategoriesSource] = await Promise.all([
   readFile(new URL('../../../components/discovery/TaxonomySearchInput.tsx', import.meta.url), 'utf8'),
   readFile(new URL('../../../components/discovery/LiveMarketplacePresentation.tsx', import.meta.url), 'utf8'),
   readFile(new URL('../../../app/explore/page.tsx', import.meta.url), 'utf8'),
+  readFile(new URL('../../../components/discovery/ExploreSmartFilters.tsx', import.meta.url), 'utf8'),
   readFile(new URL('../../../components/discovery/CanonicalPublicCategoriesDirectory.tsx', import.meta.url), 'utf8'),
   readFile(new URL('../../marketplace/public-categories.ts', import.meta.url), 'utf8'),
 ]);
@@ -81,7 +82,7 @@ test('Service cards consume search-response category aliases through the same pr
   assert.ok(livePresentationSource.includes('aliases: service.category_aliases'));
 });
 
-test('Explore category dropdown localizes labels while preserving canonical server category slug values', () => {
+test('Explore category filters localize labels while preserving canonical server category slug values', () => {
   const taxonomy = [
     { code: 'plumbing', name: 'Plumbing', group_name: 'Home Services', aliases: ['plumber', 'பிளம்பர்'] },
     { code: 'software_it_support', name: 'Custom Software & IT Support', group_name: 'Technology & Digital', aliases: ['custom software', 'கஸ்டம் சாப்ட்வேர்'] },
@@ -93,8 +94,11 @@ test('Explore category dropdown localizes labels while preserving canonical serv
   assert.equal(localizedMarketplaceCategoryLabelForKey('software-it-support', index, 'en-IN'), 'Custom Software & IT Support');
   assert.equal(localizedMarketplaceCategoryLabelForKey('legacy-category', index, 'ta-IN'), 'Legacy Category');
 
-  assert.ok(exploreSource.includes('value={category} key={category}'));
+  assert.ok(exploreSource.includes('value: category'));
   assert.ok(exploreSource.includes('localizedMarketplaceCategoryLabelForKey(category, taxonomyPresentationIndex, locale)'));
+  assert.ok(exploreSource.includes('categories={smartCategoryOptions}'));
+  assert.ok(smartFiltersSource.includes('value={option.value}'));
+  assert.ok(smartFiltersSource.includes('{option.label}'));
   assert.ok(exploreSource.includes('taxonomy={taxonomyCategories}'));
 });
 
