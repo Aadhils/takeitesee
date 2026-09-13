@@ -71,6 +71,15 @@
     box-shadow: var(--shadow-sm);
   }
 
+  .account-mobile-tab-label,
+  .account-mobile-more-label {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .account-sidebar .account-mobile-nav > a:hover,
   .account-sidebar .account-mobile-nav > .account-mobile-tab-active,
   .account-mobile-more[open] > summary,
@@ -95,17 +104,11 @@
     cursor: pointer;
     list-style: none;
     gap: 4px;
+    padding-right: 26px;
   }
 
   .account-mobile-more > summary::-webkit-details-marker {
     display: none;
-  }
-
-  .account-mobile-more-label {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .account-mobile-more-caret {
@@ -117,8 +120,8 @@
 
   .account-mobile-more-count {
     position: absolute;
-    top: 4px;
-    right: 4px;
+    top: 5px;
+    right: 5px;
     min-width: 18px;
     height: 18px;
     border: 2px solid var(--color-surface);
@@ -131,33 +134,33 @@
     top: calc(100% + 8px);
     right: 0;
     display: grid;
-    width: min(280px, calc(100vw - 32px));
-    max-height: min(60dvh, 440px);
-    gap: 3px;
+    width: min(260px, calc(100vw - 32px));
+    max-height: min(56dvh, 400px);
+    gap: 2px;
     overflow-y: auto;
     overscroll-behavior: contain;
     border: 1px solid var(--color-border);
     border-radius: 16px;
     background: var(--color-surface);
-    padding: 7px;
+    padding: 6px;
     box-shadow: 0 18px 42px rgb(29 28 54 / 18%);
   }
 
   .account-sidebar .account-mobile-more-menu a {
     display: flex;
     width: 100%;
-    min-height: 44px;
+    min-height: 40px;
     flex: none;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
     border: 0;
     border-radius: 10px;
-    padding: 9px 11px;
+    padding: 7px 10px;
     background: transparent;
     color: var(--color-ink);
     white-space: normal;
-    font-size: .82rem;
+    font-size: .8rem;
   }
 
   .account-sidebar .account-mobile-more-menu a:hover,
@@ -182,24 +185,34 @@
   }
 
   .account-sidebar .account-mobile-nav {
-    gap: 5px;
+    gap: 4px;
   }
 
   .account-sidebar .account-mobile-nav > a,
   .account-mobile-more > summary {
     min-height: 50px;
-    padding: 6px 4px;
-    font-size: .68rem;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-left: 3px;
+    font-size: .66rem;
+  }
+
+  .account-mobile-more > summary {
+    padding-right: 24px;
   }
 
   .account-mobile-more-menu {
-    width: min(260px, calc(100vw - 32px));
-    max-height: min(46dvh, 330px);
+    width: min(238px, calc(100vw - 28px));
+    max-height: min(42dvh, 292px);
+    gap: 1px;
+    padding: 5px;
+    border-radius: 14px;
   }
 
   .account-sidebar .account-mobile-more-menu a {
-    min-height: 40px;
-    padding: 8px 10px;
+    min-height: 36px;
+    padding: 6px 9px;
+    font-size: .78rem;
   }
 
   .saved-products-empty-card .state-panel {
