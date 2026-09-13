@@ -30,8 +30,8 @@
     overflow-y: hidden;
     overscroll-behavior-inline: contain;
     scroll-snap-type: x mandatory;
-    scroll-padding-inline: 2px 18px;
-    padding: 1px 18px 6px 2px;
+    scroll-padding-inline: 2px 14px;
+    padding: 1px 14px 6px 2px;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
   }
@@ -41,8 +41,8 @@
   }
 
   .customer-social-dashboard > .dashboard-grid > .card {
-    flex: 0 0 min(82vw, 304px);
-    width: min(82vw, 304px);
+    flex: 0 0 min(89vw, 332px);
+    width: min(89vw, 332px);
     min-width: 0;
     scroll-snap-align: start;
     scroll-snap-stop: always;
