@@ -99,16 +99,16 @@ export default function SavedProductsPage() {
       <p>{tamil ? 'பின்னர் பார்க்க அல்லது order request அனுப்ப நீங்கள் சேமித்த approved Business Products.' : 'Approved Business Products you saved to revisit or request later.'}</p>
     </section>
 
-    {authenticated === false ? <Card>
+    {authenticated === false ? <Card className="saved-products-empty-card">
       <EmptyState title={tamil ? 'Saved Products பார்க்க sign in செய்யவும்' : 'Sign in to view saved Products'}>
         {tamil ? 'Products-ஐ shortlist செய்து பின்னர் மீண்டும் பார்க்க உங்கள் account-ல் sign in செய்யவும்.' : 'Sign in to shortlist Products and return to them from your account.'}
       </EmptyState>
-      <div className="button-row"><Link className="button button-primary" href="/login?returnTo=%2Fsaved-products">Sign in</Link><Link className="button button-secondary" href="/signup">{tamil ? 'Account உருவாக்கவும்' : 'Create account'}</Link></div>
-    </Card> : loading ? <Card><p>{tamil ? 'Saved Products ஏற்றுகிறது…' : 'Loading saved Products…'}</p></Card> : error ? <Card><p className="field-error" role="alert">{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>{tamil ? 'மீண்டும் முயற்சி' : 'Try again'}</Button></Card> : items.length === 0 ? <Card>
+      <div className="button-row saved-products-empty-actions"><Link className="button button-primary" href="/login?returnTo=%2Fsaved-products">Sign in</Link><Link className="button button-secondary" href="/signup">{tamil ? 'Account உருவாக்கவும்' : 'Create account'}</Link></div>
+    </Card> : loading ? <Card><p>{tamil ? 'Saved Products ஏற்றுகிறது…' : 'Loading saved Products…'}</p></Card> : error ? <Card><p className="field-error" role="alert">{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>{tamil ? 'மீண்டும் முயற்சி' : 'Try again'}</Button></Card> : items.length === 0 ? <Card className="saved-products-empty-card">
       <EmptyState title={tamil ? 'இன்னும் saved Products இல்லை' : 'No saved Products yet'}>
         {tamil ? 'Product marketplace-ல் ஒரு approved Product-ஐ Save செய்து shortlist தொடங்குங்கள்.' : 'Save an approved Product from the Product marketplace to start your shortlist.'}
       </EmptyState>
-      <Link className="button button-primary" href="/products">{tamil ? 'Products பார்க்க' : 'Browse Products'}</Link>
+      <div className="saved-products-empty-actions"><Link className="button button-primary" href="/products">{tamil ? 'Products பார்க்க' : 'Browse Products'}</Link></div>
     </Card> : <div style={{ display: 'grid', gap: '1rem' }}>
       {items.map((item) => {
         if (!item.available || !item.product) {
