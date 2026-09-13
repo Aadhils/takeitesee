@@ -40,22 +40,27 @@ test('Overview uses the same account shell and suppresses the legacy duplicate m
   assert.ok(cssSource.includes('.account-content .customer-mobile-quick-shell {\n    display: none !important;'));
 });
 
-test('account mobile navigation is contained and uses single-line compact labels', () => {
+test('account mobile navigation is contained and locks primary labels to one line', () => {
   assert.ok(cssSource.includes('@media (max-width: 900px)'));
   assert.ok(cssSource.includes('grid-template-columns: repeat(5, minmax(0, 1fr));'));
   assert.ok(cssSource.includes('.account-sidebar .account-desktop-nav {\n    display: none !important;'));
   assert.ok(cssSource.includes('.account-sidebar .account-mobile-nav {\n    display: grid !important;'));
   assert.ok(cssSource.includes('overflow: visible;'));
   assert.ok(cssSource.includes('min-height: 48px;'));
+  assert.ok(shellSource.includes('account-mobile-tab-label'));
+  assert.ok(cssSource.includes('.account-mobile-tab-label,\n  .account-mobile-more-label {'));
+  assert.ok(cssSource.includes('text-overflow: ellipsis;'));
   assert.ok(cssSource.includes('white-space: nowrap;'));
   assert.ok(shellSource.includes("mobileLabel: locale === 'ta-IN' ? 'தேவைகள்' : 'Needs'"));
 });
 
-test('notification attention stays inside More and narrow phones use a compact anchored menu', () => {
-  assert.ok(cssSource.includes('.account-mobile-more-count {\n    position: absolute;\n    top: 4px;\n    right: 4px;'));
+test('notification attention stays inside More and narrow phones use a denser anchored menu', () => {
+  assert.ok(cssSource.includes('.account-mobile-more-count {\n    position: absolute;\n    top: 5px;\n    right: 5px;'));
+  assert.ok(cssSource.includes('padding-right: 26px;'));
   assert.ok(cssSource.includes('@media (max-width: 640px)'));
-  assert.ok(cssSource.includes('width: min(260px, calc(100vw - 32px));'));
-  assert.ok(cssSource.includes('max-height: min(46dvh, 330px);'));
+  assert.ok(cssSource.includes('width: min(238px, calc(100vw - 28px));'));
+  assert.ok(cssSource.includes('max-height: min(42dvh, 292px);'));
+  assert.ok(cssSource.includes('min-height: 36px;'));
   assert.ok(!cssSource.includes('bottom: calc(var(--responsive-mobile-nav-height) + 12px + env(safe-area-inset-bottom));'));
 });
 
