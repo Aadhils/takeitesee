@@ -1,0 +1,76 @@
+/* Real-device fallback for the authenticated Customer Account overview.
+   Keep this layer after the shared responsive styles so older hydrated account markup
+   still gets the compact mobile dashboard presentation. */
+
+@media (max-width: 640px) {
+  .customer-social-dashboard > .dashboard-grid {
+    display: flex !important;
+    width: 100%;
+    max-width: 100%;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 1px;
+    padding: 1px 1px 4px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .customer-social-dashboard > .dashboard-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .customer-social-dashboard > .dashboard-grid > .card {
+    flex: 0 0 min(84vw, 320px);
+    width: min(84vw, 320px);
+    min-width: 0;
+    scroll-snap-align: start;
+    padding: 14px;
+  }
+
+  .customer-social-dashboard > .dashboard-grid > .card h2 {
+    margin: 6px 0 0;
+    font-size: 1.12rem;
+    line-height: 1.2;
+  }
+
+  .customer-social-dashboard > .dashboard-grid > .card .account-secondary-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px;
+    margin: 10px 0 0;
+  }
+
+  .customer-social-dashboard > .dashboard-grid > .card .account-action-chip {
+    min-height: 40px;
+    padding: 6px 8px;
+    font-size: .72rem;
+  }
+
+  .customer-social-dashboard > .dashboard-stat-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .customer-social-dashboard > .dashboard-stat-grid > .card {
+    min-width: 0;
+    min-height: 0 !important;
+    padding: 12px;
+  }
+
+  .customer-social-dashboard > .dashboard-stat-grid > .card h2 {
+    margin: 6px 0 4px;
+    font-size: 1.45rem;
+    line-height: 1;
+  }
+
+  .customer-social-dashboard > .dashboard-stat-grid > .card p {
+    margin: 0;
+    font-size: .72rem;
+    line-height: 1.35;
+  }
+}
