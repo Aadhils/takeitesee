@@ -237,13 +237,14 @@
   .customer-social-dashboard .customer-overview-action-grid {
     grid-template-columns: none !important;
     grid-auto-flow: column;
-    grid-auto-columns: min(84vw, 320px);
+    grid-auto-columns: min(89vw, 332px);
     gap: 10px;
     overflow-x: auto;
     overscroll-behavior-inline: contain;
     scroll-snap-type: x mandatory;
+    scroll-padding-inline: 2px 14px;
     scrollbar-width: none;
-    padding-bottom: 4px;
+    padding: 0 14px 6px 2px;
   }
 
   .customer-social-dashboard .customer-overview-action-grid::-webkit-scrollbar {
@@ -252,6 +253,8 @@
 
   .customer-social-dashboard .customer-overview-action-card {
     scroll-snap-align: start;
+    scroll-snap-stop: always;
+    scroll-margin-inline-start: 2px;
     padding: 14px;
   }
 
