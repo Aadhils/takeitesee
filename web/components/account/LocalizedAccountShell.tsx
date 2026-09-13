@@ -70,7 +70,7 @@ export default function LocalizedAccountShell({ children, active, customerName, 
               aria-label={link.label}
               key={link.href}
             >
-              {link.mobileLabel}
+              <span className="account-mobile-tab-label">{link.mobileLabel}</span>
             </Link>
           ))}
           <details className={`account-mobile-more${activeSecondaryLink ? ' account-mobile-more-active' : ''}`}>
