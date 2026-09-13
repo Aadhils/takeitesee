@@ -133,9 +133,9 @@ export default function AuthenticatedAccount() {
 
       <CustomerAccountProposalSummary onUnreadChange={setProposalUnreadCount} />
 
-      <section className="dashboard-grid" aria-label={tamil ? 'Customer வழிசெலுத்தல்' : 'Customer navigation'}>
+      <section className="dashboard-grid customer-overview-action-grid" aria-label={tamil ? 'Customer வழிசெலுத்தல்' : 'Customer navigation'}>
         {navigationGroups.map((group) => (
-          <Card key={group.id}>
+          <Card className="customer-overview-action-card" key={group.id}>
             <span className="eyebrow">{group.eyebrow}</span>
             <h2>{group.title}</h2>
             <nav className="account-secondary-actions" aria-label={group.eyebrow}>
@@ -145,11 +145,11 @@ export default function AuthenticatedAccount() {
         ))}
       </section>
 
-      <div className="dashboard-stat-grid">
-        <Card><span className="eyebrow">{t('account.upcoming')}</span><h2>{summary.upcoming}</h2><p>{t('account.upcomingDetail')}</p></Card>
-        <Card><span className="eyebrow">{t('account.completed')}</span><h2>{summary.completed}</h2><p>{t('account.completedDetail')}</p></Card>
-        <Card><span className="eyebrow">{t('account.cancelled')}</span><h2>{summary.cancelled}</h2><p>{t('account.cancelledDetail')}</p></Card>
-        <Card><span className="eyebrow">{t('account.total')}</span><h2>{summary.total}</h2><p>{t('account.totalDetail')}</p></Card>
+      <div className="dashboard-stat-grid customer-overview-stat-grid">
+        <Card className="customer-overview-stat-card"><span className="eyebrow">{t('account.upcoming')}</span><h2>{summary.upcoming}</h2><p>{t('account.upcomingDetail')}</p></Card>
+        <Card className="customer-overview-stat-card"><span className="eyebrow">{t('account.completed')}</span><h2>{summary.completed}</h2><p>{t('account.completedDetail')}</p></Card>
+        <Card className="customer-overview-stat-card"><span className="eyebrow">{t('account.cancelled')}</span><h2>{summary.cancelled}</h2><p>{t('account.cancelledDetail')}</p></Card>
+        <Card className="customer-overview-stat-card"><span className="eyebrow">{t('account.total')}</span><h2>{summary.total}</h2><p>{t('account.totalDetail')}</p></Card>
       </div>
       {bookingError ? <p role="alert" style={{ color: '#b42318' }}>{t('account.bookingUnavailable')}: {bookingError}</p> : null}
 

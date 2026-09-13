@@ -202,17 +202,23 @@
   }
 
   .account-mobile-more-menu {
-    width: min(238px, calc(100vw - 28px));
-    max-height: min(42dvh, 292px);
-    gap: 1px;
-    padding: 5px;
+    width: min(336px, calc(100vw - 28px));
+    max-height: none;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    overflow: visible;
+    padding: 6px;
     border-radius: 14px;
   }
 
   .account-sidebar .account-mobile-more-menu a {
-    min-height: 36px;
-    padding: 6px 9px;
-    font-size: .78rem;
+    min-height: 38px;
+    padding: 7px 8px;
+    font-size: .75rem;
+  }
+
+  .account-sidebar .account-mobile-more-menu a:last-child {
+    grid-column: 1 / -1;
   }
 
   .saved-products-empty-card .state-panel {
@@ -226,5 +232,81 @@
   .saved-products-empty-actions .button {
     width: min(100%, 260px);
     min-width: 0;
+  }
+
+  .customer-social-dashboard .customer-overview-action-grid {
+    grid-template-columns: none !important;
+    grid-auto-flow: column;
+    grid-auto-columns: min(84vw, 320px);
+    gap: 10px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+
+  .customer-social-dashboard .customer-overview-action-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .customer-social-dashboard .customer-overview-action-card {
+    scroll-snap-align: start;
+    padding: 14px;
+  }
+
+  .customer-social-dashboard .customer-overview-action-card h2 {
+    margin: 6px 0 0;
+    font-size: 1.12rem;
+    line-height: 1.2;
+  }
+
+  .customer-social-dashboard .customer-overview-action-card .account-secondary-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    margin: 10px 0 0;
+  }
+
+  .customer-social-dashboard .customer-overview-action-card .account-action-chip {
+    min-height: 40px;
+    padding: 6px 8px;
+    font-size: .72rem;
+  }
+
+  .customer-social-dashboard .customer-overview-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px;
+  }
+
+  .customer-social-dashboard .customer-overview-stat-card {
+    min-height: 0;
+    padding: 12px;
+  }
+
+  .customer-social-dashboard .customer-overview-stat-card h2 {
+    margin: 6px 0 4px;
+    font-size: 1.45rem;
+    line-height: 1;
+  }
+
+  .customer-social-dashboard .customer-overview-stat-card p {
+    margin: 0;
+    font-size: .72rem;
+    line-height: 1.35;
+  }
+
+  .customer-social-dashboard .customer-account-proposal-summary {
+    gap: .65rem;
+    padding: 14px;
+  }
+
+  .customer-social-dashboard .customer-account-proposal-summary h2 {
+    font-size: 1.18rem;
+    line-height: 1.2;
+  }
+
+  .customer-social-dashboard .customer-account-proposal-summary .summary-note {
+    font-size: .76rem;
+    line-height: 1.4;
   }
 }
