@@ -8,6 +8,7 @@ import './responsive-foundation.css';
 import './responsive-admin.css';
 import './products-mobile-polish.css';
 import './account-mobile-navigation.css';
+import './account-real-device-fix.css';
 
 const siteUrl = 'https://www.takeitesee.com';
 const siteDescription = 'Find trusted local services, verified professionals, and service businesses. Compare live marketplace listings and book with confidence on TakeItEsee.';
