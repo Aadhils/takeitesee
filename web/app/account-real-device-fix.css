@@ -3,6 +3,24 @@
    still gets the compact mobile dashboard presentation. */
 
 @media (max-width: 640px) {
+  .customer-social-dashboard {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  .customer-social-dashboard > :not(style) {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .customer-social-dashboard > h1,
+  .customer-social-dashboard > p {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
   .customer-social-dashboard > .dashboard-grid {
     display: flex !important;
     width: 100%;

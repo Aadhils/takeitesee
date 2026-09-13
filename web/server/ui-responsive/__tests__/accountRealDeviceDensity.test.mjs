@@ -15,6 +15,15 @@ test('Account real-device fallback loads after the normal Account mobile layer',
   assert.ok(fallbackIndex > normalIndex, 'real-device fallback must load last');
 });
 
+test('Account overview root contains wide children while keeping local swipe rails', () => {
+  assert.ok(fallbackSource.includes('.customer-social-dashboard {'));
+  assert.ok(fallbackSource.includes('max-width: 100%;'));
+  assert.ok(fallbackSource.includes('min-width: 0;'));
+  assert.ok(fallbackSource.includes('overflow-x: clip;'));
+  assert.ok(fallbackSource.includes('.customer-social-dashboard > :not(style) {'));
+  assert.ok(fallbackSource.includes('overflow-wrap: anywhere;'));
+});
+
 test('Account overview actions use stable structural selectors and a horizontal snap rail on phones', () => {
   assert.ok(fallbackSource.includes('.customer-social-dashboard > .dashboard-grid {'));
   assert.ok(fallbackSource.includes('display: flex !important;'));
