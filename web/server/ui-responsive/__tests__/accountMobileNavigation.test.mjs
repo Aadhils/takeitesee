@@ -78,8 +78,9 @@ test('Account Overview uses compact swipeable action and workspace rails plus a 
   assert.ok(cssSource.includes('scroll-snap-type: x mandatory;'));
   assert.ok(cssSource.includes('.customer-social-dashboard .customer-overview-stat-grid {\n    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;'));
   assert.ok(workspaceCssSource.includes('grid-auto-flow:column'));
-  assert.ok(workspaceCssSource.includes('grid-auto-columns:min(84vw,320px)'));
+  assert.ok(workspaceCssSource.includes('grid-auto-columns:min(82vw,304px)'));
   assert.ok(workspaceCssSource.includes('scroll-snap-type:x mandatory'));
+  assert.ok(workspaceCssSource.includes('scroll-snap-stop:always'));
 });
 
 test('Saved Products empty state keeps the CTA attached and centered while data semantics remain unchanged', () => {
