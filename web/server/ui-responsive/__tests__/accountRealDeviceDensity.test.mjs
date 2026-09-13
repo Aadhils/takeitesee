@@ -3,9 +3,10 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../../../', import.meta.url);
-const [layoutSource, fallbackSource] = await Promise.all([
+const [layoutSource, fallbackSource, workspaceSource] = await Promise.all([
   readFile(new URL('app/layout.tsx', root), 'utf8'),
   readFile(new URL('app/account-real-device-fix.css', root), 'utf8'),
+  readFile(new URL('components/account/WorkspaceSwitcher.module.css', root), 'utf8'),
 ]);
 
 test('Account real-device fallback loads after the normal Account mobile layer', () => {
@@ -24,11 +25,21 @@ test('Account overview root contains wide children while keeping local swipe rai
   assert.ok(fallbackSource.includes('overflow-wrap: anywhere;'));
 });
 
-test('Account overview actions use stable structural selectors and a horizontal snap rail on phones', () => {
+test('Account overview actions use a deliberate snap rail with a next-card peek on phones', () => {
   assert.ok(fallbackSource.includes('.customer-social-dashboard > .dashboard-grid {'));
   assert.ok(fallbackSource.includes('display: flex !important;'));
   assert.ok(fallbackSource.includes('scroll-snap-type: x mandatory;'));
-  assert.ok(fallbackSource.includes('flex: 0 0 min(84vw, 320px);'));
+  assert.ok(fallbackSource.includes('scroll-padding-inline: 2px 18px;'));
+  assert.ok(fallbackSource.includes('flex: 0 0 min(82vw, 304px);'));
+  assert.ok(fallbackSource.includes('scroll-snap-stop: always;'));
+});
+
+test('Account workspace cards use the same stable snap and peek treatment', () => {
+  assert.ok(workspaceSource.includes('grid-auto-columns:min(82vw,304px)'));
+  assert.ok(workspaceSource.includes('scroll-snap-type:x mandatory'));
+  assert.ok(workspaceSource.includes('scroll-padding-inline:2px 18px'));
+  assert.ok(workspaceSource.includes('scroll-snap-stop:always'));
+  assert.ok(workspaceSource.includes('padding:0 18px 6px 2px'));
 });
 
 test('Account booking metrics stay as a compact 2 by 2 grid on phones', () => {
