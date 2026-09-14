@@ -1,0 +1,88 @@
+.productsJourney {
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.productsJourney :global(.provider-page-heading),
+.productsJourney :global(.provider-page-heading) > div,
+.productsJourney :global(.card),
+.productsJourney :global(.alert),
+.productsJourney section,
+.productsJourney form,
+.productsJourney label,
+.productsJourney input,
+.productsJourney textarea,
+.productsJourney select {
+  min-width: 0;
+}
+
+.productsJourney :global(.provider-page-heading) h1,
+.productsJourney :global(.provider-page-heading) p,
+.productsJourney :global(.card) h2,
+.productsJourney :global(.card) p,
+.productsJourney :global(.card) strong,
+.productsJourney :global(.card) span,
+.productsJourney :global(.alert),
+.productsJourney label,
+.productsJourney a {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.productsJourney input,
+.productsJourney textarea,
+.productsJourney select {
+  width: 100%;
+  max-width: 100%;
+}
+
+.productsJourney :global(.button) {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.productsJourney :global(.badge) {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.productsJourney img {
+  max-width: 100%;
+}
+
+@media (max-width: 760px) {
+  .productsJourney :global(.provider-page-heading),
+  .productsJourney :global(.card),
+  .productsJourney :global(.alert),
+  .productsJourney section {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .productsJourney :global(.button) {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .productsJourney input,
+  .productsJourney textarea,
+  .productsJourney select {
+    font-size: 16px;
+  }
+
+  .productsJourney textarea {
+    min-height: 8rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .productsJourney {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+}
