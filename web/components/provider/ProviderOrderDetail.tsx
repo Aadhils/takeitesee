@@ -150,6 +150,7 @@ export default function ProviderOrderDetail({ orderId }: { orderId: string }) {
       const payload = await response.json() as { order?: ProductOrder; error?: string };
       if (!response.ok || !payload.order) throw new Error(payload.error || 'Unable to update this order.');
       setNote('');
+      window.dispatchEvent(new Event('provider-product-orders-refresh'));
       await load();
     } catch (transitionError) {
       setError(transitionError instanceof Error ? transitionError.message : 'Unable to update this order.');
