@@ -74,13 +74,13 @@ test('Account Overview uses compact swipeable action and workspace rails plus a 
   assert.ok(authenticatedAccountSource.includes('customer-overview-stat-card'));
   assert.ok(cssSource.includes('.customer-social-dashboard .customer-overview-action-grid {'));
   assert.ok(cssSource.includes('grid-auto-flow: column;'));
-  assert.ok(cssSource.includes('grid-auto-columns: min(89vw, 332px);'));
+  assert.ok(cssSource.includes('grid-auto-columns: min(92vw, 344px);'));
   assert.ok(cssSource.includes('scroll-snap-type: x mandatory;'));
   assert.ok(cssSource.includes('scroll-padding-inline: 2px 14px;'));
   assert.ok(cssSource.includes('scroll-snap-stop: always;'));
   assert.ok(cssSource.includes('.customer-social-dashboard .customer-overview-stat-grid {\n    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;'));
   assert.ok(workspaceCssSource.includes('grid-auto-flow:column'));
-  assert.ok(workspaceCssSource.includes('grid-auto-columns:min(89vw,332px)'));
+  assert.ok(workspaceCssSource.includes('grid-auto-columns:min(92vw,344px)'));
   assert.ok(workspaceCssSource.includes('scroll-snap-type:x mandatory'));
   assert.ok(workspaceCssSource.includes('scroll-snap-stop:always'));
 });
