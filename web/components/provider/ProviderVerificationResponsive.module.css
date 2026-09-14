@@ -1,0 +1,146 @@
+.verificationJourney {
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.verificationJourney :global(.provider-page-heading),
+.verificationJourney :global(.provider-page-heading) > div,
+.verificationJourney :global(.section-heading),
+.verificationJourney :global(.section-heading) > div,
+.verificationJourney :global(.section-stack),
+.verificationJourney :global(.review-details),
+.verificationJourney :global(.review-details) > div,
+.verificationJourney :global(.card),
+.verificationJourney :global(.card) > div,
+.verificationJourney form,
+.verificationJourney label,
+.verificationJourney :global(.field),
+.verificationJourney :global(.field-control) {
+  min-width: 0;
+}
+
+.verificationJourney :global(.provider-page-heading) h1,
+.verificationJourney :global(.provider-page-heading) p,
+.verificationJourney :global(.section-heading) h2,
+.verificationJourney :global(.card) h2,
+.verificationJourney :global(.card) p,
+.verificationJourney :global(.card) strong,
+.verificationJourney :global(.card) span,
+.verificationJourney :global(.alert),
+.verificationJourney :global(.summary-note),
+.verificationJourney :global(.review-details) dt,
+.verificationJourney :global(.review-details) dd,
+.verificationJourney a,
+.verificationJourney label {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.verificationJourney :global(.field),
+.verificationJourney :global(.field-control),
+.verificationJourney input,
+.verificationJourney select,
+.verificationJourney textarea {
+  max-width: 100%;
+}
+
+.verificationJourney :global(.field-control),
+.verificationJourney select,
+.verificationJourney textarea {
+  width: 100%;
+}
+
+.verificationJourney input[type='file'] {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+}
+
+.verificationJourney :global(.button) {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.verificationJourney :global(.text-link) {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.verificationJourney :global(.review-details) {
+  width: 100%;
+}
+
+.verificationJourney :global(.review-details) dd {
+  margin-inline-start: 0;
+}
+
+@media (max-width: 900px) {
+  .verificationJourney :global(.section-heading) {
+    align-items: flex-start;
+    gap: .75rem;
+  }
+
+  .verificationJourney :global(.review-details) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .verificationJourney :global(.provider-page-heading),
+  .verificationJourney :global(.section-heading) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .verificationJourney :global(.section-heading) > :global(.badge) {
+    align-self: flex-start;
+  }
+
+  .verificationJourney :global(.review-details) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .verificationJourney :global(.card),
+  .verificationJourney :global(.section-stack) {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .verificationJourney :global(.card) :global(.button),
+  .verificationJourney form :global(.button) {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .verificationJourney :global(.card) :global(.text-link) {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .verificationJourney :global(.section-heading) :global(.badge) {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .verificationJourney input[type='file'] {
+    display: block;
+  }
+
+  .verificationJourney textarea {
+    min-height: 8rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .verificationJourney {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+}
