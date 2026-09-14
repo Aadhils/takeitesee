@@ -1,0 +1,142 @@
+.setupJourney {
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.setupJourney :global(.provider-page-heading),
+.setupJourney :global(.provider-page-heading) > div,
+.setupJourney :global(.section-heading),
+.setupJourney :global(.section-heading) > div,
+.setupJourney :global(.provider-profile-grid),
+.setupJourney :global(.provider-profile-card),
+.setupJourney :global(.section-stack),
+.setupJourney :global(.card),
+.setupJourney :global(.card) > div,
+.setupJourney form,
+.setupJourney label,
+.setupJourney :global(.field),
+.setupJourney :global(.field-control) {
+  min-width: 0;
+}
+
+.setupJourney :global(.provider-page-heading) h1,
+.setupJourney :global(.provider-page-heading) p,
+.setupJourney :global(.section-heading) h2,
+.setupJourney :global(.card) h2,
+.setupJourney :global(.card) p,
+.setupJourney :global(.card) strong,
+.setupJourney :global(.card) span,
+.setupJourney :global(.alert),
+.setupJourney :global(.summary-note),
+.setupJourney a,
+.setupJourney label {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.setupJourney :global(.field),
+.setupJourney :global(.field-control),
+.setupJourney select,
+.setupJourney input,
+.setupJourney textarea {
+  max-width: 100%;
+}
+
+.setupJourney :global(.field-control),
+.setupJourney select,
+.setupJourney input,
+.setupJourney textarea {
+  width: 100%;
+}
+
+.setupJourney :global(.button) {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.setupJourney :global(.text-link) {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.setupJourney :global(.provider-profile-grid) {
+  align-items: stretch;
+}
+
+.setupJourney :global(.provider-profile-card) {
+  height: 100%;
+}
+
+@media (max-width: 900px) {
+  .setupJourney :global(.provider-profile-grid) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .setupJourney :global(.section-heading) {
+    align-items: flex-start;
+    gap: .75rem;
+  }
+}
+
+@media (max-width: 760px) {
+  .setupJourney :global(.provider-page-heading),
+  .setupJourney :global(.section-heading) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .setupJourney :global(.section-heading) > :global(.badge) {
+    align-self: flex-start;
+  }
+
+  .setupJourney :global(.provider-profile-grid) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .setupJourney :global(.card) {
+    min-width: 0;
+  }
+
+  .setupJourney :global(.section-stack) {
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .setupJourney :global(.card) :global(.button) {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .setupJourney :global(.card) :global(.text-link) {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .setupJourney form :global(.button) {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .setupJourney :global(.section-heading) :global(.badge) {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .setupJourney :global(.summary-note),
+  .setupJourney :global(.field-error) {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .setupJourney {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+}
