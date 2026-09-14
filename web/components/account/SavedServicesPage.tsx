@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import LocalizedAccountShell from './LocalizedAccountShell';
+import styles from './CustomerSavedItemsResponsive.module.css';
 import { Badge, Button, Card, EmptyState } from '../ui/primitives';
 import { useLanguage } from '../i18n/LanguageProvider';
 
@@ -81,7 +82,7 @@ export default function SavedServicesPage() {
     catch { return `${currency} ${amount.toFixed(2)}`; }
   };
 
-  return <LocalizedAccountShell active="/saved-services">
+  return <div className={styles.savedItemsJourney}><LocalizedAccountShell active="/saved-services">
     <section className="account-page-heading">
       <span className="eyebrow">{tamil ? 'சேவை shortlist' : 'Service shortlist'}</span>
       <h1>{tamil ? 'சேமித்த சேவைகள்' : 'Saved services'}</h1>
@@ -117,5 +118,5 @@ export default function SavedServicesPage() {
         </Card>;
       })}
     </div>}
-  </LocalizedAccountShell>;
+  </LocalizedAccountShell></div>;
 }
