@@ -3,9 +3,11 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   margin-top: 24px;
+  min-width: 0;
 }
 
 .item {
+  min-width: 0;
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -14,6 +16,7 @@
 
 .preview {
   display: grid;
+  min-width: 0;
   min-height: 220px;
   place-items: center;
   overflow: hidden;
@@ -25,6 +28,7 @@
 .preview video {
   display: block;
   width: 100%;
+  max-width: 100%;
   height: 280px;
   object-fit: cover;
   background: #0f172a;
@@ -35,27 +39,60 @@
 }
 
 .unavailable {
+  max-width: 100%;
   padding: 30px;
   color: var(--color-ink-muted);
   font-size: .82rem;
   text-align: center;
+  overflow-wrap: anywhere;
 }
 
 .body {
   display: grid;
+  min-width: 0;
   gap: 14px;
   padding: 18px;
 }
 
-.body strong {
+.body strong,
+.body p,
+.body span,
+.body small,
+.editor label {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.body :global(.section-heading),
+.body :global(.section-heading) > div,
+.body :global(.button-row) {
+  min-width: 0;
+}
+
+.body :global(.button-row) {
+  flex-wrap: wrap;
+}
+
+.body :global(.badge) {
+  max-width: 100%;
+  white-space: normal;
   overflow-wrap: anywhere;
 }
 
 .editor {
   display: grid;
+  min-width: 0;
   gap: 14px;
   border-top: 1px solid var(--color-border);
   padding-top: 16px;
+}
+
+.editor input,
+.editor textarea,
+.editor select {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 @media (max-width: 760px) {
@@ -66,5 +103,44 @@
   .preview img,
   .preview video {
     height: 240px;
+  }
+
+  .body :global(.section-heading) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .65rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .body {
+    padding: 14px;
+  }
+
+  .preview {
+    min-height: 180px;
+  }
+
+  .preview img,
+  .preview video {
+    height: 210px;
+  }
+
+  .body :global(.button-row) {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .body :global(.button-row) :global(.button) {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .editor input,
+  .editor textarea,
+  .editor select {
+    font-size: 16px;
   }
 }

@@ -1,0 +1,114 @@
+.portfolioJourney {
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.portfolioJourney :global(.provider-page-heading),
+.portfolioJourney :global(.provider-page-heading) > div,
+.portfolioJourney :global(.provider-profile-card),
+.portfolioJourney :global(.section-heading),
+.portfolioJourney :global(.section-heading) > div,
+.portfolioJourney :global(.section-stack),
+.portfolioJourney :global(.button-row),
+.portfolioJourney :global(.field),
+.portfolioJourney :global(.field-control),
+.portfolioJourney form,
+.portfolioJourney label,
+.portfolioJourney input,
+.portfolioJourney textarea,
+.portfolioJourney select {
+  min-width: 0;
+}
+
+.portfolioJourney :global(.provider-page-heading) h1,
+.portfolioJourney :global(.provider-page-heading) p,
+.portfolioJourney :global(.provider-profile-card) p,
+.portfolioJourney :global(.provider-profile-card) strong,
+.portfolioJourney :global(.provider-profile-card) span,
+.portfolioJourney :global(.summary-note),
+.portfolioJourney :global(.alert),
+.portfolioJourney label {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.portfolioJourney input,
+.portfolioJourney textarea,
+.portfolioJourney select,
+.portfolioJourney :global(.field),
+.portfolioJourney :global(.field-control) {
+  width: 100%;
+  max-width: 100%;
+}
+
+.portfolioJourney input[type='file'] {
+  min-height: 44px;
+  padding: .55rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.portfolioJourney :global(.button-row) {
+  flex-wrap: wrap;
+}
+
+.portfolioJourney :global(.button) {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.portfolioJourney :global(.badge) {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+  .portfolioJourney :global(.section-heading) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .75rem;
+  }
+
+  .portfolioJourney :global(.section-heading) > :global(.button-row),
+  .portfolioJourney :global(.section-heading) > :global(.badge) {
+    align-self: stretch;
+  }
+
+  .portfolioJourney :global(.provider-profile-card),
+  .portfolioJourney :global(.section-stack) {
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .portfolioJourney :global(.button-row) {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .portfolioJourney :global(.button-row) :global(.button) {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .portfolioJourney input,
+  .portfolioJourney textarea,
+  .portfolioJourney select {
+    font-size: 16px;
+  }
+
+  .portfolioJourney input[type='file'] {
+    padding: .65rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .portfolioJourney {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+}
