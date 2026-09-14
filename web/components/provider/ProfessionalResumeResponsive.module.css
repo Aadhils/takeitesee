@@ -1,0 +1,93 @@
+.resumeJourney {
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.resumeJourney :global(.provider-page-heading),
+.resumeJourney :global(.provider-page-heading) > div,
+.resumeJourney :global(.card),
+.resumeJourney :global(.alert),
+.resumeJourney form,
+.resumeJourney label,
+.resumeJourney input,
+.resumeJourney textarea,
+.resumeJourney select {
+  min-width: 0;
+}
+
+.resumeJourney :global(.provider-page-heading) h1,
+.resumeJourney :global(.provider-page-heading) p,
+.resumeJourney :global(.card) p,
+.resumeJourney :global(.card) strong,
+.resumeJourney :global(.card) span,
+.resumeJourney :global(.alert),
+.resumeJourney label {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.resumeJourney input,
+.resumeJourney textarea,
+.resumeJourney select {
+  width: 100%;
+  max-width: 100%;
+}
+
+.resumeJourney :global(.button) {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.resumeJourney :global(.badge) {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.resumeJourney a[href='/provider/resume/export'] {
+  min-height: 44px;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: normal;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+  .resumeJourney :global(.provider-page-heading),
+  .resumeJourney :global(.card),
+  .resumeJourney :global(.alert) {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .resumeJourney :global(.button-row),
+  .resumeJourney :global(.actions) {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .resumeJourney :global(.button-row) :global(.button),
+  .resumeJourney :global(.actions) :global(.button),
+  .resumeJourney a[href='/provider/resume/export'] {
+    width: 100%;
+  }
+
+  .resumeJourney input,
+  .resumeJourney textarea,
+  .resumeJourney select {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 420px) {
+  .resumeJourney {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+}
