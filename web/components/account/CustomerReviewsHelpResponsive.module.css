@@ -1,0 +1,171 @@
+.reviewsHelpJourney {
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.reviewsHelpJourney :global(.discovery-page),
+.reviewsHelpJourney :global(.page-intro),
+.reviewsHelpJourney :global(.card),
+.reviewsHelpJourney :global(.service-grid),
+.reviewsHelpJourney :global(.discovery-card),
+.reviewsHelpJourney :global(.discovery-card-content),
+.reviewsHelpJourney :global(.card-meta),
+.reviewsHelpJourney :global(.card-footer),
+.reviewsHelpJourney :global(.account-section),
+.reviewsHelpJourney :global(.section-heading),
+.reviewsHelpJourney :global(.help-topic-grid),
+.reviewsHelpJourney :global(.help-topic-card),
+.reviewsHelpJourney :global(.faq-card),
+.reviewsHelpJourney :global(.faq-list),
+.reviewsHelpJourney :global(.support-cta),
+.reviewsHelpJourney :global(.button-row) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.reviewsHelpJourney :global(.page-intro) h1,
+.reviewsHelpJourney :global(.page-intro) p,
+.reviewsHelpJourney :global(.card) h2,
+.reviewsHelpJourney :global(.card) h3,
+.reviewsHelpJourney :global(.card) p,
+.reviewsHelpJourney :global(.card) strong,
+.reviewsHelpJourney :global(.card) span,
+.reviewsHelpJourney :global(.card) a,
+.reviewsHelpJourney :global(.faq-list) summary,
+.reviewsHelpJourney :global(.faq-list) p,
+.reviewsHelpJourney :global(.card-description),
+.reviewsHelpJourney :global(.summary-note) {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.reviewsHelpJourney :global(.page-intro) {
+  max-width: 58rem;
+}
+
+.reviewsHelpJourney :global(.card-meta),
+.reviewsHelpJourney :global(.card-footer),
+.reviewsHelpJourney :global(.section-heading),
+.reviewsHelpJourney :global(.support-cta),
+.reviewsHelpJourney :global(.button-row) {
+  flex-wrap: wrap;
+}
+
+.reviewsHelpJourney :global(.card-meta) {
+  gap: .55rem .75rem;
+}
+
+.reviewsHelpJourney :global(.card-footer) {
+  gap: .75rem;
+}
+
+.reviewsHelpJourney :global(.button) {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+}
+
+.reviewsHelpJourney :global(.help-topic-grid) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.reviewsHelpJourney :global(.help-topic-card) {
+  min-width: 0;
+}
+
+.reviewsHelpJourney :global(.help-topic-card) :global(.text-link) {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.reviewsHelpJourney :global(.faq-list) details {
+  min-width: 0;
+}
+
+.reviewsHelpJourney :global(.faq-list) summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.reviewsHelpJourney :global(.support-cta) > div {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .reviewsHelpJourney :global(.help-topic-grid) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .reviewsHelpJourney :global(.page-intro) h1 {
+    font-size: clamp(2rem, 10vw, 3rem);
+    line-height: 1.04;
+  }
+
+  .reviewsHelpJourney :global(.service-grid),
+  .reviewsHelpJourney :global(.help-topic-grid) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .reviewsHelpJourney :global(.help-topic-card) {
+    min-height: 0;
+  }
+
+  .reviewsHelpJourney :global(.section-heading),
+  .reviewsHelpJourney :global(.support-cta) {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 560px) {
+  .reviewsHelpJourney :global(.discovery-page) {
+    gap: 1rem;
+  }
+
+  .reviewsHelpJourney :global(.card),
+  .reviewsHelpJourney :global(.help-topic-card),
+  .reviewsHelpJourney :global(.faq-card) {
+    padding: clamp(1rem, 4.5vw, 1.25rem);
+  }
+
+  .reviewsHelpJourney :global(.card-meta),
+  .reviewsHelpJourney :global(.card-footer),
+  .reviewsHelpJourney :global(.section-heading),
+  .reviewsHelpJourney :global(.support-cta) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .reviewsHelpJourney :global(.card-footer) :global(.button),
+  .reviewsHelpJourney :global(.support-cta) > :global(.button),
+  .reviewsHelpJourney :global(.button-row) :global(.button),
+  .reviewsHelpJourney :global(.button-row) > a,
+  .reviewsHelpJourney :global(.help-topic-card) :global(.text-link) {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .reviewsHelpJourney :global(.button-row) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+  }
+
+  .reviewsHelpJourney :global(.faq-list) summary {
+    padding-block: .75rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .reviewsHelpJourney {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+}
