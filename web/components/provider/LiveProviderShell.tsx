@@ -19,6 +19,7 @@ type ProviderContext = {
   location?: string | null;
   pending_booking_count: number;
   unread_lead_count: number;
+  requested_product_order_count: number;
   trust_status: TrustStatus;
   trust_reason?: string | null;
 };
@@ -110,6 +111,31 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
   }, [active]);
 
   useEffect(() => {
+    if (provider?.provider_type !== 'business') return;
+    let cancelled = false;
+    const refresh = () => {
+      void fetch('/api/provider/context', { cache: 'no-store' })
+        .then(async (response) => response.ok ? response.json() as Promise<{ provider?: ProviderContext }> : null)
+        .then((payload) => {
+          if (!cancelled && payload?.provider?.provider_type === 'business') setProvider(payload.provider);
+        })
+        .catch(() => {});
+    };
+    const visibilityRefresh = () => { if (document.visibilityState === 'visible') refresh(); };
+    const timer = window.setInterval(refresh, 60_000);
+    window.addEventListener('focus', refresh);
+    window.addEventListener('provider-product-orders-refresh', refresh);
+    document.addEventListener('visibilitychange', visibilityRefresh);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('provider-product-orders-refresh', refresh);
+      document.removeEventListener('visibilitychange', visibilityRefresh);
+    };
+  }, [provider?.provider_type]);
+
+  useEffect(() => {
     const markSeen = () => setProvider((current) => current ? { ...current, unread_lead_count: 0 } : current);
     window.addEventListener('provider-leads-seen', markSeen);
     return () => { window.removeEventListener('provider-leads-seen', markSeen); };
@@ -140,6 +166,7 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
   const avatar = provider?.initials ?? 'P';
   const pending = provider?.pending_booking_count ?? 0;
   const unreadLeads = provider?.unread_lead_count ?? 0;
+  const requestedProductOrders = provider?.requested_product_order_count ?? 0;
   const countLabel = (value: number) => value > 99 ? '99+' : String(value);
   const providerKind = provider ? (provider.provider_type === 'business' ? t('profile.business') : t('profile.professional')) : null;
   const workspaceIdentity = providerKind ? `${providerKind} · ${workspaceState(provider)}` : workspaceState(provider);
@@ -166,6 +193,7 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
     {link.label}
     {link.href === '/provider/leads' && unreadLeads > 0 ? <span className="provider-nav-count">{countLabel(unreadLeads)}</span> : null}
     {link.href === '/provider/bookings' && pending > 0 ? <span className="provider-nav-count">{countLabel(pending)}</span> : null}
+    {link.href === '/provider/orders' && requestedProductOrders > 0 ? <span className="provider-nav-count">{countLabel(requestedProductOrders)}</span> : null}
   </Link>;
 
   const mobilePrimaryLinks = [
@@ -242,7 +270,10 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
         <details className="provider-mobile-more-tools">
           <summary>{tamil ? 'மேலும் கருவிகள்' : 'More tools'}</summary>
           <div className="provider-mobile-more-grid">
-            {mobileMoreLinks.map((link) => <Link href={link.href} className={active === link.href ? 'provider-mobile-more-active' : ''} key={link.href}>{link.label}</Link>)}
+            {mobileMoreLinks.map((link) => <Link href={link.href} className={active === link.href ? 'provider-mobile-more-active' : ''} key={link.href}>
+              {link.label}
+              {link.href === '/provider/orders' && requestedProductOrders > 0 ? <span className="provider-nav-count">{countLabel(requestedProductOrders)}</span> : null}
+            </Link>)}
             <Link href="/account#workspaces">{tamil ? 'என் Profiles' : 'My profiles'}</Link>
             {publicProfileHref ? <Link href={publicProfileHref} target="_blank" rel="noreferrer">{publicProfileLabel} ↗</Link> : null}
             {showPublicReadinessLink ? <Link href="/provider/public-readiness">{publicProfileSetupLabel}</Link> : null}
@@ -296,8 +327,9 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
         .provider-mobile-more-tools[open] summary::after { content: ' −'; }
         .provider-mobile-more-grid { display: flex; gap: 6px; overflow-x: auto; padding: 6px 2px 2px; scrollbar-width: none; }
         .provider-mobile-more-grid::-webkit-scrollbar { display: none; }
-        .provider-mobile-more-grid a { flex: 0 0 auto; min-height: 34px; display: inline-flex; align-items: center; padding: 7px 10px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); color: var(--color-ink-muted); font-size: .7rem; font-weight: 700; white-space: nowrap; }
+        .provider-mobile-more-grid a { flex: 0 0 auto; min-height: 34px; display: inline-flex; align-items: center; gap: 5px; padding: 7px 10px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); color: var(--color-ink-muted); font-size: .7rem; font-weight: 700; white-space: nowrap; }
         .provider-mobile-more-grid a.provider-mobile-more-active { border-color: #d8d2ff; background: var(--color-selected); color: var(--color-primary-strong); }
+        .provider-mobile-more-grid .provider-nav-count { display: inline-grid; min-width: 17px; height: 17px; place-items: center; padding: 0 4px; border-radius: 999px; background: var(--color-primary); color: #fff; font-size: .58rem; font-weight: 800; line-height: 1; }
       }
 
       @media (max-width: 390px) {
