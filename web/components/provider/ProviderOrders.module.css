@@ -1,0 +1,435 @@
+.page {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.error {
+  margin: 0;
+  color: var(--danger, #b42318);
+}
+
+.emptyCard {
+  min-width: 0;
+}
+
+.emptyCard :global(.state-panel) {
+  min-height: 0;
+  padding: 1.4rem 1rem;
+}
+
+.lifecycleSection {
+  display: grid;
+  gap: .55rem;
+}
+
+.lifecycleSummary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .65rem;
+}
+
+.lifecycleButton {
+  appearance: none;
+  display: grid;
+  justify-items: center;
+  gap: .2rem;
+  min-width: 0;
+  min-height: 64px;
+  padding: .72rem .8rem;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 1rem;
+  background: var(--surface, #fff);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.lifecycleButton span {
+  min-width: 0;
+  color: var(--text-muted, #667085);
+  font-size: .82rem;
+  overflow-wrap: anywhere;
+}
+
+.lifecycleButton strong {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.lifecycleButtonActive {
+  border-color: var(--color-primary, #6d4aff);
+  background: var(--color-secondary, #f3efff);
+  box-shadow: 0 0 0 1px var(--color-primary, #6d4aff);
+}
+
+.lifecycleButtonActive span {
+  color: var(--color-primary, #6d4aff);
+}
+
+.lifecycleMeta {
+  margin: 0;
+  color: var(--text-muted, #667085);
+  font-size: .86rem;
+  text-align: right;
+}
+
+.filteredEmptyCard {
+  display: grid;
+  gap: .25rem;
+  padding: 1rem 1.1rem;
+}
+
+.filteredEmptyCard strong,
+.filteredEmptyCard p {
+  margin: 0;
+}
+
+.filteredEmptyCard p {
+  color: var(--text-muted, #667085);
+}
+
+.ordersList {
+  display: grid;
+  gap: 1rem;
+}
+
+.orderAnchor {
+  min-width: 0;
+  scroll-margin-top: 6rem;
+}
+
+.orderCard {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.orderHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: start;
+}
+
+.orderTitle {
+  min-width: 0;
+}
+
+.orderTitle h2 {
+  margin: .3rem 0;
+  overflow-wrap: anywhere;
+}
+
+.orderTitle p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .75rem;
+}
+
+.summaryGrid > div {
+  display: grid;
+  gap: .25rem;
+  min-width: 0;
+  padding: .8rem .9rem;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: .9rem;
+  background: var(--surface-subtle, #fafafa);
+}
+
+.summaryGrid span {
+  color: var(--text-muted, #667085);
+  font-size: .82rem;
+}
+
+.summaryGrid strong {
+  overflow-wrap: anywhere;
+}
+
+.latestActivity {
+  margin: 0;
+  color: var(--text-muted, #667085);
+  overflow-wrap: anywhere;
+}
+
+.orderActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .65rem;
+}
+
+.detailPage {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.detailHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: start;
+}
+
+.detailHero h1 {
+  margin: .35rem 0;
+  overflow-wrap: anywhere;
+}
+
+.detailHero p {
+  margin: 0;
+  color: var(--text-muted, #667085);
+  overflow-wrap: anywhere;
+}
+
+.detailLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(17rem, 22rem);
+  gap: 1rem;
+  align-items: start;
+}
+
+.detailMain,
+.detailAside {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.detailAside {
+  position: sticky;
+  top: 6rem;
+}
+
+.detailCard {
+  display: grid;
+  gap: .9rem;
+  min-width: 0;
+}
+
+.detailCard h2 {
+  margin: 0;
+}
+
+.infoRows {
+  display: grid;
+}
+
+.infoRow {
+  display: grid;
+  grid-template-columns: minmax(8rem, .8fr) minmax(0, 1.2fr);
+  gap: 1rem;
+  align-items: start;
+  padding: .72rem 0;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+}
+
+.infoRow:last-child {
+  border-bottom: 0;
+}
+
+.infoRow span {
+  color: var(--text-muted, #667085);
+}
+
+.infoRow strong {
+  min-width: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.notes {
+  display: grid;
+  gap: .7rem;
+}
+
+.noteBox {
+  padding: .9rem;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: .9rem;
+}
+
+.noteBox strong,
+.noteBox p {
+  margin: 0;
+}
+
+.noteBox p {
+  margin-top: .3rem;
+  color: var(--text-muted, #667085);
+  overflow-wrap: anywhere;
+}
+
+.timeline {
+  display: grid;
+  gap: .8rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timelineItem {
+  position: relative;
+  display: grid;
+  gap: .25rem;
+  padding: 0 0 .9rem 1.2rem;
+  border-left: 3px solid var(--border, #e5e7eb);
+}
+
+.timelineItem:last-child {
+  padding-bottom: 0;
+}
+
+.timelineItem::before {
+  content: '';
+  position: absolute;
+  left: -.42rem;
+  top: .2rem;
+  width: .65rem;
+  height: .65rem;
+  border-radius: 999px;
+  background: var(--color-primary, #6d4aff);
+}
+
+.timelineHeading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+  align-items: center;
+}
+
+.timelineItem p {
+  margin: 0;
+  color: var(--text-muted, #667085);
+  overflow-wrap: anywhere;
+}
+
+.timelineMeta {
+  font-size: .86rem;
+}
+
+.detailActions {
+  display: grid;
+  gap: .65rem;
+}
+
+.detailActions :global(.button) {
+  width: 100%;
+  justify-content: center;
+}
+
+.flowNotice {
+  margin: 0;
+  color: var(--text-muted, #667085);
+  font-size: .9rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 760px) {
+  .lifecycleSummary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .lifecycleButton {
+    min-height: 58px;
+    padding: .65rem .7rem;
+  }
+
+  .lifecycleMeta {
+    text-align: left;
+  }
+
+  .orderHeader,
+  .detailHero {
+    grid-template-columns: 1fr;
+  }
+
+  .orderHeader :global(.badge),
+  .detailHero :global(.badge) {
+    justify-self: start;
+  }
+
+  .summaryGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .summaryGrid > div:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .orderActions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .orderActions :global(.button) {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .detailLayout {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .detailAside {
+    position: static;
+    order: -1;
+    width: 100%;
+  }
+
+  .detailMain {
+    width: 100%;
+  }
+
+  .infoRow {
+    grid-template-columns: 1fr;
+    gap: .25rem;
+  }
+
+  .infoRow strong {
+    text-align: left;
+  }
+}
+
+@media (max-width: 480px) {
+  .emptyCard :global(.state-panel) {
+    padding: 1rem .4rem;
+  }
+
+  .lifecycleButton span {
+    font-size: .78rem;
+  }
+
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .summaryGrid > div:first-child {
+    grid-column: auto;
+  }
+
+  .orderCard,
+  .detailCard {
+    gap: .8rem;
+  }
+
+  .summaryGrid > div {
+    padding: .7rem .8rem;
+  }
+
+  .timelineItem {
+    padding-left: 1rem;
+  }
+}
