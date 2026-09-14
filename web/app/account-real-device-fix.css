@@ -41,8 +41,8 @@
   }
 
   .customer-social-dashboard > .dashboard-grid > .card {
-    flex: 0 0 min(92vw, 344px);
-    width: min(92vw, 344px);
+    flex: 0 0 calc(100% - 10px);
+    width: calc(100% - 10px);
     min-width: 0;
     scroll-snap-align: start;
     scroll-snap-stop: always;
