@@ -1,0 +1,194 @@
+.booking-flow,
+.booking-review-page {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.booking-flow .booking-flow-header,
+.booking-flow .booking-layout,
+.booking-flow .booking-controls,
+.booking-flow .booking-summary,
+.booking-review-page .review-page-heading,
+.booking-review-page .review-layout,
+.booking-review-page .review-main,
+.booking-review-page .review-section,
+.booking-review-page .review-aside,
+.booking-review-page .review-price {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.booking-flow .booking-flow-header h1,
+.booking-flow .booking-flow-header p,
+.booking-flow .booking-summary h2,
+.booking-flow .booking-summary dd,
+.booking-flow .summary-note,
+.booking-review-page .review-page-heading h1,
+.booking-review-page .review-page-heading p,
+.booking-review-page .review-section h2,
+.booking-review-page .review-details dd,
+.booking-review-page .detail-copy,
+.booking-review-page .terms-row span,
+.booking-review-page .explore-disclaimer,
+.booking-review-page .field-error {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.booking-flow .date-options,
+.booking-flow .time-options {
+  min-width: 0;
+}
+
+.booking-flow .date-option,
+.booking-flow .time-option,
+.booking-flow .button,
+.booking-review-page .button,
+.booking-review-page .text-link {
+  min-height: 44px;
+  max-width: 100%;
+}
+
+.booking-flow .date-option,
+.booking-flow .time-option {
+  min-width: 0;
+}
+
+.booking-flow .booking-summary .section-heading,
+.booking-review-page .review-section .section-heading {
+  flex-wrap: wrap;
+}
+
+.booking-review-page .terms-row {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  align-items: flex-start;
+}
+
+.booking-review-page .terms-row input {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+}
+
+.booking-review-page .field-control {
+  max-width: 100%;
+}
+
+@media (max-width: 760px) {
+  .booking-flow .booking-layout,
+  .booking-review-page .review-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .booking-review-page .review-aside {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .booking-flow,
+  .booking-review-page {
+    gap: 20px;
+  }
+
+  .booking-flow .booking-flow-header h1,
+  .booking-review-page .review-page-heading h1 {
+    font-size: clamp(2rem, 10vw, 3rem);
+    line-height: 1.04;
+  }
+
+  .booking-flow .date-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .booking-flow .time-options {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .booking-flow .booking-summary .section-heading,
+  .booking-review-page .review-section .section-heading {
+    align-items: flex-start;
+  }
+
+  .booking-review-page .review-details div {
+    min-width: 0;
+  }
+
+  .booking-review-page .field-control {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 560px) {
+  .booking-flow .booking-controls > .button,
+  .booking-flow .booking-controls > a.button,
+  .booking-review-page .review-aside > .button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .booking-flow .booking-summary,
+  .booking-review-page .review-section,
+  .booking-review-page .review-price {
+    padding: clamp(16px, 4.5vw, 20px);
+  }
+
+  .booking-flow .booking-summary .section-heading,
+  .booking-review-page .review-section .section-heading {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .booking-flow .booking-summary .badge,
+  .booking-review-page .review-section .badge {
+    align-self: flex-start;
+  }
+
+  .booking-review-page .review-section .text-link {
+    display: inline-flex;
+    width: 100%;
+    align-items: center;
+  }
+
+  .booking-flow .booking-summary dl div,
+  .booking-review-page .review-details div {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .booking-flow .booking-summary dd,
+  .booking-review-page .review-details dd {
+    max-width: 100%;
+    width: 100%;
+    text-align: left;
+  }
+}
+
+@media (max-width: 480px) {
+  .booking-flow .time-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .booking-flow .date-option,
+  .booking-flow .time-option {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 390px) {
+  .booking-flow .date-options {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .booking-flow,
+  .booking-review-page {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+}
