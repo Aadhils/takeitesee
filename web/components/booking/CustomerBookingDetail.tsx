@@ -10,6 +10,7 @@ import CustomerPaymentPanel from './CustomerPaymentPanel';
 import { cancelBookingThroughConfiguredRepository, getBookingThroughConfiguredRepository } from '../../services/booking-repository';
 import type { CustomerBooking } from '../../types/booking-domain';
 import { useOperationalTranslations } from '../i18n/OperationalTranslations';
+import styles from './CustomerBookingDetail.module.css';
 
 type SavedReview = { id: string; rating: number; comment?: string | null };
 type CloseoutWindow = { review_window_open: boolean; review_due_at?: string; state: string; attendance_outcome: string };
@@ -107,22 +108,22 @@ export default function CustomerBookingDetail({ bookingId }: { bookingId: string
     finally { setSubmitting(false); }
   };
 
-  return <div className="booking-detail-page">
-    <section className="booking-detail-heading">
+  return <div className={`booking-detail-page ${styles.page}`}>
+    <section className={`booking-detail-heading ${styles.heading}`}>
       <div><span className="eyebrow">{booking.bookingReference}</span><h1>{booking.serviceName}</h1><p>{booking.bookingDate} · {booking.startTime} {booking.timezone}</p></div>
       <Badge tone={booking.status === 'cancelled' ? 'danger' : booking.status === 'completed' ? 'success' : 'info'}>{booking.status === 'rescheduled' ? t('book.rescheduleRequested') : status(booking.status)}</Badge>
     </section>
 
-    <div className="booking-detail-layout">
-      <main>
-        <Card className="detail-status-card">
+    <div className={`booking-detail-layout ${styles.layout}`}>
+      <main className={styles.main}>
+        <Card className={`detail-status-card ${styles.statusCard}`}>
           <div className="section-heading"><div><span className="eyebrow">{t('book.currentStatus')}</span><h2>{booking.status === 'rescheduled' ? t('book.awaitingProvider') : status(booking.status)}</h2></div><Badge tone="neutral">{t('book.paymentPrefix')} {status(booking.paymentStatus)}</Badge></div>
           <p className="detail-copy">{t('book.backendNote')}</p>
           {booking.status === 'rescheduled' ? <p className="detail-copy">{t('book.rescheduleHelp')}</p> : null}
           {booking.status === 'cancelled' ? <p className="detail-copy">{t('book.cancelledHelp')}</p> : null}
         </Card>
 
-        <Card className="policy-card"><span className="eyebrow">{t('book.information')}</span><dl className="review-details"><div><dt>{t('book.provider')}</dt><dd>{providerLabel}</dd></div><div><dt>{t('book.dateTime')}</dt><dd>{booking.bookingDate}, {booking.startTime} {booking.timezone}</dd></div><div><dt>{t('common.duration')}</dt><dd>{booking.durationMinutes} {t('common.minutes')}</dd></div><div><dt>{t('common.location')}</dt><dd>{booking.location}</dd></div><div><dt>{t('book.price')}</dt><dd>{money(booking.basePrice, booking.currency)}</dd></div></dl></Card>
+        <Card className={`policy-card ${styles.informationCard}`}><span className="eyebrow">{t('book.information')}</span><dl className="review-details"><div><dt>{t('book.provider')}</dt><dd>{providerLabel}</dd></div><div><dt>{t('book.dateTime')}</dt><dd>{booking.bookingDate}, {booking.startTime} {booking.timezone}</dd></div><div><dt>{t('common.duration')}</dt><dd>{booking.durationMinutes} {t('common.minutes')}</dd></div><div><dt>{t('common.location')}</dt><dd>{booking.location}</dd></div><div><dt>{t('book.price')}</dt><dd>{money(booking.basePrice, booking.currency)}</dd></div></dl></Card>
 
         <CustomerPaymentPanel bookingId={booking.bookingId} bookingStatus={booking.status} paymentStatus={booking.paymentStatus} onPaymentUpdated={refreshBooking} />
         <BookingCloseoutPanel bookingId={booking.bookingId} allowSupport viewer="customer" />
@@ -137,7 +138,7 @@ export default function CustomerBookingDetail({ bookingId }: { bookingId: string
         </Card> : null}
       </main>
 
-      <aside className="booking-detail-aside">
+      <aside className={`booking-detail-aside ${styles.aside}`}>
         <Card><span className="eyebrow">{t('book.actions')}</span>{canManage ? <Link href={`/bookings/${encodeURIComponent(booking.bookingId)}/reschedule`} className="button button-secondary">{t('book.reschedule')}</Link> : null}{canManage ? <button type="button" className="button button-secondary" disabled={cancelBusy} onClick={() => setCancelConfirmOpen(true)}>{cancelBusy ? t('book.cancelling') : t('book.cancel')}</button> : null}{cancelError ? <p role="alert" style={{ color: '#b42318' }}>{cancelError}</p> : null}<Link href="/explore" className="button button-secondary">{t('book.findAnother')}</Link></Card>
         <p className="support-note">{t('book.supportNote')}</p>
       </aside>
