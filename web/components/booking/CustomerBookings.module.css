@@ -164,6 +164,49 @@
   }
 }
 
+@media (max-width: 640px) {
+  .bookingGroupEmpty :global(.card) {
+    overflow: hidden;
+  }
+
+  .bookingGroupEmpty :global(.state-panel) {
+    grid-template-columns: 30px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-items: center;
+    justify-items: start;
+    column-gap: 10px !important;
+    row-gap: 2px !important;
+    padding: 12px 14px !important;
+    text-align: left;
+  }
+
+  .bookingGroupEmpty :global(.state-mark) {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .bookingGroupEmpty :global(.state-panel h3) {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: start;
+    margin: 0;
+    font-size: .94rem;
+    line-height: 1.18;
+  }
+
+  .bookingGroupEmpty :global(.state-panel p) {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: start;
+    max-width: none;
+    margin: 0;
+    font-size: .74rem;
+    line-height: 1.32;
+  }
+}
+
 @media (max-width: 380px) {
   .lifecycleNav {
     gap: 5px;
