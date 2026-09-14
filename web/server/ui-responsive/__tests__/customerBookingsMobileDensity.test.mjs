@@ -32,3 +32,12 @@ test('Customer Bookings mobile presentation is compact without changing booking 
   assert.ok(cssSource.includes('.bookingsPage :global(.booking-card)'));
   assert.ok(cssSource.includes('overflow-x: clip'));
 });
+
+test('Customer Bookings phone empty states collapse into compact horizontal rows', () => {
+  assert.ok(cssSource.includes('@media (max-width: 640px)'));
+  assert.ok(cssSource.includes('grid-template-columns: 30px minmax(0, 1fr)'));
+  assert.ok(cssSource.includes('grid-row: 1 / span 2'));
+  assert.ok(cssSource.includes('padding: 12px 14px !important'));
+  assert.ok(cssSource.includes('text-align: left'));
+  assert.ok(cssSource.includes('font-size: .74rem'));
+});
