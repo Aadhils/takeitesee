@@ -1,0 +1,98 @@
+.handleJourney {
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.handleJourney :global(.card),
+.handleJourney :global(.section-heading),
+.handleJourney :global(.section-heading) > div,
+.handleJourney :global(.section-stack),
+.handleJourney :global(.button-row),
+.handleJourney form,
+.handleJourney label,
+.handleJourney :global(.field),
+.handleJourney :global(.field-control) {
+  min-width: 0;
+}
+
+.handleJourney :global(.section-heading) h2,
+.handleJourney :global(.card) p,
+.handleJourney :global(.card) strong,
+.handleJourney :global(.card) span,
+.handleJourney :global(.summary-note),
+.handleJourney :global(.field-error),
+.handleJourney label,
+.handleJourney a {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.handleJourney :global(.field),
+.handleJourney :global(.field-control),
+.handleJourney input {
+  width: 100%;
+  max-width: 100%;
+}
+
+.handleJourney :global(.button-row) {
+  flex-wrap: wrap;
+}
+
+.handleJourney :global(.button) {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.handleJourney :global(.section-heading) > :global(.badge) {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.handleJourney :global(.summary-note) {
+  max-width: 100%;
+}
+
+@media (max-width: 760px) {
+  .handleJourney :global(.section-heading) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .75rem;
+  }
+
+  .handleJourney :global(.section-heading) > :global(.badge) {
+    align-self: flex-start;
+  }
+
+  .handleJourney :global(.card),
+  .handleJourney :global(.section-stack) {
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .handleJourney :global(.button-row) {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .handleJourney :global(.button-row) :global(.button),
+  .handleJourney :global(.button-row) > a {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .handleJourney input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 420px) {
+  .handleJourney {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+}
