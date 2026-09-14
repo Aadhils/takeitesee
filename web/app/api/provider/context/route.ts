@@ -60,6 +60,7 @@ export async function GET(request: Request) {
         { count, error: countError },
         { data: trust, error: trustError },
         { count: unreadLeadCount, error: unreadLeadCountError },
+        { count: requestedProductOrderCount, error: requestedProductOrderCountError },
       ] = await Promise.all([
         supabase.from('bookings').select('id', { count: 'exact', head: true }).eq('business_id', business.id).eq('status', 'pending'),
         supabase.from('provider_trust_states').select('status,reason').eq('business_id', business.id).maybeSingle(),
@@ -67,10 +68,14 @@ export async function GET(request: Request) {
           .eq('recipient_user_id', session.user_id)
           .in('event_type', ['provider_requirement_match', 'requirement_proposal_accepted'])
           .is('read_at', null),
+        supabase.from('business_product_orders').select('id', { count: 'exact', head: true })
+          .eq('business_id', business.id)
+          .eq('status', 'requested'),
       ]);
       if (countError) throw new Error(countError.message);
       if (trustError) throw new Error(trustError.message);
       if (unreadLeadCountError) throw new Error(unreadLeadCountError.message);
+      if (requestedProductOrderCountError) throw new Error(requestedProductOrderCountError.message);
 
       const disclosureComplete = marketplaceDisclosureComplete(business);
       const profileComplete = profileBasicsComplete(business.name, business.description, business.location);
@@ -88,6 +93,7 @@ export async function GET(request: Request) {
           location: business.location,
           pending_booking_count: count ?? 0,
           unread_lead_count: unreadLeadCount ?? 0,
+          requested_product_order_count: requestedProductOrderCount ?? 0,
           trust_status: trustStatus,
           trust_reason: trust?.reason ?? null,
         },
@@ -139,6 +145,7 @@ export async function GET(request: Request) {
         location: professional.service_area,
         pending_booking_count: count ?? 0,
         unread_lead_count: unreadLeadCount ?? 0,
+        requested_product_order_count: 0,
         trust_status: trustStatus,
         trust_reason: trust?.reason ?? null,
       },
