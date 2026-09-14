@@ -1,0 +1,77 @@
+.businessJobsJourney {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  gap: 24px;
+  overflow-x: clip;
+}
+
+.businessJobsJourney :global(.card),
+.businessJobsJourney section,
+.businessJobsJourney form,
+.businessJobsJourney label,
+.businessJobsJourney input,
+.businessJobsJourney textarea,
+.businessJobsJourney select {
+  min-width: 0;
+}
+
+.businessJobsJourney h1,
+.businessJobsJourney h2,
+.businessJobsJourney h3,
+.businessJobsJourney p,
+.businessJobsJourney strong,
+.businessJobsJourney span,
+.businessJobsJourney small,
+.businessJobsJourney label,
+.businessJobsJourney a {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.businessJobsJourney input,
+.businessJobsJourney textarea,
+.businessJobsJourney select {
+  width: 100%;
+  max-width: 100%;
+}
+
+.businessJobsJourney button,
+.businessJobsJourney a {
+  max-width: 100%;
+}
+
+@media (max-width: 760px) {
+  .businessJobsJourney {
+    gap: 18px;
+  }
+
+  .businessJobsJourney section,
+  .businessJobsJourney :global(.card) {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .businessJobsJourney {
+    gap: 16px;
+  }
+
+  .businessJobsJourney input,
+  .businessJobsJourney textarea,
+  .businessJobsJourney select {
+    font-size: 16px;
+  }
+
+  .businessJobsJourney button,
+  .businessJobsJourney a {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 420px) {
+  .businessJobsJourney {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+}
