@@ -127,6 +127,8 @@ export function MarketplaceMessagingWorkspace({ initialConversationId = '' }: { 
       setDetail(payload.conversation); setMessages(payload.messages ?? []);
       setConversations((current) => current.map((row) => row.id === conversationId ? { ...row, unread_count: 0 } : row));
       await loadSafety(conversationId); setError('');
+      window.dispatchEvent(new Event('marketplace-messages-attention-refresh'));
+      window.dispatchEvent(new Event('notifications-attention-refresh'));
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Conversation could not be loaded.'); }
     finally { if (!silent) setLoadingThread(false); }
   }, [loadSafety]);

@@ -4,6 +4,23 @@ import { createSupabaseServerClient } from '../../../lib/supabase/server';
 const requirementIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const productOrderUpdateEvents = ['product_order_accepted', 'product_order_declined', 'product_order_fulfilled'];
 
+type InboxDestinationRow = {
+  id?: string;
+  participant_role?: 'customer' | 'provider' | 'applicant' | 'employer' | 'business' | null;
+};
+
+type NotificationRow = {
+  id: string;
+  booking_id: string | null;
+  conversation_id: string | null;
+  target_path: string | null;
+  event_type: string;
+  title: string;
+  body: string;
+  created_at: string;
+  read_at: string | null;
+};
+
 export async function GET(request: Request) {
   try {
     const supabase = await createSupabaseServerClient();
@@ -63,7 +80,25 @@ export async function GET(request: Request) {
       .order('created_at', { ascending: false })
       .limit(100);
     if (error) throw new Error(error.message);
-    return NextResponse.json({ notifications: data ?? [] });
+
+    const notifications = (data ?? []) as NotificationRow[];
+    const needsMessageDestination = notifications.some((item) => item.event_type === 'message_received' && item.conversation_id && !item.target_path);
+    if (!needsMessageDestination) return NextResponse.json({ notifications });
+
+    const { data: inboxData, error: inboxError } = await supabase.rpc('get_marketplace_inbox');
+    if (inboxError) return NextResponse.json({ notifications });
+    const destinationByConversation = new Map<string, string>();
+    for (const row of (Array.isArray(inboxData) ? inboxData : []) as InboxDestinationRow[]) {
+      if (!row.id) continue;
+      const providerSide = row.participant_role === 'provider' || row.participant_role === 'business' || row.participant_role === 'employer';
+      destinationByConversation.set(row.id, `${providerSide ? '/provider/messages' : '/messages'}?conversation=${encodeURIComponent(row.id)}`);
+    }
+
+    return NextResponse.json({
+      notifications: notifications.map((item) => item.event_type === 'message_received' && item.conversation_id && !item.target_path
+        ? { ...item, target_path: destinationByConversation.get(item.conversation_id) ?? item.target_path }
+        : item),
+    });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to load notifications.' }, { status: 400 });
   }
