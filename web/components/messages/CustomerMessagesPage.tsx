@@ -5,6 +5,7 @@ import LocalizedAccountShell from '../account/LocalizedAccountShell';
 import { getSupabaseBrowserUser } from '../../services/auth-adapter';
 import { getCustomerProfile } from '../../services/customer-profile';
 import { MarketplaceMessagingWorkspace } from './MarketplaceMessagingWorkspace';
+import styles from './MarketplaceMessagingResponsive.module.css';
 
 export function CustomerMessagesPage({ initialConversationId = '' }: { initialConversationId?: string }) {
   const [customerName, setCustomerName] = useState('Your account');
@@ -22,6 +23,8 @@ export function CustomerMessagesPage({ initialConversationId = '' }: { initialCo
   }, []);
 
   return <LocalizedAccountShell active="/messages" customerName={customerName}>
-    <MarketplaceMessagingWorkspace initialConversationId={initialConversationId} />
+    <div className={styles.shell}>
+      <MarketplaceMessagingWorkspace initialConversationId={initialConversationId} />
+    </div>
   </LocalizedAccountShell>;
 }
