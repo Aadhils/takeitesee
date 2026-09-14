@@ -6,6 +6,7 @@ import { LocalizedSettingsPage } from '../../../components/account/LocalizedAcco
 import { Card, EmptyState } from '../../../components/ui/primitives';
 import { useOperationalTranslations } from '../../../components/i18n/OperationalTranslations';
 import { getCurrentCustomerAsync } from '../../../services/auth-adapter';
+import styles from '../../../components/account/CustomerProfileSettingsResponsive.module.css';
 
 export default function AccountSettingsPage() {
   const { locale } = useOperationalTranslations();
@@ -20,7 +21,7 @@ export default function AccountSettingsPage() {
   }, []);
 
   if (authenticated === null) {
-    return <Card><p>{locale === 'ta-IN' ? 'உங்கள் account-ஐ சரிபார்க்கிறது…' : 'Checking your account…'}</p></Card>;
+    return <div className={styles.accountProfileSettingsJourney}><Card><p>{locale === 'ta-IN' ? 'உங்கள் account-ஐ சரிபார்க்கிறது…' : 'Checking your account…'}</p></Card></div>;
   }
 
   if (!authenticated) {
@@ -36,13 +37,13 @@ export default function AccountSettingsPage() {
       createAccount: 'Create account',
     };
 
-    return <Card>
+    return <div className={styles.accountProfileSettingsJourney}><Card>
       <EmptyState title={copy.title}>{copy.help}</EmptyState>
       <div className="button-row">
         <Link href="/login?returnTo=%2Faccount%2Fsettings" className="button button-primary">{copy.signIn}</Link>
         <Link href="/signup" className="button button-secondary">{copy.createAccount}</Link>
       </div>
-    </Card>;
+    </Card></div>;
   }
 
   const securityCopy = locale === 'ta-IN' ? {
@@ -69,7 +70,7 @@ export default function AccountSettingsPage() {
     action: 'Manage privacy requests',
   };
 
-  return <>
+  return <div className={styles.accountProfileSettingsJourney}>
     <LocalizedSettingsPage />
     <div className="container section-stack">
       <Card>
@@ -85,5 +86,5 @@ export default function AccountSettingsPage() {
         <Link href="/account/privacy" className="button button-secondary">{privacyCopy.action}</Link>
       </Card>
     </div>
-  </>;
+  </div>;
 }

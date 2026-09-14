@@ -1,0 +1,153 @@
+.accountProfileSettingsJourney {
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.accountProfileSettingsJourney :global(.account-layout),
+.accountProfileSettingsJourney :global(.account-content),
+.accountProfileSettingsJourney :global(.account-page-heading),
+.accountProfileSettingsJourney :global(.profile-summary),
+.accountProfileSettingsJourney :global(.profile-summary) > div,
+.accountProfileSettingsJourney :global(.profile-detail-grid),
+.accountProfileSettingsJourney :global(.settings-grid),
+.accountProfileSettingsJourney :global(.settings-section),
+.accountProfileSettingsJourney :global(.profile-form),
+.accountProfileSettingsJourney :global(.account-details),
+.accountProfileSettingsJourney :global(.account-details) > div,
+.accountProfileSettingsJourney :global(.account-actions),
+.accountProfileSettingsJourney :global(.button-row),
+.accountProfileSettingsJourney :global(.section-stack),
+.accountProfileSettingsJourney :global(.card),
+.accountProfileSettingsJourney label,
+.accountProfileSettingsJourney input,
+.accountProfileSettingsJourney select {
+  min-width: 0;
+}
+
+.accountProfileSettingsJourney :global(.account-page-heading) h1,
+.accountProfileSettingsJourney :global(.account-page-heading) p,
+.accountProfileSettingsJourney :global(.profile-summary) h2,
+.accountProfileSettingsJourney :global(.profile-summary) p,
+.accountProfileSettingsJourney :global(.card-location),
+.accountProfileSettingsJourney :global(.account-details) dt,
+.accountProfileSettingsJourney :global(.account-details) dd,
+.accountProfileSettingsJourney :global(.settings-section) h2,
+.accountProfileSettingsJourney :global(.settings-section) p,
+.accountProfileSettingsJourney :global(.choice-row),
+.accountProfileSettingsJourney :global(.choice-row) span,
+.accountProfileSettingsJourney :global(.alert),
+.accountProfileSettingsJourney :global(.card) h2,
+.accountProfileSettingsJourney :global(.card) p,
+.accountProfileSettingsJourney label {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.accountProfileSettingsJourney :global(.profile-detail-grid),
+.accountProfileSettingsJourney :global(.settings-grid) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.accountProfileSettingsJourney :global(.profile-summary) {
+  max-width: 100%;
+}
+
+.accountProfileSettingsJourney :global(.profile-summary) > .badge {
+  flex: 0 0 auto;
+}
+
+.accountProfileSettingsJourney input,
+.accountProfileSettingsJourney select {
+  width: 100%;
+  max-width: 100%;
+}
+
+.accountProfileSettingsJourney :global(.button),
+.accountProfileSettingsJourney button {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+}
+
+@media (max-width: 900px) {
+  .accountProfileSettingsJourney :global(.account-page-heading) {
+    max-width: 100%;
+  }
+
+  .accountProfileSettingsJourney :global(.profile-detail-grid),
+  .accountProfileSettingsJourney :global(.settings-grid) {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 760px) {
+  .accountProfileSettingsJourney :global(.profile-detail-grid),
+  .accountProfileSettingsJourney :global(.settings-grid) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .accountProfileSettingsJourney :global(.profile-summary) {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .accountProfileSettingsJourney :global(.profile-summary) > .badge {
+    margin-left: 0;
+  }
+
+  .accountProfileSettingsJourney :global(.account-details) > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+
+  .accountProfileSettingsJourney :global(.settings-section),
+  .accountProfileSettingsJourney :global(.profile-detail-grid) > :global(.card),
+  .accountProfileSettingsJourney :global(.section-stack) > :global(.card) {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .accountProfileSettingsJourney :global(.account-page-heading) h1 {
+    font-size: clamp(2rem, 12vw, 3rem);
+  }
+
+  .accountProfileSettingsJourney input,
+  .accountProfileSettingsJourney select {
+    font-size: 16px;
+  }
+
+  .accountProfileSettingsJourney :global(.account-actions),
+  .accountProfileSettingsJourney :global(.button-row) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+  }
+
+  .accountProfileSettingsJourney :global(.account-actions) :global(.button),
+  .accountProfileSettingsJourney :global(.button-row) :global(.button),
+  .accountProfileSettingsJourney :global(.settings-section) :global(.button),
+  .accountProfileSettingsJourney :global(.section-stack) :global(.button),
+  .accountProfileSettingsJourney > :global(.card) :global(.button) {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .accountProfileSettingsJourney :global(.profile-summary) {
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .accountProfileSettingsJourney :global(.profile-summary) > div:nth-child(2) {
+    flex: 1 1 12rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .accountProfileSettingsJourney {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+}

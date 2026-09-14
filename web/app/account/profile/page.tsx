@@ -7,6 +7,7 @@ import IdentityHandleManager from '../../../components/identity/IdentityHandleMa
 import { Card, EmptyState } from '../../../components/ui/primitives';
 import { useOperationalTranslations } from '../../../components/i18n/OperationalTranslations';
 import { getCurrentCustomerAsync } from '../../../services/auth-adapter';
+import styles from '../../../components/account/CustomerProfileSettingsResponsive.module.css';
 
 export default function AccountProfilePage() {
   const { locale } = useOperationalTranslations();
@@ -21,7 +22,7 @@ export default function AccountProfilePage() {
   }, []);
 
   if (authenticated === null) {
-    return <Card><p>{locale === 'ta-IN' ? 'உங்கள் account-ஐ சரிபார்க்கிறது…' : 'Checking your account…'}</p></Card>;
+    return <div className={styles.accountProfileSettingsJourney}><Card><p>{locale === 'ta-IN' ? 'உங்கள் account-ஐ சரிபார்க்கிறது…' : 'Checking your account…'}</p></Card></div>;
   }
 
   if (!authenticated) {
@@ -37,17 +38,17 @@ export default function AccountProfilePage() {
       createAccount: 'Create account',
     };
 
-    return <Card>
+    return <div className={styles.accountProfileSettingsJourney}><Card>
       <EmptyState title={copy.title}>{copy.help}</EmptyState>
       <div className="button-row">
         <Link href="/login?returnTo=%2Faccount%2Fprofile" className="button button-primary">{copy.signIn}</Link>
         <Link href="/signup" className="button button-secondary">{copy.createAccount}</Link>
       </div>
-    </Card>;
+    </Card></div>;
   }
 
-  return <>
+  return <div className={styles.accountProfileSettingsJourney}>
     <LocalizedProfilePage />
     <IdentityHandleManager context="customer" locale={locale} />
-  </>;
+  </div>;
 }
