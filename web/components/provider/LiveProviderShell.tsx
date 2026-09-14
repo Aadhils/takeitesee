@@ -29,6 +29,8 @@ type ProviderNavGroup = { id: string; label: string; links: ProviderNavLink[] };
 export function LiveProviderShell({ children, active }: { children: React.ReactNode; active: string }) {
   const { t, locale } = useIdentityWorkspaceTranslations();
   const [provider, setProvider] = useState<ProviderContext | null>(null);
+  const [messageUnreadCount, setMessageUnreadCount] = useState(0);
+  const [notificationUnreadCount, setNotificationUnreadCount] = useState(0);
   const activeLinkRef = useRef<HTMLAnchorElement | null>(null);
   const tamil = locale.toLowerCase().startsWith('ta');
 
@@ -40,6 +42,7 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
         links: [
           { href: '/provider/leads', label: t('provider.leads') },
           { href: '/provider/messages', label: t('provider.messages') },
+          { href: '/notifications', label: tamil ? 'அறிவிப்புகள்' : 'Notifications' },
           { href: '/provider/bookings', label: t('provider.bookings') },
           { href: '/provider/schedule', label: t('provider.schedule') },
         ],
@@ -109,6 +112,44 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
       .catch(() => { if (!cancelled) setProvider(null); });
     return () => { cancelled = true; };
   }, [active]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = async () => {
+      try {
+        const [messageResponse, notificationResponse] = await Promise.all([
+          fetch('/api/messages?mode=unread-count', { cache: 'no-store' }),
+          fetch('/api/notifications?mode=unread-count', { cache: 'no-store' }),
+        ]);
+        if (cancelled) return;
+        if (messageResponse.ok) {
+          const payload = await messageResponse.json() as { unread_count?: number };
+          if (Number.isFinite(payload.unread_count)) setMessageUnreadCount(Math.max(0, Number(payload.unread_count)));
+        }
+        if (notificationResponse.ok) {
+          const payload = await notificationResponse.json() as { unread_count?: number };
+          if (Number.isFinite(payload.unread_count)) setNotificationUnreadCount(Math.max(0, Number(payload.unread_count)));
+        }
+      } catch {
+        // Provider attention badges are progressive enhancement.
+      }
+    };
+    const visibilityRefresh = () => { if (document.visibilityState === 'visible') void refresh(); };
+    void refresh();
+    const timer = window.setInterval(() => void refresh(), 60_000);
+    window.addEventListener('focus', refresh);
+    window.addEventListener('marketplace-messages-attention-refresh', refresh);
+    window.addEventListener('notifications-attention-refresh', refresh);
+    document.addEventListener('visibilitychange', visibilityRefresh);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('marketplace-messages-attention-refresh', refresh);
+      window.removeEventListener('notifications-attention-refresh', refresh);
+      document.removeEventListener('visibilitychange', visibilityRefresh);
+    };
+  }, []);
 
   useEffect(() => {
     if (provider?.provider_type !== 'business') return;
@@ -192,6 +233,8 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
   >
     {link.label}
     {link.href === '/provider/leads' && unreadLeads > 0 ? <span className="provider-nav-count">{countLabel(unreadLeads)}</span> : null}
+    {link.href === '/provider/messages' && messageUnreadCount > 0 ? <span className="provider-nav-count">{countLabel(messageUnreadCount)}</span> : null}
+    {link.href === '/notifications' && notificationUnreadCount > 0 ? <span className="provider-nav-count">{countLabel(notificationUnreadCount)}</span> : null}
     {link.href === '/provider/bookings' && pending > 0 ? <span className="provider-nav-count">{countLabel(pending)}</span> : null}
     {link.href === '/provider/orders' && requestedProductOrders > 0 ? <span className="provider-nav-count">{countLabel(requestedProductOrders)}</span> : null}
   </Link>;
@@ -265,6 +308,7 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
             <span>{link.label}</span>
             {link.href === '/provider/leads' && unreadLeads > 0 ? <em>{countLabel(unreadLeads)}</em> : null}
             {link.href === '/provider/bookings' && pending > 0 ? <em>{countLabel(pending)}</em> : null}
+            {link.href === '/provider/messages' && messageUnreadCount > 0 ? <em>{countLabel(messageUnreadCount)}</em> : null}
           </Link>)}
         </nav>
         <details className="provider-mobile-more-tools">
@@ -273,6 +317,7 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
             {mobileMoreLinks.map((link) => <Link href={link.href} className={active === link.href ? 'provider-mobile-more-active' : ''} key={link.href}>
               {link.label}
               {link.href === '/provider/orders' && requestedProductOrders > 0 ? <span className="provider-nav-count">{countLabel(requestedProductOrders)}</span> : null}
+              {link.href === '/notifications' && notificationUnreadCount > 0 ? <span className="provider-nav-count">{countLabel(notificationUnreadCount)}</span> : null}
             </Link>)}
             <Link href="/account#workspaces">{tamil ? 'என் Profiles' : 'My profiles'}</Link>
             {publicProfileHref ? <Link href={publicProfileHref} target="_blank" rel="noreferrer">{publicProfileLabel} ↗</Link> : null}
