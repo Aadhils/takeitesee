@@ -39,6 +39,84 @@
   min-height: 44px;
 }
 
+.lifecycleSection {
+  display: grid;
+  gap: .55rem;
+}
+
+.lifecycleSummary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .65rem;
+}
+
+.lifecycleButton {
+  appearance: none;
+  display: grid;
+  justify-items: center;
+  gap: .2rem;
+  min-width: 0;
+  min-height: 64px;
+  padding: .72rem .8rem;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 1rem;
+  background: var(--surface, #fff);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.lifecycleButton span {
+  min-width: 0;
+  color: var(--text-muted, #667085);
+  font-size: .82rem;
+  overflow-wrap: anywhere;
+}
+
+.lifecycleButton strong {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.lifecycleButtonActive {
+  border-color: var(--color-primary, #6d4aff);
+  background: var(--color-secondary, #f3efff);
+  box-shadow: 0 0 0 1px var(--color-primary, #6d4aff);
+}
+
+.lifecycleButtonActive span {
+  color: var(--color-primary, #6d4aff);
+}
+
+.lifecycleMeta {
+  margin: 0;
+  color: var(--text-muted, #667085);
+  font-size: .86rem;
+  text-align: right;
+}
+
+.filteredEmptyCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+}
+
+.filteredEmptyCard > div {
+  min-width: 0;
+}
+
+.filteredEmptyCard strong,
+.filteredEmptyCard p {
+  margin: 0;
+}
+
+.filteredEmptyCard p {
+  margin-top: .2rem;
+  color: var(--text-muted, #667085);
+}
+
 .ordersList {
   display: grid;
   gap: 1rem;
@@ -300,6 +378,30 @@
     justify-content: center;
   }
 
+  .lifecycleSummary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .lifecycleButton {
+    min-height: 58px;
+    padding: .65rem .7rem;
+  }
+
+  .lifecycleMeta {
+    text-align: left;
+  }
+
+  .filteredEmptyCard {
+    display: grid;
+    grid-template-columns: 1fr;
+    padding: .9rem;
+  }
+
+  .filteredEmptyCard :global(.button) {
+    width: 100%;
+    justify-content: center;
+  }
+
   .orderHeader,
   .detailHero {
     grid-template-columns: 1fr;
@@ -362,6 +464,10 @@
   .emptyOrdersState :global(.state-mark) {
     width: 36px;
     height: 36px;
+  }
+
+  .lifecycleButton span {
+    font-size: .78rem;
   }
 
   .summaryGrid {

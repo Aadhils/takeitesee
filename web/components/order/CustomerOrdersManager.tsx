@@ -7,6 +7,7 @@ import { useLanguage } from '../i18n/LanguageProvider';
 import styles from './CustomerOrders.module.css';
 
 type OrderStatus = 'requested' | 'accepted' | 'declined' | 'fulfilled' | 'cancelled';
+type OrderView = 'all' | 'active' | 'fulfilled' | 'closed';
 
 type ProductOrderEvent = {
   id: string;
@@ -47,6 +48,13 @@ function statusTone(status: OrderStatus) {
   return 'neutral' as const;
 }
 
+function orderMatchesView(status: OrderStatus, view: OrderView) {
+  if (view === 'all') return true;
+  if (view === 'active') return status === 'requested' || status === 'accepted';
+  if (view === 'fulfilled') return status === 'fulfilled';
+  return status === 'declined' || status === 'cancelled';
+}
+
 export default function CustomerOrdersManager() {
   const { locale } = useLanguage();
   const tamil = locale === 'ta-IN';
@@ -55,6 +63,7 @@ export default function CustomerOrdersManager() {
   const [authRequired, setAuthRequired] = useState(false);
   const [error, setError] = useState('');
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
+  const [view, setView] = useState<OrderView>('all');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -151,6 +160,20 @@ export default function CustomerOrdersManager() {
     </div>;
   }
 
+  const lifecycleCounts: Record<OrderView, number> = {
+    all: orders.length,
+    active: orders.filter((order) => order.status === 'requested' || order.status === 'accepted').length,
+    fulfilled: orders.filter((order) => order.status === 'fulfilled').length,
+    closed: orders.filter((order) => order.status === 'declined' || order.status === 'cancelled').length,
+  };
+  const lifecycleItems: Array<{ key: OrderView; label: string; count: number }> = [
+    { key: 'all', label: tamil ? 'அனைத்தும்' : 'All', count: lifecycleCounts.all },
+    { key: 'active', label: tamil ? 'செயலில்' : 'Active', count: lifecycleCounts.active },
+    { key: 'fulfilled', label: tamil ? 'நிறைவேற்றப்பட்டது' : 'Fulfilled', count: lifecycleCounts.fulfilled },
+    { key: 'closed', label: tamil ? 'மூடப்பட்டது' : 'Closed', count: lifecycleCounts.closed },
+  ];
+  const visibleOrders = orders.filter((order) => orderMatchesView(order.status, view));
+
   return <div className={`bookings-page section-stack ${styles.page}`}>
     <section className="page-intro">
       <span className="eyebrow">{tamil ? 'வாடிக்கையாளர் Orders' : 'Customer orders'}</span>
@@ -172,8 +195,36 @@ export default function CustomerOrdersManager() {
       <div className={`button-row ${styles.emptyOrdersActions}`}><Link href="/products" className="button button-secondary">{tamil ? 'Products பார்க்க' : 'Browse products'}</Link></div>
     </Card> : null}
 
+    {!loading && orders.length ? <section className={styles.lifecycleSection} aria-label={tamil ? 'Order நிலை filter' : 'Order status filter'}>
+      <div className={styles.lifecycleSummary}>
+        {lifecycleItems.map((item) => <button
+          key={item.key}
+          type="button"
+          className={`${styles.lifecycleButton} ${view === item.key ? styles.lifecycleButtonActive : ''}`}
+          aria-pressed={view === item.key}
+          onClick={() => setView(item.key)}
+        >
+          <span>{item.label}</span>
+          <strong>{item.count}</strong>
+        </button>)}
+      </div>
+      <p className={styles.lifecycleMeta}>{tamil
+        ? `${visibleOrders.length} / ${orders.length} orders காண்பிக்கப்படுகிறது`
+        : `Showing ${visibleOrders.length} of ${orders.length} orders`}</p>
+    </section> : null}
+
+    {!loading && orders.length && !visibleOrders.length ? <Card className={styles.filteredEmptyCard}>
+      <div>
+        <strong>{tamil ? 'இந்த பிரிவில் orders இல்லை' : 'No orders in this group'}</strong>
+        <p>{tamil ? 'வேறு lifecycle filter தேர்வு செய்யவும்.' : 'Choose another lifecycle filter to continue.'}</p>
+      </div>
+      <Button type="button" variant="secondary" onClick={() => setView('all')}>
+        {tamil ? 'அனைத்து orders' : 'Show all orders'}
+      </Button>
+    </Card> : null}
+
     <div className={styles.ordersList}>
-      {orders.map((order) => {
+      {visibleOrders.map((order) => {
         const total = order.unit_price_snapshot * order.quantity;
         const cancellable = order.status === 'requested' || order.status === 'accepted';
         const latestEvent = order.events.at(-1);
