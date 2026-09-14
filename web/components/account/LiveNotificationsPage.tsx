@@ -8,6 +8,7 @@ import { Badge, Button, Card, EmptyState } from '../ui/primitives';
 import { getSupabaseBrowserUser } from '../../services/auth-adapter';
 import { getCustomerProfile } from '../../services/customer-profile';
 import { useOperationalTranslations } from '../i18n/OperationalTranslations';
+import styles from './LiveNotificationsPage.module.css';
 
 type NotificationItem = {
   id: string;
@@ -130,37 +131,50 @@ export default function LiveNotificationsPage() {
   };
 
   return <LocalizedAccountShell active="/notifications" customerName={customerName || undefined} unreadCount={unread}>
-    <section className="account-page-heading"><span className="eyebrow">{t('notif.eyebrow')}</span><h1>{t('notif.title')}</h1><p>{t('notif.intro')}</p></section>
-    {authenticated === false ? <Card>
-      <EmptyState title={guestCopy.title}>{guestCopy.help}</EmptyState>
-      <div className="button-row">
-        <Link href="/login" className="button button-primary">{guestCopy.signIn}</Link>
-        <Link href="/signup" className="button button-secondary">{guestCopy.createAccount}</Link>
-      </div>
-    </Card> : <>
-      {authenticated === true && !loading ? <div className="notification-toolbar"><Badge tone={unread ? 'info' : 'neutral'}>{unread} {t('notif.unread')}</Badge>{unread ? <Button type="button" variant="quiet" loading={busy} onClick={() => void markAllRead()}>{t('notif.markAll')}</Button> : <span className="results-note">{t('notif.caughtUp')}</span>}</div> : null}
-      {loading ? <Card><p>{t('notif.loading')}</p></Card> : error ? <Card><p className="field-error" role="alert">{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>{t('common.tryAgain')}</Button></Card> : items.length ? <div className="notification-list">{items.map((item) => {
-        const label = labelFor(item.event_type);
-        const href = hrefFor(item);
-        const openLabel = item.event_type === 'requirement_proposal_received'
-          ? (locale === 'ta-IN' ? 'Proposal-ஐ review செய்' : 'Review proposal')
-          : item.event_type === 'requirement_proposal_accepted'
-            ? (locale === 'ta-IN' ? 'ஏற்கப்பட்ட Proposal-ஐ பார்க்க' : 'View accepted proposal')
-            : item.event_type === 'review_submitted'
-              ? (locale === 'ta-IN' ? 'Customer review-ஐ பார்க்க' : 'Open customer review')
-              : item.event_type === 'provider_reverification_required'
-                ? (locale === 'ta-IN' ? 'Re-verification-ஐ தொடங்கு' : 'Start re-verification')
-                : item.event_type === 'provider_suspended'
-                  ? (locale === 'ta-IN' ? 'Platform support-ஐ திற' : 'Open platform support')
-                  : item.event_type === 'provider_restored' || item.event_type === 'provider_verification_approved'
-                    ? (locale === 'ta-IN' ? 'Public readiness-ஐ review செய்' : 'Review public readiness')
-                    : item.target_path
-                      ? (locale === 'ta-IN' ? 'Update-ஐ திற' : 'Open update')
-                      : item.conversation_id
-                        ? t('notif.openConversation')
-                        : t('notif.viewBooking');
-        return <Card className={`notification-card ${!item.read_at ? 'notification-unread' : ''}`} key={item.id}><div className="notification-card-mark" aria-hidden="true">{label.slice(0,1)}</div><div className="notification-card-body"><div className="notification-card-top"><Badge tone={!item.read_at ? 'info' : 'neutral'}>{label}</Badge><time>{new Date(item.created_at).toLocaleString(locale)}</time></div><h2>{item.title}</h2><p>{item.body}</p><div className="notification-card-actions">{href ? <Link href={href} className="text-link" onClick={(event) => void openNotification(event, item, href)}>{openLabel}</Link> : null}{!item.read_at ? <Button type="button" variant="quiet" onClick={() => void markRead(item.id)}>{t('notif.markRead')}</Button> : null}</div></div></Card>;
-      })}</div> : <Card><EmptyState title={t('notif.none')}>{t('notif.noneHelp')}</EmptyState></Card>}
-    </>}
+    <div className={styles.page}>
+      <section className={`account-page-heading ${styles.heading}`}><span className="eyebrow">{t('notif.eyebrow')}</span><h1>{t('notif.title')}</h1><p>{t('notif.intro')}</p></section>
+      {authenticated === false ? <Card className={styles.stateCard}>
+        <EmptyState title={guestCopy.title}>{guestCopy.help}</EmptyState>
+        <div className={`button-row ${styles.guestActions}`}>
+          <Link href="/login" className="button button-primary">{guestCopy.signIn}</Link>
+          <Link href="/signup" className="button button-secondary">{guestCopy.createAccount}</Link>
+        </div>
+      </Card> : <>
+        {authenticated === true && !loading ? <div className={`notification-toolbar ${styles.toolbar}`}><Badge tone={unread ? 'info' : 'neutral'}>{unread} {t('notif.unread')}</Badge>{unread ? <Button type="button" variant="quiet" loading={busy} onClick={() => void markAllRead()}>{t('notif.markAll')}</Button> : <span className="results-note">{t('notif.caughtUp')}</span>}</div> : null}
+        {loading ? <Card className={styles.stateCard}><p>{t('notif.loading')}</p></Card> : error ? <Card className={styles.stateCard}><p className="field-error" role="alert">{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>{t('common.tryAgain')}</Button></Card> : items.length ? <div className={`notification-list ${styles.list}`}>{items.map((item) => {
+          const label = labelFor(item.event_type);
+          const href = hrefFor(item);
+          const openLabel = item.event_type === 'requirement_proposal_received'
+            ? (locale === 'ta-IN' ? 'Proposal-ஐ review செய்' : 'Review proposal')
+            : item.event_type === 'requirement_proposal_accepted'
+              ? (locale === 'ta-IN' ? 'ஏற்கப்பட்ட Proposal-ஐ பார்க்க' : 'View accepted proposal')
+              : item.event_type === 'review_submitted'
+                ? (locale === 'ta-IN' ? 'Customer review-ஐ பார்க்க' : 'Open customer review')
+                : item.event_type === 'provider_reverification_required'
+                  ? (locale === 'ta-IN' ? 'Re-verification-ஐ தொடங்கு' : 'Start re-verification')
+                  : item.event_type === 'provider_suspended'
+                    ? (locale === 'ta-IN' ? 'Platform support-ஐ திற' : 'Open platform support')
+                    : item.event_type === 'provider_restored' || item.event_type === 'provider_verification_approved'
+                      ? (locale === 'ta-IN' ? 'Public readiness-ஐ review செய்' : 'Review public readiness')
+                      : item.target_path
+                        ? (locale === 'ta-IN' ? 'Update-ஐ திற' : 'Open update')
+                        : item.conversation_id
+                          ? t('notif.openConversation')
+                          : t('notif.viewBooking');
+          return <Card className={`notification-card ${styles.notificationCard} ${!item.read_at ? `notification-unread ${styles.unreadCard}` : ''}`} key={item.id}>
+            <div className={`notification-card-mark ${styles.mark}`} aria-hidden="true">{label.slice(0,1)}</div>
+            <div className={`notification-card-body ${styles.body}`}>
+              <div className={`notification-card-top ${styles.top}`}><Badge tone={!item.read_at ? 'info' : 'neutral'}>{label}</Badge><time>{new Date(item.created_at).toLocaleString(locale)}</time></div>
+              <h2 className={styles.title}>{item.title}</h2>
+              <p className={styles.copy}>{item.body}</p>
+              <div className={`notification-card-actions ${styles.actions}`}>
+                {href ? <Link href={href} className={`text-link ${styles.openAction}`} onClick={(event) => void openNotification(event, item, href)}>{openLabel}</Link> : null}
+                {!item.read_at ? <Button type="button" variant="quiet" onClick={() => void markRead(item.id)}>{t('notif.markRead')}</Button> : null}
+              </div>
+            </div>
+          </Card>;
+        })}</div> : <Card className={styles.stateCard}><EmptyState title={t('notif.none')}>{t('notif.noneHelp')}</EmptyState></Card>}
+      </>}
+    </div>
   </LocalizedAccountShell>;
 }
