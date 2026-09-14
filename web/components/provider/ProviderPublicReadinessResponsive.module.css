@@ -1,0 +1,124 @@
+.readinessJourney {
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.readinessJourney :global(.provider-page-heading),
+.readinessJourney :global(.provider-page-heading) > div,
+.readinessJourney :global(.section-heading),
+.readinessJourney :global(.section-heading) > div,
+.readinessJourney :global(.provider-profile-grid),
+.readinessJourney :global(.provider-profile-card),
+.readinessJourney :global(.provider-review-summary),
+.readinessJourney :global(.provider-review-summary) > div,
+.readinessJourney :global(.button-row),
+.readinessJourney :global(.card),
+.readinessJourney :global(.alert) {
+  min-width: 0;
+}
+
+.readinessJourney :global(.provider-page-heading) h1,
+.readinessJourney :global(.provider-page-heading) p,
+.readinessJourney :global(.section-heading) h2,
+.readinessJourney :global(.provider-profile-card) h2,
+.readinessJourney :global(.card) h2,
+.readinessJourney :global(.card) p,
+.readinessJourney :global(.card) strong,
+.readinessJourney :global(.card) span,
+.readinessJourney :global(.summary-note),
+.readinessJourney :global(.field-error),
+.readinessJourney :global(.alert),
+.readinessJourney a {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.readinessJourney :global(.button-row) {
+  flex-wrap: wrap;
+}
+
+.readinessJourney :global(.button) {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.readinessJourney :global(.text-link) {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.readinessJourney :global(.provider-review-summary) > div {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .readinessJourney :global(.provider-profile-grid),
+  .readinessJourney :global(.provider-review-summary) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .readinessJourney :global(.section-heading) {
+    align-items: flex-start;
+    gap: .75rem;
+  }
+}
+
+@media (max-width: 760px) {
+  .readinessJourney :global(.provider-page-heading),
+  .readinessJourney :global(.section-heading) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .readinessJourney :global(.section-heading) > :global(.badge) {
+    align-self: flex-start;
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .readinessJourney :global(.provider-profile-grid),
+  .readinessJourney :global(.provider-review-summary) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .readinessJourney :global(.card),
+  .readinessJourney :global(.provider-profile-card) {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .readinessJourney :global(.button-row) {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .readinessJourney :global(.button-row) :global(.button),
+  .readinessJourney :global(.card) > :global(.button) {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .readinessJourney :global(.text-link) {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .readinessJourney :global(.provider-review-summary) > div {
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .readinessJourney {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+}
