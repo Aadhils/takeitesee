@@ -163,11 +163,13 @@ export default function CustomerOrdersManager() {
     {error ? <p role="alert" className={styles.error}>{error}</p> : null}
     {loading ? <Card><p>{tamil ? 'Orders ஏற்றப்படுகிறது…' : 'Loading orders…'}</p></Card> : null}
 
-    {!loading && !orders.length ? <Card>
-      <EmptyState title={tamil ? 'Order requests இன்னும் இல்லை' : 'No order requests yet'}>
-        {tamil ? 'Approved Business storefront-ல் இருந்து product order request அனுப்பலாம்.' : 'Request an order from an approved Business storefront product.'}
-      </EmptyState>
-      <div className="button-row"><Link href="/products" className="button button-secondary">{tamil ? 'Products பார்க்க' : 'Browse products'}</Link></div>
+    {!loading && !orders.length ? <Card className={styles.emptyOrdersCard}>
+      <div className={styles.emptyOrdersState}>
+        <EmptyState title={tamil ? 'Order requests இன்னும் இல்லை' : 'No order requests yet'}>
+          {tamil ? 'Approved Business storefront-ல் இருந்து product order request அனுப்பலாம்.' : 'Request an order from an approved Business storefront product.'}
+        </EmptyState>
+      </div>
+      <div className={`button-row ${styles.emptyOrdersActions}`}><Link href="/products" className="button button-secondary">{tamil ? 'Products பார்க்க' : 'Browse products'}</Link></div>
     </Card> : null}
 
     <div className={styles.ordersList}>
