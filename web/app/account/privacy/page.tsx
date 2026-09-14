@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
+import styles from '../../../components/account/CustomerSecurityPrivacyResponsive.module.css';
 import { Badge, Button, Card, Select, Textarea } from '../../../components/ui/primitives';
 import { useOperationalTranslations } from '../../../components/i18n/OperationalTranslations';
 import { getCurrentCustomerAsync } from '../../../services/auth-adapter';
@@ -102,10 +103,10 @@ export default function AccountPrivacyPage() {
     return tamil ? 'Account / தகவல் நீக்க கோரிக்கை' : 'Account / information deletion request';
   };
 
-  if (authenticated === null && loading) return <Card><p>{tamil ? 'உங்கள் account-ஐ சரிபார்க்கிறது…' : 'Checking your account…'}</p></Card>;
+  if (authenticated === null && loading) return <div className={styles.securityPrivacyJourney}><Card><p>{tamil ? 'உங்கள் account-ஐ சரிபார்க்கிறது…' : 'Checking your account…'}</p></Card></div>;
 
   if (authenticated === false) {
-    return <main className="container section-stack">
+    return <div className={styles.securityPrivacyJourney}><main className="container section-stack">
       <Card>
         <h1>{tamil ? 'Privacy requests-க்கு sign in செய்யவும்' : 'Sign in to manage privacy requests'}</h1>
         <p>{tamil ? 'உங்கள் தனிப்பட்ட தகவலுக்கான access, correction அல்லது deletion request submit செய்ய sign in செய்யவும்.' : 'Sign in to submit access, correction, or deletion requests for your personal information.'}</p>
@@ -114,10 +115,10 @@ export default function AccountPrivacyPage() {
           <Link className="button button-secondary" href="/privacy">{tamil ? 'Privacy Policy பார்க்க' : 'View Privacy Policy'}</Link>
         </div>
       </Card>
-    </main>;
+    </main></div>;
   }
 
-  return <main className="container section-stack">
+  return <div className={styles.securityPrivacyJourney}><main className="container section-stack">
     <section className="page-intro">
       <span className="eyebrow">{tamil ? 'Account privacy' : 'Account privacy'}</span>
       <h1>{tamil ? 'உங்கள் privacy requests-ஐ நிர்வகிக்கவும்' : 'Manage your privacy requests'}</h1>
@@ -167,5 +168,5 @@ export default function AccountPrivacyPage() {
         {item.review_note ? <div className="settings-note"><strong>{tamil ? 'Review note' : 'Review note'}</strong><p>{item.review_note}</p></div> : null}
       </Card>)}
     </section>
-  </main>;
+  </main></div>;
 }
