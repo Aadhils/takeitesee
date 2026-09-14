@@ -1,0 +1,54 @@
+.calendarAction {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: .75rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.calendarAction :global(.summary-note) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.calendarAction :global(.button) {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 760px) {
+  .calendarAction {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px 12px;
+  }
+
+  .calendarAction :global(.summary-note) {
+    margin: 0;
+    font-size: .8rem;
+    line-height: 1.4;
+  }
+
+  .calendarAction :global(.button) {
+    min-height: 42px;
+    padding: 10px 14px;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 560px) {
+  .calendarAction {
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+  }
+
+  .calendarAction :global(.summary-note) {
+    font-size: .76rem;
+  }
+
+  .calendarAction :global(.button) {
+    width: 100%;
+    justify-content: center;
+  }
+}
