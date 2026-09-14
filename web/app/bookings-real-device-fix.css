@@ -1,0 +1,65 @@
+/* Real-device Customer Bookings fallback.
+   Loaded after shared responsive layers so generic mobile section-heading rules
+   cannot expand lifecycle counts or empty states on narrow phones. */
+
+@media (max-width: 640px) {
+  .bookings-page .booking-group .section-heading {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .bookings-page .booking-group .section-heading > div {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .bookings-page .booking-group .results-note {
+    width: auto;
+    flex: 0 0 auto;
+    align-self: flex-start;
+    border-radius: 999px;
+    background: var(--color-surface-muted);
+    padding: 5px 8px;
+    font-size: .68rem;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .bookings-page .booking-group > .card:has(.state-panel) {
+    box-shadow: none;
+  }
+
+  .bookings-page .booking-group > .card > .state-panel {
+    gap: 5px;
+    min-height: 0;
+    padding: 16px 14px;
+  }
+
+  .bookings-page .booking-group > .card > .state-panel .state-mark {
+    width: 32px;
+    height: 32px;
+  }
+
+  .bookings-page .booking-group > .card > .state-panel h3 {
+    font-size: .98rem;
+    line-height: 1.25;
+  }
+
+  .bookings-page .booking-group > .card > .state-panel p {
+    max-width: 38ch;
+    font-size: .78rem;
+    line-height: 1.38;
+  }
+}
+
+@media (max-width: 380px) {
+  .bookings-page .booking-group .section-heading {
+    gap: 7px;
+  }
+
+  .bookings-page .booking-group .results-note {
+    padding-inline: 6px;
+    font-size: .64rem;
+  }
+}
