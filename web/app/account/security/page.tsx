@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
+import styles from '../../../components/account/CustomerSecurityPrivacyResponsive.module.css';
 import { Button, Card, Input } from '../../../components/ui/primitives';
 import { PasswordInput } from '../../../components/ui/PasswordInput';
 import { useOperationalTranslations } from '../../../components/i18n/OperationalTranslations';
@@ -123,11 +124,11 @@ export default function AccountSecurityPage() {
   };
 
   if (checking) {
-    return <Card><p>{tamil ? 'உங்கள் account security-ஐ சரிபார்க்கிறது…' : 'Checking your account security…'}</p></Card>;
+    return <div className={styles.securityPrivacyJourney}><Card><p>{tamil ? 'உங்கள் account security-ஐ சரிபார்க்கிறது…' : 'Checking your account security…'}</p></Card></div>;
   }
 
   if (!email) {
-    return <main className="container section-stack">
+    return <div className={styles.securityPrivacyJourney}><main className="container section-stack">
       <Card>
         <h1>{tamil ? 'Account Security-க்கு sign in செய்யவும்' : 'Sign in to manage account security'}</h1>
         <p>{tamil ? 'Password அல்லது email மாற்ற உங்கள் TakeItEsee account-ல் sign in செய்யவும்.' : 'Sign in to your TakeItEsee account to change your password or email.'}</p>
@@ -136,10 +137,10 @@ export default function AccountSecurityPage() {
           <Link href="/forgot-password" className="button button-secondary">{tamil ? 'Password மறந்துவிட்டதா?' : 'Forgot password?'}</Link>
         </div>
       </Card>
-    </main>;
+    </main></div>;
   }
 
-  return <main className="container section-stack">
+  return <div className={styles.securityPrivacyJourney}><main className="container section-stack">
     <section className="page-intro">
       <span className="eyebrow">{tamil ? 'Account security' : 'Account security'}</span>
       <h1>{tamil ? 'உங்கள் sign-in security-ஐ நிர்வகிக்கவும்' : 'Manage your sign-in security'}</h1>
@@ -177,5 +178,5 @@ export default function AccountSecurityPage() {
         <Button type="submit" loading={emailSubmitting}>{tamil ? 'Email change request அனுப்பு' : 'Request email change'}</Button>
       </form>
     </Card>
-  </main>;
+  </main></div>;
 }
