@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
 
 const requirementIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const productOrderUpdateEvents = ['product_order_accepted', 'product_order_declined', 'product_order_fulfilled'];
 
 export async function GET(request: Request) {
   try {
@@ -19,6 +20,30 @@ export async function GET(request: Request) {
         .is('read_at', null);
       if (error) throw new Error(error.message);
       return NextResponse.json({ unread_count: count ?? 0 });
+    }
+
+    if (url.searchParams.get('mode') === 'product-order-unread-updates') {
+      const [countResult, latestResult] = await Promise.all([
+        supabase
+          .from('notifications')
+          .select('id', { count: 'exact', head: true })
+          .eq('recipient_user_id', user.id)
+          .in('event_type', productOrderUpdateEvents)
+          .like('target_path', '/orders/%')
+          .is('read_at', null),
+        supabase
+          .from('notifications')
+          .select('id,target_path,event_type,title,body,created_at')
+          .eq('recipient_user_id', user.id)
+          .in('event_type', productOrderUpdateEvents)
+          .like('target_path', '/orders/%')
+          .is('read_at', null)
+          .order('created_at', { ascending: false })
+          .limit(1),
+      ]);
+      if (countResult.error) throw new Error(countResult.error.message);
+      if (latestResult.error) throw new Error(latestResult.error.message);
+      return NextResponse.json({ unread_count: countResult.count ?? 0, latest: latestResult.data?.[0] ?? null });
     }
 
     if (url.searchParams.get('mode') === 'unread-count') {
@@ -51,6 +76,8 @@ export async function PATCH(request: Request) {
       mark_all_read?: boolean;
       mark_requirement_proposals_read?: boolean;
       requirement_id?: string;
+      mark_product_order_updates_read?: boolean;
+      order_id?: string;
     };
     const supabase = await createSupabaseServerClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -66,6 +93,15 @@ export async function PATCH(request: Request) {
       query = query
         .eq('event_type', 'requirement_proposal_received')
         .like('target_path', `/requirements/${requirementId}?proposal=%`)
+        .is('read_at', null);
+    } else if (body.mark_product_order_updates_read) {
+      const orderId = body.order_id?.trim() ?? '';
+      if (!requirementIdPattern.test(orderId)) {
+        return NextResponse.json({ error: 'A valid product order id is required.' }, { status: 400 });
+      }
+      query = query
+        .in('event_type', productOrderUpdateEvents)
+        .eq('target_path', `/orders/${orderId}`)
         .is('read_at', null);
     } else if (body.mark_all_read) {
       query = query.is('read_at', null);

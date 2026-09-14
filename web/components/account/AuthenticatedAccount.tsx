@@ -6,11 +6,16 @@ import { Button, Card } from '../ui/primitives';
 import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 import RoleIdentityMediaHeader from '../identity/RoleIdentityMediaHeader';
 import CustomerAccountProposalSummary from './CustomerAccountProposalSummary';
+import CustomerProductOrderAttention from './CustomerProductOrderAttention';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { getSupabaseBrowserUser, isSupabaseConfigured, localDevelopmentAuthAdapter, signOutWithSupabase } from '../../services/auth-adapter';
 import { getBookingsForCustomer, getBookingsThroughConfiguredRepository } from '../../services/booking-repository';
 import type { User } from '../../types/auth-domain';
 import type { CustomerBooking } from '../../types/booking-domain';
+
+type AccountNavLink = { href: string; label: string; badge?: number };
+type AccountNavGroup = { id: string; eyebrow: string; title: string; links: AccountNavLink[] };
+type MobileQuickLink = { href: string; label: string; icon: string; badge?: number; badgeLabel?: string };
 
 export default function AuthenticatedAccount() {
   const { t, locale } = useIdentityWorkspaceTranslations();
@@ -19,6 +24,7 @@ export default function AuthenticatedAccount() {
   const [bookings, setBookings] = useState<CustomerBooking[]>([]);
   const [bookingError, setBookingError] = useState('');
   const [proposalUnreadCount, setProposalUnreadCount] = useState(0);
+  const [productOrderUnreadCount, setProductOrderUnreadCount] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -56,14 +62,14 @@ export default function AuthenticatedAccount() {
     setUser(undefined);
   };
 
-  const navigationGroups = [
+  const navigationGroups: AccountNavGroup[] = [
     {
       id: 'activity',
       eyebrow: tamil ? 'என் செயல்பாடு' : 'My activity',
       title: tamil ? 'Bookings, orders & conversations' : 'Bookings, orders & conversations',
       links: [
         { href: '/bookings', label: tamil ? 'என் Bookings' : 'My bookings' },
-        { href: '/orders', label: tamil ? 'என் Product Orders' : 'My product orders' },
+        { href: '/orders', label: tamil ? 'என் Product Orders' : 'My product orders', badge: productOrderUnreadCount },
         { href: '/messages', label: tamil ? 'செய்திகள்' : 'Messages' },
         { href: '/notifications', label: t('account.notifications') },
         { href: '/reviews', label: tamil ? 'மதிப்புரைகள்' : 'Reviews' },
@@ -94,10 +100,10 @@ export default function AuthenticatedAccount() {
     },
   ];
 
-  const mobileQuickLinks: Array<{ href: string; label: string; icon: string; badge?: number }> = [
+  const mobileQuickLinks: MobileQuickLink[] = [
     { href: '/bookings', label: tamil ? 'Bookings' : 'Bookings', icon: '▣' },
-    { href: '/orders', label: tamil ? 'Orders' : 'Orders', icon: '□' },
-    { href: '/requirements', label: tamil ? 'தேவைகள்' : 'Needs', icon: '◇', badge: proposalUnreadCount },
+    { href: '/orders', label: tamil ? 'Orders' : 'Orders', icon: '□', badge: productOrderUnreadCount, badgeLabel: tamil ? 'புதிய order updates' : 'new order updates' },
+    { href: '/requirements', label: tamil ? 'தேவைகள்' : 'Needs', icon: '◇', badge: proposalUnreadCount, badgeLabel: tamil ? 'புதிய proposals' : 'new proposals' },
     { href: '/messages', label: tamil ? 'செய்திகள்' : 'Messages', icon: '✉' },
     { href: '/account/profile', label: tamil ? 'Profile' : 'Profile', icon: '◯' },
   ];
@@ -117,7 +123,7 @@ export default function AuthenticatedAccount() {
           <Link href="/account/settings" className="customer-mobile-quick-settings" aria-label={tamil ? 'Account அமைப்புகள்' : 'Account settings'}>⚙</Link>
         </div>
         <nav className="customer-mobile-quick-nav" aria-label={tamil ? 'Customer முக்கிய வழிசெலுத்தல்' : 'Customer primary navigation'}>
-          {mobileQuickLinks.map((link) => <Link href={link.href} key={link.href} aria-label={link.badge ? `${link.label}, ${link.badge} new proposals` : link.label}>
+          {mobileQuickLinks.map((link) => <Link href={link.href} key={link.href} aria-label={link.badge ? `${link.label}, ${link.badge} ${link.badgeLabel ?? 'new updates'}` : link.label}>
             <span className="customer-mobile-quick-icon" aria-hidden="true">
               {link.icon}
               {link.badge ? <span className="customer-mobile-quick-badge">{link.badge > 99 ? '99+' : link.badge}</span> : null}
@@ -131,6 +137,7 @@ export default function AuthenticatedAccount() {
 
       <WorkspaceSwitcher currentWorkspace="customer" />
 
+      <CustomerProductOrderAttention onUnreadChange={setProductOrderUnreadCount} />
       <CustomerAccountProposalSummary onUnreadChange={setProposalUnreadCount} />
 
       <section className="dashboard-grid customer-overview-action-grid" aria-label={tamil ? 'Customer வழிசெலுத்தல்' : 'Customer navigation'}>
@@ -139,7 +146,10 @@ export default function AuthenticatedAccount() {
             <span className="eyebrow">{group.eyebrow}</span>
             <h2>{group.title}</h2>
             <nav className="account-secondary-actions" aria-label={group.eyebrow}>
-              {group.links.map((link) => <Link href={link.href} className="account-action-chip" key={link.href}>{link.label}</Link>)}
+              {group.links.map((link) => <Link href={link.href} className={`account-action-chip${link.badge ? ' customer-account-action-with-badge' : ''}`} key={link.href}>
+                <span>{link.label}</span>
+                {link.badge ? <span className="customer-account-action-badge" aria-label={`${link.badge} new updates`}>{link.badge > 99 ? '99+' : link.badge}</span> : null}
+              </Link>)}
             </nav>
           </Card>
         ))}
@@ -159,6 +169,8 @@ export default function AuthenticatedAccount() {
 
       <style jsx>{`
         .customer-mobile-quick-shell { display: none; }
+        .customer-account-action-with-badge { display: inline-flex; align-items: center; gap: .42rem; }
+        .customer-account-action-badge { display: inline-grid; min-width: 18px; height: 18px; place-items: center; padding: 0 4px; border-radius: 999px; background: var(--color-primary-strong); color: white; font-size: .58rem; font-weight: 850; line-height: 1; }
 
         @media (max-width: 900px) {
           .customer-mobile-quick-shell {

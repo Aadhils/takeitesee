@@ -74,6 +74,17 @@ export default function CustomerOrderDetail({ orderId }: { orderId: string }) {
       setAuthRequired(false);
       setNotFound(!match);
       setOrder(match);
+      if (match) {
+        void fetch('/api/notifications', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mark_product_order_updates_read: true, order_id: match.id }),
+        }).then((acknowledgement) => {
+          if (acknowledgement.ok) window.dispatchEvent(new Event('customer-product-order-attention-refresh'));
+        }).catch(() => {
+          // Notification acknowledgement is best effort; order detail remains usable.
+        });
+      }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load this order.');
     } finally {

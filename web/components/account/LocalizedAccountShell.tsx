@@ -7,9 +7,11 @@ import { useRemainingWorkspaceTranslations } from '../i18n/RemainingWorkspaceTra
 export default function LocalizedAccountShell({ children, active, customerName, unreadCount }: { children: ReactNode; active: string; customerName?: string; unreadCount?: number }) {
   const { t, locale } = useRemainingWorkspaceTranslations();
   const [fetchedUnreadCount, setFetchedUnreadCount] = useState(0);
+  const [productOrderUnreadCount, setProductOrderUnreadCount] = useState(0);
   const name = customerName || t('account.yourAccount');
   const initials = name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
   const unreadLabel = locale === 'ta-IN' ? 'படிக்காத அறிவிப்புகள்' : 'unread notifications';
+  const productOrderUnreadLabel = locale === 'ta-IN' ? 'புதிய Product Order updates' : 'new Product Order updates';
   const moreLabel = locale === 'ta-IN' ? 'மேலும்' : 'More';
   const resolvedUnreadCount = unreadCount ?? fetchedUnreadCount;
   const links = [
@@ -19,6 +21,7 @@ export default function LocalizedAccountShell({ children, active, customerName, 
     { href: '/saved-services', label: locale === 'ta-IN' ? 'சேமித்த சேவைகள்' : 'Saved services', mobileLabel: locale === 'ta-IN' ? 'சேவைகள்' : 'Services' },
     { href: '/saved-products', label: locale === 'ta-IN' ? 'சேமித்த Products' : 'Saved Products', mobileLabel: 'Products' },
     { href: '/requirements', label: locale === 'ta-IN' ? 'தேவைகள்' : 'Requirements', mobileLabel: locale === 'ta-IN' ? 'தேவைகள்' : 'Needs' },
+    { href: '/orders', label: locale === 'ta-IN' ? 'என் Product Orders' : 'My product orders', mobileLabel: 'Orders' },
     { href: '/messages', label: locale === 'ta-IN' ? 'செய்திகள்' : 'Messages', mobileLabel: locale === 'ta-IN' ? 'செய்திகள்' : 'Messages' },
     { href: '/notifications', label: t('account.notifications'), mobileLabel: t('account.notifications') },
     { href: '/reviews', label: t('account.reviews'), mobileLabel: t('account.reviews') },
@@ -44,7 +47,36 @@ export default function LocalizedAccountShell({ children, active, customerName, 
     return () => { activeRequest = false; };
   }, [unreadCount]);
 
+  useEffect(() => {
+    let activeRequest = true;
+    const load = async () => {
+      try {
+        const response = await fetch('/api/notifications?mode=product-order-unread-updates', { cache: 'no-store' });
+        if (!response.ok || !activeRequest) return;
+        const payload = await response.json() as { unread_count?: number };
+        if (Number.isFinite(payload.unread_count)) setProductOrderUnreadCount(Math.max(0, Number(payload.unread_count)));
+      } catch {
+        // Product Order navigation attention is progressive enhancement.
+      }
+    };
+    const refresh = () => { void load(); };
+    const visibilityRefresh = () => { if (document.visibilityState === 'visible') refresh(); };
+    void load();
+    const timer = window.setInterval(refresh, 60_000);
+    window.addEventListener('focus', refresh);
+    window.addEventListener('customer-product-order-attention-refresh', refresh);
+    document.addEventListener('visibilitychange', visibilityRefresh);
+    return () => {
+      activeRequest = false;
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('customer-product-order-attention-refresh', refresh);
+      document.removeEventListener('visibilitychange', visibilityRefresh);
+    };
+  }, []);
+
   const notificationBadge = resolvedUnreadCount ? <span className="account-nav-count" aria-label={`${resolvedUnreadCount} ${unreadLabel}`}>{resolvedUnreadCount}</span> : null;
+  const productOrderBadge = productOrderUnreadCount ? <span className="account-nav-count" aria-label={`${productOrderUnreadCount} ${productOrderUnreadLabel}`}>{productOrderUnreadCount > 99 ? '99+' : productOrderUnreadCount}</span> : null;
 
   return (
     <div className="account-layout">
@@ -57,6 +89,7 @@ export default function LocalizedAccountShell({ children, active, customerName, 
           {links.map((link) => (
             <Link href={link.href} className={active === link.href ? 'account-nav-active' : ''} aria-current={active === link.href ? 'page' : undefined} key={link.href}>
               {link.label}
+              {link.href === '/orders' ? productOrderBadge : null}
               {link.href === '/notifications' ? notificationBadge : null}
             </Link>
           ))}
@@ -83,6 +116,7 @@ export default function LocalizedAccountShell({ children, active, customerName, 
               {mobileSecondaryLinks.map((link) => (
                 <Link href={link.href} className={active === link.href ? 'account-nav-active' : ''} aria-current={active === link.href ? 'page' : undefined} key={link.href}>
                   <span>{link.label}</span>
+                  {link.href === '/orders' ? productOrderBadge : null}
                   {link.href === '/notifications' ? notificationBadge : null}
                 </Link>
               ))}
