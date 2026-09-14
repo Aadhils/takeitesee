@@ -4,14 +4,14 @@ import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { Badge, Button, Card, EmptyState } from '../ui/primitives';
 import { useLanguage } from '../i18n/LanguageProvider';
+import styles from './CustomerOrders.module.css';
 
 type OrderStatus = 'requested' | 'accepted' | 'declined' | 'fulfilled' | 'cancelled';
-type OrderActorType = 'customer' | 'business' | 'system';
 
 type ProductOrderEvent = {
   id: string;
   order_id: string;
-  actor_type: OrderActorType;
+  actor_type: 'customer' | 'business' | 'system';
   event_type: OrderStatus;
   note: string | null;
   created_at: string;
@@ -113,30 +113,6 @@ export default function CustomerOrdersManager() {
     return tamil ? tamilCopy[status] : english[status];
   };
 
-  const eventLabel = (status: OrderStatus) => {
-    const english: Record<OrderStatus, string> = {
-      requested: 'Order requested',
-      accepted: 'Order accepted',
-      declined: 'Order declined',
-      fulfilled: 'Order fulfilled',
-      cancelled: 'Order cancelled',
-    };
-    const tamilCopy: Record<OrderStatus, string> = {
-      requested: 'Order கோரப்பட்டது',
-      accepted: 'Order ஏற்றுக்கொள்ளப்பட்டது',
-      declined: 'Order நிராகரிக்கப்பட்டது',
-      fulfilled: 'Order நிறைவேற்றப்பட்டது',
-      cancelled: 'Order ரத்து செய்யப்பட்டது',
-    };
-    return tamil ? tamilCopy[status] : english[status];
-  };
-
-  const actorLabel = (actorType: OrderActorType) => {
-    if (actorType === 'customer') return tamil ? 'வாடிக்கையாளர்' : 'Customer';
-    if (actorType === 'business') return tamil ? 'Business' : 'Business';
-    return tamil ? 'System' : 'System';
-  };
-
   const cancelOrder = async (orderId: string) => {
     setBusyOrderId(orderId);
     setError('');
@@ -157,7 +133,7 @@ export default function CustomerOrdersManager() {
   };
 
   if (authRequired) {
-    return <div className="bookings-page section-stack">
+    return <div className={`bookings-page section-stack ${styles.page}`}>
       <section className="page-intro">
         <span className="eyebrow">{tamil ? 'வாடிக்கையாளர் Orders' : 'Customer orders'}</span>
         <h1>{tamil ? 'என் product orders' : 'My product orders'}</h1>
@@ -175,67 +151,64 @@ export default function CustomerOrdersManager() {
     </div>;
   }
 
-  return <div className="bookings-page section-stack">
+  return <div className={`bookings-page section-stack ${styles.page}`}>
     <section className="page-intro">
       <span className="eyebrow">{tamil ? 'வாடிக்கையாளர் Orders' : 'Customer orders'}</span>
       <h1>{tamil ? 'என் product orders' : 'My product orders'}</h1>
       <p>{tamil
         ? 'Business products-க்கு நீங்கள் அனுப்பிய non-payment order requests. TakeItEsee payment/Cashfree இந்த flow-ல் செயல்படாது.'
-        : 'Your non-payment order requests for Business products. TakeItEsee payment and Cashfree are not active in this flow.'}</p>
+        : 'Track your non-payment order requests for Business products and open any order for its full activity history.'}</p>
     </section>
 
-    {error ? <p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p> : null}
+    {error ? <p role="alert" className={styles.error}>{error}</p> : null}
     {loading ? <Card><p>{tamil ? 'Orders ஏற்றப்படுகிறது…' : 'Loading orders…'}</p></Card> : null}
 
     {!loading && !orders.length ? <Card>
       <EmptyState title={tamil ? 'Order requests இன்னும் இல்லை' : 'No order requests yet'}>
         {tamil ? 'Approved Business storefront-ல் இருந்து product order request அனுப்பலாம்.' : 'Request an order from an approved Business storefront product.'}
       </EmptyState>
-      <div className="button-row"><Link href="/explore" className="button button-secondary">{tamil ? 'Marketplace பார்க்க' : 'Explore marketplace'}</Link></div>
+      <div className="button-row"><Link href="/products" className="button button-secondary">{tamil ? 'Products பார்க்க' : 'Browse products'}</Link></div>
     </Card> : null}
 
-    <div style={{ display: 'grid', gap: '1rem' }}>
+    <div className={styles.ordersList}>
       {orders.map((order) => {
         const total = order.unit_price_snapshot * order.quantity;
         const cancellable = order.status === 'requested' || order.status === 'accepted';
-        return <div id={`order-${order.id}`} key={order.id} style={{ scrollMarginTop: '6rem' }}><Card style={{ display: 'grid', gap: '.8rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-            <div>
-              <span className="eyebrow">{order.business_name_snapshot}</span>
-              <h2 style={{ margin: '.3rem 0' }}>{order.product_name_snapshot}</h2>
-              <p style={{ margin: 0 }}>{order.quantity} × {money(order.unit_price_snapshot, order.currency_snapshot)} / {order.unit_label_snapshot}</p>
+        const latestEvent = order.events.at(-1);
+        return <div id={`order-${order.id}`} key={order.id} className={styles.orderAnchor}>
+          <Card className={styles.orderCard}>
+            <div className={styles.orderHeader}>
+              <div className={styles.orderTitle}>
+                <span className="eyebrow">{order.business_name_snapshot}</span>
+                <h2>{order.product_name_snapshot}</h2>
+                <p>{order.quantity} × {money(order.unit_price_snapshot, order.currency_snapshot)} / {order.unit_label_snapshot}</p>
+              </div>
+              <Badge tone={statusTone(order.status)}>{statusLabel(order.status)}</Badge>
             </div>
-            <Badge tone={statusTone(order.status)}>{statusLabel(order.status)}</Badge>
-          </div>
-          <strong>{tamil ? 'Snapshot total' : 'Snapshot total'}: {money(total, order.currency_snapshot)}</strong>
-          {order.customer_note ? <p style={{ margin: 0 }}><strong>{tamil ? 'உங்கள் note' : 'Your note'}:</strong> {order.customer_note}</p> : null}
-          {order.business_note ? <p style={{ margin: 0 }}><strong>{tamil ? 'Business note' : 'Business note'}:</strong> {order.business_note}</p> : null}
-          <p className="muted" style={{ margin: 0 }}>
-            {tamil ? 'Requested' : 'Requested'} {new Date(order.created_at).toLocaleString(locale)} · Rev {order.product_revision}
-          </p>
 
-          {order.events.length ? <div style={{ borderTop: '1px solid var(--border, #e5e7eb)', paddingTop: '.75rem' }}>
-            <strong>{tamil ? 'Order activity' : 'Order activity'}</strong>
-            <ol style={{ margin: '.55rem 0 0', paddingLeft: '1.25rem', display: 'grid', gap: '.55rem' }}>
-              {order.events.map((event) => <li key={event.id}>
-                <div>
-                  <strong>{eventLabel(event.event_type)}</strong>
-                  <span className="muted"> · {actorLabel(event.actor_type)} · {new Date(event.created_at).toLocaleString(locale)}</span>
-                </div>
-                {event.note ? <p className="muted" style={{ margin: '.2rem 0 0' }}>{event.note}</p> : null}
-              </li>)}
-            </ol>
-          </div> : null}
+            <div className={styles.summaryGrid}>
+              <div><span>{tamil ? 'மொத்தம்' : 'Snapshot total'}</span><strong>{money(total, order.currency_snapshot)}</strong></div>
+              <div><span>{tamil ? 'கோரிய நேரம்' : 'Requested'}</span><strong>{new Date(order.created_at).toLocaleString(locale)}</strong></div>
+              <div><span>{tamil ? 'Revision' : 'Revision'}</span><strong>Rev {order.product_revision}</strong></div>
+            </div>
 
-          {(order.conversation_id || cancellable) ? <div className="button-row">
-            {order.conversation_id ? <Link href={`/messages?conversation=${encodeURIComponent(order.conversation_id)}`} className="button button-secondary">
-              {tamil ? 'Business-க்கு message' : 'Message Business'}
-            </Link> : null}
-            {cancellable ? <Button type="button" variant="secondary" loading={busyOrderId === order.id} onClick={() => void cancelOrder(order.id)}>
-              {tamil ? 'Order request ரத்து செய்' : 'Cancel order request'}
-            </Button> : null}
-          </div> : null}
-        </Card></div>;
+            {latestEvent ? <p className={styles.latestActivity}>
+              <strong>{tamil ? 'Latest' : 'Latest'}:</strong> {statusLabel(latestEvent.event_type)} · {new Date(latestEvent.created_at).toLocaleString(locale)}
+            </p> : null}
+
+            <div className={styles.orderActions}>
+              <Link href={`/orders/${encodeURIComponent(order.id)}`} className="button button-primary">
+                {tamil ? 'Order details பார்க்க' : 'View order details'}
+              </Link>
+              {order.conversation_id ? <Link href={`/messages?conversation=${encodeURIComponent(order.conversation_id)}`} className="button button-secondary">
+                {tamil ? 'Business-க்கு message' : 'Message Business'}
+              </Link> : null}
+              {cancellable ? <Button type="button" variant="secondary" loading={busyOrderId === order.id} onClick={() => void cancelOrder(order.id)}>
+                {tamil ? 'Order request ரத்து செய்' : 'Cancel order request'}
+              </Button> : null}
+            </div>
+          </Card>
+        </div>;
       })}
     </div>
   </div>;
