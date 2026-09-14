@@ -6,6 +6,7 @@ import LocalizedAccountShell from '../../components/account/LocalizedAccountShel
 import CustomerRequirementProposalAttention from '../../components/requirements/CustomerRequirementProposalAttention';
 import CustomerRequirementLifecycleOverview from '../../components/requirements/CustomerRequirementLifecycleOverview';
 import CustomerRequirementsManager, { type RequirementPrefill } from '../../components/requirements/CustomerRequirementsManager';
+import styles from '../../components/requirements/CustomerRequirementsResponsive.module.css';
 import { resolveRequirementExploreContext } from '../../components/requirements/requirementExplorePrefill';
 import { parseMarketplaceSearchIntent } from '../../components/discovery/marketplaceSearchIntent';
 import { Card, EmptyState } from '../../components/ui/primitives';
@@ -129,7 +130,7 @@ export default function RequirementsPage() {
   }
 
   return <LocalizedAccountShell active="/requirements">
-    <div style={{ display: 'grid', gap: '1.5rem' }}>
+    <div className={styles.journey}>
       <CustomerRequirementProposalAttention />
       <CustomerRequirementLifecycleOverview />
       <CustomerRequirementsManager prefill={prefill} />

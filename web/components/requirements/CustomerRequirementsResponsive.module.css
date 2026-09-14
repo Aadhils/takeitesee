@@ -1,0 +1,216 @@
+.journey,
+.detailJourney {
+  display: grid;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.journey :global(.policy-card),
+.detailJourney :global(.policy-card),
+.detailJourney :global(.customer-proposal-card),
+.detailJourney :global(.customer-proposal-compare-guide),
+.detailJourney :global(.customer-provider-current-context),
+.detailJourney :global(.customer-proposal-message),
+.detailJourney :global(.customer-proposal-confirm) {
+  min-width: 0;
+}
+
+.journey :global(.section-heading),
+.detailJourney :global(.section-heading) {
+  min-width: 0;
+  align-items: flex-start;
+}
+
+.journey :global(.section-heading) > div,
+.detailJourney :global(.section-heading) > div {
+  min-width: 0;
+}
+
+.journey :global(.section-heading) h1,
+.journey :global(.section-heading) h2,
+.journey :global(.section-heading) h3,
+.detailJourney :global(.section-heading) h1,
+.detailJourney :global(.section-heading) h2,
+.detailJourney :global(.section-heading) h3,
+.journey :global(.detail-copy),
+.detailJourney :global(.detail-copy),
+.detailJourney :global(.summary-note),
+.detailJourney :global(.customer-proposal-message) p,
+.detailJourney :global(.customer-provider-current-context) p,
+.detailJourney :global(.customer-proposal-confirm) p {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.journey :global(.review-details),
+.detailJourney :global(.review-details) {
+  min-width: 0;
+}
+
+.journey :global(.review-details) > div,
+.detailJourney :global(.review-details) > div {
+  min-width: 0;
+}
+
+.journey :global(.review-details) dd,
+.detailJourney :global(.review-details) dd {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.journey :global(.policy-card form) {
+  min-width: 0;
+}
+
+.journey :global(.policy-card form) :global(input),
+.journey :global(.policy-card form) :global(textarea),
+.journey :global(.policy-card form) :global(select) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.journey :global(.button),
+.detailJourney :global(.button) {
+  min-height: 44px;
+}
+
+.detailJourney :global(.customer-proposal-compare-guide) {
+  display: grid;
+  gap: .7rem;
+}
+
+.detailJourney :global(.customer-proposal-compare-guide) p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.detailJourney :global(.customer-proposal-compare-badges),
+.detailJourney :global(.customer-proposal-statuses) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+}
+
+.detailJourney :global(.customer-proposal-statuses) {
+  justify-content: flex-end;
+}
+
+.detailJourney :global(.customer-proposal-card) {
+  display: grid;
+  gap: .9rem;
+  overflow: hidden;
+}
+
+.detailJourney :global(.customer-provider-current-context) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: .9rem;
+  align-items: start;
+}
+
+.detailJourney :global(.customer-provider-current-context) > div {
+  min-width: 0;
+}
+
+.detailJourney :global(.customer-proposal-message),
+.detailJourney :global(.customer-proposal-confirm) {
+  display: grid;
+  gap: .65rem;
+}
+
+.detailJourney :global(.customer-proposal-message) p,
+.detailJourney :global(.customer-proposal-confirm) p {
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .journey,
+  .detailJourney {
+    gap: 1rem;
+  }
+
+  .journey :global(.section-heading),
+  .detailJourney :global(.section-heading) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: .65rem;
+  }
+
+  .journey :global(.section-heading) > :global(.badge),
+  .detailJourney :global(.section-heading) > :global(.badge) {
+    justify-self: start;
+  }
+
+  .detailJourney :global(.customer-proposal-statuses) {
+    justify-content: flex-start;
+  }
+
+  .detailJourney :global(.customer-provider-current-context) {
+    grid-template-columns: 1fr;
+  }
+
+  .detailJourney :global(.customer-provider-current-context) :global(.button) {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 560px) {
+  .journey :global(.policy-card),
+  .detailJourney :global(.policy-card) {
+    padding: 16px;
+  }
+
+  .journey :global(.policy-card form) > div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  .journey :global(.review-details) > div,
+  .detailJourney :global(.review-details) > div {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: .25rem;
+  }
+
+  .journey :global(.review-details) dd,
+  .detailJourney :global(.review-details) dd {
+    max-width: none;
+    text-align: left;
+  }
+
+  .journey section :global(.policy-card) :global(.button),
+  .detailJourney :global(.policy-card) :global(.button),
+  .detailJourney :global(.customer-proposal-card) :global(.button),
+  .detailJourney :global(.customer-proposal-confirm) :global(.button) {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .detailJourney :global(.customer-proposal-card) {
+    gap: .75rem;
+  }
+
+  .detailJourney :global(.customer-proposal-compare-badges),
+  .detailJourney :global(.customer-proposal-statuses) {
+    gap: .35rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .journey :global(.policy-card),
+  .detailJourney :global(.policy-card) {
+    padding: 14px;
+  }
+
+  .journey :global(.section-heading) h1,
+  .detailJourney :global(.section-heading) h1 {
+    font-size: clamp(1.65rem, 8vw, 2.2rem);
+  }
+
+  .detailJourney {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+}
