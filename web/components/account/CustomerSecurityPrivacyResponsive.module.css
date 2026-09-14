@@ -1,0 +1,151 @@
+.securityPrivacyJourney {
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.securityPrivacyJourney :global(.container),
+.securityPrivacyJourney :global(.section-stack),
+.securityPrivacyJourney :global(.page-intro),
+.securityPrivacyJourney :global(.card),
+.securityPrivacyJourney :global(.auth-card),
+.securityPrivacyJourney :global(.settings-note),
+.securityPrivacyJourney :global(.alert),
+.securityPrivacyJourney :global(.admin-record-top),
+.securityPrivacyJourney :global(.admin-record-top) > div,
+.securityPrivacyJourney :global(.account-details),
+.securityPrivacyJourney :global(.account-details) > div,
+.securityPrivacyJourney form,
+.securityPrivacyJourney label,
+.securityPrivacyJourney input,
+.securityPrivacyJourney select,
+.securityPrivacyJourney textarea {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.securityPrivacyJourney :global(.page-intro) h1,
+.securityPrivacyJourney :global(.page-intro) p,
+.securityPrivacyJourney :global(.card) h1,
+.securityPrivacyJourney :global(.card) h2,
+.securityPrivacyJourney :global(.card) h3,
+.securityPrivacyJourney :global(.card) p,
+.securityPrivacyJourney :global(.card) strong,
+.securityPrivacyJourney :global(.card) span,
+.securityPrivacyJourney :global(.card) dd,
+.securityPrivacyJourney :global(.settings-note),
+.securityPrivacyJourney :global(.settings-note) p,
+.securityPrivacyJourney :global(.alert),
+.securityPrivacyJourney :global(.field-error) {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.securityPrivacyJourney :global(.page-intro) {
+  max-width: 56rem;
+}
+
+.securityPrivacyJourney :global(.auth-card) {
+  width: 100%;
+}
+
+.securityPrivacyJourney form {
+  width: 100%;
+}
+
+.securityPrivacyJourney input,
+.securityPrivacyJourney select,
+.securityPrivacyJourney textarea {
+  width: 100%;
+}
+
+.securityPrivacyJourney textarea {
+  resize: vertical;
+}
+
+.securityPrivacyJourney :global(.button-row) {
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+.securityPrivacyJourney :global(.button) {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+}
+
+.securityPrivacyJourney :global(.account-details) dd {
+  margin-inline-start: 0;
+}
+
+.securityPrivacyJourney :global(.admin-record-top) {
+  gap: .8rem;
+}
+
+.securityPrivacyJourney :global(.admin-record-top) > :global(.badge) {
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+
+@media (max-width: 760px) {
+  .securityPrivacyJourney :global(.page-intro) h1 {
+    font-size: clamp(2rem, 9vw, 3rem);
+    line-height: 1.04;
+  }
+
+  .securityPrivacyJourney :global(.admin-record-top) {
+    align-items: flex-start;
+  }
+
+  .securityPrivacyJourney :global(.account-details) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .securityPrivacyJourney :global(.container) {
+    padding-inline: clamp(.85rem, 4vw, 1.1rem);
+  }
+
+  .securityPrivacyJourney :global(.section-stack) {
+    gap: 1rem;
+  }
+
+  .securityPrivacyJourney :global(.card),
+  .securityPrivacyJourney :global(.auth-card) {
+    padding: clamp(1rem, 4.5vw, 1.25rem);
+  }
+
+  .securityPrivacyJourney :global(.admin-record-top) {
+    flex-direction: column;
+  }
+
+  .securityPrivacyJourney :global(.button-row) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+  }
+
+  .securityPrivacyJourney :global(.button-row) :global(.button),
+  .securityPrivacyJourney form > :global(.button) {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .securityPrivacyJourney input,
+  .securityPrivacyJourney select,
+  .securityPrivacyJourney textarea {
+    font-size: 16px;
+  }
+
+  .securityPrivacyJourney textarea {
+    min-height: 8rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .securityPrivacyJourney {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+}
