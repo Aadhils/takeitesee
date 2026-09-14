@@ -1,0 +1,151 @@
+.confirmation-page {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.confirmation-page .confirmation-panel,
+.confirmation-page .confirmation-layout,
+.confirmation-page .confirmation-layout > .card,
+.confirmation-page .confirmation-actions,
+.confirmation-page .booking-card-top,
+.confirmation-page .review-details,
+.confirmation-page .payment-line,
+.confirmation-page .confirmation-reference {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.confirmation-page .confirmation-panel h1,
+.confirmation-page .confirmation-panel p,
+.confirmation-page .confirmation-reference,
+.confirmation-page .confirmation-reference strong,
+.confirmation-page .booking-card-top h2,
+.confirmation-page .card-provider,
+.confirmation-page .review-details dt,
+.confirmation-page .review-details dd,
+.confirmation-page .payment-line,
+.confirmation-page .summary-note {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.confirmation-page .confirmation-reference {
+  width: min(100%, 520px);
+}
+
+.confirmation-page .confirmation-reference strong {
+  max-width: 100%;
+}
+
+.confirmation-page .confirmation-actions .button {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+}
+
+.confirmation-page .booking-card-top,
+.confirmation-page .payment-line {
+  flex-wrap: wrap;
+}
+
+.confirmation-page .review-details dd {
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .confirmation-page {
+    gap: 22px;
+  }
+
+  .confirmation-page .confirmation-panel {
+    padding: 30px 18px;
+  }
+
+  .confirmation-page .confirmation-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .confirmation-page .confirmation-actions {
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .confirmation-page .confirmation-panel {
+    gap: 10px;
+    padding: 24px 16px;
+  }
+
+  .confirmation-page .confirmation-panel h1 {
+    font-size: clamp(2rem, 11vw, 3rem);
+    line-height: 1.02;
+  }
+
+  .confirmation-page .confirmation-reference {
+    display: grid;
+    gap: 6px;
+    justify-items: center;
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .confirmation-page .confirmation-reference strong {
+    letter-spacing: .04em;
+  }
+
+  .confirmation-page .confirmation-layout > .card {
+    gap: 14px;
+    padding: 18px;
+  }
+
+  .confirmation-page .booking-card-top {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .confirmation-page .review-details div {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .confirmation-page .review-details dd {
+    max-width: 100%;
+    text-align: left;
+  }
+
+  .confirmation-page .payment-line {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .confirmation-page .confirmation-actions .button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 420px) {
+  .confirmation-page {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .confirmation-page .confirmation-panel {
+    border-radius: 16px;
+    padding: 20px 14px;
+  }
+
+  .confirmation-page .confirmation-layout > .card {
+    padding: 16px;
+  }
+
+  .confirmation-page .confirmation-mark {
+    width: 44px;
+    height: 44px;
+  }
+}
