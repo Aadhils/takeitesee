@@ -1,0 +1,120 @@
+.servicesJourney {
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.servicesJourney :global(.provider-page-heading),
+.servicesJourney :global(.provider-page-heading) > div,
+.servicesJourney :global(.provider-heading-action),
+.servicesJourney :global(.card),
+.servicesJourney :global(.card) > div,
+.servicesJourney :global(.field),
+.servicesJourney :global(.field-control),
+.servicesJourney form,
+.servicesJourney label {
+  min-width: 0;
+}
+
+.servicesJourney :global(.provider-page-heading) h1,
+.servicesJourney :global(.provider-page-heading) p,
+.servicesJourney :global(.card) h2,
+.servicesJourney :global(.card) p,
+.servicesJourney :global(.card) strong,
+.servicesJourney :global(.card) span,
+.servicesJourney :global(.alert),
+.servicesJourney a,
+.servicesJourney label {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.servicesJourney :global(.field),
+.servicesJourney :global(.field-control),
+.servicesJourney textarea,
+.servicesJourney select,
+.servicesJourney input {
+  max-width: 100%;
+}
+
+.servicesJourney :global(.field-control),
+.servicesJourney textarea,
+.servicesJourney select,
+.servicesJourney input {
+  width: 100%;
+}
+
+.servicesJourney :global(.button) {
+  min-height: 44px !important;
+  max-width: 100%;
+  white-space: normal !important;
+}
+
+.servicesJourney :global(.text-link) {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+@media (max-width: 900px) {
+  .servicesJourney :global(.provider-page-heading) {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 760px) {
+  .servicesJourney :global(.provider-page-heading) {
+    flex-direction: column;
+    gap: .75rem;
+  }
+
+  .servicesJourney :global(.provider-heading-action) {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .servicesJourney :global(.provider-heading-action) :global(.button) {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .servicesJourney :global(.card) {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .servicesJourney :global(.card) :global(.field),
+  .servicesJourney :global(.card) :global(.field-control) {
+    width: 100%;
+  }
+
+  .servicesJourney :global(.card) :global(.button) {
+    width: 100% !important;
+    justify-content: center;
+  }
+
+  .servicesJourney :global(.card) :global(.text-link) {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .servicesJourney form > div:first-child {
+    align-items: stretch;
+  }
+
+  .servicesJourney form > div:first-child :global(.button) {
+    width: 100%;
+  }
+
+  .servicesJourney textarea {
+    min-height: 9rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .servicesJourney {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+}
