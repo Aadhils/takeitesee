@@ -1,0 +1,160 @@
+.journey {
+  display: grid;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 1120px;
+  min-width: 0;
+  margin: 0 auto;
+  overflow-x: clip;
+}
+
+.journey :global(.policy-card),
+.journey :global(.provider-lead-match-context),
+.journey :global(.provider-lead-proposal),
+.journey :global(.provider-lead-response-cta),
+.journey :global(.provider-award-next-actions) {
+  min-width: 0;
+}
+
+.journey :global(.section-heading) {
+  min-width: 0;
+  align-items: flex-start;
+}
+
+.journey :global(.section-heading) > div {
+  min-width: 0;
+}
+
+.journey :global(.section-heading) h1,
+.journey :global(.section-heading) h2,
+.journey :global(.section-heading) h3,
+.journey :global(.detail-copy),
+.journey :global(.summary-note),
+.journey :global(.provider-lead-match-context) p,
+.journey :global(.provider-lead-response-cta) span,
+.journey :global(.provider-proposal-helper) span,
+.journey :global(.provider-award-next-actions) p {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.journey :global(.review-details),
+.journey :global(.review-details) > div,
+.journey :global(.review-details) dd {
+  min-width: 0;
+}
+
+.journey :global(.review-details) dd {
+  overflow-wrap: anywhere;
+}
+
+.journey :global(.provider-lead-match-badges),
+.journey :global(.provider-proposal-helper),
+.journey :global(.provider-proposal-actions),
+.journey :global(.provider-award-next-actions-buttons) {
+  min-width: 0;
+}
+
+.journey :global(.provider-lead-proposal) :global(.field),
+.journey :global(.provider-lead-proposal) :global(.field-control) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.journey :global(.provider-lead-proposal) :global(.field-control) {
+  width: 100%;
+}
+
+.journey :global(.button) {
+  min-height: 44px;
+}
+
+@media (max-width: 760px) {
+  .journey {
+    gap: 1rem;
+  }
+
+  .journey :global(.section-heading) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: .65rem;
+  }
+
+  .journey :global(.section-heading) > div:last-child {
+    justify-content: flex-start !important;
+  }
+
+  .journey :global(.provider-lead-response-cta),
+  .journey :global(.provider-proposal-helper),
+  .journey :global(.provider-proposal-actions),
+  .journey :global(.provider-award-next-actions-buttons) {
+    align-items: stretch;
+  }
+
+  .journey :global(.provider-lead-match-context),
+  .journey :global(.provider-award-next-actions) {
+    padding: .8rem .9rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .journey :global(.policy-card) {
+    padding: 16px;
+  }
+
+  .journey :global(.review-details) > div {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: .25rem;
+  }
+
+  .journey :global(.review-details) dd {
+    max-width: none;
+    text-align: left;
+  }
+
+  .journey :global(.provider-lead-match-badges) {
+    gap: .35rem;
+  }
+
+  .journey :global(.provider-lead-response-cta),
+  .journey :global(.provider-proposal-helper),
+  .journey :global(.provider-proposal-actions),
+  .journey :global(.provider-award-next-actions-buttons) {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: .55rem;
+  }
+
+  .journey :global(.provider-lead-response-cta) :global(.button),
+  .journey :global(.provider-proposal-helper) :global(.button),
+  .journey :global(.provider-proposal-actions) :global(.button),
+  .journey :global(.provider-award-next-actions-buttons) :global(.button),
+  .journey :global(.policy-card) > div:last-child :global(.button) {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .journey :global(.provider-lead-response-cta) span,
+  .journey :global(.provider-proposal-helper) span {
+    line-height: 1.45;
+  }
+
+  .journey :global(.provider-lead-proposal) {
+    gap: .7rem !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .journey {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .journey :global(.policy-card) {
+    padding: 14px;
+  }
+
+  .journey :global(.section-heading) h1 {
+    font-size: clamp(1.65rem, 8vw, 2.2rem);
+  }
+}
