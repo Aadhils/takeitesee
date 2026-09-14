@@ -7,13 +7,16 @@ import { useRemainingWorkspaceTranslations } from '../i18n/RemainingWorkspaceTra
 export default function LocalizedAccountShell({ children, active, customerName, unreadCount }: { children: ReactNode; active: string; customerName?: string; unreadCount?: number }) {
   const { t, locale } = useRemainingWorkspaceTranslations();
   const [fetchedUnreadCount, setFetchedUnreadCount] = useState(0);
+  const [messageUnreadCount, setMessageUnreadCount] = useState(0);
   const [productOrderUnreadCount, setProductOrderUnreadCount] = useState(0);
   const name = customerName || t('account.yourAccount');
   const initials = name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
   const unreadLabel = locale === 'ta-IN' ? 'படிக்காத அறிவிப்புகள்' : 'unread notifications';
+  const messageUnreadLabel = locale === 'ta-IN' ? 'படிக்காத செய்திகள்' : 'unread messages';
   const productOrderUnreadLabel = locale === 'ta-IN' ? 'புதிய Product Order updates' : 'new Product Order updates';
   const moreLabel = locale === 'ta-IN' ? 'மேலும்' : 'More';
   const resolvedUnreadCount = unreadCount ?? fetchedUnreadCount;
+  const countLabel = (value: number) => value > 99 ? '99+' : String(value);
   const links = [
     { href: '/account', label: t('account.overview'), mobileLabel: t('account.overview') },
     { href: '/account/profile', label: t('account.profile'), mobileLabel: t('account.profile') },
@@ -37,15 +40,59 @@ export default function LocalizedAccountShell({ children, active, customerName, 
   useEffect(() => {
     if (unreadCount !== undefined) return;
     let activeRequest = true;
-    void fetch('/api/notifications?mode=unread-count', { cache: 'no-store' })
-      .then(async (response) => {
-        if (!response.ok) return;
+    const load = async () => {
+      try {
+        const response = await fetch('/api/notifications?mode=unread-count', { cache: 'no-store' });
+        if (!response.ok || !activeRequest) return;
         const payload = await response.json() as { unread_count?: number };
-        if (activeRequest && Number.isFinite(payload.unread_count)) setFetchedUnreadCount(Number(payload.unread_count));
-      })
-      .catch(() => undefined);
-    return () => { activeRequest = false; };
+        if (Number.isFinite(payload.unread_count)) setFetchedUnreadCount(Math.max(0, Number(payload.unread_count)));
+      } catch {
+        // Notification navigation attention is progressive enhancement.
+      }
+    };
+    const refresh = () => { void load(); };
+    const visibilityRefresh = () => { if (document.visibilityState === 'visible') refresh(); };
+    void load();
+    const timer = window.setInterval(refresh, 60_000);
+    window.addEventListener('focus', refresh);
+    window.addEventListener('notifications-attention-refresh', refresh);
+    document.addEventListener('visibilitychange', visibilityRefresh);
+    return () => {
+      activeRequest = false;
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('notifications-attention-refresh', refresh);
+      document.removeEventListener('visibilitychange', visibilityRefresh);
+    };
   }, [unreadCount]);
+
+  useEffect(() => {
+    let activeRequest = true;
+    const load = async () => {
+      try {
+        const response = await fetch('/api/messages?mode=unread-count', { cache: 'no-store' });
+        if (!response.ok || !activeRequest) return;
+        const payload = await response.json() as { unread_count?: number };
+        if (Number.isFinite(payload.unread_count)) setMessageUnreadCount(Math.max(0, Number(payload.unread_count)));
+      } catch {
+        // Message navigation attention is progressive enhancement.
+      }
+    };
+    const refresh = () => { void load(); };
+    const visibilityRefresh = () => { if (document.visibilityState === 'visible') refresh(); };
+    void load();
+    const timer = window.setInterval(refresh, 60_000);
+    window.addEventListener('focus', refresh);
+    window.addEventListener('marketplace-messages-attention-refresh', refresh);
+    document.addEventListener('visibilitychange', visibilityRefresh);
+    return () => {
+      activeRequest = false;
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('marketplace-messages-attention-refresh', refresh);
+      document.removeEventListener('visibilitychange', visibilityRefresh);
+    };
+  }, []);
 
   useEffect(() => {
     let activeRequest = true;
@@ -75,8 +122,9 @@ export default function LocalizedAccountShell({ children, active, customerName, 
     };
   }, []);
 
-  const notificationBadge = resolvedUnreadCount ? <span className="account-nav-count" aria-label={`${resolvedUnreadCount} ${unreadLabel}`}>{resolvedUnreadCount}</span> : null;
-  const productOrderBadge = productOrderUnreadCount ? <span className="account-nav-count" aria-label={`${productOrderUnreadCount} ${productOrderUnreadLabel}`}>{productOrderUnreadCount > 99 ? '99+' : productOrderUnreadCount}</span> : null;
+  const notificationBadge = resolvedUnreadCount ? <span className="account-nav-count" aria-label={`${resolvedUnreadCount} ${unreadLabel}`}>{countLabel(resolvedUnreadCount)}</span> : null;
+  const messageBadge = messageUnreadCount ? <span className="account-nav-count" aria-label={`${messageUnreadCount} ${messageUnreadLabel}`}>{countLabel(messageUnreadCount)}</span> : null;
+  const productOrderBadge = productOrderUnreadCount ? <span className="account-nav-count" aria-label={`${productOrderUnreadCount} ${productOrderUnreadLabel}`}>{countLabel(productOrderUnreadCount)}</span> : null;
 
   return (
     <div className="account-layout">
@@ -90,6 +138,7 @@ export default function LocalizedAccountShell({ children, active, customerName, 
             <Link href={link.href} className={active === link.href ? 'account-nav-active' : ''} aria-current={active === link.href ? 'page' : undefined} key={link.href}>
               {link.label}
               {link.href === '/orders' ? productOrderBadge : null}
+              {link.href === '/messages' ? messageBadge : null}
               {link.href === '/notifications' ? notificationBadge : null}
             </Link>
           ))}
@@ -109,7 +158,7 @@ export default function LocalizedAccountShell({ children, active, customerName, 
           <details className={`account-mobile-more${activeSecondaryLink ? ' account-mobile-more-active' : ''}`}>
             <summary aria-label={activeSecondaryLink ? `${mobileMoreLabel} — ${moreLabel}` : moreLabel}>
               <span className="account-mobile-more-label">{mobileMoreLabel}</span>
-              {resolvedUnreadCount ? <span className="account-nav-count account-mobile-more-count" aria-label={`${resolvedUnreadCount} ${unreadLabel}`}>{resolvedUnreadCount}</span> : null}
+              {resolvedUnreadCount ? <span className="account-nav-count account-mobile-more-count" aria-label={`${resolvedUnreadCount} ${unreadLabel}`}>{countLabel(resolvedUnreadCount)}</span> : null}
               <span className="account-mobile-more-caret" aria-hidden="true">⌄</span>
             </summary>
             <div className="account-mobile-more-menu">
@@ -117,6 +166,7 @@ export default function LocalizedAccountShell({ children, active, customerName, 
                 <Link href={link.href} className={active === link.href ? 'account-nav-active' : ''} aria-current={active === link.href ? 'page' : undefined} key={link.href}>
                   <span>{link.label}</span>
                   {link.href === '/orders' ? productOrderBadge : null}
+                  {link.href === '/messages' ? messageBadge : null}
                   {link.href === '/notifications' ? notificationBadge : null}
                 </Link>
               ))}
