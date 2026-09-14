@@ -21,8 +21,14 @@ test('Customer Bookings keeps all lifecycle groups and adds a compact jump summa
 test('Customer Bookings mobile presentation is compact without changing booking grids on desktop', () => {
   assert.ok(cssSource.includes('@media (max-width: 760px)'));
   assert.ok(cssSource.includes('grid-template-columns: repeat(4, minmax(0, 1fr))'));
+  assert.ok(cssSource.includes('flex-direction: row !important'));
+  assert.ok(cssSource.includes('width: fit-content !important'));
+  assert.ok(cssSource.includes('align-self: flex-start !important'));
+  assert.ok(cssSource.includes('.bookingGroupEmpty :global(.card)'));
+  assert.ok(cssSource.includes('padding: 0 !important'));
   assert.ok(cssSource.includes('.bookingGroupEmpty :global(.state-panel)'));
-  assert.ok(cssSource.includes('padding: 18px 16px'));
+  assert.ok(cssSource.includes('padding: 18px 14px !important'));
+  assert.ok(cssSource.includes('min-height: 0 !important'));
   assert.ok(cssSource.includes('.bookingsPage :global(.booking-card)'));
   assert.ok(cssSource.includes('overflow-x: clip'));
 });
