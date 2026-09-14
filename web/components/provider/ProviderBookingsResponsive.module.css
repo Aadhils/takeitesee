@@ -1,0 +1,150 @@
+.bookingsJourney,
+.detailJourney {
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.bookingsJourney :global(.provider-booking-list),
+.bookingsJourney :global(.provider-booking-card),
+.bookingsJourney :global(.provider-booking-top),
+.bookingsJourney :global(.provider-booking-footer),
+.bookingsJourney :global(.provider-booking-details),
+.bookingsJourney :global(.provider-booking-details) > div,
+.bookingsJourney :global(.provider-actions),
+.detailJourney :global(.provider-detail-grid),
+.detailJourney :global(.provider-detail-card),
+.detailJourney :global(.provider-profile-details),
+.detailJourney :global(.provider-profile-details) > div,
+.detailJourney :global(.provider-actions),
+.detailJourney :global(.section-heading) {
+  min-width: 0;
+}
+
+.bookingsJourney :global(.provider-booking-top) > div,
+.bookingsJourney :global(.provider-booking-footer) > div,
+.detailJourney :global(.section-heading) > div,
+.detailJourney :global(.provider-profile-details) dd {
+  min-width: 0;
+}
+
+.bookingsJourney :global(.provider-booking-card) h2,
+.bookingsJourney :global(.provider-service-name),
+.bookingsJourney :global(.provider-customer-note),
+.bookingsJourney :global(.provider-booking-details) dd,
+.bookingsJourney :global(.provider-fixture-note),
+.detailJourney :global(.provider-detail-card) h2,
+.detailJourney :global(.provider-detail-card) p,
+.detailJourney :global(.provider-profile-details) dd,
+.detailJourney :global(.summary-note) {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.bookingsJourney :global(.field),
+.bookingsJourney :global(.field-control),
+.detailJourney :global(.field),
+.detailJourney :global(.field-control) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.bookingsJourney :global(.field-control),
+.detailJourney :global(.field-control) {
+  width: 100%;
+}
+
+.bookingsJourney :global(.button),
+.detailJourney :global(.button) {
+  min-height: 44px;
+}
+
+.bookingsJourney :global(.provider-actions),
+.detailJourney :global(.provider-actions) {
+  flex-wrap: wrap;
+}
+
+.detailJourney :global(a[href="/provider/bookings"]) {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  width: fit-content;
+}
+
+@media (max-width: 900px) {
+  .detailJourney :global(.provider-detail-grid) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .bookingsJourney :global(.provider-booking-card),
+  .detailJourney :global(.provider-detail-card) {
+    padding: 16px;
+  }
+
+  .bookingsJourney :global(.provider-booking-details) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bookingsJourney :global(.provider-booking-top),
+  .bookingsJourney :global(.provider-booking-footer),
+  .detailJourney :global(.section-heading) {
+    gap: .75rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .bookingsJourney :global(.provider-booking-card),
+  .detailJourney :global(.provider-detail-card) {
+    padding: 14px;
+  }
+
+  .bookingsJourney :global(.provider-booking-top),
+  .bookingsJourney :global(.provider-booking-footer),
+  .detailJourney :global(.section-heading) {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .bookingsJourney :global(.provider-booking-details),
+  .detailJourney :global(.provider-profile-details) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bookingsJourney :global(.provider-booking-details) > div,
+  .detailJourney :global(.provider-profile-details) > div {
+    min-width: 0;
+  }
+
+  .bookingsJourney :global(.provider-actions),
+  .detailJourney :global(.provider-actions) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    gap: .55rem;
+  }
+
+  .bookingsJourney :global(.provider-actions) :global(.button),
+  .detailJourney :global(.provider-actions) :global(.button),
+  .detailJourney :global(.provider-detail-card) > :global(.button) {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .bookingsJourney :global(.provider-booking-footer) > :global(.badge) {
+    width: fit-content;
+  }
+}
+
+@media (max-width: 420px) {
+  .bookingsJourney,
+  .detailJourney {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .bookingsJourney :global(.provider-booking-card),
+  .detailJourney :global(.provider-detail-card) {
+    padding: 12px;
+  }
+}
