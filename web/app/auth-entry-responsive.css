@@ -1,0 +1,139 @@
+.auth-page {
+  width: min(100%, 620px);
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.auth-page .page-intro,
+.auth-page .auth-card,
+.auth-page .card,
+.auth-page form,
+.auth-page .field,
+.auth-page .section-stack,
+.auth-page .choice-row,
+.auth-page .alert,
+.auth-page .settings-note {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.auth-page .page-intro h1,
+.auth-page .page-intro p,
+.auth-page .auth-card h2,
+.auth-page .auth-card h3,
+.auth-page .auth-card p,
+.auth-page .auth-card strong,
+.auth-page .auth-switch,
+.auth-page .choice-row,
+.auth-page .choice-row span,
+.auth-page .choice-description,
+.auth-page .alert,
+.auth-page .settings-note,
+.auth-page .field-hint,
+.auth-page .field-error,
+.auth-page .text-link {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.auth-page .field-control {
+  min-height: 46px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.auth-page .button,
+.auth-page button[type='submit'] {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+}
+
+.auth-page .field button[aria-pressed] {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.auth-page .choice-row {
+  width: 100%;
+  min-height: 44px;
+  align-items: flex-start;
+}
+
+.auth-page .choice-input {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+}
+
+.auth-page .auth-switch {
+  line-height: 1.5;
+}
+
+.auth-page .section-stack {
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .auth-page {
+    gap: 18px;
+  }
+
+  .auth-page .page-intro h1 {
+    font-size: clamp(2rem, 10vw, 3rem);
+    line-height: 1.04;
+  }
+
+  .auth-page .page-intro p {
+    line-height: 1.55;
+  }
+
+  .auth-page .auth-card {
+    gap: 16px;
+    padding: clamp(18px, 5vw, 22px);
+  }
+
+  .auth-page .auth-card form,
+  .auth-page .section-stack {
+    gap: 14px;
+  }
+}
+
+@media (max-width: 560px) {
+  .auth-page .field-control {
+    font-size: 16px;
+  }
+
+  .auth-page .button,
+  .auth-page button[type='submit'],
+  .auth-page .auth-card > .button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .auth-page .auth-switch {
+    margin-top: 2px;
+  }
+
+  .auth-page .choice-row {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  .auth-page {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .auth-page .auth-card {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .auth-page .page-intro h1 {
+    font-size: clamp(1.85rem, 10.5vw, 2.45rem);
+  }
+}
