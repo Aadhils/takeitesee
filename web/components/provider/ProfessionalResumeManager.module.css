@@ -1,16 +1,19 @@
 .stack {
   display: grid;
+  min-width: 0;
   gap: 20px;
 }
 
 .summaryGrid {
   display: grid;
+  min-width: 0;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 
 .summaryCard {
   display: grid;
+  min-width: 0;
   gap: 8px;
   padding: 20px;
 }
@@ -25,27 +28,60 @@
   line-height: 1.55;
 }
 
+.summaryCard strong,
+.summaryCard p,
+.sectionHeading h2,
+.itemCard h3,
+.itemCard p,
+.itemCard strong,
+.itemCard span,
+.itemCard small,
+.opportunityBox,
+.inlineEditor label {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .sectionCard {
   display: grid;
+  min-width: 0;
   gap: 20px;
   padding: 22px;
 }
 
 .sectionHeading {
   display: flex;
+  min-width: 0;
   justify-content: space-between;
   align-items: flex-start;
   gap: 16px;
+}
+
+.sectionHeading > * {
+  min-width: 0;
 }
 
 .sectionHeading h2 {
   margin: 5px 0 0;
 }
 
+.sectionHeading :global(.badge) {
+  max-width: 100%;
+  white-space: normal;
+}
+
 .formStack,
 .inlineEditor {
   display: grid;
+  min-width: 0;
   gap: 16px;
+}
+
+.formStack > *,
+.inlineEditor > *,
+.twoCol > *,
+.choiceGrid > * {
+  min-width: 0;
 }
 
 .inlineEditor {
@@ -59,12 +95,14 @@
 
 .twoCol {
   display: grid;
+  min-width: 0;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
 
 .choiceGrid {
   display: grid;
+  min-width: 0;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
@@ -73,13 +111,28 @@
 .itemActions,
 .badges {
   display: flex;
+  min-width: 0;
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
 }
 
+.actions :global(.button),
+.itemActions :global(.button) {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.badges :global(.badge) {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .opportunityBox {
   display: grid;
+  min-width: 0;
   gap: 10px;
   padding: 16px;
   border: 1px solid var(--color-border, #e5e7eb);
@@ -89,16 +142,22 @@
 
 .itemGrid {
   display: grid;
+  min-width: 0;
   gap: 12px;
 }
 
 .itemCard {
   display: flex;
+  min-width: 0;
   justify-content: space-between;
   gap: 18px;
   padding: 16px;
   border: 1px solid var(--color-border, #e5e7eb);
   border-radius: 14px;
+}
+
+.itemCard > * {
+  min-width: 0;
 }
 
 .itemCard h3 {
@@ -135,5 +194,35 @@
 
   .itemActions {
     align-self: stretch;
+  }
+}
+
+@media (max-width: 560px) {
+  .summaryCard,
+  .sectionCard {
+    padding: 16px;
+  }
+
+  .actions,
+  .itemActions {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .actions :global(.button),
+  .itemActions :global(.button) {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .formStack :global(input),
+  .formStack :global(textarea),
+  .formStack :global(select),
+  .inlineEditor :global(input),
+  .inlineEditor :global(textarea),
+  .inlineEditor :global(select) {
+    max-width: 100%;
+    font-size: 16px;
   }
 }
