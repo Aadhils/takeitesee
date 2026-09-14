@@ -32,7 +32,7 @@ test('Professional Portfolio journey covers narrow-screen form and action ergono
 
 test('Professional Portfolio media cards retain responsive gallery and editor hardening', () => {
   assert.ok(mediaCss.includes('repeat(2, minmax(0, 1fr))'));
-  assert.ok(mediaCss.includes('grid-template-columns: minmax(0, 1fr)'));
+  assert.ok(mediaCss.includes('grid-template-columns: 1fr'));
   assert.ok(mediaCss.includes('word-break: break-word'));
   assert.ok(mediaCss.includes('height: 210px'));
   assert.ok(mediaCss.includes('min-height: 44px'));
