@@ -97,7 +97,7 @@
 
 @media (max-width: 760px) {
   .gallery {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 1fr;
   }
 
   .preview img,
