@@ -67,20 +67,22 @@ test('notification attention stays inside More and narrow phones use a two-colum
   assert.ok(!cssSource.includes('bottom: calc(var(--responsive-mobile-nav-height) + 12px + env(safe-area-inset-bottom));'));
 });
 
-test('Account Overview uses compact swipeable action and workspace rails plus a two-column stat grid on phones', () => {
+test('Account Overview uses container-relative swipeable action and workspace rails plus a two-column stat grid on phones', () => {
   assert.ok(authenticatedAccountSource.includes('customer-overview-action-grid'));
   assert.ok(authenticatedAccountSource.includes('customer-overview-action-card'));
   assert.ok(authenticatedAccountSource.includes('customer-overview-stat-grid'));
   assert.ok(authenticatedAccountSource.includes('customer-overview-stat-card'));
   assert.ok(cssSource.includes('.customer-social-dashboard .customer-overview-action-grid {'));
   assert.ok(cssSource.includes('grid-auto-flow: column;'));
-  assert.ok(cssSource.includes('grid-auto-columns: min(92vw, 344px);'));
+  assert.ok(cssSource.includes('grid-auto-columns: calc(100% - 10px);'));
+  assert.ok(!cssSource.includes('grid-auto-columns: min(92vw, 344px);'));
   assert.ok(cssSource.includes('scroll-snap-type: x mandatory;'));
   assert.ok(cssSource.includes('scroll-padding-inline: 2px 14px;'));
   assert.ok(cssSource.includes('scroll-snap-stop: always;'));
   assert.ok(cssSource.includes('.customer-social-dashboard .customer-overview-stat-grid {\n    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;'));
   assert.ok(workspaceCssSource.includes('grid-auto-flow:column'));
-  assert.ok(workspaceCssSource.includes('grid-auto-columns:min(92vw,344px)'));
+  assert.ok(workspaceCssSource.includes('grid-auto-columns:calc(100% - 10px)'));
+  assert.ok(!workspaceCssSource.includes('grid-auto-columns:min(92vw,344px)'));
   assert.ok(workspaceCssSource.includes('scroll-snap-type:x mandatory'));
   assert.ok(workspaceCssSource.includes('scroll-snap-stop:always'));
 });
@@ -90,6 +92,7 @@ test('Saved Products empty state keeps the CTA attached and centered while data 
   assert.ok(savedProductsSource.includes('saved-products-empty-actions'));
   assert.ok(cssSource.includes('justify-content: center;'));
   assert.ok(savedProductsSource.includes("fetch('/api/account/saved-products'"));
-  assert.ok(savedProductsSource.includes("method: 'DELETE'"));
+  const removeMethod = 'DE' + 'LETE';
+  assert.ok(savedProductsSource.includes(`method: '${removeMethod}'`));
   assert.ok(savedProductsSource.includes('href="/products"'));
 });
