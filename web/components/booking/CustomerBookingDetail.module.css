@@ -1,0 +1,138 @@
+.page {
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px 18px;
+  min-width: 0;
+}
+
+.heading > div,
+.layout,
+.main,
+.aside {
+  min-width: 0;
+}
+
+.heading h1,
+.heading p,
+.informationCard :global(dd) {
+  overflow-wrap: anywhere;
+}
+
+.layout {
+  min-width: 0;
+}
+
+.main {
+  min-width: 0;
+}
+
+.informationCard :global(.review-details) {
+  min-width: 0;
+}
+
+.informationCard :global(.review-details) > div {
+  min-width: 0;
+}
+
+.informationCard :global(.review-details) dd {
+  min-width: 0;
+}
+
+.aside :global(.card) {
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .page {
+    gap: 20px;
+  }
+
+  .heading {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 12px;
+  }
+
+  .heading h1 {
+    margin-top: 10px !important;
+    font-size: clamp(2.15rem, 10vw, 3.25rem) !important;
+    line-height: 1 !important;
+  }
+
+  .heading p {
+    line-height: 1.45 !important;
+  }
+
+  .layout {
+    gap: 14px !important;
+  }
+
+  .aside {
+    order: -1;
+    position: static !important;
+    gap: 8px !important;
+  }
+
+  .aside :global(.card) {
+    padding: 16px !important;
+    gap: 10px !important;
+  }
+
+  .aside :global(.button) {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .aside :global(.support-note) {
+    margin: 0 4px;
+    font-size: .78rem;
+    line-height: 1.45;
+  }
+
+  .statusCard,
+  .informationCard {
+    padding: 18px !important;
+    gap: 12px !important;
+  }
+
+  .informationCard :global(.review-details) {
+    gap: 10px;
+  }
+
+  .informationCard :global(.review-details) > div {
+    display: grid !important;
+    grid-template-columns: minmax(92px, .8fr) minmax(0, 1.2fr);
+    align-items: start;
+    gap: 12px !important;
+  }
+
+  .informationCard :global(.review-details) dd {
+    max-width: none !important;
+    text-align: right;
+  }
+}
+
+@media (max-width: 480px) {
+  .heading {
+    grid-template-columns: 1fr;
+  }
+
+  .heading > :global(.badge) {
+    justify-self: start;
+  }
+
+  .informationCard :global(.review-details) > div {
+    grid-template-columns: 1fr;
+    gap: 4px !important;
+  }
+
+  .informationCard :global(.review-details) dd {
+    text-align: left;
+  }
+}
