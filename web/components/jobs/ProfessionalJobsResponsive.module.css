@@ -1,0 +1,131 @@
+.professionalJobsJourney {
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.professionalJobsJourney *,
+.professionalJobsJourney *::before,
+.professionalJobsJourney *::after {
+  min-width: 0;
+}
+
+.professionalJobsJourney :where(h1, h2, h3, p, strong, span, small, summary, label) {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.professionalJobsJourney :where(article, section, details, form) {
+  max-width: 100%;
+}
+
+.professionalJobsJourney :where(input, textarea, select) {
+  width: 100%;
+  max-width: 100%;
+}
+
+.professionalJobsJourney :where(a, button) {
+  max-width: 100%;
+}
+
+.professionalJobsJourney a[target='_blank'] {
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.heroCard,
+.heroHeading,
+.heroHeading > div,
+.heroActions,
+.tabList,
+.tabPanel {
+  min-width: 0;
+}
+
+.heroHeading {
+  align-items: flex-start;
+}
+
+.heroActions {
+  flex-wrap: wrap;
+}
+
+.heroActions > a {
+  min-height: 44px;
+  white-space: normal;
+  text-align: center;
+}
+
+.tabList {
+  max-width: 100%;
+  overscroll-behavior-inline: contain;
+  scroll-snap-type: inline proximity;
+}
+
+.tabList [role='tab'] {
+  min-height: 44px;
+  scroll-snap-align: start;
+}
+
+.tabPanel[hidden] {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .heroHeading {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .heroActions {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .tabPanel {
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .heroCard {
+    padding: 16px;
+  }
+
+  .heroActions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .heroActions > a {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .tabList {
+    margin-inline: 0;
+    padding: 5px;
+  }
+
+  .tabList [role='tab'] {
+    flex: 0 0 auto;
+    min-height: 46px;
+    padding-inline: 12px;
+    font-size: .92rem;
+  }
+
+  .professionalJobsJourney :where(input, textarea, select) {
+    font-size: 16px;
+  }
+
+  .professionalJobsJourney button:not([role='tab']) {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 420px) {
+  .professionalJobsJourney {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+}
