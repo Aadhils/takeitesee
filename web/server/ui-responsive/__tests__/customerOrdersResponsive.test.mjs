@@ -18,6 +18,20 @@ test('Customer orders list links each summary to a dedicated order detail route'
   assert.ok(listSource.includes('styles.orderActions'));
 });
 
+test('Customer orders empty state stays compact and CTA-balanced across real device widths', () => {
+  assert.ok(listSource.includes('styles.emptyOrdersCard'));
+  assert.ok(listSource.includes('styles.emptyOrdersState'));
+  assert.ok(listSource.includes('styles.emptyOrdersActions'));
+  assert.ok(cssSource.includes('.emptyOrdersState :global(.state-panel)'));
+  assert.ok(cssSource.includes('min-height: 0'));
+  assert.ok(cssSource.includes('justify-content: center'));
+  assert.ok(cssSource.includes('@media (max-width: 760px)'));
+  assert.ok(cssSource.includes('.emptyOrdersActions :global(.button)'));
+  assert.ok(cssSource.includes('width: 100%'));
+  assert.ok(cssSource.includes('@media (max-width: 480px)'));
+  assert.ok(cssSource.includes('.emptyOrdersState :global(.state-mark)'));
+});
+
 test('Customer order detail route renders the scoped detail component', () => {
   assert.ok(routeSource.includes("CustomerOrderDetail from '../../../components/order/CustomerOrderDetail'"));
   assert.ok(routeSource.includes('CustomerOrderDetail orderId={orderId}'));
