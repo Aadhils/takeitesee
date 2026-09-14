@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 import styles from './JobMarketplace.module.css';
+import businessStyles from './BusinessEmployerJobsResponsive.module.css';
 import { EmployerHiringWorkspace } from './EmployerHiringWorkspace';
 import { HiringJourneyGuide } from './HiringJourneyGuide';
 import { ProfessionalJobsWorkspace } from './ProfessionalJobsWorkspace';
@@ -35,7 +36,7 @@ export function ProviderJobsExperience(){
 
   if(error) return <div className={`${styles.alert} ${styles.error}`}>{error}</div>;
   if(!mode) return <div className={styles.empty}>Loading jobs workspace…</div>;
-  if(mode==='business') return <>
+  if(mode==='business') return <div className={businessStyles.businessJobsJourney}>
     <section className={`${styles.card} ${styles.section}`}>
       <div className={styles.sectionHeading}>
         <div>
@@ -59,6 +60,6 @@ export function ProviderJobsExperience(){
       </div>
     </section>
     <SafeJobDeletionPanel/>
-  </>;
+  </div>;
   return <ProfessionalJobsWorkspace/>;
 }
