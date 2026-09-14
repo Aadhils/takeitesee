@@ -237,7 +237,7 @@
   .customer-social-dashboard .customer-overview-action-grid {
     grid-template-columns: none !important;
     grid-auto-flow: column;
-    grid-auto-columns: min(92vw, 344px);
+    grid-auto-columns: calc(100% - 10px);
     gap: 10px;
     overflow-x: auto;
     overscroll-behavior-inline: contain;
