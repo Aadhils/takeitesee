@@ -72,10 +72,14 @@
     gap: 14px !important;
   }
 
-  .aside {
-    order: -1;
+  .layout > .aside {
+    order: -1 !important;
     position: static !important;
     gap: 8px !important;
+  }
+
+  .layout > .main {
+    order: 0;
   }
 
   .aside :global(.card) {
