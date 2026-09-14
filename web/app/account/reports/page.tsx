@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import styles from '../../../components/account/CustomerSupportSafetyResponsive.module.css';
 import { Badge, Card } from '../../../components/ui/primitives';
 import { useOperationalTranslations } from '../../../components/i18n/OperationalTranslations';
 import { getCurrentCustomerAsync } from '../../../services/auth-adapter';
@@ -73,11 +74,11 @@ export default function AccountSafetyReportsPage() {
   }, []);
 
   if (authenticated === null && loading) {
-    return <Card><p>{tamil ? 'உங்கள் safety reports-ஐ சரிபார்க்கிறது…' : 'Checking your safety reports…'}</p></Card>;
+    return <div className={styles.supportSafetyJourney}><Card><p>{tamil ? 'உங்கள் safety reports-ஐ சரிபார்க்கிறது…' : 'Checking your safety reports…'}</p></Card></div>;
   }
 
   if (authenticated === false) {
-    return <main className="container section-stack">
+    return <div className={styles.supportSafetyJourney}><main className="container section-stack">
       <Card>
         <h1>{tamil ? 'Safety reports பார்க்க sign in செய்யவும்' : 'Sign in to view safety reports'}</h1>
         <p>{tamil ? 'நீங்கள் TakeItEsee-க்கு report செய்த marketplace safety items-ன் status பார்க்க sign in செய்யவும்.' : 'Sign in to review the status of marketplace safety items you reported to TakeItEsee.'}</p>
@@ -86,10 +87,10 @@ export default function AccountSafetyReportsPage() {
           <Link href="/account" className="button button-secondary">{tamil ? 'Account-க்கு திரும்பவும்' : 'Back to account'}</Link>
         </div>
       </Card>
-    </main>;
+    </main></div>;
   }
 
-  return <main className="container section-stack">
+  return <div className={styles.supportSafetyJourney}><main className="container section-stack">
     <section className="page-intro">
       <span className="eyebrow">{tamil ? 'Marketplace safety' : 'Marketplace safety'}</span>
       <h1>{tamil ? 'என் safety reports' : 'My safety reports'}</h1>
@@ -143,5 +144,5 @@ export default function AccountSafetyReportsPage() {
         </ul>
       </div> : null}
     </Card>)}
-  </main>;
+  </main></div>;
 }

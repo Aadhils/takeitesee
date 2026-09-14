@@ -1,0 +1,160 @@
+.supportSafetyJourney {
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.supportSafetyJourney :global(.account-layout),
+.supportSafetyJourney :global(.account-content),
+.supportSafetyJourney :global(.container),
+.supportSafetyJourney :global(.section-stack),
+.supportSafetyJourney :global(.page-intro),
+.supportSafetyJourney :global(.card),
+.supportSafetyJourney :global(.settings-note),
+.supportSafetyJourney :global(.alert),
+.supportSafetyJourney :global(.admin-record-top),
+.supportSafetyJourney :global(.admin-record-top) > div,
+.supportSafetyJourney :global(.account-details),
+.supportSafetyJourney :global(.account-details) > div,
+.supportSafetyJourney form,
+.supportSafetyJourney label,
+.supportSafetyJourney input,
+.supportSafetyJourney select,
+.supportSafetyJourney textarea,
+.supportSafetyJourney ul,
+.supportSafetyJourney li {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.supportSafetyJourney :global(.page-intro) h1,
+.supportSafetyJourney :global(.page-intro) p,
+.supportSafetyJourney :global(.card) h1,
+.supportSafetyJourney :global(.card) h2,
+.supportSafetyJourney :global(.card) h3,
+.supportSafetyJourney :global(.card) p,
+.supportSafetyJourney :global(.card) strong,
+.supportSafetyJourney :global(.card) span,
+.supportSafetyJourney :global(.card) dd,
+.supportSafetyJourney :global(.settings-note),
+.supportSafetyJourney :global(.settings-note) p,
+.supportSafetyJourney :global(.alert),
+.supportSafetyJourney :global(.field-error),
+.supportSafetyJourney ul,
+.supportSafetyJourney li {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.supportSafetyJourney :global(.page-intro) {
+  max-width: 58rem;
+}
+
+.supportSafetyJourney form,
+.supportSafetyJourney input,
+.supportSafetyJourney select,
+.supportSafetyJourney textarea {
+  width: 100%;
+}
+
+.supportSafetyJourney textarea {
+  resize: vertical;
+}
+
+.supportSafetyJourney :global(.button-row) {
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+.supportSafetyJourney :global(.button) {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+}
+
+.supportSafetyJourney :global(.account-details) dd {
+  margin-inline-start: 0;
+}
+
+.supportSafetyJourney :global(.admin-record-top) {
+  gap: .8rem;
+}
+
+.supportSafetyJourney :global(.admin-record-top) > :global(.badge) {
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+
+.supportSafetyJourney ul {
+  padding-inline-start: 1.25rem;
+}
+
+.supportSafetyJourney li + li {
+  margin-top: .5rem;
+}
+
+@media (max-width: 760px) {
+  .supportSafetyJourney :global(.page-intro) h1 {
+    font-size: clamp(2rem, 9vw, 3rem);
+    line-height: 1.04;
+  }
+
+  .supportSafetyJourney :global(.admin-record-top) {
+    align-items: flex-start;
+  }
+
+  .supportSafetyJourney :global(.account-details) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .supportSafetyJourney :global(.container) {
+    padding-inline: clamp(.85rem, 4vw, 1.1rem);
+  }
+
+  .supportSafetyJourney :global(.section-stack) {
+    gap: 1rem;
+  }
+
+  .supportSafetyJourney :global(.card) {
+    padding: clamp(1rem, 4.5vw, 1.25rem);
+  }
+
+  .supportSafetyJourney :global(.admin-record-top) {
+    flex-direction: column;
+  }
+
+  .supportSafetyJourney :global(.button-row) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+  }
+
+  .supportSafetyJourney :global(.button-row) :global(.button),
+  .supportSafetyJourney form > :global(.button) {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .supportSafetyJourney input,
+  .supportSafetyJourney select,
+  .supportSafetyJourney textarea {
+    font-size: 16px;
+  }
+
+  .supportSafetyJourney textarea {
+    min-height: 9rem;
+  }
+
+  .supportSafetyJourney ul {
+    padding-inline-start: 1rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .supportSafetyJourney {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+}

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
 import LocalizedAccountShell from '../../../components/account/LocalizedAccountShell';
+import styles from '../../../components/account/CustomerSupportSafetyResponsive.module.css';
 import { Badge, Button, Card, Input, Select, Textarea } from '../../../components/ui/primitives';
 import { useOperationalTranslations } from '../../../components/i18n/OperationalTranslations';
 import { getCurrentCustomerAsync } from '../../../services/auth-adapter';
@@ -90,15 +91,15 @@ export default function AccountSupportPage() {
     } finally { setSubmitting(false); }
   };
 
-  if (authenticated === null && loading) return <Card><p>{tamil ? 'உங்கள் account-ஐ சரிபார்க்கிறது…' : 'Checking your account…'}</p></Card>;
+  if (authenticated === null && loading) return <div className={styles.supportSafetyJourney}><Card><p>{tamil ? 'உங்கள் account-ஐ சரிபார்க்கிறது…' : 'Checking your account…'}</p></Card></div>;
 
-  if (authenticated === false) return <main className="container section-stack"><Card>
+  if (authenticated === false) return <div className={styles.supportSafetyJourney}><main className="container section-stack"><Card>
     <h1>{tamil ? 'Platform support-க்கு sign in செய்யவும்' : 'Sign in for platform support'}</h1>
     <p>{tamil ? 'In-app support request submit செய்து status track செய்ய sign in செய்யவும். Sign in செய்ய முடியாவிட்டால் Grievance Officer email fallback பயன்படுத்தலாம்.' : 'Sign in to submit and track an in-app support request. If you cannot sign in, you can still use the Grievance Officer email fallback.'}</p>
     <div className="button-row"><Link href="/login?returnTo=%2Faccount%2Fsupport" className="button button-primary">Sign in</Link><a href="mailto:uandv.com@gmail.com" className="button button-secondary">{tamil ? 'Grievance Officer-க்கு email' : 'Email Grievance Officer'}</a></div>
-  </Card></main>;
+  </Card></main></div>;
 
-  return <LocalizedAccountShell active="/account/support">
+  return <div className={styles.supportSafetyJourney}><LocalizedAccountShell active="/account/support">
     <div className="section-stack">
       <section className="page-intro"><span className="eyebrow">{tamil ? 'Platform support' : 'Platform support'}</span><h1>{tamil ? 'Support & grievance requests' : 'Support & grievance requests'}</h1><p>{tamil ? 'Booking-க்கு அப்பாற்பட்ட TakeItEsee platform issue, account help, safety concern அல்லது provider conduct concern-ஐ submit செய்து status track செய்யவும்.' : 'Submit and track TakeItEsee platform issues, account help, safety concerns, or provider-conduct concerns that are not booking-specific.'}</p></section>
       <Card>
@@ -120,5 +121,5 @@ export default function AccountSupportPage() {
         {requests.map((item) => <Card key={item.id}><div className="admin-record-top"><div><span className="eyebrow">SR-{item.id.slice(0, 8).toUpperCase()}</span><h3>{item.subject}</h3></div><Badge tone={tone(item.status)}>{item.status.replaceAll('_', ' ')}</Badge></div><p>{item.details}</p><dl className="account-details"><div><dt>{tamil ? 'Type' : 'Type'}</dt><dd>{typeLabel(item.request_type)}</dd></div><div><dt>{tamil ? 'Submitted' : 'Submitted'}</dt><dd>{new Date(item.created_at).toLocaleString(locale)}</dd></div><div><dt>{tamil ? 'Last update' : 'Last update'}</dt><dd>{new Date(item.updated_at).toLocaleString(locale)}</dd></div></dl>{item.review_note ? <div className="settings-note"><strong>{tamil ? 'Review note' : 'Review note'}</strong><p>{item.review_note}</p></div> : null}</Card>)}
       </section>
     </div>
-  </LocalizedAccountShell>;
+  </LocalizedAccountShell></div>;
 }
