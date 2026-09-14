@@ -17,6 +17,17 @@ export async function GET(_request: Request, context: RouteContext) {
     if (error || !data) throw new Error(error?.message ?? 'Conversation was not found.');
     const { error: readError } = await supabase.rpc('mark_marketplace_conversation_read', { target_conversation_id: conversationId });
     if (readError) throw new Error(readError.message);
+
+    // Keep the notification badge aligned with the inbox read state. This is
+    // best effort so a notification acknowledgement can never block the thread.
+    await supabase
+      .from('notifications')
+      .update({ read_at: new Date().toISOString() })
+      .eq('recipient_user_id', user.id)
+      .eq('event_type', 'message_received')
+      .eq('conversation_id', conversationId)
+      .is('read_at', null);
+
     return NextResponse.json(data);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to load conversation.';
