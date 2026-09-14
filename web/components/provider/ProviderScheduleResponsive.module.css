@@ -1,0 +1,79 @@
+.scheduleJourney {
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.scheduleJourney :global(.provider-page-heading),
+.scheduleJourney :global(.provider-page-heading) > div,
+.scheduleJourney :global(.provider-heading-action),
+.scheduleJourney :global(.card),
+.scheduleJourney :global(.card) > div,
+.scheduleJourney :global(.field),
+.scheduleJourney :global(.field-control) {
+  min-width: 0;
+}
+
+.scheduleJourney :global(.provider-page-heading) h1,
+.scheduleJourney :global(.provider-page-heading) p,
+.scheduleJourney :global(.card) h2,
+.scheduleJourney :global(.card) p,
+.scheduleJourney :global(.card) strong,
+.scheduleJourney :global(.card) span {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.scheduleJourney :global(.field),
+.scheduleJourney :global(.field-control) {
+  max-width: 100%;
+}
+
+.scheduleJourney :global(.field-control) {
+  width: 100%;
+}
+
+.scheduleJourney :global(.button) {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+}
+
+@media (max-width: 760px) {
+  .scheduleJourney :global(.provider-page-heading) {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: .75rem;
+  }
+
+  .scheduleJourney :global(.provider-heading-action) {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .scheduleJourney :global(.provider-heading-action) :global(.button) {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 560px) {
+  .scheduleJourney :global(.card) {
+    min-width: 0;
+  }
+
+  .scheduleJourney :global(.card) :global(.field),
+  .scheduleJourney :global(.card) :global(.field-control) {
+    width: 100%;
+  }
+
+  .scheduleJourney :global(.card) :global(.button) {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 420px) {
+  .scheduleJourney {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+}
