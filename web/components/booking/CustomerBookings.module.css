@@ -85,12 +85,14 @@
   }
 
   .bookingGroup :global(.section-heading) {
-    align-items: flex-start;
-    gap: 8px;
+    flex-direction: row !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
   }
 
   .bookingGroup :global(.section-heading) > div {
     min-width: 0;
+    flex: 1 1 auto;
   }
 
   .bookingGroup :global(h2) {
@@ -104,34 +106,42 @@
   }
 
   .bookingGroup :global(.results-note) {
-    flex: 0 0 auto;
-    border-radius: 999px;
+    display: inline-flex !important;
+    width: fit-content !important;
+    max-width: 100%;
+    flex: 0 0 auto !important;
+    align-self: flex-start !important;
+    border-radius: 999px !important;
     background: var(--color-surface-muted);
-    padding: 5px 8px;
+    padding: 5px 8px !important;
     font-size: .68rem;
     line-height: 1;
     white-space: nowrap;
   }
 
   .bookingGroupEmpty :global(.card) {
+    padding: 0 !important;
     box-shadow: none;
   }
 
   .bookingGroupEmpty :global(.state-panel) {
-    gap: 5px;
-    padding: 18px 16px;
+    gap: 5px !important;
+    min-height: 0 !important;
+    padding: 18px 14px !important;
   }
 
   .bookingGroupEmpty :global(.state-mark) {
-    width: 34px;
-    height: 34px;
+    width: 32px !important;
+    height: 32px !important;
   }
 
   .bookingGroupEmpty :global(.state-panel h3) {
     font-size: 1rem;
+    line-height: 1.25;
   }
 
   .bookingGroupEmpty :global(.state-panel p) {
+    max-width: 38ch;
     font-size: .8rem;
     line-height: 1.4;
   }
