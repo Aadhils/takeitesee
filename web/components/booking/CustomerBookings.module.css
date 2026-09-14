@@ -1,0 +1,166 @@
+.bookingsPage {
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.lifecycleNav {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 20px 0 30px;
+}
+
+.lifecycleLink {
+  display: flex;
+  min-width: 0;
+  min-height: 58px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  padding: 10px 12px;
+  color: var(--color-ink-muted);
+  font-size: .78rem;
+  font-weight: 700;
+  line-height: 1.15;
+  box-shadow: var(--shadow-sm);
+  scroll-margin-top: 96px;
+}
+
+.lifecycleLink:hover,
+.lifecycleLink:focus-visible {
+  border-color: #bdb4ef;
+  color: var(--color-primary-strong);
+}
+
+.lifecycleLinkHasItems {
+  border-color: #cfc7f4;
+  background: var(--color-brand-subtle);
+  color: var(--color-primary-strong);
+}
+
+.lifecycleCount {
+  display: inline-grid;
+  flex: 0 0 auto;
+  min-width: 26px;
+  height: 26px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--color-secondary);
+  color: var(--color-primary-strong);
+  font-size: .74rem;
+  font-weight: 800;
+}
+
+.bookingGroup {
+  scroll-margin-top: 104px;
+}
+
+@media (max-width: 760px) {
+  .lifecycleNav {
+    gap: 7px;
+    margin: 14px 0 22px;
+  }
+
+  .lifecycleLink {
+    min-height: 54px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 5px;
+    font-size: .68rem;
+    text-align: center;
+  }
+
+  .lifecycleCount {
+    min-width: 22px;
+    height: 22px;
+    font-size: .68rem;
+  }
+
+  .bookingGroup {
+    gap: 10px;
+  }
+
+  .bookingGroup :global(.section-heading) {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .bookingGroup :global(.section-heading) > div {
+    min-width: 0;
+  }
+
+  .bookingGroup :global(h2) {
+    font-size: 1.32rem;
+    line-height: 1.15;
+  }
+
+  .bookingGroup :global(.summary-note) {
+    font-size: .8rem;
+    line-height: 1.42;
+  }
+
+  .bookingGroup :global(.results-note) {
+    flex: 0 0 auto;
+    border-radius: 999px;
+    background: var(--color-surface-muted);
+    padding: 5px 8px;
+    font-size: .68rem;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .bookingGroupEmpty :global(.card) {
+    box-shadow: none;
+  }
+
+  .bookingGroupEmpty :global(.state-panel) {
+    gap: 5px;
+    padding: 18px 16px;
+  }
+
+  .bookingGroupEmpty :global(.state-mark) {
+    width: 34px;
+    height: 34px;
+  }
+
+  .bookingGroupEmpty :global(.state-panel h3) {
+    font-size: 1rem;
+  }
+
+  .bookingGroupEmpty :global(.state-panel p) {
+    font-size: .8rem;
+    line-height: 1.4;
+  }
+
+  .bookingsPage :global(.booking-card) {
+    gap: 10px;
+    padding: 15px;
+  }
+
+  .bookingsPage :global(.booking-card-top) {
+    gap: 9px;
+  }
+
+  .bookingsPage :global(.booking-card h3) {
+    font-size: 1.02rem;
+  }
+
+  .bookingsPage :global(.booking-card-meta) {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 380px) {
+  .lifecycleNav {
+    gap: 5px;
+  }
+
+  .lifecycleLink {
+    font-size: .64rem;
+    padding-inline: 3px;
+  }
+}
