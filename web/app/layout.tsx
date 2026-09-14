@@ -5,6 +5,7 @@ import './globals.css';
 import './responsive-overrides.css';
 import './ui-polish.css';
 import './responsive-foundation.css';
+import './auth-entry-responsive.css';
 import './responsive-admin.css';
 import './products-mobile-polish.css';
 import './account-mobile-navigation.css';
