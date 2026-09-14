@@ -32,6 +32,20 @@ test('Customer orders empty state stays compact and CTA-balanced across real dev
   assert.ok(cssSource.includes('.emptyOrdersState :global(.state-mark)'));
 });
 
+test('Customer orders expose a compact lifecycle summary without changing backend statuses', () => {
+  assert.ok(listSource.includes("type OrderView = 'all' | 'active' | 'fulfilled' | 'closed'"));
+  assert.ok(listSource.includes("status === 'requested' || status === 'accepted'"));
+  assert.ok(listSource.includes("status === 'declined' || status === 'cancelled'"));
+  assert.ok(listSource.includes('styles.lifecycleSummary'));
+  assert.ok(listSource.includes('styles.lifecycleButtonActive'));
+  assert.ok(listSource.includes('aria-pressed={view === item.key}'));
+  assert.ok(listSource.includes('visibleOrders.map((order)'));
+  assert.ok(listSource.includes('Showing ${visibleOrders.length} of ${orders.length} orders'));
+  assert.ok(cssSource.includes('grid-template-columns: repeat(4, minmax(0, 1fr))'));
+  assert.ok(cssSource.includes('.lifecycleButtonActive'));
+  assert.ok(cssSource.includes('grid-template-columns: 1fr 1fr'));
+});
+
 test('Customer order detail route renders the scoped detail component', () => {
   assert.ok(routeSource.includes("CustomerOrderDetail from '../../../components/order/CustomerOrderDetail'"));
   assert.ok(routeSource.includes('CustomerOrderDetail orderId={orderId}'));
