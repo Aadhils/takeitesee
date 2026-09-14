@@ -10,6 +10,35 @@
   color: var(--danger, #b42318);
 }
 
+.emptyOrdersCard {
+  display: grid;
+  gap: .75rem;
+  padding: 1.1rem;
+}
+
+.emptyOrdersState {
+  min-width: 0;
+}
+
+.emptyOrdersState :global(.state-panel) {
+  min-height: 0;
+  gap: 7px;
+  padding: 1.35rem 1rem .85rem;
+}
+
+.emptyOrdersState :global(.state-panel p) {
+  max-width: 40ch;
+}
+
+.emptyOrdersActions {
+  justify-content: center;
+  margin: 0;
+}
+
+.emptyOrdersActions :global(.button) {
+  min-height: 44px;
+}
+
 .ordersList {
   display: grid;
   gap: 1rem;
@@ -253,6 +282,24 @@
 }
 
 @media (max-width: 760px) {
+  .emptyOrdersCard {
+    padding: .9rem;
+  }
+
+  .emptyOrdersState :global(.state-panel) {
+    padding: 1rem .6rem .55rem;
+  }
+
+  .emptyOrdersActions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .emptyOrdersActions :global(.button) {
+    width: 100%;
+    justify-content: center;
+  }
+
   .orderHeader,
   .detailHero {
     grid-template-columns: 1fr;
@@ -307,6 +354,16 @@
 }
 
 @media (max-width: 480px) {
+  .emptyOrdersState :global(.state-panel) {
+    gap: 6px;
+    padding: .8rem .25rem .45rem;
+  }
+
+  .emptyOrdersState :global(.state-mark) {
+    width: 36px;
+    height: 36px;
+  }
+
   .summaryGrid {
     grid-template-columns: 1fr;
   }
