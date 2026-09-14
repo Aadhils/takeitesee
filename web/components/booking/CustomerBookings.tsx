@@ -7,6 +7,7 @@ import { Badge, Card, EmptyState } from '../ui/primitives';
 import { getBookingsForCustomer, getBookingsThroughConfiguredRepository } from '../../services/booking-repository';
 import type { CustomerBooking } from '../../types/booking-domain';
 import { getCurrentCustomerAsync, isSupabaseConfigured, presentationAuthAdapter, type AuthState } from '../../services/auth-adapter';
+import styles from './CustomerBookings.module.css';
 
 function closeoutOutcome(booking: CustomerBooking) {
   return booking.attendanceOutcome === 'customer_no_show'
@@ -76,6 +77,7 @@ export default function CustomerBookings() {
       return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(parsed);
     } catch { return value; }
   };
+  const pageClassName = `bookings-page ${styles.bookingsPage}`;
 
   useEffect(() => {
     let cancelled = false;
@@ -96,40 +98,49 @@ export default function CustomerBookings() {
     return () => { cancelled = true; };
   }, []);
 
-  if (resolved && !auth.authenticated) return <div className="bookings-page"><section className="page-intro"><span className="eyebrow">{text('Customer space', 'வாடிக்கையாளர் பகுதி')}</span><h1>{text('My bookings', 'என் bookings')}</h1><p>{text('Your bookings will appear here after you sign in.', 'நீங்கள் sign in செய்த பிறகு உங்கள் bookings இங்கே தோன்றும்.')}</p></section><Card><EmptyState title={text('Sign in to view bookings', 'Bookings பார்க்க sign in செய்யவும்')}>{text('Sign in to your account to see your customer bookings.', 'உங்கள் customer bookings-ஐ பார்க்க account-ல் sign in செய்யவும்.')}</EmptyState></Card></div>;
-  if (loading) return <div className="bookings-page"><section className="page-intro"><span className="eyebrow">{text('Customer space', 'வாடிக்கையாளர் பகுதி')}</span><h1>{text('My bookings', 'என் bookings')}</h1><p>{text('Loading your live bookings…', 'உங்கள் live bookings ஏற்றப்படுகின்றன…')}</p></section></div>;
-  if (error) return <div className="bookings-page"><section className="page-intro"><span className="eyebrow">{text('Customer space', 'வாடிக்கையாளர் பகுதி')}</span><h1>{text('My bookings', 'என் bookings')}</h1></section><Card><EmptyState title={text('Bookings unavailable', 'Bookings கிடைக்கவில்லை')}>{error}</EmptyState></Card></div>;
+  if (resolved && !auth.authenticated) return <div className={pageClassName}><section className="page-intro"><span className="eyebrow">{text('Customer space', 'வாடிக்கையாளர் பகுதி')}</span><h1>{text('My bookings', 'என் bookings')}</h1><p>{text('Your bookings will appear here after you sign in.', 'நீங்கள் sign in செய்த பிறகு உங்கள் bookings இங்கே தோன்றும்.')}</p></section><Card><EmptyState title={text('Sign in to view bookings', 'Bookings பார்க்க sign in செய்யவும்')}>{text('Sign in to your account to see your customer bookings.', 'உங்கள் customer bookings-ஐ பார்க்க account-ல் sign in செய்யவும்.')}</EmptyState></Card></div>;
+  if (loading) return <div className={pageClassName}><section className="page-intro"><span className="eyebrow">{text('Customer space', 'வாடிக்கையாளர் பகுதி')}</span><h1>{text('My bookings', 'என் bookings')}</h1><p>{text('Loading your live bookings…', 'உங்கள் live bookings ஏற்றப்படுகின்றன…')}</p></section></div>;
+  if (error) return <div className={pageClassName}><section className="page-intro"><span className="eyebrow">{text('Customer space', 'வாடிக்கையாளர் பகுதி')}</span><h1>{text('My bookings', 'என் bookings')}</h1></section><Card><EmptyState title={text('Bookings unavailable', 'Bookings கிடைக்கவில்லை')}>{error}</EmptyState></Card></div>;
 
   const groups = [
     {
       key: 'upcoming',
+      navLabel: text('Upcoming', 'வரவிருப்பு'),
       title: text('Upcoming', 'வரவிருப்பவை'),
       help: text('Requests, confirmations and scheduled service work that still need to happen.', 'இன்னும் நடைபெற வேண்டிய requests, confirmations மற்றும் scheduled service work.'),
       values: bookings.filter((booking) => !closeoutOutcome(booking) && ['pending', 'confirmed', 'accepted', 'in_progress', 'rescheduled'].includes(booking.status)),
     },
     {
       key: 'completed',
+      navLabel: text('Follow-up', 'Follow-up'),
       title: text('Service completed & follow-up', 'சேவை முடிந்தது & follow-up'),
       help: text('The provider has finished the service, but customer confirmation, support or final closeout may still be pending.', 'Provider service-ஐ முடித்துள்ளார்; customer confirmation, support அல்லது final closeout இன்னும் நிலுவையில் இருக்கலாம்.'),
       values: bookings.filter((booking) => booking.status === 'completed' && !closeoutOutcome(booking)),
     },
     {
       key: 'closeout',
+      navLabel: text('History', 'History'),
       title: text('Final outcomes & history', 'இறுதி outcomes & history'),
       help: text('No-show outcomes and bookings that reached the final closeout stage appear here.', 'No-show outcomes மற்றும் final closeout stage-ஐ அடைந்த bookings இங்கே இருக்கும்.'),
       values: bookings.filter(closeoutOutcome),
     },
     {
       key: 'cancelled',
+      navLabel: text('Cancelled', 'ரத்து'),
       title: text('Cancelled', 'ரத்து செய்யப்பட்டவை'),
       help: text('Bookings cancelled before normal service completion.', 'சாதாரண service completion-க்கு முன் ரத்து செய்யப்பட்ட bookings.'),
       values: bookings.filter((booking) => booking.status === 'cancelled' && !closeoutOutcome(booking)),
     },
   ];
 
-  return <div className="bookings-page">
+  return <div className={pageClassName}>
     <section className="page-intro"><span className="eyebrow">{text('Customer space', 'வாடிக்கையாளர் பகுதி')}</span><h1>{text('My bookings', 'என் bookings')}</h1><p>{text('Track active service work separately from completion follow-up and final history.', 'Active service work, completion follow-up மற்றும் final history-ஐ தனித்தனியாக track செய்யுங்கள்.')}</p></section>
-    {groups.map((group) => <section className="booking-group" aria-labelledby={`group-${group.key}`} key={group.key}>
+    <nav className={styles.lifecycleNav} aria-label={text('Booking lifecycle', 'Booking lifecycle')}>
+      {groups.map((group) => <a className={`${styles.lifecycleLink} ${group.values.length ? styles.lifecycleLinkHasItems : ''}`} href={`#booking-group-${group.key}`} key={group.key}>
+        <span>{group.navLabel}</span><strong className={styles.lifecycleCount}>{group.values.length}</strong>
+      </a>)}
+    </nav>
+    {groups.map((group) => <section id={`booking-group-${group.key}`} className={`booking-group ${styles.bookingGroup} ${group.values.length ? '' : styles.bookingGroupEmpty}`} aria-labelledby={`group-${group.key}`} key={group.key}>
       <div className="section-heading"><div><h2 id={`group-${group.key}`}>{group.title}</h2><p className="summary-note" style={{ margin: '.25rem 0 0' }}>{group.help}</p></div><span className="results-note">{text(`${group.values.length} shown`, `${group.values.length} காட்டப்படுகிறது`)}</span></div>
       {group.values.length ? <div className="booking-grid">{group.values.map((booking) => <Card className="booking-card" key={booking.bookingId}>
         <div className="booking-card-top"><div><span className="eyebrow">{booking.bookingReference}</span><h3>{booking.serviceName}</h3></div><Badge tone={effectiveTone(booking)}>{effectiveLabel(booking)}</Badge></div>
