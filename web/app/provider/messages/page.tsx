@@ -1,4 +1,5 @@
 import { MarketplaceMessagingWorkspace } from '../../../components/messages/MarketplaceMessagingWorkspace';
+import styles from '../../../components/messages/MarketplaceMessagingResponsive.module.css';
 import { LiveProviderShell } from '../../../components/provider/LiveProviderShell';
 
 type SearchParams = Promise<{ conversation?: string }>;
@@ -7,6 +8,8 @@ export default async function ProviderMessagesRoute({ searchParams }: { searchPa
   const params = await searchParams;
   const conversationId = typeof params.conversation === 'string' ? params.conversation : '';
   return <LiveProviderShell active="/provider/messages">
-    <MarketplaceMessagingWorkspace initialConversationId={conversationId} />
+    <div className={styles.shell}>
+      <MarketplaceMessagingWorkspace initialConversationId={conversationId} />
+    </div>
   </LiveProviderShell>;
 }
