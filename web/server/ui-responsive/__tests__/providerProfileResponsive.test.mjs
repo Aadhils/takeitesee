@@ -3,43 +3,48 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../../../', import.meta.url);
-const [routeSource, centerSource, cssSource, profileApiSource] = await Promise.all([
+const [routeSource, dashboardSource, identitySource, cssSource, profileApiSource] = await Promise.all([
   readFile(new URL('app/provider/profile/page.tsx', root), 'utf8'),
-  readFile(new URL('components/provider/ProviderProfileSetupCenter.tsx', root), 'utf8'),
-  readFile(new URL('components/provider/ProviderProfileSetupCenter.module.css', root), 'utf8'),
+  readFile(new URL('components/provider/ProviderDashboardManager.tsx', root), 'utf8'),
+  readFile(new URL('components/provider/ProviderDashboardIdentityCenter.tsx', root), 'utf8'),
+  readFile(new URL('components/provider/ProviderDashboardIdentityCenter.module.css', root), 'utf8'),
   readFile(new URL('app/api/provider/profile/route.ts', root), 'utf8'),
 ]);
 
-test('Provider Profile route uses the smart setup center', () => {
-  assert.ok(routeSource.includes('ProviderProfileSetupCenter'));
-  assert.ok(!routeSource.includes('ProviderProfileManager'));
+test('Provider Profile compatibility route returns users to the Dashboard identity center', () => {
+  assert.ok(routeSource.includes("redirect('/provider#provider-profile')"));
+  assert.ok(!routeSource.includes('ProviderProfileSetupCenter'));
 });
 
-test('Provider Profile setup center keeps the core profile and role contracts', () => {
-  assert.ok(centerSource.includes('/api/provider/profile'));
-  assert.ok(centerSource.includes('/api/provider/profile/roles'));
-  assert.ok(centerSource.includes('provider_type'));
-  assert.ok(centerSource.includes('service_bookings_enabled'));
-  assert.ok(centerSource.includes('full_time_enabled'));
-  assert.ok(centerSource.includes('contract_enabled'));
-  assert.ok(centerSource.includes('/provider/setup'));
+test('Provider Dashboard owns Professional and Business profile controls', () => {
+  assert.ok(dashboardSource.includes("import ProviderDashboardIdentityCenter"));
+  assert.ok(dashboardSource.includes('<ProviderDashboardIdentityCenter onProfileUpdated={load} />'));
+  assert.ok(dashboardSource.includes("href=\"/provider#provider-profile\""));
+  assert.ok(dashboardSource.includes("profile.provider_type === 'business'"));
+  assert.ok(dashboardSource.includes("profile.provider_type === 'professional'"));
+  assert.ok(!dashboardSource.includes('Profile readiness\"'));
+  assert.ok(!dashboardSource.includes('Open profile'));
 });
 
-test('Provider Profile setup is progressive instead of exposing every role option at once', () => {
-  assert.ok(centerSource.includes('Profile setup center'));
-  assert.ok(centerSource.includes('Quick role setup'));
-  assert.ok(centerSource.includes('<details className={styles.moreOptions}>'));
-  assert.ok(centerSource.includes('role.id !== editingRoleId'));
-  assert.ok(centerSource.includes('aria-live="assertive"'));
+test('Dashboard identity center preserves profile and Professional role contracts', () => {
+  assert.ok(identitySource.includes("fetch('/api/provider/profile'"));
+  assert.ok(identitySource.includes("fetch('/api/provider/profile/roles'"));
+  assert.ok(identitySource.includes("profile.provider_type === 'professional'"));
+  assert.ok(identitySource.includes("profile.provider_type === 'business'"));
+  assert.ok(identitySource.includes('service_bookings_enabled'));
+  assert.ok(identitySource.includes('full_time_enabled'));
+  assert.ok(identitySource.includes('contract_enabled'));
+  assert.ok(identitySource.includes('/provider/public-readiness'));
+  assert.ok(identitySource.includes('/provider/setup'));
 });
 
-test('Provider Profile styles compact the journey across phone and tablet layouts', () => {
-  assert.ok(cssSource.includes('overflow-x: clip'));
-  assert.ok(cssSource.includes('min-height: 44px'));
-  assert.ok(cssSource.includes('grid-template-columns: repeat(3'));
+test('Dashboard role editing remains progressive and mobile-friendly', () => {
+  assert.ok(identitySource.includes('<details className={styles.more}>'));
+  assert.ok(identitySource.includes('role.id !== editingRoleId'));
+  assert.ok(identitySource.includes('aria-live="assertive"'));
   assert.ok(cssSource.includes('grid-auto-flow: column'));
-  assert.ok(cssSource.includes('scroll-snap-type: inline mandatory'));
-  assert.ok(cssSource.includes('grid-auto-columns: minmax(82%'));
+  assert.ok(cssSource.includes('scroll-snap-type: x proximity'));
+  assert.ok(cssSource.includes('grid-auto-columns: minmax(245px'));
   assert.ok(cssSource.includes('flex: 0 0 18px'));
   assert.ok(cssSource.includes('safe-area-inset-bottom'));
 });
