@@ -5,6 +5,7 @@ import ProviderDashboardManager from './ProviderDashboardManager';
 import ProviderDashboardHandleCenter from './ProviderDashboardHandleCenter';
 import ProviderDashboardLaunchCenter from './ProviderDashboardLaunchCenter';
 import ProviderDashboardAvailabilityCenter from './ProviderDashboardAvailabilityCenter';
+import ProviderDashboardReachCenter from './ProviderDashboardReachCenter';
 import ProviderLiveAvailabilityControl from './ProviderLiveAvailabilityControl';
 import BusinessProductCatalogShortcut from './BusinessProductCatalogShortcut';
 import BusinessProductOrderAttention from './BusinessProductOrderAttention';
@@ -24,6 +25,7 @@ export default function ProviderDashboardEntry() {
     <ProviderDashboardHandleCenter />
     <ProviderDashboardLaunchCenter />
     <ProviderDashboardAvailabilityCenter key={`availability-${workspaceVersion}`} />
+    <ProviderDashboardReachCenter key={`reach-${workspaceVersion}`} />
     <BusinessProductOrderAttention />
     <BusinessProductCatalogShortcut />
     <BusinessShopStatusControl />
