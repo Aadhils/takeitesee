@@ -1,0 +1,272 @@
+.center {
+  width: min(calc(100% - 32px), 1180px);
+  margin: 22px auto 0;
+  scroll-margin-top: 100px;
+}
+
+.card {
+  display: grid;
+  gap: 18px;
+  overflow: hidden;
+  padding: 20px;
+}
+
+.header,
+.serviceHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.header > div,
+.serviceHead > div {
+  min-width: 0;
+}
+
+.eyebrow {
+  color: var(--color-primary);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.header h2 {
+  margin: 5px 0 6px;
+  font-size: clamp(1.2rem, 2.5vw, 1.55rem);
+  line-height: 1.15;
+}
+
+.header p,
+.emptyState p,
+.serviceHead p,
+.help {
+  margin: 0;
+  color: var(--color-ink-muted);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.step,
+.stepDone {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 10px 11px;
+  background: var(--color-surface-raised);
+}
+
+.stepDone {
+  border-color: #cce2d5;
+  background: #f7fcf9;
+}
+
+.step span,
+.stepDone span {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-secondary);
+  color: var(--color-primary-strong);
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.stepDone span {
+  background: #e1f2e8;
+  color: #1d6b42;
+}
+
+.step strong,
+.stepDone strong {
+  min-width: 0;
+  font-size: .76rem;
+  line-height: 1.3;
+}
+
+.emptyState,
+.topActions,
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.emptyState {
+  justify-content: space-between;
+  border: 1px dashed #cbc5e8;
+  border-radius: var(--radius-md);
+  padding: 15px;
+  background: var(--color-brand-subtle);
+}
+
+.emptyState > div {
+  min-width: 0;
+}
+
+.emptyState strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.form {
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  background: var(--color-surface-raised);
+}
+
+.twoColumns,
+.scopeSummary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.form :global(input),
+.form :global(select),
+.inlineAction :global(select) {
+  min-height: 44px;
+}
+
+.secondaryLink {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-size: .8rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.notice {
+  margin: 0;
+  color: #1d6b42;
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+.textButton {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--color-primary);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.serviceRail {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.serviceCard {
+  display: grid;
+  min-width: 0;
+  gap: 13px;
+  align-content: start;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 15px;
+  background: var(--color-surface);
+}
+
+.serviceHead small {
+  display: block;
+  color: var(--color-ink-muted);
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.serviceHead h3 {
+  margin: 4px 0 5px;
+  font-size: 1rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.inlineAction {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+}
+
+.scopeSummary {
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+}
+
+.scopeSummary span,
+.scopeSummary small,
+.scopeSummary strong {
+  display: block;
+}
+
+.scopeSummary small {
+  color: var(--color-ink-muted);
+  font-size: .66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.scopeSummary strong {
+  margin-top: 3px;
+  font-size: .78rem;
+  overflow-wrap: anywhere;
+}
+
+.help {
+  font-size: .76rem;
+}
+
+@media (max-width: 900px) {
+  .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .serviceRail { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .center { width: min(calc(100% - 20px), 1180px); margin-top: 16px; }
+  .card { gap: 15px; padding: 15px; }
+  .header, .serviceHead { flex-direction: column; }
+  .twoColumns, .scopeSummary { grid-template-columns: 1fr; }
+  .emptyState { align-items: stretch; flex-direction: column; }
+  .topActions, .actions { display: grid; grid-template-columns: 1fr; width: 100%; }
+  .topActions :global(.button),
+  .actions :global(.button),
+  .secondaryLink { width: 100%; min-height: 44px; }
+  .form :global(input),
+  .form :global(select),
+  .form :global(textarea),
+  .inlineAction :global(select) { font-size: 16px; }
+}
+
+@media (max-width: 440px) {
+  .steps { grid-template-columns: 1fr; }
+  .card { padding-bottom: calc(15px + env(safe-area-inset-bottom)); }
+}
