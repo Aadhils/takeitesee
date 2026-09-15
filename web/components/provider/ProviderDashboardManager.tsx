@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Badge, Card } from '../ui/primitives';
 import { ProviderHeading } from './ProviderPresentation';
 import { LiveProviderShell } from './LiveProviderShell';
@@ -129,7 +129,7 @@ function MetricCard({ href, label, value, detail, tone, icon }: { href: string; 
   </Link>;
 }
 
-export default function ProviderDashboardManager() {
+export default function ProviderDashboardManager({ children, workspaceVersion = 0 }: { children?: ReactNode; workspaceVersion?: number }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -162,7 +162,7 @@ export default function ProviderDashboardManager() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void load(); }, [load, workspaceVersion]);
   useEffect(() => {
     const refresh = () => { void load(); };
     window.addEventListener('booking:provider-list-refresh', refresh);
@@ -291,6 +291,8 @@ export default function ProviderDashboardManager() {
           </Card>
         </section>
       </> : null}
+
+      {children}
     </div>
   </LiveProviderShell>;
 }
