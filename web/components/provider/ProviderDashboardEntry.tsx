@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import ProviderDashboardManager from './ProviderDashboardManager';
 import ProviderDashboardHandleCenter from './ProviderDashboardHandleCenter';
 import ProviderDashboardLaunchCenter from './ProviderDashboardLaunchCenter';
+import ProviderDashboardAvailabilityCenter from './ProviderDashboardAvailabilityCenter';
 import ProviderLiveAvailabilityControl from './ProviderLiveAvailabilityControl';
 import BusinessProductCatalogShortcut from './BusinessProductCatalogShortcut';
 import BusinessProductOrderAttention from './BusinessProductOrderAttention';
@@ -22,6 +23,7 @@ export default function ProviderDashboardEntry() {
     <ProviderDashboardManager key={workspaceVersion} />
     <ProviderDashboardHandleCenter />
     <ProviderDashboardLaunchCenter />
+    <ProviderDashboardAvailabilityCenter key={`availability-${workspaceVersion}`} />
     <BusinessProductOrderAttention />
     <BusinessProductCatalogShortcut />
     <BusinessShopStatusControl />
