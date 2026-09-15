@@ -209,6 +209,8 @@ export default function ProviderServiceReachControl({ serviceId, serviceName }: 
         </div>
 
         <div className={styles.actions}><button type="button" className={styles.primary} disabled={saving} onClick={() => void saveModes()}>{saving ? 'Saving…' : 'Save service reach'}</button></div>
+        {notice ? <p className={styles.notice} role="status">{notice}</p> : null}
+        {error ? <p className={styles.error} role="alert">{error}</p> : null}
 
         <div className={styles.locationGrid}>
           <div className={styles.locationCard}>
@@ -234,9 +236,6 @@ export default function ProviderServiceReachControl({ serviceId, serviceName }: 
 
         <p className={styles.note}>Precise service points stay private. Marketplace customers receive derived distance/matching results, not your raw coordinates. For mobile matching, a valid shared live location takes priority over the mobile base.</p>
       </>}
-
-      {notice ? <p className={styles.notice}>{notice}</p> : null}
-      {error ? <p className={styles.error} role="alert">{error}</p> : null}
     </div> : null}
   </div>;
 }
