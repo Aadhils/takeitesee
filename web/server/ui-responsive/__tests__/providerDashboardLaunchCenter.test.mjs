@@ -3,10 +3,11 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../../../', import.meta.url);
-const [centerSource, cssSource, entrySource] = await Promise.all([
+const [centerSource, cssSource, entrySource, managerSource] = await Promise.all([
   readFile(new URL('components/provider/ProviderDashboardLaunchCenter.tsx', root), 'utf8'),
   readFile(new URL('components/provider/ProviderDashboardLaunchCenter.module.css', root), 'utf8'),
   readFile(new URL('components/provider/ProviderDashboardEntry.tsx', root), 'utf8'),
+  readFile(new URL('components/provider/ProviderDashboardManager.tsx', root), 'utf8'),
 ]);
 
 test('Provider Dashboard owns the first-service marketplace launch journey', () => {
@@ -31,7 +32,9 @@ test('Dashboard launch center preserves controlled approval and activation contr
 test('Provider Dashboard refreshes summary data after service workflow changes', () => {
   assert.ok(centerSource.includes("new Event('provider-services-refresh')"));
   assert.ok(entrySource.includes("window.addEventListener('provider-services-refresh'"));
-  assert.ok(entrySource.includes('key={workspaceVersion}'));
+  assert.ok(entrySource.includes('workspaceVersion={workspaceVersion}'));
+  assert.ok(managerSource.includes('useEffect(() => { void load(); }, [load, workspaceVersion])'));
+  assert.ok(!entrySource.includes('<ProviderDashboardManager key={workspaceVersion}'));
 });
 
 test('Marketplace launch center stays compact and phone safe', () => {
