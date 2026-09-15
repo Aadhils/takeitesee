@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Badge, Card } from '../ui/primitives';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Badge, Button, Card } from '../ui/primitives';
 import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 import styles from './ProviderDashboardBookingInbox.module.css';
 
@@ -81,6 +81,8 @@ export default function ProviderDashboardBookingInbox() {
     title: 'Customer booking next actions',
     intro: 'புதிய booking request, reschedule, completion due மற்றும் முக்கிய follow-up மட்டும் இங்கே சுருக்கமாக காட்டப்படும். Complex booking actions dedicated Booking workspace-ல் தொடரும்.',
     all: 'All bookings',
+    refresh: 'Refresh inbox',
+    refreshing: 'Refreshing…',
     emptyTitle: 'இப்போது booking action இல்லை',
     emptyBody: 'Real customer booking வந்ததும் Provider next action இங்கே தோன்றும்.',
     loading: 'Booking inbox load ஆகிறது…',
@@ -97,6 +99,8 @@ export default function ProviderDashboardBookingInbox() {
     title: 'Customer booking next actions',
     intro: 'See new booking requests, reschedules, completion-due work and important follow-up here. Complex booking actions stay in the dedicated Booking workspace.',
     all: 'All bookings',
+    refresh: 'Refresh inbox',
+    refreshing: 'Refreshing…',
     emptyTitle: 'No booking action right now',
     emptyBody: 'When a real customer booking arrives, the Provider next action will appear here.',
     loading: 'Loading booking inbox…',
@@ -113,9 +117,13 @@ export default function ProviderDashboardBookingInbox() {
   const [bookings, setBookings] = useState<ProviderBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [now] = useState(() => Date.now());
+  const [now, setNow] = useState(() => Date.now());
+  const loadingRef = useRef(false);
 
   const load = useCallback(async () => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
+    setNow(Date.now());
     setLoading(true);
     setError('');
     try {
@@ -127,11 +135,23 @@ export default function ProviderDashboardBookingInbox() {
       setBookings([]);
       setError(cause instanceof Error ? cause.message : 'Unable to load provider bookings.');
     } finally {
+      loadingRef.current = false;
       setLoading(false);
     }
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const refreshVisibleInbox = () => {
+      if (document.visibilityState === 'visible') void load();
+    };
+    window.addEventListener('focus', refreshVisibleInbox);
+    document.addEventListener('visibilitychange', refreshVisibleInbox);
+    return () => {
+      window.removeEventListener('focus', refreshVisibleInbox);
+      document.removeEventListener('visibilitychange', refreshVisibleInbox);
+    };
+  }, [load]);
 
   const attention = useMemo(() => bookings
     .map((booking) => ({ booking, kind: attentionKind(booking, now) }))
@@ -178,7 +198,10 @@ export default function ProviderDashboardBookingInbox() {
           <h2>{copy.title}</h2>
           <p>{copy.intro}</p>
         </div>
-        <Link href="/provider/bookings" className={styles.secondaryLink}>{copy.all}</Link>
+        <div className={styles.headerActions}>
+          <Button type="button" variant="secondary" disabled={loading} onClick={() => void load()}>{loading ? copy.refreshing : copy.refresh}</Button>
+          <Link href="/provider/bookings" className={styles.secondaryLink}>{copy.all}</Link>
+        </div>
       </div>
 
       {loading ? <p className={styles.status}>{copy.loading}</p> : null}
