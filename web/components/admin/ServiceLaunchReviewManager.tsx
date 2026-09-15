@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Badge, Button, Card, EmptyState } from '../ui/primitives';
 
 type LaunchReview = { id: string; applicant_user_id: string; service_id: string; service_name: string; provider_type: string; provider_name: string; application_id: string; application_name: string; category_id: string; category_name: string; location_id: string; location_name: string; status: 'pending' | 'approved' | 'changes_requested' | 'rejected' | 'withdrawn'; review_note?: string | null; reviewed_at?: string | null; created_at: string; can_manage?: boolean };
@@ -19,8 +19,11 @@ export default function ServiceLaunchReviewManager() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const loadingRef = useRef(false);
 
   const load = useCallback(async () => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
     setLoading(true); setError('');
     try {
       const response = await fetch('/api/super-admin/service-launches', { cache: 'no-store' });
@@ -28,9 +31,20 @@ export default function ServiceLaunchReviewManager() {
       if (!response.ok || !body.requests) throw new Error(body.error ?? 'Unable to load service launch reviews.');
       setItems(body.requests);
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to load service launch reviews.'); }
-    finally { setLoading(false); }
+    finally { loadingRef.current = false; setLoading(false); }
   }, []);
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const refreshVisibleReviews = () => {
+      if (document.visibilityState === 'visible') void load();
+    };
+    window.addEventListener('focus', refreshVisibleReviews);
+    document.addEventListener('visibilitychange', refreshVisibleReviews);
+    return () => {
+      window.removeEventListener('focus', refreshVisibleReviews);
+      document.removeEventListener('visibilitychange', refreshVisibleReviews);
+    };
+  }, [load]);
 
   const review = async (item: LaunchReview, decision: 'approve' | 'changes_requested' | 'reject') => {
     if (busyId || item.can_manage === false) return;
@@ -52,7 +66,7 @@ export default function ServiceLaunchReviewManager() {
 
   return <div className="section-stack">
     <div className="dashboard-grid"><Card><span className="eyebrow">Pending launch reviews</span><h2>{pendingCount}</h2></Card><Card><span className="eyebrow">Launch request history</span><h2>{items.length}</h2></Card></div>
-    <div className="button-row"><Button type="button" variant={filter === 'pending' ? 'primary' : 'secondary'} onClick={() => setFilter('pending')}>Pending ({pendingCount})</Button><Button type="button" variant={filter === 'all' ? 'primary' : 'secondary'} onClick={() => setFilter('all')}>All ({items.length})</Button></div>
+    <div className="button-row"><Button type="button" variant={filter === 'pending' ? 'primary' : 'secondary'} onClick={() => setFilter('pending')}>Pending ({pendingCount})</Button><Button type="button" variant={filter === 'all' ? 'primary' : 'secondary'} onClick={() => setFilter('all')}>All ({items.length})</Button><Button type="button" variant="secondary" disabled={loading} onClick={() => void load()}>{loading ? 'Refreshing…' : 'Refresh reviews'}</Button></div>
     {error ? <Card><p className="field-error" role="alert">{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>Reload</Button></Card> : null}
     {loading ? <Card><p>Loading service launch reviews…</p></Card> : null}
     {!loading && !visible.length ? <Card><EmptyState title={filter === 'pending' ? 'No service launches waiting' : 'No launch request history'}>Provider category/location launch requests visible to your assigned scope will appear here.</EmptyState></Card> : null}
