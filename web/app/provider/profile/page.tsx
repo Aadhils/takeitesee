@@ -1,5 +1,5 @@
-import ProviderProfileSetupCenter from '../../../components/provider/ProviderProfileSetupCenter';
+import { redirect } from 'next/navigation';
 
 export default function ProviderProfileRoute() {
-  return <ProviderProfileSetupCenter />;
+  redirect('/provider#provider-profile');
 }
