@@ -95,52 +95,19 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const session = await productionAuthProvider.requireProvider(request);
+    await productionAuthProvider.requireProvider(request);
     const input = profileInput(await request.json() as { display_name?: string; description?: string; location?: string });
     const supabase = await createSupabaseServerClient();
 
-    if (session.roles.includes('professional')) {
-      const { data: profile, error } = await supabase
-        .from('professional_profiles')
-        .update({ headline: input.displayName, description: input.description, service_area: input.location, updated_at: new Date().toISOString() })
-        .eq('user_id', session.user_id)
-        .select('id')
-        .maybeSingle();
-      if (error) throw new Error(error.message);
-      if (!profile) throw new Error('Professional profile was not found.');
-      const { data: complete, error: completeError } = await supabase.rpc('provider_profile_is_complete', {
-        p_provider_type: 'professional',
-        p_professional_id: profile.id,
-        p_business_id: null,
-      });
-      if (completeError) throw new Error(completeError.message);
-      if (!complete) {
-        const { error: pauseError } = await supabase.from('services').update({ status: 'paused', active: false, updated_at: new Date().toISOString() }).eq('professional_id', profile.id).eq('status', 'active');
-        if (pauseError) throw new Error(pauseError.message);
-      }
-      return NextResponse.json({ result: { provider_type: 'professional', provider_id: profile.id, profile_complete: Boolean(complete) } });
-    }
-
-    const { data: business, error } = await supabase
-      .from('businesses')
-      .update({ name: input.displayName, description: input.description, location: input.location, updated_at: new Date().toISOString() })
-      .eq('owner_user_id', session.user_id)
-      .select('id')
-      .limit(1)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!business) throw new Error('Business profile was not found.');
-    const { data: complete, error: completeError } = await supabase.rpc('provider_profile_is_complete', {
-      p_provider_type: 'business',
-      p_professional_id: null,
-      p_business_id: business.id,
+    const { data: result, error } = await supabase.rpc('update_provider_profile', {
+      requested_display_name: input.displayName,
+      requested_description: input.description,
+      requested_location: input.location,
     });
-    if (completeError) throw new Error(completeError.message);
-    if (!complete) {
-      const { error: pauseError } = await supabase.from('services').update({ status: 'paused', active: false, updated_at: new Date().toISOString() }).eq('business_id', business.id).eq('status', 'active');
-      if (pauseError) throw new Error(pauseError.message);
-    }
-    return NextResponse.json({ result: { provider_type: 'business', provider_id: business.id, profile_complete: Boolean(complete) } });
+    if (error) throw new Error(error.message);
+    if (!result || typeof result !== 'object') throw new Error('Provider profile update returned an invalid result.');
+
+    return NextResponse.json({ result });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to update provider profile.' }, { status: 400 });
   }
