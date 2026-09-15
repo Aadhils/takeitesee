@@ -3,10 +3,11 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../../../', import.meta.url);
-const [routeSource, managerSource, cssSource] = await Promise.all([
+const [routeSource, managerSource, cssSource, profileApiSource] = await Promise.all([
   readFile(new URL('app/provider/profile/page.tsx', root), 'utf8'),
   readFile(new URL('components/provider/ProviderProfileManager.tsx', root), 'utf8'),
   readFile(new URL('components/provider/ProviderProfileResponsive.module.css', root), 'utf8'),
+  readFile(new URL('app/api/provider/profile/route.ts', root), 'utf8'),
 ]);
 
 test('Provider Profile route uses responsive wrapper', () => {
@@ -45,4 +46,14 @@ test('Professional role editor surfaces duplicate saves locally and keeps errors
   assert.ok(managerSource.includes('roleCopy.duplicate'));
   assert.ok(managerSource.includes('roleError && !roleEditorOpen'));
   assert.ok(managerSource.includes('aria-live="assertive"'));
+});
+
+test('Provider Profile mutation uses the owner-scoped RPC instead of direct table writes', () => {
+  const patchSource = profileApiSource.split('export async function PATCH')[1] ?? '';
+  assert.ok(patchSource.includes("rpc('update_provider_profile'"));
+  assert.ok(patchSource.includes('requested_display_name: input.displayName'));
+  assert.ok(patchSource.includes('requested_description: input.description'));
+  assert.ok(patchSource.includes('requested_location: input.location'));
+  assert.ok(!patchSource.includes("from('professional_profiles')"));
+  assert.ok(!patchSource.includes("from('businesses')"));
 });
