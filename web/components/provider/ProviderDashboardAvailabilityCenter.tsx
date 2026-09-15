@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Card, Select } from '../ui/primitives';
+import { Button, Card, Select } from '../ui/primitives';
 import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 import styles from './ProviderDashboardAvailabilityCenter.module.css';
 
@@ -39,8 +39,9 @@ export default function ProviderDashboardAvailabilityCenter() {
     blackoutPlural: 'blackouts',
     none: 'No detailed schedule yet',
     loading: 'Availability load ஆகிறது…',
-    updating: 'Updating…',
-    saved: 'Availability mode updated.',
+    updating: 'Saving…',
+    save: 'Save availability',
+    saved: 'Availability saved.',
     retry: 'Retry',
   } : {
     eyebrow: 'Booking availability',
@@ -59,15 +60,18 @@ export default function ProviderDashboardAvailabilityCenter() {
     blackoutPlural: 'blackouts',
     none: 'No detailed schedule yet',
     loading: 'Loading service availability…',
-    updating: 'Updating…',
-    saved: 'Availability mode updated.',
+    updating: 'Saving…',
+    save: 'Save availability',
+    saved: 'Availability saved.',
     retry: 'Retry',
   }, [tamil]);
 
   const [services, setServices] = useState<Service[]>([]);
   const [availabilityByService, setAvailabilityByService] = useState<Record<string, Availability>>({});
+  const [draftModeByService, setDraftModeByService] = useState<Record<string, AvailabilityMode>>({});
   const [loading, setLoading] = useState(true);
   const [savingServiceId, setSavingServiceId] = useState<string | null>(null);
+  const [noticeServiceId, setNoticeServiceId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
@@ -89,6 +93,7 @@ export default function ProviderDashboardAvailabilityCenter() {
         return [service.id, body.availability] as const;
       }));
       setAvailabilityByService(Object.fromEntries(availabilityPairs));
+      setDraftModeByService(Object.fromEntries(availabilityPairs.map(([serviceId, availability]) => [serviceId, availability.mode])));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to load service availability.');
     } finally {
@@ -98,12 +103,14 @@ export default function ProviderDashboardAvailabilityCenter() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const updateMode = async (service: Service, mode: AvailabilityMode) => {
+  const saveMode = async (service: Service) => {
     const current = availabilityByService[service.id];
-    if (!current || savingServiceId) return;
+    const mode = draftModeByService[service.id] ?? current?.mode;
+    if (!current || !mode || savingServiceId) return;
     if (mode === 'scheduled' && current.weekly_windows.length === 0) return;
 
     setSavingServiceId(service.id);
+    setNoticeServiceId(null);
     setError('');
     setNotice('');
     try {
@@ -120,7 +127,9 @@ export default function ProviderDashboardAvailabilityCenter() {
       const body = await response.json() as { availability?: Availability; error?: string };
       if (!response.ok || !body.availability) throw new Error(body.error ?? 'Unable to update availability.');
       setAvailabilityByService((existing) => ({ ...existing, [service.id]: body.availability as Availability }));
+      setDraftModeByService((existing) => ({ ...existing, [service.id]: (body.availability as Availability).mode }));
       setNotice(copy.saved);
+      setNoticeServiceId(service.id);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to update availability.');
     } finally {
@@ -143,7 +152,6 @@ export default function ProviderDashboardAvailabilityCenter() {
 
       {loading ? <p className={styles.status}>{copy.loading}</p> : null}
       {error ? <p className="field-error" role="alert">{error} <button type="button" className={styles.textButton} onClick={() => void load()}>{copy.retry}</button></p> : null}
-      {notice ? <p className={styles.notice} role="status">{notice}</p> : null}
 
       {!loading && !services.length ? <p className={styles.empty}>{copy.noServices}</p> : null}
 
@@ -151,6 +159,7 @@ export default function ProviderDashboardAvailabilityCenter() {
         {visibleServices.map((service) => {
           const availability = availabilityByService[service.id];
           const saving = savingServiceId === service.id;
+          const selectedMode = draftModeByService[service.id] ?? availability?.mode ?? 'on_request';
           const weeklyCount = availability?.weekly_windows.length ?? 0;
           const blackoutCount = availability?.blackout_periods.length ?? 0;
           const scheduleSummary = weeklyCount || blackoutCount
@@ -166,16 +175,24 @@ export default function ProviderDashboardAvailabilityCenter() {
             </div>
 
             {availability ? <>
-              <Select
-                label={copy.eyebrow}
-                value={availability.mode}
-                disabled={Boolean(savingServiceId)}
-                onChange={(event) => void updateMode(service, event.target.value as AvailabilityMode)}
-              >
-                <option value="always_available">{copy.always}</option>
-                <option value="on_request">{copy.onRequest}</option>
-                <option value="scheduled" disabled={availability.weekly_windows.length === 0}>{availability.weekly_windows.length ? copy.scheduled : copy.scheduledNeedsHours}</option>
-              </Select>
+              <div className={styles.modeControls}>
+                <Select
+                  label={copy.eyebrow}
+                  value={selectedMode}
+                  disabled={Boolean(savingServiceId)}
+                  onChange={(event) => {
+                    setNotice('');
+                    setNoticeServiceId(null);
+                    setDraftModeByService((existing) => ({ ...existing, [service.id]: event.target.value as AvailabilityMode }));
+                  }}
+                >
+                  <option value="always_available">{copy.always}</option>
+                  <option value="on_request">{copy.onRequest}</option>
+                  <option value="scheduled" disabled={availability.weekly_windows.length === 0}>{availability.weekly_windows.length ? copy.scheduled : copy.scheduledNeedsHours}</option>
+                </Select>
+                <Button type="button" loading={saving} disabled={Boolean(savingServiceId)} onClick={() => void saveMode(service)}>{copy.save}</Button>
+              </div>
+              {notice && noticeServiceId === service.id ? <p className={styles.notice} role="status">{notice}</p> : null}
               <p className={styles.summary}>{saving ? copy.updating : scheduleSummary}</p>
             </> : <p className={styles.summary}>{copy.loading}</p>}
           </article>;
