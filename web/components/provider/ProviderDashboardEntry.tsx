@@ -22,8 +22,7 @@ export default function ProviderDashboardEntry() {
     return () => window.removeEventListener('provider-services-refresh', refresh);
   }, []);
 
-  return <>
-    <ProviderDashboardManager key={workspaceVersion} />
+  return <ProviderDashboardManager workspaceVersion={workspaceVersion}>
     <ProviderDashboardHandleCenter />
     <ProviderDashboardLaunchCenter />
     <ProviderDashboardAvailabilityCenter key={`availability-${workspaceVersion}`} />
@@ -34,5 +33,5 @@ export default function ProviderDashboardEntry() {
     <BusinessProductCatalogShortcut />
     <BusinessShopStatusControl />
     <ProviderLiveAvailabilityControl />
-  </>;
+  </ProviderDashboardManager>;
 }
