@@ -51,10 +51,33 @@
 }
 
 .profileJourney :global(.field-control),
-.profileJourney input,
 .profileJourney textarea,
 .profileJourney select {
   width: 100%;
+}
+
+.profileJourney :global(.choice-row) {
+  width: 100%;
+  min-width: 0;
+  align-items: flex-start;
+  gap: .75rem;
+}
+
+.profileJourney :global(.choice-input) {
+  width: 18px;
+  min-width: 18px;
+  max-width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+
+.profileJourney :global(.choice-row) > span {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.profileJourney :global(.choice-description) {
+  margin-top: .2rem;
 }
 
 .profileJourney :global(.button) {
