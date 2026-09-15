@@ -7,6 +7,7 @@ import ProviderDashboardLaunchCenter from './ProviderDashboardLaunchCenter';
 import ProviderDashboardAvailabilityCenter from './ProviderDashboardAvailabilityCenter';
 import ProviderDashboardReachCenter from './ProviderDashboardReachCenter';
 import ProviderOfferingDiscoverabilityStatus from './ProviderOfferingDiscoverabilityStatus';
+import ProviderDashboardBookingInbox from './ProviderDashboardBookingInbox';
 import ProviderLiveAvailabilityControl from './ProviderLiveAvailabilityControl';
 import BusinessProductCatalogShortcut from './BusinessProductCatalogShortcut';
 import BusinessProductOrderAttention from './BusinessProductOrderAttention';
@@ -28,6 +29,7 @@ export default function ProviderDashboardEntry() {
     <ProviderDashboardAvailabilityCenter key={`availability-${workspaceVersion}`} />
     <ProviderDashboardReachCenter key={`reach-${workspaceVersion}`} />
     <ProviderOfferingDiscoverabilityStatus key={`discoverability-${workspaceVersion}`} mode="services" />
+    <ProviderDashboardBookingInbox />
     <BusinessProductOrderAttention />
     <BusinessProductCatalogShortcut />
     <BusinessShopStatusControl />
