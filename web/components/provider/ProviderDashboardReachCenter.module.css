@@ -1,0 +1,137 @@
+.center {
+  width: min(calc(100% - 32px), 1180px);
+  margin: 22px auto 0;
+  scroll-margin-top: 100px;
+}
+
+.card {
+  display: grid;
+  gap: 18px;
+  overflow: hidden;
+  padding: 20px;
+}
+
+.header,
+.serviceHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.header > div,
+.serviceHead > div {
+  min-width: 0;
+}
+
+.eyebrow {
+  color: var(--color-primary);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.header h2 {
+  margin: 5px 0 6px;
+  font-size: clamp(1.2rem, 2.5vw, 1.55rem);
+  line-height: 1.15;
+}
+
+.header p,
+.status,
+.empty {
+  margin: 0;
+  color: var(--color-ink-muted);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.secondaryLink,
+.moreLink {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-size: .8rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.serviceGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.serviceCard {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+  align-content: start;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 15px;
+  background: var(--color-surface);
+}
+
+.serviceHead small {
+  display: block;
+  color: var(--color-ink-muted);
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.serviceHead h3 {
+  margin: 4px 0 0;
+  font-size: 1rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.empty {
+  border: 1px dashed #cbc5e8;
+  border-radius: var(--radius-md);
+  padding: 15px;
+  background: var(--color-brand-subtle);
+}
+
+.textButton {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--color-primary);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.moreLink {
+  justify-self: start;
+  border: 0;
+  padding-inline: 0;
+  background: transparent;
+}
+
+@media (max-width: 900px) {
+  .serviceGrid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .center { width: min(calc(100% - 20px), 1180px); margin-top: 16px; }
+  .card { gap: 15px; padding: 15px; }
+  .header { flex-direction: column; }
+  .secondaryLink { width: 100%; }
+}
+
+@media (max-width: 440px) {
+  .card { padding-bottom: calc(15px + env(safe-area-inset-bottom)); }
+  .serviceCard { padding: 13px; }
+}
