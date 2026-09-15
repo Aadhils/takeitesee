@@ -28,9 +28,18 @@ test('booking inbox prioritizes real operational next actions without mutating b
   assert.ok(bookingApiSource.includes('productionProviderBookingRepository.list(session)'));
 });
 
+test('booking inbox refreshes data and time when the Provider returns', () => {
+  assert.ok(inboxSource.includes('Refresh inbox'));
+  assert.ok(inboxSource.includes('setNow(Date.now())'));
+  assert.ok(inboxSource.includes("window.addEventListener('focus', refreshVisibleInbox)"));
+  assert.ok(inboxSource.includes("document.addEventListener('visibilitychange', refreshVisibleInbox)"));
+  assert.ok(inboxSource.includes('if (loadingRef.current) return;'));
+});
+
 test('booking inbox remains compact and responsive', () => {
   assert.ok(cssSource.includes('min-height: 44px'));
   assert.ok(cssSource.includes('@media (max-width: 640px)'));
   assert.ok(cssSource.includes('@media (max-width: 440px)'));
   assert.ok(cssSource.includes('safe-area-inset-bottom'));
+  assert.ok(cssSource.includes('.headerActions'));
 });
