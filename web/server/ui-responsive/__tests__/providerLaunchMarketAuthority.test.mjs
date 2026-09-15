@@ -32,8 +32,8 @@ test('Admin approval rechecks market availability before granting service scope'
 
 test('Public launchability follows the same application market authority', () => {
   assert.ok(migrationSource.includes('create or replace function private.service_scope_is_launchable'));
-  assert.ok(migrationSource.includes('join public.application_locations al'));
-  assert.ok(migrationSource.includes('and al.application_id=ses.application_id'));
-  assert.ok(migrationSource.includes('and al.location_id=ses.location_id'));
-  assert.ok(migrationSource.includes('and al.enabled=true'));
+  assert.match(
+    migrationSource,
+    /join public\.application_locations al\s+on al\.application_id=ses\.application_id\s+and al\.location_id=ses\.location_id\s+and al\.enabled=true/,
+  );
 });
