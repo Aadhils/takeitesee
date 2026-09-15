@@ -1,4 +1,6 @@
 .center {
+  width: min(calc(100% - 32px), 1180px);
+  margin: 22px auto 0;
   scroll-margin-top: 110px;
 }
 
@@ -126,6 +128,7 @@
 }
 
 @media (max-width: 760px) {
+  .center { width: min(calc(100% - 24px), 1180px); margin-top: 16px; }
   .card { padding: 16px; }
   .header { flex-direction: column; }
   .summary { grid-template-columns: 1fr; }
@@ -135,7 +138,7 @@
 }
 
 @media (max-width: 560px) {
-  .center { scroll-margin-top: 86px; }
+  .center { width: min(calc(100% - 20px), 1180px); scroll-margin-top: 86px; }
   .card { gap: 14px; padding: 14px; }
   .actions { display: grid; grid-template-columns: 1fr; }
   .actions :global(.button),
