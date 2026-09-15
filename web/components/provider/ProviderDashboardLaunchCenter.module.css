@@ -139,6 +139,12 @@
   gap: 12px;
 }
 
+.categoryChooser {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+}
+
 .form :global(input),
 .form :global(select),
 .inlineAction :global(select) {
