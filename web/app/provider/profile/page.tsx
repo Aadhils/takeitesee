@@ -1,6 +1,5 @@
-import ProviderProfileManager from '../../../components/provider/ProviderProfileManager';
-import styles from '../../../components/provider/ProviderProfileResponsive.module.css';
+import ProviderProfileSetupCenter from '../../../components/provider/ProviderProfileSetupCenter';
 
 export default function ProviderProfileRoute() {
-  return <div className={styles.profileJourney}><ProviderProfileManager /></div>;
+  return <ProviderProfileSetupCenter />;
 }

@@ -1,0 +1,562 @@
+.center {
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  overflow-x: clip;
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+
+.center *,
+.center *::before,
+.center *::after {
+  box-sizing: border-box;
+}
+
+.center h1,
+.center h2,
+.center h3,
+.center p,
+.center strong,
+.center small,
+.center span,
+.center label,
+.center a {
+  overflow-wrap: anywhere;
+}
+
+.center :global(.button) {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.center :global(.field),
+.center :global(.field-control),
+.center input,
+.center textarea,
+.center select {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.center :global(.field-control),
+.center textarea,
+.center select {
+  width: 100%;
+}
+
+.center :global(.choice-row) {
+  width: 100%;
+  min-width: 0;
+  align-items: flex-start;
+  gap: .7rem;
+}
+
+.center :global(.choice-input) {
+  width: 18px;
+  min-width: 18px;
+  max-width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+
+.center :global(.choice-row) > span {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.alertCard p {
+  margin: 0;
+}
+
+.hero {
+  display: grid;
+  gap: 1rem;
+}
+
+.heroTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  min-width: 0;
+}
+
+.avatar {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 58px;
+  font-weight: 800;
+  font-size: 1rem;
+  background: linear-gradient(135deg, rgba(73, 54, 211, .14), rgba(117, 82, 255, .22));
+  border: 1px solid rgba(91, 69, 214, .18);
+}
+
+.identityText {
+  min-width: 0;
+}
+
+.identityText h1,
+.sectionHead h2,
+.roleEditorHead h3,
+.nextCard h2 {
+  margin: .2rem 0 .35rem;
+}
+
+.identityText p,
+.sectionHead p,
+.roleEditorHead p,
+.nextCard p,
+.profilePreview p {
+  margin: 0;
+  opacity: .78;
+}
+
+.eyebrow {
+  display: inline-block;
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  opacity: .72;
+}
+
+.badges,
+.chips,
+.heroActions,
+.formActions,
+.roleActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .55rem;
+  min-width: 0;
+}
+
+.badges {
+  justify-content: flex-end;
+}
+
+.profilePreview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(260px, .9fr);
+  gap: 1rem;
+  padding: .9rem 1rem;
+  border-radius: 16px;
+  background: rgba(95, 72, 220, .055);
+  border: 1px solid rgba(95, 72, 220, .12);
+}
+
+.profilePreview > div {
+  min-width: 0;
+}
+
+.profilePreview strong {
+  display: block;
+  margin-bottom: .25rem;
+}
+
+.quickFacts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .65rem;
+}
+
+.quickFacts span {
+  min-width: 0;
+  padding: .65rem .75rem;
+  border-radius: 12px;
+  background: rgba(255,255,255,.72);
+  border: 1px solid rgba(95, 72, 220, .1);
+}
+
+.quickFacts small,
+.quickFacts strong {
+  display: block;
+}
+
+.quickFacts small {
+  opacity: .65;
+  margin-bottom: .2rem;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .65rem;
+}
+
+.step {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  padding: .75rem;
+  border-radius: 14px;
+  border: 1px solid rgba(120,120,140,.18);
+  background: rgba(255,255,255,.45);
+}
+
+.step > span {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 30px;
+  font-weight: 800;
+  background: rgba(95,72,220,.1);
+}
+
+.step div {
+  min-width: 0;
+}
+
+.step strong,
+.step small {
+  display: block;
+}
+
+.step small {
+  margin-top: .12rem;
+  opacity: .68;
+}
+
+.stepDone {
+  border-color: rgba(40, 160, 90, .28);
+  background: rgba(40, 160, 90, .06);
+}
+
+.stepDone > span {
+  background: rgba(40,160,90,.12);
+}
+
+.editorCard,
+.rolesSection,
+.nextCard {
+  min-width: 0;
+}
+
+.sectionHead,
+.roleEditorHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 0;
+  margin-bottom: 1rem;
+}
+
+.sectionHead > div,
+.roleEditorHead > div {
+  min-width: 0;
+}
+
+.formStack,
+.roleEditor {
+  display: grid;
+  gap: .9rem;
+  min-width: 0;
+}
+
+.twoColumns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(180px, .6fr);
+  gap: .8rem;
+  min-width: 0;
+}
+
+.rolesSection {
+  display: grid;
+  gap: .9rem;
+}
+
+.notice {
+  margin: 0;
+  padding: .7rem .85rem;
+  border-radius: 12px;
+  background: rgba(40,160,90,.08);
+}
+
+.roleEditor {
+  padding: 1rem;
+  border-radius: 16px;
+  background: rgba(95,72,220,.045);
+  border: 1px solid rgba(95,72,220,.14);
+}
+
+.moreOptions {
+  border: 1px solid rgba(120,120,140,.18);
+  border-radius: 14px;
+  overflow: clip;
+}
+
+.moreOptions summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: .7rem .85rem;
+  cursor: pointer;
+  font-weight: 700;
+  user-select: none;
+}
+
+.optionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .7rem;
+  padding: .8rem;
+  border-top: 1px solid rgba(120,120,140,.14);
+}
+
+.roleGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .75rem;
+  min-width: 0;
+}
+
+.roleCard {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .7rem;
+}
+
+.roleCardHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .65rem;
+  min-width: 0;
+}
+
+.roleCardHead > div {
+  min-width: 0;
+}
+
+.roleCardHead h3 {
+  margin: 0 0 .2rem;
+}
+
+.roleCardHead small {
+  opacity: .65;
+}
+
+.roleSummary {
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 3.6em;
+}
+
+.chips {
+  align-items: flex-start;
+}
+
+.roleActions {
+  margin-top: auto;
+}
+
+.swipeHint {
+  display: none;
+  margin: 0;
+  font-size: .82rem;
+  opacity: .65;
+}
+
+.nextCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.nextCard > div {
+  min-width: 0;
+}
+
+.setupLink {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: .72rem 1rem;
+  border-radius: 12px;
+  background: var(--primary, #5b46d8);
+  color: white;
+  text-decoration: none;
+  font-weight: 750;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 900px) {
+  .profilePreview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .roleGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .center {
+    gap: .8rem;
+  }
+
+  .heroTop,
+  .sectionHead,
+  .nextCard {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .badges {
+    justify-content: flex-start;
+  }
+
+  .quickFacts,
+  .twoColumns,
+  .optionGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .steps {
+    gap: .45rem;
+  }
+
+  .step {
+    padding: .6rem;
+    gap: .45rem;
+  }
+
+  .step > span {
+    width: 26px;
+    height: 26px;
+    flex-basis: 26px;
+    border-radius: 9px;
+  }
+
+  .step small {
+    font-size: .72rem;
+  }
+
+  .setupLink {
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .identity {
+    align-items: flex-start;
+  }
+
+  .avatar {
+    width: 50px;
+    height: 50px;
+    flex-basis: 50px;
+    border-radius: 15px;
+  }
+
+  .identityText h1 {
+    font-size: 1.35rem;
+  }
+
+  .profilePreview {
+    padding: .75rem;
+  }
+
+  .steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .step {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .heroActions,
+  .formActions,
+  .roleActions {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .heroActions :global(.button),
+  .formActions :global(.button),
+  .roleActions :global(.button) {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+
+  .roleEditor {
+    padding: .8rem;
+  }
+
+  .swipeHint {
+    display: block;
+  }
+
+  .roleGrid {
+    display: grid;
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(82%, 1fr);
+    gap: .7rem;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: inline mandatory;
+    padding: .1rem .05rem .4rem;
+    scrollbar-width: thin;
+  }
+
+  .roleCard {
+    scroll-snap-align: start;
+  }
+
+  .roleSummary {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 420px) {
+  .center {
+    padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .step {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .roleGrid {
+    grid-auto-columns: minmax(90%, 1fr);
+  }
+
+  .heroActions :global(.button),
+  .formActions :global(.button),
+  .roleActions :global(.button) {
+    flex-basis: 100%;
+    width: 100%;
+  }
+}
