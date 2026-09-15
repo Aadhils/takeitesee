@@ -127,6 +127,7 @@ export default function ProviderProfileManager() {
       deleted: 'Professional role deleted.',
       loadError: 'Professional roles load செய்ய முடியவில்லை.',
       saveError: 'Professional role save செய்ய முடியவில்லை.',
+      duplicate: 'இந்த professional role ஏற்கனவே உங்கள் profile-ல் உள்ளது. புதியதாக சேர்க்காமல், மேலே உள்ள role-ல் Edit பயன்படுத்துங்கள்.',
       deleteConfirm: 'இந்த professional role-ஐ delete செய்ய வேண்டுமா?',
       verifiedVisibility: 'Verified public visibility',
       verifiedHelp: 'Verified professional-ன் active roles மட்டும் public discovery-க்கு eligible. Subscription/search boost இந்த phase-ல் இல்லை.',
@@ -175,6 +176,7 @@ export default function ProviderProfileManager() {
       deleted: 'Professional role deleted.',
       loadError: 'Unable to load professional roles.',
       saveError: 'Unable to save professional role.',
+      duplicate: 'This professional role already exists on your profile. Use Edit on the existing role instead of adding it again.',
       deleteConfirm: 'Delete this professional role?',
       verifiedVisibility: 'Verified public visibility',
       verifiedHelp: 'Only active roles of a verified professional are eligible for public discovery. Subscription and search boosts are not part of this phase.',
@@ -272,6 +274,15 @@ export default function ProviderProfileManager() {
   const saveRole = async (event: FormEvent) => {
     event.preventDefault();
     if (roleSaving) return;
+
+    const normalizedTitle = roleForm.title.trim().toLocaleLowerCase();
+    const duplicateRole = roles.find((role) => role.id !== editingRoleId && role.title.trim().toLocaleLowerCase() === normalizedTitle);
+    if (duplicateRole) {
+      setRoleNotice('');
+      setRoleError(roleCopy.duplicate);
+      return;
+    }
+
     setRoleSaving(true);
     setRoleError('');
     setRoleNotice('');
@@ -352,7 +363,7 @@ export default function ProviderProfileManager() {
         </div>
         <p>{roleCopy.intro}</p>
         <p className="summary-note"><strong>{roleCopy.verifiedVisibility}:</strong> {roleCopy.verifiedHelp}</p>
-        {roleError ? <p className="field-error" role="alert">{roleError}</p> : null}
+        {roleError && !roleEditorOpen ? <p className="field-error" role="alert">{roleError}</p> : null}
         {roleNotice ? <p role="status">{roleNotice}</p> : null}
         {rolesLoading ? <p>{roleCopy.loadError.replace('Unable to load professional roles.', 'Loading professional roles…').replace('Professional roles load செய்ய முடியவில்லை.', 'Professional roles load ஆகிறது…')}</p> : null}
 
@@ -381,7 +392,7 @@ export default function ProviderProfileManager() {
 
         {roleEditorOpen ? <form onSubmit={saveRole} className="section-stack">
           <div className="section-heading"><div><span className="eyebrow">{roleCopy.eyebrow}</span><h3>{editingRoleId ? roleCopy.editorEdit : roleCopy.editorAdd}</h3></div></div>
-          <Input label={roleCopy.roleTitle} hint={roleCopy.roleTitleHint} value={roleForm.title} onChange={(event) => setRoleForm((current) => ({ ...current, title: event.target.value }))} required minLength={2} maxLength={120} />
+          <Input label={roleCopy.roleTitle} hint={roleCopy.roleTitleHint} value={roleForm.title} onChange={(event) => { setRoleError(''); setRoleForm((current) => ({ ...current, title: event.target.value })); }} required minLength={2} maxLength={120} />
           <Textarea label={roleCopy.summary} hint={roleCopy.summaryHint} value={roleForm.summary} onChange={(event) => setRoleForm((current) => ({ ...current, summary: event.target.value }))} maxLength={1200} rows={4} />
           <Input label={roleCopy.experienceYears} type="number" min={0} max={80} step={1} value={roleForm.experience_years} onChange={(event) => setRoleForm((current) => ({ ...current, experience_years: event.target.value }))} />
           <div className="section-stack"><div><strong>{roleCopy.opportunityHeading}</strong><p className="summary-note">{roleCopy.opportunityHint}</p></div>
@@ -392,6 +403,7 @@ export default function ProviderProfileManager() {
             <Checkbox label={roleCopy.contract} description={roleCopy.contractHelp} checked={roleForm.contract_enabled} onChange={(event) => setRoleForm((current) => ({ ...current, contract_enabled: event.target.checked }))} />
             <Checkbox label={roleCopy.activeLabel} description={roleCopy.activeHelp} checked={roleForm.active} onChange={(event) => setRoleForm((current) => ({ ...current, active: event.target.checked }))} />
           </div>
+          {roleError ? <p className="field-error" role="alert" aria-live="assertive">{roleError}</p> : null}
           <div className="button-row"><Button type="submit" loading={roleSaving}>{editingRoleId ? roleCopy.update : roleCopy.save}</Button><Button type="button" variant="secondary" onClick={resetRoleEditor} disabled={roleSaving}>{roleCopy.cancel}</Button></div>
         </form> : null}
       </Card> : null}

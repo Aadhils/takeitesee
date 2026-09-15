@@ -21,6 +21,9 @@ test('Provider Profile styles cover phone and tablet layouts', () => {
   assert.ok(cssSource.includes('provider-review-summary'));
   assert.ok(cssSource.includes('provider-profile-grid'));
   assert.ok(cssSource.includes('button-row'));
+  assert.ok(cssSource.includes('choice-row'));
+  assert.ok(cssSource.includes('choice-input'));
+  assert.ok(cssSource.includes('flex: 0 0 18px'));
   assert.ok(cssSource.includes('max-width: 760px'));
   assert.ok(cssSource.includes('max-width: 560px'));
   assert.ok(cssSource.includes('safe-area-inset-bottom'));
@@ -35,4 +38,11 @@ test('Provider Profile and professional role contracts remain present', () => {
   assert.ok(managerSource.includes('full_time_enabled'));
   assert.ok(managerSource.includes('contract_enabled'));
   assert.ok(managerSource.includes('/provider/setup'));
+});
+
+test('Professional role editor surfaces duplicate saves locally and keeps errors near the action', () => {
+  assert.ok(managerSource.includes('role.id !== editingRoleId'));
+  assert.ok(managerSource.includes('roleCopy.duplicate'));
+  assert.ok(managerSource.includes('roleError && !roleEditorOpen'));
+  assert.ok(managerSource.includes('aria-live="assertive"'));
 });
