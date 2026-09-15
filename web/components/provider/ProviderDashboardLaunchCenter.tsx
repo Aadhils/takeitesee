@@ -70,12 +70,12 @@ export default function ProviderDashboardLaunchCenter() {
   const tamil = locale.toLowerCase().startsWith('ta');
   const copy = useMemo(() => tamil ? {
     eyebrow: 'Marketplace launch', title: 'Service-ஐ இங்கிருந்தே launch செய்யுங்கள்', intro: 'First service create செய்வது முதல் category/location approval மற்றும் activation வரை Dashboard-லேயே முடிக்கலாம்.',
-    ready: 'Marketplace live', progress: 'Setup in progress', create: 'Add first service', addAnother: 'Add service', manage: 'Advanced service manager', name: 'Service name', description: 'Service description', category: 'Platform category', price: 'Starting price (INR)', duration: 'Duration (minutes)', save: 'Save draft service', cancel: 'Cancel',
+    ready: 'Marketplace live', progress: 'Setup in progress', create: 'Add first service', addAnother: 'Add service', manage: 'Advanced service manager', name: 'Service name', description: 'Service description', category: 'Platform category', categorySearch: 'Category தேடுங்கள்', categorySearchPlaceholder: 'Website, driver, marketing…', categoryChoose: 'ஒரு category தேர்வு செய்யுங்கள்', categoryNoMatches: 'Matching category இல்லை. வேறு வார்த்தை type செய்யுங்கள்.', price: 'Starting price (INR)', duration: 'Duration (minutes)', save: 'Save draft service', cancel: 'Cancel',
     created: 'Draft service created. இப்போது launch location தேர்வு செய்து approval request செய்யலாம்.', approval: 'Request approval', location: 'Launch location', pending: 'Approval pending', approved: 'Scope approved', live: 'Live', activate: 'Activate service', withdraw: 'Withdraw request', retry: 'Try again', noCategory: 'இந்த service-க்கு valid platform category தேவை.',
     identity: 'Identity ready', service: 'Service created', scope: 'Scope approved', public: 'Public live', reload: 'Reload', loading: 'Marketplace setup load ஆகிறது…',
   } : {
     eyebrow: 'Marketplace launch', title: 'Launch a service from this Dashboard', intro: 'Create your first service, request category/location approval and activate it without leaving the Provider workspace.',
-    ready: 'Marketplace live', progress: 'Setup in progress', create: 'Add first service', addAnother: 'Add service', manage: 'Advanced service manager', name: 'Service name', description: 'Service description', category: 'Platform category', price: 'Starting price (INR)', duration: 'Duration (minutes)', save: 'Save draft service', cancel: 'Cancel',
+    ready: 'Marketplace live', progress: 'Setup in progress', create: 'Add first service', addAnother: 'Add service', manage: 'Advanced service manager', name: 'Service name', description: 'Service description', category: 'Platform category', categorySearch: 'Find category', categorySearchPlaceholder: 'Type website, driver, marketing…', categoryChoose: 'Choose a category', categoryNoMatches: 'No matching categories. Try another search.', price: 'Starting price (INR)', duration: 'Duration (minutes)', save: 'Save draft service', cancel: 'Cancel',
     created: 'Draft service created. Choose a launch location and request approval next.', approval: 'Request approval', location: 'Launch location', pending: 'Approval pending', approved: 'Scope approved', live: 'Live', activate: 'Activate service', withdraw: 'Withdraw request', retry: 'Try again', noCategory: 'This service needs a valid platform category.',
     identity: 'Identity ready', service: 'Service created', scope: 'Scope approved', public: 'Public live', reload: 'Reload', loading: 'Loading marketplace setup…',
   }, [tamil]);
@@ -85,6 +85,7 @@ export default function ProviderDashboardLaunchCenter() {
   const [options, setOptions] = useState<SetupOptions>({ applications: [], categories: [], locations: [] });
   const [requests, setRequests] = useState<LaunchRequest[]>([]);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const [categoryQuery, setCategoryQuery] = useState('');
   const [locationByService, setLocationByService] = useState<Record<string, string>>({});
   const [formOpen, setFormOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -100,6 +101,19 @@ export default function ProviderDashboardLaunchCenter() {
     return cities.length ? cities : options.locations;
   }, [options.locations]);
   const parentById = useMemo(() => new Map(options.categories.map((item) => [item.id, item])), [options.categories]);
+  const categoryMatches = useMemo(() => {
+    const query = normalized(categoryQuery);
+    if (!query) return selectableCategories;
+    return selectableCategories.filter((category) => {
+      const parentName = category.parent_id ? parentById.get(category.parent_id)?.name ?? '' : '';
+      return normalized(`${parentName} ${category.name} ${category.code}`).includes(query);
+    });
+  }, [categoryQuery, parentById, selectableCategories]);
+  const categoryOptions = useMemo(() => {
+    const selected = selectableCategories.find((category) => category.id === draft.category_id);
+    if (!selected || categoryMatches.some((category) => category.id === selected.id)) return categoryMatches;
+    return [selected, ...categoryMatches];
+  }, [categoryMatches, draft.category_id, selectableCategories]);
   const latestByService = useMemo(() => {
     const map = new Map<string, LaunchRequest>();
     for (const request of requests) if (!map.has(request.service_id)) map.set(request.service_id, request);
@@ -135,9 +149,6 @@ export default function ProviderDashboardLaunchCenter() {
 
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
-    if (!draft.category_id && selectableCategories[0]?.id) setDraft((current) => ({ ...current, category_id: selectableCategories[0].id }));
-  }, [draft.category_id, selectableCategories]);
-  useEffect(() => {
     if (!preferredLocations[0]?.id || !readiness) return;
     setLocationByService((current) => {
       const next = { ...current };
@@ -162,7 +173,7 @@ export default function ProviderDashboardLaunchCenter() {
       });
       const body = await response.json() as { service?: Service; error?: string };
       if (!response.ok || !body.service) throw new Error(body.error ?? 'Service could not be created.');
-      setDraft(emptyDraft); setFormOpen(false); setNotice(copy.created);
+      setDraft(emptyDraft); setCategoryQuery(''); setFormOpen(false); setNotice(copy.created);
       await load(); refreshWorkspace();
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Service could not be created.'); }
     finally { setBusy(null); }
@@ -243,16 +254,21 @@ export default function ProviderDashboardLaunchCenter() {
       {formOpen ? <form className={styles.form} onSubmit={createService}>
         <div className={styles.twoColumns}>
           <Input label={copy.name} value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} required maxLength={120} />
-          <Select label={copy.category} value={draft.category_id} onChange={(event) => setDraft((current) => ({ ...current, category_id: event.target.value }))} required>
-            {selectableCategories.map((category) => <option value={category.id} key={category.id}>{categoryLabel(category)}</option>)}
-          </Select>
+          <div className={styles.categoryChooser}>
+            <Input label={copy.categorySearch} value={categoryQuery} onChange={(event) => setCategoryQuery(event.target.value)} placeholder={copy.categorySearchPlaceholder} />
+            <Select label={copy.category} value={draft.category_id} onChange={(event) => setDraft((current) => ({ ...current, category_id: event.target.value }))} required>
+              <option value="">{copy.categoryChoose}</option>
+              {categoryOptions.map((category) => <option value={category.id} key={category.id}>{categoryLabel(category)}</option>)}
+            </Select>
+            {categoryQuery.trim() && categoryMatches.length === 0 ? <p className={styles.help}>{copy.categoryNoMatches}</p> : null}
+          </div>
         </div>
         <Textarea label={copy.description} value={draft.description} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))} required maxLength={1200} rows={3} />
         <div className={styles.twoColumns}>
           <Input label={copy.price} type="number" min={0} step="0.01" value={draft.price} onChange={(event) => setDraft((current) => ({ ...current, price: event.target.value }))} required />
           <Input label={copy.duration} type="number" min={1} step={1} value={draft.duration} onChange={(event) => setDraft((current) => ({ ...current, duration: event.target.value }))} required />
         </div>
-        <div className={styles.actions}><Button type="submit" loading={busy === 'create'}>{copy.save}</Button><Button type="button" variant="secondary" onClick={() => { setFormOpen(false); setDraft(emptyDraft); }}>{copy.cancel}</Button></div>
+        <div className={styles.actions}><Button type="submit" loading={busy === 'create'}>{copy.save}</Button><Button type="button" variant="secondary" onClick={() => { setFormOpen(false); setDraft(emptyDraft); setCategoryQuery(''); }}>{copy.cancel}</Button></div>
       </form> : null}
 
       {readiness?.services.length ? <div className={styles.serviceRail}>

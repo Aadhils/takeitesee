@@ -107,7 +107,15 @@
   font-weight: 800;
 }
 
-.serviceCard :global(select) {
+.modeControls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.serviceCard :global(select),
+.modeControls :global(.button) {
   min-height: 44px;
 }
 
@@ -155,6 +163,8 @@
   .card { gap: 15px; padding: 15px; }
   .header, .serviceHead { flex-direction: column; }
   .secondaryLink { width: 100%; }
+  .modeControls { grid-template-columns: 1fr; }
+  .modeControls :global(.button) { width: 100%; }
   .serviceCard :global(select) { font-size: 16px; }
 }
 
