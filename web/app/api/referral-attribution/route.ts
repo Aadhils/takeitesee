@@ -1,21 +1,27 @@
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { randomUUID } from 'crypto';
-import { createClient } from '@supabase/supabase-js';
+import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
+import { createSupabaseServiceClient } from '../../../lib/supabase/service';
 
 const cookieName = 'takeitesee_ref_attribution';
 const maxAgeSeconds = 60 * 60 * 24 * 30;
-
-function publicSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return null;
-  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
-}
+const maxRawHandleLength = 128;
+const canonicalHandlePattern = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function normalizeHandle(value: unknown) {
-  if (typeof value !== 'string') return '';
-  return value.trim().replace(/^@+/, '').toLowerCase();
+  if (typeof value !== 'string' || value.length > maxRawHandleLength) return '';
+  return value
+    .trim()
+    .replace(/^@+/, '')
+    .toLowerCase()
+    .replace(/[ _]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function isValidHandle(value: string) {
+  return value.length >= 3 && value.length <= 30 && canonicalHandlePattern.test(value);
 }
 
 export async function POST(request: Request) {
@@ -29,21 +35,24 @@ export async function POST(request: Request) {
   const payload = body as { referrer?: unknown; destination?: unknown };
   const referrer = normalizeHandle(payload.referrer);
   const destination = normalizeHandle(payload.destination);
-  if (!referrer || !destination) {
-    return NextResponse.json({ ok: false, error: 'Referrer and destination are required.' }, { status: 400 });
+  if (!isValidHandle(referrer) || !isValidHandle(destination) || referrer === destination) {
+    return NextResponse.json({ ok: false, error: 'Invalid referral handles.' }, { status: 400 });
   }
 
-  const supabase = publicSupabase();
-  if (!supabase) {
+  let supabase;
+  try {
+    supabase = createSupabaseServiceClient();
+  } catch {
     return NextResponse.json({ ok: false, error: 'Referral attribution is unavailable.' }, { status: 503 });
   }
 
   const cookieStore = await cookies();
   const existingAttributionId = cookieStore.get(cookieName)?.value;
-  const attributionId = existingAttributionId && /^[0-9a-f-]{36}$/i.test(existingAttributionId)
+  const hasValidAttributionCookie = Boolean(existingAttributionId && uuidPattern.test(existingAttributionId));
+  const attributionId = hasValidAttributionCookie && existingAttributionId
     ? existingAttributionId
     : randomUUID();
-  const landingPath = `/@${encodeURIComponent(destination)}`;
+  const landingPath = `/@${destination}`;
 
   const { error } = await supabase.rpc('record_public_referral_attribution', {
     p_raw_referrer: referrer,
@@ -57,7 +66,7 @@ export async function POST(request: Request) {
   }
 
   const response = NextResponse.json({ ok: true });
-  if (!existingAttributionId) {
+  if (!hasValidAttributionCookie) {
     response.cookies.set(cookieName, attributionId, {
       httpOnly: true,
       secure: true,
