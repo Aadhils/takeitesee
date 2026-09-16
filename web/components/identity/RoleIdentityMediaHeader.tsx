@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createSupabaseBrowserClient } from '../../lib/supabase/browser';
 import { ProviderReadinessSummary } from '../account/ProviderReadinessSummary';
 import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
+import GlobalWorkspaceSwitcher from '../layout/GlobalWorkspaceSwitcher';
 import styles from './RoleIdentityMediaHeader.module.css';
 
 type IdentityContext = 'customer' | 'provider';
@@ -115,6 +116,9 @@ export default function RoleIdentityMediaHeader({ context, displayName, subtitle
         <div className={styles.identityTop}><h2>{displayName}</h2><span className={styles.scopePill}>{scopeLabel(identity?.scope ?? (context === 'customer' ? 'customer' : 'professional'), tamil)}</span></div>
         <p className={styles.subtitle}>{subtitle}</p>
         {meta ? <p className={styles.meta}>{meta}</p> : null}
+      </div>
+      <div className={styles.workspaceSwitch}>
+        <GlobalWorkspaceSwitcher fallbackName={displayName} tamil={tamil} triggerVariant="identity" />
       </div>
       {hasAvatar ? <div className={styles.avatarControls}>
         <button type="button" className={styles.removeButton} disabled={Boolean(working)} onClick={() => void remove('avatar')}>{tamil ? 'Photo remove' : 'Remove photo'}</button>
