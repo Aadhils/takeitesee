@@ -1,291 +1,158 @@
-# Final Launch Closure — Stage 3: Pilot Marketplace Supply Readiness
+# Final Launch Closure — Stage 3: Pilot Marketplace Supply
 
-Status: Stage 3B authoritative readiness plan
+Status: **CLOSED — production evidence complete**
+Last audited: 2026-09-16 Asia/Kolkata
 Scope: non-finance pilot marketplace supply only
 Canonical production database: `bukrpkymivkhdpueropt`
-Baseline main before this document: `2da6ccd5abcb5ee9f0790034d78e1aa54e55a932`
+Authoritative main before this closure update: `879347d3132ee229b7786306620cfaffe39ffd69`
 
 ## Purpose
 
-Stage 3 moves TakeItEsee from a technically healthy marketplace candidate to a marketplace with at least one genuine, owner-controlled Provider supply path that can be discovered and booked by a real Customer.
+Stage 3 required at least one genuine, owner-controlled Provider supply path that a real Customer could discover and book through normal TakeItEsee workflows without synthetic production fixtures, direct database substitution for owner content, or Finance/Cashfree activation.
 
-This stage must not create persistent synthetic production fixtures, silently promote existing test Providers, invent Provider content, or bypass normal Provider/Admin UI workflows. Real Provider content must be supplied or confirmed by the Provider owner through the normal application UI.
+That acceptance path is now complete.
 
-## Production supply snapshot
+## Pilot Provider and Service
 
-Current canonical production supply audit found:
+The accepted pilot supply is the verified Professional identity `Shakthi` with the genuine Service `Website Development`.
 
-- `Takeitesee Test Business`
-  - Provider type: Business
-  - Verification: not verified
-  - Services: 2
-  - Active services: 0
-  - Existing service names are explicitly test-labelled
-  - Not eligible for the real pilot
-- `Takeitesee Test Professional`
-  - Provider type: Professional
-  - Verification: verified
-  - Services: 1
-  - Active services: 0
-  - Existing service name is explicitly test-labelled
-  - Not eligible for the real pilot
-- `Shakthi`
-  - Provider type: Professional
-  - Verification: verified
-  - Marketplace disclosure: complete
-  - Trust state: `normal`
-  - Provider services: 0
-  - Current public handle: none
-  - Profile basics: incomplete because `description` is empty
-  - Existing active professional roles:
-    - Web Developer — service bookings enabled
-    - Acting Driver — service bookings enabled
+Verified production state:
 
-The existing three Services are all paused test Services and must remain excluded from the real pilot acceptance evidence.
+- Provider type: Professional
+- Provider verification: verified
+- Marketplace disclosure: complete
+- Public handle: `shakthi`
+- Profile basics: complete
+- Service: `Website Development`
+- Service status: active
+- Category scope: approved/enabled — `Website Development`
+- Launch location: approved/enabled — `Tiruchirappalli`
+- Duration: 60 minutes
+- Base price: INR 1,000
+- Booking availability: `on_request`
+- Availability timezone: `Asia/Kolkata`
+- Weekly schedule rows: 0, intentionally valid for `on_request`
+- Provider live-now state: `offline`; this is a separate live-presence signal and does not disable `on_request` booking
 
-## Stage 3 pilot candidate
+The existing explicitly test-labelled Providers/Services remain excluded from Stage 3 acceptance evidence.
 
-`Shakthi` is the cleanest existing candidate because the identity is already verified, marketplace disclosure is complete, trust is normal, and no synthetic Service needs to be promoted.
+## Gate closure evidence
 
-However, this identity is only a candidate. The application must not invent or silently insert the missing profile description, public handle, Service title, Service description, price, duration, category choice, launch location, availability, or other owner-controlled content.
+### P0-1 — Provider profile basics
 
-## Current blocking gate
+**COMPLETE**
 
-The immediate P0 blocker is Provider profile completeness.
+The Provider owner supplied and saved genuine profile content through the normal Provider UI. Display name, description and service area are present; profile readiness is complete.
 
-The Professional profile currently has:
+### P0-2 — Public Provider handle
 
-- display/headline: present
-- service area: present
-- description: missing
+**COMPLETE**
 
-The Provider Setup workflow deliberately blocks launch approval until profile basics are complete.
+The Provider owner claimed the current canonical handle `shakthi` through the normal application flow. The live public route `https://www.takeitesee.com/@shakthi` resolves to the same verified Professional identity.
 
-### Required UI action
+### P0-3 — Genuine pilot Service
 
-Route: `/provider/profile`
+**COMPLETE**
 
-The Provider owner must enter a genuine profile description and save it through the normal Provider Profile UI. The existing API path is `/api/provider/profile` and the normal PATCH flow preserves Provider ownership checks.
+A genuine `Website Development` Service exists for the pilot Professional. It is not one of the legacy test-labelled Services.
 
-Do not fill this field directly in the database for launch evidence.
+### P0-4 — Category and launch-location approval
 
-## Canonical Stage 3 sequence
+**COMPLETE**
 
-### Gate 1 — Provider profile basics
+The Service has an enabled canonical ecosystem scope matching `Website Development` and `Tiruchirappalli`.
 
-Route: `/provider/profile`
+### P0-5 — Admin launch review
 
-Acceptance:
+**COMPLETE**
 
-- display name present
-- genuine description present
-- location/service area present
-- Provider profile readiness reports complete
+The launch request was approved through the existing governed launch-review workflow; the resulting scope remains enabled.
 
-Current status: **BLOCKED — description missing**
+### P0-6 — Service availability / reach readiness
 
-### Gate 2 — Public Provider handle
+**COMPLETE**
 
-Route: `/provider/handle`
+The Provider owner selected `On request` and saved it through the normal Provider Dashboard. Canonical production persistence shows:
 
-The Provider owner may claim a canonical handle through `/api/identity-handle?context=provider`.
+- mode: `on_request`
+- timezone: `Asia/Kolkata`
 
-Rules already enforced by the application/database:
+No synthetic weekly schedule was inserted.
 
-- authenticated owner only
-- lowercase canonicalization
-- 3–30 characters
-- letters, numbers and single hyphens only
-- reserved handles rejected
-- globally used/retired handles rejected
-- one current handle per identity
+During this gate a genuine production defect was found: anonymous booking availability reads returned `permission denied for table professional_profiles` after Provider privacy hardening. PR #593 fixed the issue by splitting availability SELECT policies by role without broadening private Provider-column access.
 
-A handle is not the Service launch gate itself, but it is required for Stage 3 public-profile/share evidence.
+PR #593 production closure:
 
-Current status: **PENDING — no current handle**
+- merged main: `879347d3132ee229b7786306620cfaffe39ffd69`
+- production deployment: `dpl_4wcYjiqmQb4nU2uF5nCQofpEx4GT`
+- canonical health: 200 / app ok / database ok / release `879347d3132e`
+- public availability endpoint: 200
+- recent 5xx: 0
+- recent error/fatal: 0
+- unresolved Vercel feedback: 0
 
-### Gate 3 — Create one genuine pilot Service
+### P0-7 — Manual Service activation
 
-Route: `/provider/services`
+**COMPLETE**
 
-Create the Service through the normal Provider Catalog UI. Do not clone or rename one of the existing test Services.
+`Website Development` is active in production after the normal readiness gates.
 
-The Provider owner must provide genuine values for:
+### P0-8 — Public discovery evidence
 
-- Service name
-- Service description
-- Admin-managed platform category
-- Base price
-- Duration
-- Initial non-public status until launch gates are complete
+**COMPLETE**
 
-The current taxonomy contains matching examples for the existing roles, including:
+Verified on live Customer-facing surfaces:
 
-- Technology & Digital → Website Development
-- Automotive & Mobility → Driver Services
+- marketplace API exposes the active `Website Development` Service
+- Provider public profile is reachable
+- canonical `@shakthi` handle resolves correctly
+- the Service is visible on the public Provider profile
+- Provider verification/disclosure gating remains intact
+- the pilot Service is not test-labelled
 
-These are availability findings, not automatic selections. The Provider owner must select the category that truthfully matches the actual pilot Service.
+### P0-9 — Real Customer booking evidence
 
-Current status: **PENDING — no Service exists for the candidate**
+**COMPLETE**
 
-### Gate 4 — Category and launch-location approval
+A separate real Customer account completed the normal discovery → availability → date/time → review → confirmation flow.
 
-Route: `/provider/setup`
+Production evidence:
 
-The Provider Setup UI:
+- booking reference: `TIS-20260917-0CB8A0`
+- Service: `Website Development`
+- booking date: 2026-09-17
+- start time: 09:00 Asia/Kolkata
+- duration: 60 minutes
+- location: Tiruchirappalli
+- booking status: `pending`
+- payment status: `unpaid`
+- quoted price: INR 1,000
+- Customer `booking_created` notification created
+- Provider-owner `booking_created` notification created
+- Provider notification target: `/provider/bookings/<booking-id>`
+- Provider notification is unread immediately after creation
+- public availability now blocks 09:00 and overlapping 09:30 as `Already booked`, proving booking-conflict projection is active
 
-- reads the Service's canonical Admin-managed category
-- locks that category during launch approval
-- lets the Provider choose an active launch location
-- submits the normal launch request to `/api/provider/setup`
-- uses `submit_service_launch_request_for_type(...)`
+No payment was collected and no Cashfree/Finance activation was introduced.
 
-The workflow must not bypass this step by directly inserting ecosystem scope rows.
+## Human-content boundary outcome
 
-Acceptance:
+The Stage 3 pilot respected the owner-content boundary. Provider biography, handle, Service details, launch scope and booking availability were supplied/confirmed through normal product flows rather than invented or directly written as launch evidence.
 
-- one real Service has an approved `service_ecosystem_scope`
-- the scope category matches the Service catalog category
-- the launch location is owner-selected and genuine
-- no pending/changes-requested blocker remains
+## Protected boundaries
 
-Current status: **PENDING**
+The following remain unchanged:
 
-### Gate 5 — Admin launch review
+- Finance / Cashfree / payment / refund / payout / settlement / reconciliation / recovery: HOLD
+- Recurrence / recovery: FROZEN
+- Supabase leaked-password protection: HOLD pending approved plan capability
+- One account = Customer + one final Provider identity — Professional OR Business, never both
+- Test-labelled production fixtures are excluded from launch acceptance evidence
 
-Use the existing Admin/Super Admin Service Launch Review workflow.
+## Stage 3 verdict
 
-Acceptance:
+**Stage 3 is CLOSED.**
 
-- real launch request reviewed by an authorized Admin/Super Admin
-- approval creates/maintains the canonical Service ecosystem scope
-- no direct production-table approval is used as launch evidence
+TakeItEsee now has verified production evidence of one genuine Provider supply path from public discovery through real Customer booking, Provider notification and booking-conflict enforcement.
 
-Current status: **PENDING**
-
-### Gate 6 — Service availability / reach readiness
-
-Routes involved:
-
-- `/provider/schedule`
-- `/provider/services` reach controls where applicable
-
-The Provider must configure genuine booking availability/reach appropriate to the Service before customer booking UAT.
-
-Acceptance:
-
-- Service has owner-controlled availability/reach compatible with the selected launch location and Service mode
-- no synthetic schedule data is inserted only to make a test pass
-
-Current status: **PENDING**
-
-### Gate 7 — Manual Service activation
-
-Route: `/provider/services`
-
-TakeItEsee deliberately does not auto-reactivate/publish a Service after approval.
-
-Activation requires the existing readiness gates to pass:
-
-- profile complete
-- Provider verified
-- marketplace disclosure complete
-- trust state normal
-- category/location scope approved
-- Service launch-ready
-
-The Provider then manually sets the Service to `Active` through the normal Services UI.
-
-Current status: **PENDING**
-
-### Gate 8 — Public discovery evidence
-
-Acceptance must be captured from public Customer-facing surfaces:
-
-- Service is visible through the public marketplace under the approved category/location
-- Provider public profile is reachable and public-ready
-- canonical handle resolves to the same Professional identity
-- Service is not a test-labelled fixture
-- public access does not expose private verification data
-
-Current status: **PENDING**
-
-### Gate 9 — Real Customer booking evidence
-
-This is the bridge into Stage 4 UAT.
-
-Acceptance:
-
-- a real Customer can discover the pilot Service
-- availability loads
-- Customer can select date/time
-- booking review works
-- booking confirmation works
-- Provider receives the expected booking/notification attention
-- no payment/Cashfree activation is introduced
-
-Current status: **PENDING**
-
-## Human-content boundary
-
-The following values must not be invented by launch automation:
-
-- Provider biography/description
-- Provider handle choice
-- Service name/description
-- Service price/duration
-- exact Service category if multiple legitimate categories could apply
-- launch location
-- availability schedule
-- public media/content
-
-The owner should enter these through TakeItEsee. After each owner-controlled step, the launch closure process may use canonical DB/app checks to verify the resulting state.
-
-## Existing test supply exclusion
-
-The following existing records must not be counted as Stage 3 pilot acceptance evidence:
-
-- `Takeitesee Test Business`
-- `Takeitesee Test Professional`
-- `Test website consultation`
-- `Test professional consultation`
-- `Test home service visit`
-
-They may remain paused for regression/history purposes unless a separate cleanup decision is approved.
-
-## Stage 3 priority order
-
-P0-1. Complete genuine Provider profile basics.
-
-P0-2. Claim a canonical Provider handle for public evidence.
-
-P0-3. Create one genuine pilot Service via `/provider/services`.
-
-P0-4. Submit category/location launch approval via `/provider/setup`.
-
-P0-5. Complete authorized Admin launch review.
-
-P0-6. Configure real availability/reach.
-
-P0-7. Manually activate the Service through Provider UI.
-
-P0-8. Verify public search/profile/handle visibility.
-
-P0-9. Run the first real Customer discovery → booking → confirmation flow.
-
-Only after P0-1 through P0-9 have evidence should Stage 3 be declared complete and Stage 4 real-account/device UAT become the active launch gate.
-
-## Non-goals / protected boundaries
-
-- Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD.
-- Recurrence/recovery remains FROZEN.
-- Supabase leaked-password protection remains HOLD pending the approved plan upgrade.
-- One account = Customer + one final Provider identity (Professional OR Business, never both) remains authoritative.
-- No fake production Provider or Service should be created only for launch closure.
-- No direct database mutation should substitute for owner/Admin UI evidence unless a genuine application defect requires a separately reviewed fix.
-
-## Stage 3B verdict
-
-The software path required for the pilot already exists. No missing code behavior was found in this audit.
-
-The next real blocker is operational/user-owned content, not development: complete the candidate Professional profile description in `/provider/profile`, then continue the canonical Provider UI sequence above.
+The active launch gate moves to **Stage 4 — real-account / real-device UAT**. Stage 4 should exercise the agreed phone, tablet and desktop matrix and create focused PRs only for reproducible P0/P1 failures.
