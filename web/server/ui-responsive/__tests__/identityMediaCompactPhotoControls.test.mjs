@@ -18,3 +18,9 @@ test('existing avatars retain an explicit remove control', () => {
   assert.ok(source.includes('className={styles.removeButton}'));
   assert.ok(source.includes("onClick={() => void remove('avatar')}"));
 });
+
+test('customer identity hero suppresses contact meta while provider meta remains available', () => {
+  assert.ok(source.includes("const visibleMeta = context === 'customer' ? '' : meta;"));
+  assert.ok(source.includes('{visibleMeta ? <p className={styles.meta}>{visibleMeta}</p> : null}'));
+  assert.ok(!source.includes('{meta ? <p className={styles.meta}>{meta}</p> : null}'));
+});
