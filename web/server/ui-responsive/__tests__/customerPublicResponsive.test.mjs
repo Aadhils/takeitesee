@@ -3,11 +3,12 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../../../', import.meta.url);
-const [identityCss, storefrontCss, mediaHeaderCss, productDetailSource, storefrontProductsSource, storefrontProductsCss, foundationCss] = await Promise.all([
+const [identityCss, storefrontCss, mediaHeaderCss, productDetailSource, productDetailCss, storefrontProductsSource, storefrontProductsCss, foundationCss] = await Promise.all([
   readFile(new URL('components/detail/PublicProviderIdentity.module.css', root), 'utf8'),
   readFile(new URL('components/detail/BusinessStorefrontQuickBook.module.css', root), 'utf8'),
   readFile(new URL('components/identity/RoleIdentityMediaHeader.module.css', root), 'utf8'),
   readFile(new URL('app/products/[productId]/page.tsx', root), 'utf8'),
+  readFile(new URL('app/products/[productId]/ProductDetailPage.module.css', root), 'utf8'),
   readFile(new URL('components/detail/BusinessStorefrontProducts.tsx', root), 'utf8'),
   readFile(new URL('components/detail/BusinessStorefrontProducts.module.css', root), 'utf8'),
   readFile(new URL('app/responsive-foundation.css', root), 'utf8'),
@@ -35,7 +36,9 @@ test('identity media controls meet touch target requirements and collapse safely
 });
 
 test('product detail and storefront product actions retain existing wrap-safe layout contracts', () => {
-  assert.ok(productDetailSource.includes("flexWrap: 'wrap'"));
+  assert.ok(productDetailSource.includes('className={styles.actionCluster}'));
+  assert.match(productDetailCss, /\.actionCluster\s*\{[\s\S]*?flex-wrap:\s*wrap/);
+  assert.match(productDetailCss, /@media \(max-width: 640px\)[\s\S]*?\.ctaRow :global\(\.button\)[\s\S]*?width:\s*100%/);
   assert.ok(storefrontProductsSource.includes('className={styles.grid}'));
   assert.ok(storefrontProductsSource.includes('className={styles.image}'));
   assert.match(storefrontProductsCss, /\.grid\s*\{[\s\S]*?grid-template-columns:\s*repeat\(auto-fit, minmax\(min\(250px, 100%\), 1fr\)\)/);
