@@ -9,6 +9,7 @@ import styles from './GlobalWorkspaceSwitcher.module.css';
 type WorkspaceKind = 'customer' | 'professional' | 'business' | 'admin' | 'super_admin';
 type WorkspaceOption = { id: WorkspaceKind; label: string; display_name: string; description: string; target: string; verified?: boolean };
 type WorkspacePayload = { active?: WorkspaceKind; workspaces?: WorkspaceOption[]; error?: string };
+type TriggerVariant = 'full' | 'identity';
 
 function initials(value: string) {
   return value.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'A';
@@ -27,11 +28,13 @@ export default function GlobalWorkspaceSwitcher({
   tamil,
   attentionCount = 0,
   attentionLabel,
+  triggerVariant = 'full',
 }: {
   fallbackName: string;
   tamil: boolean;
   attentionCount?: number;
   attentionLabel?: string;
+  triggerVariant?: TriggerVariant;
 }) {
   const pathname = usePathname();
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -91,6 +94,8 @@ export default function GlobalWorkspaceSwitcher({
   const current = useMemo(() => workspaces.find((workspace) => workspace.id === active), [active, workspaces]);
   const triggerName = current?.display_name || fallbackName;
   const triggerRole = current?.label || (tamil ? 'வாடிக்கையாளர்' : 'Customer');
+  const switchLabel = tamil ? 'Profile மாற்று' : 'Switch profile';
+  const hideFullTriggerOnIdentityHome = triggerVariant === 'full' && (pathname === '/account' || pathname === '/provider');
 
   async function switchWorkspace(workspace: WorkspaceKind) {
     if (workspace === active || switching) return;
@@ -128,11 +133,11 @@ export default function GlobalWorkspaceSwitcher({
       style={overlayStyle}
       role="dialog"
       aria-modal="true"
-      aria-label={tamil ? 'Profile மாற்று' : 'Switch profile'}
+      aria-label={switchLabel}
     >
       <div className={styles.sheetHandle} aria-hidden="true" />
       <div className={styles.heading}>
-        <div><span>TAKEITESEE ACCOUNT</span><h2>{tamil ? 'Profile மாற்று' : 'Switch profile'}</h2></div>
+        <div><span>TAKEITESEE ACCOUNT</span><h2>{switchLabel}</h2></div>
         <button type="button" className={styles.close} onClick={() => setOpen(false)} aria-label={tamil ? 'மூடு' : 'Close'}>×</button>
       </div>
 
@@ -159,24 +164,30 @@ export default function GlobalWorkspaceSwitcher({
     </section>
   </>, document.body) : null;
 
-  return <div className={styles.root}>
+  if (hideFullTriggerOnIdentityHome) return null;
+
+  return <div className={`${styles.root}${triggerVariant === 'identity' ? ` ${styles.rootIdentity}` : ''}`}>
     <button
       ref={triggerRef}
       type="button"
-      className={styles.trigger}
+      className={`${styles.trigger}${triggerVariant === 'identity' ? ` ${styles.triggerIdentity}` : ''}`}
       aria-haspopup="dialog"
       aria-expanded={open}
+      aria-label={triggerVariant === 'identity' ? switchLabel : undefined}
+      title={triggerVariant === 'identity' ? switchLabel : undefined}
       onClick={() => {
         updateAnchor();
         setOpen((value) => !value);
       }}
     >
-      <span className={styles.triggerAvatar} aria-hidden="true">{initials(triggerName)}</span>
-      <span className={styles.triggerText}>
-        <strong>{triggerName}</strong>
-        <small>{triggerRole}</small>
-      </span>
-      <span className={styles.chevron} aria-hidden="true">⌄</span>
+      {triggerVariant === 'identity' ? <svg className={styles.identityChevron} aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m7 9 5 5 5-5" /></svg> : <>
+        <span className={styles.triggerAvatar} aria-hidden="true">{initials(triggerName)}</span>
+        <span className={styles.triggerText}>
+          <strong>{triggerName}</strong>
+          <small>{triggerRole}</small>
+        </span>
+        <span className={styles.chevron} aria-hidden="true">⌄</span>
+      </>}
       {attentionCount > 0 ? <span className={styles.attention} aria-label={attentionLabel}>{attentionCount > 99 ? '99+' : attentionCount}</span> : null}
     </button>
     {overlay}
