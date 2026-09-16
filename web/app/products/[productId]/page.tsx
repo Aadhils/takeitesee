@@ -9,6 +9,7 @@ import ProductShareAction from '../../../components/detail/ProductShareAction';
 import SavedProductAction from '../../../components/detail/SavedProductAction';
 import { hasMarketplaceDisclosure } from '../../../server/marketplace/public-directory';
 import { loadProductImagePresence } from '../../../server/marketplace/public-product-media';
+import styles from './ProductDetailPage.module.css';
 
 const siteUrl = 'https://www.takeitesee.com';
 
@@ -177,22 +178,26 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, '\\u003c') }}
     />
-    <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', paddingTop: '1rem' }}>
+    <div className={`container ${styles.topBar}`}>
       <Link href="/products" className="button button-quiet">← Browse products</Link>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem', flexWrap: 'wrap' }}>
+      <div className={styles.actionCluster}>
         <SavedProductAction productId={product.id} />
         <ProductShareAction productId={product.id} productName={productName} businessName={businessName} />
       </div>
     </div>
-    <section className="container page-intro" style={{ paddingTop: '1rem' }}>
+    <section className={`container page-intro ${styles.intro}`}>
       <span className="eyebrow">Business product</span>
       <h1>{productName}</h1>
-      <p>{product.description || `Product from ${businessName}.`}</p>
-      <p style={{ marginTop: '.75rem' }}>
-        Sold by <Link href={`/businesses/${encodeURIComponent(product.business_id)}`}>{businessName}</Link>
-        {business.location ? <> <span aria-hidden="true">·</span> {business.location}</> : null}
+      <p className={styles.description}>{product.description || `Product from ${businessName}.`}</p>
+      <p className={styles.sellerLine}>
+        <span>Sold by</span>
+        <Link href={`/businesses/${encodeURIComponent(product.business_id)}`}>{businessName}</Link>
+        {business.location ? <>
+          <span className={styles.separator} aria-hidden="true">·</span>
+          <span>{business.location}</span>
+        </> : null}
       </p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.75rem', marginTop: '1rem' }}>
+      <div className={styles.ctaRow}>
         <Link href={storefrontHref} className="button button-secondary">View in Business storefront</Link>
         <Link href="/products" className="button button-quiet">Back to product marketplace</Link>
       </div>
