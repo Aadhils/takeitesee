@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { LocaleText } from '../../../components/i18n/LocaleText';
+import styles from '../../../components/super-admin/SuperAdminCategoriesResponsive.module.css';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
 import { getSuperAdminSessionOrNull } from '../../../server/auth/session';
 import { createCategory, reviewCategoryRequest, setCategoryActive, updateCategorySearchAliases } from './actions';
@@ -32,58 +33,99 @@ export default async function CategoriesPage() {
   const resolvedRequests = (categoryRequests ?? []).filter((request) => request.status !== 'pending').slice(0, 20);
 
   return <main className="container section-stack">
-    <section className="page-intro"><span className="eyebrow"><LocaleText en="SaaS control plane" ta="SaaS கட்டுப்பாட்டு மையம்" /></span><h1><LocaleText en="Category registry" ta="வகை பதிவகம்" /></h1><p><LocaleText en="Build application-specific categories, parent-child trees and governed marketplace search aliases without changing Provider identity." ta="Provider identity-ஐ மாற்றாமல் application-specific categories, parent-child trees மற்றும் governed marketplace search aliases நிர்வகிக்கவும்." /></p><Link href="/super-admin">← Super Admin</Link></section>
+    <div className={styles.registryJourney}>
+      <section className="page-intro">
+        <span className="eyebrow"><LocaleText en="SaaS control plane" ta="SaaS கட்டுப்பாட்டு மையம்" /></span>
+        <h1><LocaleText en="Category registry" ta="வகை பதிவகம்" /></h1>
+        <p><LocaleText en="Build application-specific categories, parent-child trees and governed marketplace search aliases without changing Provider identity." ta="Provider identity-ஐ மாற்றாமல் application-specific categories, parent-child trees மற்றும் governed marketplace search aliases நிர்வகிக்கவும்." /></p>
+        <Link href="/super-admin">← Super Admin</Link>
+      </section>
 
-    <section className="section-stack">
-      <div><span className="eyebrow">Provider taxonomy requests</span><h2>Category review queue</h2><p>Providers can suggest missing specialties, but only Super Admin approval creates an active canonical category.</p></div>
-      {pendingRequests.length ? pendingRequests.map((request) => {
-        const appCategories = (categories ?? []).filter((category) => category.application_id === request.application_id);
-        const defaultParent = request.suggested_parent_category_id && appCategories.some((category) => category.id === request.suggested_parent_category_id) ? request.suggested_parent_category_id : '';
-        return <article className="card section-stack" key={request.id}>
-          <div><span className="eyebrow">{appName.get(request.application_id) ?? 'Application'} · {request.provider_type} · pending</span><h3>{request.requested_name}</h3><p>{request.requested_description || 'No description supplied.'}</p><p><strong>Provider suggestion:</strong> {request.suggested_parent_category_id ? categoryName.get(request.suggested_parent_category_id) ?? 'Category' : 'No parent selected'}</p></div>
-          <form action={reviewCategoryRequest} className="section-stack">
-            <input type="hidden" name="request_id" value={request.id} />
-            <label>Final category name<input name="final_name" defaultValue={request.requested_name} maxLength={100} /></label>
-            <label>Final category code<input name="final_code" defaultValue={suggestedCode(request.requested_name)} pattern="[a-z0-9][a-z0-9_-]{1,62}" placeholder="tyre_puncture_repair" /></label>
-            <label>Final parent category<select name="parent_id" defaultValue={defaultParent}><option value="">None / root category</option>{appCategories.map((category) => <option key={category.id} value={category.id}>{category.name} ({category.active ? 'active' : 'inactive'})</option>)}</select></label>
-            <label>Review note<textarea name="review_note" rows={3} maxLength={1000} placeholder="Optional provider-facing reason or guidance" /></label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-              <button type="submit" name="decision" value="approve">Approve & create category</button>
-              <button type="submit" name="decision" value="reject">Reject request</button>
+      <section className="section-stack">
+        <div>
+          <span className="eyebrow">Provider taxonomy requests</span>
+          <h2>Category review queue</h2>
+          <p>Providers can suggest missing specialties, but only Super Admin approval creates an active canonical category.</p>
+        </div>
+        {pendingRequests.length ? pendingRequests.map((request) => {
+          const appCategories = (categories ?? []).filter((category) => category.application_id === request.application_id);
+          const defaultParent = request.suggested_parent_category_id && appCategories.some((category) => category.id === request.suggested_parent_category_id) ? request.suggested_parent_category_id : '';
+          return <article className={`card section-stack ${styles.categoryCard}`} key={request.id}>
+            <div>
+              <span className="eyebrow">{appName.get(request.application_id) ?? 'Application'} · {request.provider_type} · pending</span>
+              <h3>{request.requested_name}</h3>
+              <p>{request.requested_description || 'No description supplied.'}</p>
+              <p><strong>Provider suggestion:</strong> {request.suggested_parent_category_id ? categoryName.get(request.suggested_parent_category_id) ?? 'Category' : 'No parent selected'}</p>
             </div>
-          </form>
-        </article>;
-      }) : <div className="card"><p>No pending Provider category requests.</p></div>}
-    </section>
+            <form action={reviewCategoryRequest} className="section-stack">
+              <input type="hidden" name="request_id" value={request.id} />
+              <label>Final category name<input name="final_name" defaultValue={request.requested_name} maxLength={100} /></label>
+              <label>Final category code<input name="final_code" defaultValue={suggestedCode(request.requested_name)} pattern="[a-z0-9][a-z0-9_-]{1,62}" placeholder="tyre_puncture_repair" /></label>
+              <label>Final parent category<select name="parent_id" defaultValue={defaultParent}><option value="">None / root category</option>{appCategories.map((category) => <option key={category.id} value={category.id}>{category.name} ({category.active ? 'active' : 'inactive'})</option>)}</select></label>
+              <label>Review note<textarea name="review_note" rows={3} maxLength={1000} placeholder="Optional provider-facing reason or guidance" /></label>
+              <div className={styles.reviewActions}>
+                <button type="submit" name="decision" value="approve">Approve & create category</button>
+                <button type="submit" name="decision" value="reject">Reject request</button>
+              </div>
+            </form>
+          </article>;
+        }) : <div className="card"><p>No pending Provider category requests.</p></div>}
+      </section>
 
-    {resolvedRequests.length ? <section className="section-stack"><h2>Recently reviewed requests</h2>{resolvedRequests.map((request) => <article className="card" key={request.id}><span className="eyebrow">{appName.get(request.application_id) ?? 'Application'} · {request.provider_type} · {request.status}</span><h3>{request.requested_name}</h3>{request.review_note ? <p><strong>Review note:</strong> {request.review_note}</p> : null}{request.created_category_id ? <p><strong>Created category:</strong> {categoryName.get(request.created_category_id) ?? request.created_category_id}</p> : null}<p className="summary-note">Submitted {new Date(request.created_at).toLocaleString('en-IN')}{request.reviewed_at ? ` · Reviewed ${new Date(request.reviewed_at).toLocaleString('en-IN')}` : ''}</p></article>)}</section> : null}
+      {resolvedRequests.length ? <section className="section-stack">
+        <h2>Recently reviewed requests</h2>
+        {resolvedRequests.map((request) => <article className={`card ${styles.categoryCard}`} key={request.id}>
+          <span className="eyebrow">{appName.get(request.application_id) ?? 'Application'} · {request.provider_type} · {request.status}</span>
+          <h3>{request.requested_name}</h3>
+          {request.review_note ? <p><strong>Review note:</strong> {request.review_note}</p> : null}
+          {request.created_category_id ? <p><strong>Created category:</strong> {categoryName.get(request.created_category_id) ?? request.created_category_id}</p> : null}
+          <p className="summary-note">Submitted {new Date(request.created_at).toLocaleString('en-IN')}{request.reviewed_at ? ` · Reviewed ${new Date(request.reviewed_at).toLocaleString('en-IN')}` : ''}</p>
+        </article>)}
+      </section> : null}
 
-    <section className="card"><h2><LocaleText en="Add category" ta="வகை சேர்க்க" /></h2><form action={createCategory} className="section-stack">
-      <label><LocaleText en="Application" ta="Application" /><select name="application_id" required defaultValue=""><option value="" disabled>Select application</option>{(applications ?? []).map((app) => <option key={app.id} value={app.id}>{app.name} ({app.status})</option>)}</select></label>
-      <label><LocaleText en="Name" ta="பெயர்" /><input name="name" required placeholder="Home Services" /></label>
-      <label><LocaleText en="Code" ta="குறியீடு" /><input name="code" required pattern="[a-z0-9][a-z0-9_-]{1,62}" placeholder="home_services" /></label>
-      <label><LocaleText en="Parent category" ta="மேல் வகை" /><select name="parent_id" defaultValue=""><option value="">None / root category</option>{(categories ?? []).map((category) => <option key={category.id} value={category.id}>{category.name} — {appName.get(category.application_id) ?? 'Application'}</option>)}</select></label>
-      <label><LocaleText en="Description" ta="விளக்கம்" /><textarea name="description" rows={3} placeholder="What this category contains" /></label>
-      <button type="submit"><LocaleText en="Create category" ta="வகை உருவாக்க" /></button>
-    </form></section>
+      <section className={`card ${styles.categoryCard}`}>
+        <h2><LocaleText en="Add category" ta="வகை சேர்க்க" /></h2>
+        <form action={createCategory} className="section-stack">
+          <label><LocaleText en="Application" ta="Application" /><select name="application_id" required defaultValue=""><option value="" disabled>Select application</option>{(applications ?? []).map((app) => <option key={app.id} value={app.id}>{app.name} ({app.status})</option>)}</select></label>
+          <label><LocaleText en="Name" ta="பெயர்" /><input name="name" required placeholder="Home Services" /></label>
+          <label><LocaleText en="Code" ta="குறியீடு" /><input name="code" required pattern="[a-z0-9][a-z0-9_-]{1,62}" placeholder="home_services" /></label>
+          <label><LocaleText en="Parent category" ta="மேல் வகை" /><select name="parent_id" defaultValue=""><option value="">None / root category</option>{(categories ?? []).map((category) => <option key={category.id} value={category.id}>{category.name} — {appName.get(category.application_id) ?? 'Application'}</option>)}</select></label>
+          <label><LocaleText en="Description" ta="விளக்கம்" /><textarea name="description" rows={3} placeholder="What this category contains" /></label>
+          <button type="submit"><LocaleText en="Create category" ta="வகை உருவாக்க" /></button>
+        </form>
+      </section>
 
-    <section className="section-stack">
-      <div><h2><LocaleText en="Registered categories" ta="பதிவுசெய்யப்பட்ட வகைகள்" /></h2><p>Services specialties can carry governed search aliases. Use one alias per line or separate aliases with commas; aliases are normalized and deduplicated on save.</p></div>
-      {(categories ?? []).length ? (categories ?? []).map((category) => {
-        const aliases = searchAliases(category.metadata);
-        const canManageSearchAliases = appCode.get(category.application_id) === 'services' && Boolean(category.parent_id);
-        return <article className="card section-stack" key={category.id}>
-          <div><span className="eyebrow">{appName.get(category.application_id) ?? 'Application'} · {category.code}</span><h3>{category.name}</h3><p>{category.description || <LocaleText en="No description yet." ta="இன்னும் விளக்கம் இல்லை." />}</p><p><strong><LocaleText en="Status:" ta="நிலை:" /></strong> <LocaleText en={category.active ? 'Active' : 'Inactive'} ta={category.active ? 'செயலில்' : 'செயலற்றது'} /> · <LocaleText en={category.parent_id ? 'Child category' : 'Root category'} ta={category.parent_id ? 'Child category' : 'Root category'} /></p></div>
-          {canManageSearchAliases ? <form action={updateCategorySearchAliases} className="section-stack">
-            <input type="hidden" name="id" value={category.id} />
-            <input type="hidden" name="application_id" value={category.application_id} />
-            <label>Search aliases / synonyms<textarea name="search_aliases" rows={Math.min(8, Math.max(3, aliases.length + 1))} maxLength={4000} defaultValue={aliases.join('\n')} placeholder={'puncture shop\ntire repair\nபஞ்சர்'} /></label>
-            <p className="summary-note">{aliases.length} governed alias{aliases.length === 1 ? '' : 'es'} · maximum 40 aliases · 80 characters each. Saving an empty field removes all aliases for this specialty.</p>
-            <button type="submit">Save search aliases</button>
-          </form> : appCode.get(category.application_id) === 'services' ? <p className="summary-note">Root taxonomy group — search aliases are managed on its leaf/specialty categories.</p> : null}
-          <form action={setCategoryActive}><input type="hidden" name="id" value={category.id} /><input type="hidden" name="application_id" value={category.application_id} /><input type="hidden" name="active" value={String(!category.active)} /><button type="submit"><LocaleText en={category.active ? 'Deactivate' : 'Activate'} ta={category.active ? 'செயலிழக்கச் செய்' : 'செயல்படுத்து'} /></button></form>
-        </article>;
-      }) : <div className="card"><p><LocaleText en="No categories registered yet." ta="இன்னும் categories பதிவு செய்யப்படவில்லை." /></p></div>}
-    </section>
+      <section className="section-stack">
+        <div>
+          <h2><LocaleText en="Registered categories" ta="பதிவுசெய்யப்பட்ட வகைகள்" /></h2>
+          <p>Services specialties can carry governed search aliases. Use one alias per line or separate aliases with commas; aliases are normalized and deduplicated on save.</p>
+        </div>
+        {(categories ?? []).length ? (categories ?? []).map((category) => {
+          const aliases = searchAliases(category.metadata);
+          const canManageSearchAliases = appCode.get(category.application_id) === 'services' && Boolean(category.parent_id);
+          return <article className={`card section-stack ${styles.categoryCard}`} key={category.id}>
+            <div>
+              <span className="eyebrow">{appName.get(category.application_id) ?? 'Application'} · {category.code}</span>
+              <h3>{category.name}</h3>
+              <p>{category.description || <LocaleText en="No description yet." ta="இன்னும் விளக்கம் இல்லை." />}</p>
+              <p className={styles.statusLine}><strong><LocaleText en="Status:" ta="நிலை:" /></strong> <LocaleText en={category.active ? 'Active' : 'Inactive'} ta={category.active ? 'செயலில்' : 'செயலற்றது'} /> · <LocaleText en={category.parent_id ? 'Child category' : 'Root category'} ta={category.parent_id ? 'Child category' : 'Root category'} /></p>
+            </div>
+            {canManageSearchAliases ? <form action={updateCategorySearchAliases} className="section-stack">
+              <input type="hidden" name="id" value={category.id} />
+              <input type="hidden" name="application_id" value={category.application_id} />
+              <label>Search aliases / synonyms<textarea name="search_aliases" rows={Math.min(8, Math.max(3, aliases.length + 1))} maxLength={4000} defaultValue={aliases.join('\n')} placeholder={'puncture shop\ntire repair\nபஞ்சர்'} /></label>
+              <p className="summary-note">{aliases.length} governed alias{aliases.length === 1 ? '' : 'es'} · maximum 40 aliases · 80 characters each. Saving an empty field removes all aliases for this specialty.</p>
+              <button type="submit">Save search aliases</button>
+            </form> : appCode.get(category.application_id) === 'services' ? <p className="summary-note">Root taxonomy group — search aliases are managed on its leaf/specialty categories.</p> : null}
+            <form action={setCategoryActive}>
+              <input type="hidden" name="id" value={category.id} />
+              <input type="hidden" name="application_id" value={category.application_id} />
+              <input type="hidden" name="active" value={String(!category.active)} />
+              <button type="submit"><LocaleText en={category.active ? 'Deactivate' : 'Activate'} ta={category.active ? 'செயலிழக்கச் செய்' : 'செயல்படுத்து'} /></button>
+            </form>
+          </article>;
+        }) : <div className="card"><p><LocaleText en="No categories registered yet." ta="இன்னும் categories பதிவு செய்யப்படவில்லை." /></p></div>}
+      </section>
+    </div>
   </main>;
 }
