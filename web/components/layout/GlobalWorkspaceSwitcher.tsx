@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './GlobalWorkspaceSwitcher.module.css';
 
@@ -10,6 +11,14 @@ type WorkspacePayload = { active?: WorkspaceKind; workspaces?: WorkspaceOption[]
 
 function initials(value: string) {
   return value.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'A';
+}
+
+function activeFromRoute(pathname: string, workspaces: WorkspaceOption[], fallback: WorkspaceKind) {
+  if (pathname.startsWith('/provider')) return workspaces.find((workspace) => workspace.id === 'professional' || workspace.id === 'business')?.id ?? fallback;
+  if (pathname.startsWith('/super-admin') && workspaces.some((workspace) => workspace.id === 'super_admin')) return 'super_admin';
+  if (pathname.startsWith('/admin') && workspaces.some((workspace) => workspace.id === 'admin')) return 'admin';
+  if (pathname.startsWith('/account')) return 'customer';
+  return fallback;
 }
 
 export default function GlobalWorkspaceSwitcher({
@@ -23,6 +32,7 @@ export default function GlobalWorkspaceSwitcher({
   attentionCount?: number;
   attentionLabel?: string;
 }) {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [workspaces, setWorkspaces] = useState<WorkspaceOption[]>([]);
   const [active, setActive] = useState<WorkspaceKind>('customer');
@@ -35,15 +45,17 @@ export default function GlobalWorkspaceSwitcher({
       const response = await fetch('/api/account/workspaces', { cache: 'no-store' });
       const payload = await response.json() as WorkspacePayload;
       if (!response.ok) throw new Error(payload.error || 'Unable to load profiles.');
-      setWorkspaces(payload.workspaces ?? []);
-      setActive(payload.active ?? 'customer');
+      const options = payload.workspaces ?? [];
+      const fallbackActive = payload.active ?? 'customer';
+      setWorkspaces(options);
+      setActive(activeFromRoute(pathname, options, fallbackActive));
       setError('');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to load profiles.');
     }
   };
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void load(); }, [pathname]);
 
   useEffect(() => {
     if (!open) return;
@@ -58,7 +70,7 @@ export default function GlobalWorkspaceSwitcher({
       document.removeEventListener('keydown', closeOnEscape);
       document.removeEventListener('mousedown', closeOnOutside);
     };
-  }, [open]);
+  }, [open, pathname]);
 
   const current = useMemo(() => workspaces.find((workspace) => workspace.id === active), [active, workspaces]);
   const triggerName = current?.display_name || fallbackName;
