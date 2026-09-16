@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { LiveProviderShell } from '../../../components/provider/LiveProviderShell';
+import styles from '../../../components/provider/ProviderCategoryRequestsResponsive.module.css';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
 import { productionAuthProvider } from '../../../server/auth/session';
 import { submitProviderCategoryRequest } from './actions';
@@ -47,58 +48,60 @@ export default async function ProviderCategoryRequestsPage() {
   const rootCategories = (categories ?? []).filter((category) => !category.parent_id);
 
   return <LiveProviderShell active="/provider/services">
-    <section className="page-intro">
-      <span className="eyebrow">Marketplace taxonomy</span>
-      <h1>Request a missing category</h1>
-      <p>If the exact service specialty is not available, submit it for Super Admin review. Requested categories never become public automatically.</p>
-      <Link href="/provider/services" className="text-link">← Back to Services</Link>
-    </section>
+    <div className={styles.categoryRequestsJourney}>
+      <section className="page-intro">
+        <span className="eyebrow">Marketplace taxonomy</span>
+        <h1>Request a missing category</h1>
+        <p>If the exact service specialty is not available, submit it for Super Admin review. Requested categories never become public automatically.</p>
+        <Link href="/provider/services" className="text-link">← Back to Services</Link>
+      </section>
 
-    <section className="card section-stack">
-      <div>
-        <span className="eyebrow">Can’t find my category?</span>
-        <h2>Suggest a platform category</h2>
-        <p>Choose the closest application and, when possible, a parent category. The Super Admin can correct the final name, code, or parent before approval.</p>
-      </div>
-      <form action={submitProviderCategoryRequest} className="section-stack">
-        <label>Application
-          <select name="application_id" required defaultValue={applications?.[0]?.id ?? ''}>
-            {(applications ?? []).map((app) => <option key={app.id} value={app.id}>{app.name}</option>)}
-          </select>
-        </label>
-        <label>Closest category group
-          <select name="parent_category_id" defaultValue="">
-            <option value="">Not sure / let Admin decide</option>
-            {rootCategories.map((category) => <option key={category.id} value={category.id}>{category.name} — {appName.get(category.application_id) ?? 'Application'}</option>)}
-          </select>
-        </label>
-        <label>Requested category name
-          <input name="requested_name" required minLength={2} maxLength={100} placeholder="Example: Tyre Puncture Repair" />
-        </label>
-        <label>What does this category cover?
-          <textarea name="requested_description" rows={4} maxLength={1000} placeholder="Briefly explain the service so Admin can place it in the right taxonomy." />
-        </label>
-        <button type="submit" disabled={!applications?.length}>Send for Admin review</button>
-      </form>
-    </section>
-
-    <section className="section-stack">
-      <div><span className="eyebrow">Review history</span><h2>My category requests</h2></div>
-      {(requests ?? []).length ? (requests as CategoryRequest[]).map((request) => <article className="card" key={request.id}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-          <div>
-            <span className="eyebrow">{appName.get(request.application_id) ?? 'Application'} · {request.provider_type}</span>
-            <h3>{request.requested_name}</h3>
-          </div>
-          <span style={{ ...statusStyle(request.status), border: '1px solid', borderRadius: 999, padding: '5px 10px', fontSize: 12, fontWeight: 700, textTransform: 'capitalize' }}>{request.status}</span>
+      <section className="card section-stack">
+        <div>
+          <span className="eyebrow">Can’t find my category?</span>
+          <h2>Suggest a platform category</h2>
+          <p>Choose the closest application and, when possible, a parent category. The Super Admin can correct the final name, code, or parent before approval.</p>
         </div>
-        {request.requested_description ? <p>{request.requested_description}</p> : null}
-        <p><strong>Suggested group:</strong> {request.suggested_parent_category_id ? categoryName.get(request.suggested_parent_category_id) ?? 'Category' : 'Admin to decide'}</p>
-        {request.review_note ? <p><strong>Admin note:</strong> {request.review_note}</p> : null}
-        {request.status === 'approved' ? <p><strong>Approved category:</strong> {request.created_category_id ? categoryName.get(request.created_category_id) ?? request.requested_name : request.requested_name}. It is now available from the Services category selector.</p> : null}
-        {request.status === 'pending' ? <p className="summary-note">Pending requests cannot be used for publishing until Super Admin approval creates the canonical category.</p> : null}
-        <p className="summary-note">Submitted {new Date(request.created_at).toLocaleString('en-IN')}{request.reviewed_at ? ` · Reviewed ${new Date(request.reviewed_at).toLocaleString('en-IN')}` : ''}</p>
-      </article>) : <div className="card"><p>No category requests yet.</p></div>}
-    </section>
+        <form action={submitProviderCategoryRequest} className={`section-stack ${styles.requestForm}`}>
+          <label>Application
+            <select name="application_id" required defaultValue={applications?.[0]?.id ?? ''}>
+              {(applications ?? []).map((app) => <option key={app.id} value={app.id}>{app.name}</option>)}
+            </select>
+          </label>
+          <label>Closest category group
+            <select name="parent_category_id" defaultValue="">
+              <option value="">Not sure / let Admin decide</option>
+              {rootCategories.map((category) => <option key={category.id} value={category.id}>{category.name} — {appName.get(category.application_id) ?? 'Application'}</option>)}
+            </select>
+          </label>
+          <label>Requested category name
+            <input name="requested_name" required minLength={2} maxLength={100} placeholder="Example: Tyre Puncture Repair" />
+          </label>
+          <label>What does this category cover?
+            <textarea name="requested_description" rows={4} maxLength={1000} placeholder="Briefly explain the service so Admin can place it in the right taxonomy." />
+          </label>
+          <button type="submit" className={styles.submitAction} disabled={!applications?.length}>Send for Admin review</button>
+        </form>
+      </section>
+
+      <section className="section-stack">
+        <div><span className="eyebrow">Review history</span><h2>My category requests</h2></div>
+        {(requests ?? []).length ? (requests as CategoryRequest[]).map((request) => <article className="card" key={request.id}>
+          <div className={styles.requestHeader}>
+            <div className={styles.requestIdentity}>
+              <span className="eyebrow">{appName.get(request.application_id) ?? 'Application'} · {request.provider_type}</span>
+              <h3>{request.requested_name}</h3>
+            </div>
+            <span className={styles.statusPill} style={{ ...statusStyle(request.status), border: '1px solid', borderRadius: 999, padding: '5px 10px', fontSize: 12, fontWeight: 700, textTransform: 'capitalize' }}>{request.status}</span>
+          </div>
+          {request.requested_description ? <p>{request.requested_description}</p> : null}
+          <p><strong>Suggested group:</strong> {request.suggested_parent_category_id ? categoryName.get(request.suggested_parent_category_id) ?? 'Category' : 'Admin to decide'}</p>
+          {request.review_note ? <p><strong>Admin note:</strong> {request.review_note}</p> : null}
+          {request.status === 'approved' ? <p><strong>Approved category:</strong> {request.created_category_id ? categoryName.get(request.created_category_id) ?? request.requested_name : request.requested_name}. It is now available from the Services category selector.</p> : null}
+          {request.status === 'pending' ? <p className="summary-note">Pending requests cannot be used for publishing until Super Admin approval creates the canonical category.</p> : null}
+          <p className="summary-note">Submitted {new Date(request.created_at).toLocaleString('en-IN')}{request.reviewed_at ? ` · Reviewed ${new Date(request.reviewed_at).toLocaleString('en-IN')}` : ''}</p>
+        </article>) : <div className="card"><p>No category requests yet.</p></div>}
+      </section>
+    </div>
   </LiveProviderShell>;
 }
