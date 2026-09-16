@@ -52,25 +52,41 @@ export function WorkspaceSwitcher({ currentWorkspace, compact = false }: { curre
 
   if (!workspaces.length && !error) return null;
 
-  if (compact) return <details className={styles.compact}>
-    <summary>{tamil ? 'Profile மாற்று' : 'Switch profile'}</summary>
-    <div className={styles.compactMenu}>
-      {workspaces.map((workspace) => <button key={workspace.id} className={`${styles.compactButton} ${workspace.id === active ? styles.compactCurrent : ''}`} type="button" disabled={switching !== null || workspace.id === active} onClick={() => void switchWorkspace(workspace.id)}>{workspace.label} · {workspace.display_name}{workspace.id === active ? (tamil ? ' · தற்போது' : ' · Current') : ''}</button>)}
-      {error ? <div className={styles.error} role="alert">{error}</div> : null}
+  const quickSwitch = workspaces.length > 1 ? <div className={`${styles.quickSwitch}${compact ? ` ${styles.quickSwitchCompact}` : ''}`} aria-label={tamil ? 'Workspace விரைவாக மாற்று' : 'Quick workspace switch'}>
+    <div className={styles.quickSwitchLabel}>{tamil ? 'விரைவு மாற்றம்' : 'Quick switch'}</div>
+    <div className={styles.quickSwitchOptions}>
+      {workspaces.map((workspace) => {
+        const selected = workspace.id === active;
+        return <button
+          key={`quick-${workspace.id}`}
+          className={`${styles.quickSwitchButton} ${selected ? styles.quickSwitchCurrent : ''}`}
+          type="button"
+          disabled={switching !== null || selected}
+          onClick={() => void switchWorkspace(workspace.id)}
+          aria-current={selected ? 'page' : undefined}
+        >
+          <span className={styles.quickSwitchRole}>{workspace.label}</span>
+          <span className={styles.quickSwitchName}>{workspace.display_name}</span>
+          {selected ? <span className={styles.quickSwitchState}>{tamil ? 'தற்போது' : 'Current'}</span> : switching === workspace.id ? <span className={styles.quickSwitchState}>{tamil ? 'மாற்றப்படுகிறது…' : 'Switching…'}</span> : null}
+        </button>;
+      })}
     </div>
-  </details>;
+    {error ? <div className={styles.error} role="alert">{error}</div> : null}
+  </div> : null;
+
+  if (compact) return quickSwitch;
 
   const providerWorkspace = workspaces.find((workspace) => workspace.id === 'professional' || workspace.id === 'business');
   const pendingProfile = addableProfiles.find((profile) => profile.pending);
   const choices = addableProfiles.filter((profile) => !profile.pending);
-  const opposite = providerWorkspace?.id === 'professional' ? 'Business' : 'Professional';
 
   return <section className={styles.section} id="workspaces" aria-labelledby="workspace-switcher-title">
+    {quickSwitch}
     <div className={styles.heading}>
       <h2 id="workspace-switcher-title">{tamil ? 'என் Profiles & Workspaces' : 'My profiles & workspaces'}</h2>
       <p>{tamil ? 'உங்கள் Customer workspace, நீங்கள் தேர்ந்தெடுத்த ஒரு Provider workspace மற்றும் அனுமதி உள்ள platform workspace-கள் இடையே மாறுங்கள்.' : 'Switch between your Customer workspace, your chosen Provider workspace and permitted platform workspaces.'}</p>
     </div>
-    {error ? <div className={styles.error} role="alert">{error}</div> : null}
+    {error && !quickSwitch ? <div className={styles.error} role="alert">{error}</div> : null}
     <div className={styles.grid}>
       {workspaces.map((workspace) => { const selected = workspace.id === active; const roleSummary = workspace.id === 'professional' || workspace.id === 'business' ? providerRoleSummary(workspace.id, tamil) : null; return <article className={`${styles.card} ${selected ? styles.cardActive : ''}`} key={workspace.id}>
         <div className={styles.row}><div><div className={styles.role}>{workspace.label}</div><div className={styles.name}>{workspace.display_name}</div></div>{selected ? <span className={`${styles.badge} ${styles.activeBadge}`}>{tamil ? 'தற்போது' : 'Current'}</span> : workspace.verified ? <span className={styles.badge}>Verified</span> : null}</div>
@@ -83,7 +99,7 @@ export function WorkspaceSwitcher({ currentWorkspace, compact = false }: { curre
     {choices.length ? <div className={styles.addSection}>
       <div className={styles.subheading}>
         <h3>{tamil ? 'TakeItEsee-ல் சம்பாதிக்க தொடங்குங்கள்' : 'Start earning on TakeItEsee'}</h3>
-        <p>{tamil ? 'Professional அல்லது Business — ஒரு Provider identity மட்டும் தேர்வு செய்யுங்கள். Approval பிறகு மற்ற provider type-க்கு தனி TakeItEsee account தேவை.' : 'Choose one Provider identity: Professional or Business. After approval, the other provider type requires a separate TakeItEsee account.'}</p>
+        <p>{tamil ? 'Professional அல்லது Business — ஒரு Provider identity மட்டும் தேர்வு செய்யுங்கள். Approval ஆன பிறகு அந்த Provider identity இந்த account-க்கு final.' : 'Choose one Provider identity: Professional or Business. After approval, that Provider identity is final for this account.'}</p>
       </div>
       <div className={styles.grid}>{choices.map((profile) => <article className={`${styles.card} ${styles.addCard}`} key={`add-${profile.id}`}>
         <div className={styles.row}><div><div className={styles.role}>{profile.label}</div><div className={styles.name}>{profile.display_name}</div></div><span className={`${styles.badge} ${styles.availableBadge}`}>{tamil ? 'தேர்வு செய்யலாம்' : 'Choose'}</span></div>
@@ -98,8 +114,9 @@ export function WorkspaceSwitcher({ currentWorkspace, compact = false }: { curre
       <div className={styles.grid}><article className={`${styles.card} ${styles.addCard}`}><div className={styles.row}><div><div className={styles.role}>{pendingProfile.label}</div><div className={styles.name}>{pendingProfile.display_name}</div></div><span className={`${styles.badge} ${styles.pendingBadge}`}>{tamil ? 'Review pending' : 'Pending review'}</span></div><div className={styles.description}>{providerRoleSummary(pendingProfile.id, tamil)}</div><div className={styles.description}>{pendingProfile.description}</div><Link className={styles.button} href={pendingProfile.target}>{tamil ? 'Application நிலையை பார்க்க' : 'View application'}</Link></article></div>
     </div> : null}
 
-    {providerWorkspace ? <div className={styles.addSection}>
-      <div className={styles.subheading}><h3>{tamil ? `Provider identity: ${providerWorkspace.label}` : `Provider identity: ${providerWorkspace.label}`}</h3><p>{tamil ? `இந்த account ${providerWorkspace.label} provider-ஆக பதிவு செய்யப்பட்டுள்ளது. ${opposite} provider identity இயக்க தனி TakeItEsee account உருவாக்க வேண்டும்.` : `This account is registered as a ${providerWorkspace.label} provider. To operate a ${opposite} provider identity, create a separate TakeItEsee account.`}</p></div>
+    {providerWorkspace ? <div className={styles.finalityNote}>
+      <span className={styles.finalityBadge}>{tamil ? 'Final identity' : 'Final identity'}</span>
+      <div><strong>{providerWorkspace.label}</strong><p>{tamil ? `இந்த account-ன் Provider identity ${providerWorkspace.label} ஆக final செய்யப்பட்டுள்ளது. Customer workspace தொடர்ந்து கிடைக்கும்.` : `This account's Provider identity is final as ${providerWorkspace.label}. Customer workspace remains available.`}</p></div>
     </div> : null}
   </section>;
 }
