@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
+// Keep this regression anchored to the production Business storefront wrapper.
 const root = new URL('../../../', import.meta.url);
 const [styles, businessProfile] = await Promise.all([
   readFile(new URL('components/detail/CanonicalBusinessStorefrontBody.module.css', root), 'utf8'),
