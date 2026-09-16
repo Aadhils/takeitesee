@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import BackToTop from './BackToTop';
+import GlobalWorkspaceSwitcher from './GlobalWorkspaceSwitcher';
 import { LanguageProvider, useLanguage, type TranslationKey } from '../i18n/LanguageProvider';
 import { getSupabaseBrowserUser, isSupabaseConfigured, localDevelopmentAuthAdapter } from '../../services/auth-adapter';
 import type { User } from '../../types/auth-domain';
@@ -112,11 +113,10 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
               </select>
             </label>
             <Link href="/requirements" className="header-requirement">{t('nav.postRequirement')}</Link>
-            <Link href={accountAttentionHref} className="header-login">
+            {currentUser ? <GlobalWorkspaceSwitcher fallbackName={currentUser.name} tamil={isTamil} attentionCount={proposalUnreadCount} attentionLabel={proposalBadgeLabel} /> : <Link href={accountAttentionHref} className="header-login">
               <span className="header-account-icon" aria-hidden="true"><ShellIcon name="account" /></span>
-              <span className="header-login-label">{currentUser ? currentUser.name : t('nav.account')}</span>
-              {proposalUnreadCount > 0 ? <span className="global-proposal-attention-badge" aria-label={proposalBadgeLabel}>{proposalBadgeText}</span> : null}
-            </Link>
+              <span className="header-login-label">{t('nav.account')}</span>
+            </Link>}
             <button className={`menu-trigger${menuOpen ? ' menu-trigger-open' : ''}`} type="button" aria-expanded={menuOpen} aria-controls="mobile-menu" aria-label={t('nav.toggleMenu')} onClick={() => setMenuOpen((value) => !value)}>
               <span /><span /><span />
             </button>
