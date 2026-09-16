@@ -116,10 +116,9 @@ export default function RoleIdentityMediaHeader({ context, displayName, subtitle
         <p className={styles.subtitle}>{subtitle}</p>
         {meta ? <p className={styles.meta}>{meta}</p> : null}
       </div>
-      <div className={styles.avatarControls}>
-        <button type="button" className={styles.secondaryButton} disabled={loading || Boolean(working) || !identity} onClick={() => chooseUpload('avatar')}>{hasAvatar ? (tamil ? 'Photo மாற்று' : 'Change photo') : (tamil ? 'Photo சேர்' : 'Add photo')}</button>
-        {hasAvatar ? <button type="button" className={styles.removeButton} disabled={Boolean(working)} onClick={() => void remove('avatar')}>{tamil ? 'Photo remove' : 'Remove photo'}</button> : null}
-      </div>
+      {hasAvatar ? <div className={styles.avatarControls}>
+        <button type="button" className={styles.removeButton} disabled={Boolean(working)} onClick={() => void remove('avatar')}>{tamil ? 'Photo remove' : 'Remove photo'}</button>
+      </div> : null}
     </div>
     {context === 'provider' ? <ProviderReadinessSummary placement="provider" /> : null}
     {loading ? <p className={styles.status} role="status">{tamil ? 'Profile media load ஆகிறது…' : 'Loading profile media…'}</p> : null}
