@@ -95,6 +95,7 @@ export default function GlobalWorkspaceSwitcher({
   const triggerName = current?.display_name || fallbackName;
   const triggerRole = current?.label || (tamil ? 'வாடிக்கையாளர்' : 'Customer');
   const switchLabel = tamil ? 'Profile மாற்று' : 'Switch profile';
+  const hideFullTriggerOnIdentityHome = triggerVariant === 'full' && (pathname === '/account' || pathname === '/provider');
 
   async function switchWorkspace(workspace: WorkspaceKind) {
     if (workspace === active || switching) return;
@@ -162,6 +163,8 @@ export default function GlobalWorkspaceSwitcher({
       <Link className={styles.manage} href="/account" onClick={() => setOpen(false)}>{tamil ? 'Account & profiles நிர்வகிக்க' : 'Manage account & profiles'}</Link>
     </section>
   </>, document.body) : null;
+
+  if (hideFullTriggerOnIdentityHome) return null;
 
   return <div className={`${styles.root}${triggerVariant === 'identity' ? ` ${styles.rootIdentity}` : ''}`}>
     <button
