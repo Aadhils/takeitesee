@@ -264,9 +264,9 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
   ];
 
   const mobilePrimaryHrefs = new Set(mobilePrimaryLinks.map((link) => link.href));
-  const mobileMoreLinks = providerNavGroups.flatMap((group) => group.links).filter((link, index, links) =>
-    !mobilePrimaryHrefs.has(link.href) && links.findIndex((candidate) => candidate.href === link.href) === index
-  );
+  const mobileMoreGroups = providerNavGroups
+    .map((group) => ({ ...group, links: group.links.filter((link) => !mobilePrimaryHrefs.has(link.href)) }))
+    .filter((group) => group.links.length > 0);
 
   return <div className="provider-layout provider-social-layout">
     <aside className="provider-sidebar provider-desktop-sidebar">
@@ -329,17 +329,27 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
         </nav>
         <details className="provider-mobile-more-tools">
           <summary>{tamil ? 'மேலும் கருவிகள்' : 'More tools'}</summary>
-          <div className="provider-mobile-more-grid">
-            {mobileMoreLinks.map((link) => <Link href={link.href} className={active === link.href ? 'provider-mobile-more-active' : ''} key={link.href}>
-              {link.label}
-              {link.href === '/provider/orders' && requestedProductOrders > 0 ? <span className="provider-nav-count">{countLabel(requestedProductOrders)}</span> : null}
-              {link.href === '/notifications' && notificationUnreadCount > 0 ? <span className="provider-nav-count">{countLabel(notificationUnreadCount)}</span> : null}
-            </Link>)}
-            <Link href="/account#workspaces">{tamil ? 'என் Profiles' : 'My profiles'}</Link>
-            {publicProfileHref ? <Link href={publicProfileHref} target="_blank" rel="noreferrer">{publicProfileLabel} ↗</Link> : null}
-            {showPublicReadinessLink ? <Link href="/provider/public-readiness">{publicProfileSetupLabel}</Link> : null}
-            <Link href="/">{t('provider.viewMarketplace')}</Link>
-            <Link href="/account/settings">{tamil ? 'Account அமைப்புகள்' : 'Account settings'}</Link>
+          <div className="provider-mobile-more-panel">
+            {mobileMoreGroups.map((group) => <section className="provider-mobile-more-section" key={group.id}>
+              <span className="provider-mobile-more-section-title">{group.label}</span>
+              <div className="provider-mobile-more-grid">
+                {group.links.map((link) => <Link href={link.href} className={active === link.href ? 'provider-mobile-more-active' : ''} aria-current={active === link.href ? 'page' : undefined} key={link.href}>
+                  <span>{link.label}</span>
+                  {link.href === '/provider/orders' && requestedProductOrders > 0 ? <span className="provider-nav-count">{countLabel(requestedProductOrders)}</span> : null}
+                  {link.href === '/notifications' && notificationUnreadCount > 0 ? <span className="provider-nav-count">{countLabel(notificationUnreadCount)}</span> : null}
+                </Link>)}
+              </div>
+            </section>)}
+            <section className="provider-mobile-more-section provider-mobile-more-utilities">
+              <span className="provider-mobile-more-section-title">{tamil ? 'Workspace & Account' : 'Workspace & account'}</span>
+              <div className="provider-mobile-more-grid">
+                <Link href="/account#workspaces"><span>{tamil ? 'என் Profiles' : 'My profiles'}</span></Link>
+                {publicProfileHref ? <Link href={publicProfileHref} target="_blank" rel="noreferrer"><span>{publicProfileLabel} ↗</span></Link> : null}
+                {showPublicReadinessLink ? <Link href="/provider/public-readiness"><span>{publicProfileSetupLabel}</span></Link> : null}
+                <Link href="/"><span>{t('provider.viewMarketplace')}</span></Link>
+                <Link href="/account/settings"><span>{tamil ? 'Account அமைப்புகள்' : 'Account settings'}</span></Link>
+              </div>
+            </section>
           </div>
         </details>
       </section>
@@ -383,21 +393,27 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
         .provider-mobile-primary-nav a.provider-mobile-nav-active { background: var(--color-selected); color: var(--color-primary-strong); }
         .provider-mobile-primary-nav em { position: absolute; top: 3px; right: 7px; display: grid; min-width: 16px; height: 16px; place-items: center; padding: 0 3px; border-radius: 999px; background: var(--color-primary); color: #fff; font-size: .58rem; font-style: normal; }
         .provider-mobile-more-tools { border-top: 1px solid var(--color-border); }
-        .provider-mobile-more-tools summary { min-height: 32px; padding: 8px 6px 3px; color: var(--color-primary-strong); cursor: pointer; font-size: .72rem; font-weight: 800; list-style: none; }
-        .provider-mobile-more-tools summary::-webkit-details-marker { display: none; }
-        .provider-mobile-more-tools summary::after { content: ' +'; }
-        .provider-mobile-more-tools[open] summary::after { content: ' −'; }
-        .provider-mobile-more-grid { display: flex; gap: 6px; overflow-x: auto; padding: 6px 2px 2px; scrollbar-width: none; }
-        .provider-mobile-more-grid::-webkit-scrollbar { display: none; }
-        .provider-mobile-more-grid a { flex: 0 0 auto; min-height: 34px; display: inline-flex; align-items: center; gap: 5px; padding: 7px 10px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); color: var(--color-ink-muted); font-size: .7rem; font-weight: 700; white-space: nowrap; }
-        .provider-mobile-more-grid a.provider-mobile-more-active { border-color: #d8d2ff; background: var(--color-selected); color: var(--color-primary-strong); }
-        .provider-mobile-more-grid .provider-nav-count { display: inline-grid; min-width: 17px; height: 17px; place-items: center; padding: 0 4px; border-radius: 999px; background: var(--color-primary); color: #fff; font-size: .58rem; font-weight: 800; line-height: 1; }
+        .provider-mobile-more-tools > summary { display: flex; min-height: 44px; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 6px 3px; color: var(--color-primary-strong); cursor: pointer; font-size: .72rem; font-weight: 800; list-style: none; }
+        .provider-mobile-more-tools > summary::-webkit-details-marker { display: none; }
+        .provider-mobile-more-tools > summary::after { content: ''; width: 8px; height: 8px; margin-right: 5px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform .18s ease; }
+        .provider-mobile-more-tools[open] > summary::after { transform: rotate(225deg); }
+        .provider-mobile-more-panel { display: grid; max-height: min(56vh, 460px); gap: 12px; overflow-y: auto; overscroll-behavior: contain; padding: 8px 2px 3px; scrollbar-width: thin; }
+        .provider-mobile-more-section { display: grid; gap: 6px; }
+        .provider-mobile-more-section + .provider-mobile-more-section { padding-top: 10px; border-top: 1px solid var(--color-border); }
+        .provider-mobile-more-section-title { padding: 0 4px; color: var(--color-ink-muted); font-size: .63rem; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; }
+        .provider-mobile-more-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+        .provider-mobile-more-grid a { min-width: 0; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 7px; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface); color: var(--color-ink-muted); font-size: .7rem; font-weight: 700; line-height: 1.18; }
+        .provider-mobile-more-grid a > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+        .provider-mobile-more-grid a.provider-mobile-more-active { border-color: #d8d2ff; background: var(--color-selected); color: var(--color-primary-strong); box-shadow: inset 3px 0 0 var(--color-primary); }
+        .provider-mobile-more-grid .provider-nav-count { flex: 0 0 auto; display: inline-grid; min-width: 18px; height: 18px; place-items: center; padding: 0 4px; border-radius: 999px; background: var(--color-primary); color: #fff; font-size: .58rem; font-weight: 800; line-height: 1; }
+        .provider-mobile-more-utilities .provider-mobile-more-grid a { background: color-mix(in srgb, var(--color-surface) 85%, var(--color-selected)); }
       }
 
       @media (max-width: 390px) {
         .provider-mobile-social-shell { margin-inline: -2px; padding: 7px; border-radius: 16px; }
         .provider-mobile-primary-nav a { min-height: 52px; font-size: .58rem; }
         .provider-mobile-nav-icon { width: 20px; height: 20px; }
+        .provider-mobile-more-grid { grid-template-columns: 1fr; }
       }
     `}</style>
   </div>;
