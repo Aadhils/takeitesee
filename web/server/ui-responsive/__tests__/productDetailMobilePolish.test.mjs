@@ -35,6 +35,7 @@ test('Product detail actions remain touch-friendly and stack on mobile', () => {
 
 test('Product detail remains presentation-only around order flow', () => {
   assert.equal(pageSource.includes("fetch('/api/orders'"), false);
-  assert.equal(pageSource.includes('payment'), false);
+  assert.equal(pageSource.includes('payment_status'), false);
   assert.equal(pageSource.includes('Cashfree'), false);
+  assert.ok(pageSource.includes('non-payment order request'));
 });
