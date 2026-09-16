@@ -4,6 +4,7 @@ import { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import PublicProviderIdentityLayout from '../../components/detail/PublicProviderIdentityLayout';
 import CanonicalBusinessStorefrontBody from '../../components/detail/CanonicalBusinessStorefrontBody';
+import CanonicalProfessionalProfileBody from '../../components/detail/CanonicalProfessionalProfileBody';
 import BusinessPublicProfileContent, {
   loadPublicBusiness,
   publicBusinessSeoText,
@@ -179,7 +180,9 @@ export default async function PublicHandlePage({ params }: { params: Promise<{ h
     if (!record) notFound();
 
     return <PublicProviderIdentityLayout kind="professional" providerId={resolved.identity_id}>
-      <ProfessionalPublicProfileContent providerId={resolved.identity_id} canonicalUrl={canonical} />
+      <CanonicalProfessionalProfileBody>
+        <ProfessionalPublicProfileContent providerId={resolved.identity_id} canonicalUrl={canonical} />
+      </CanonicalProfessionalProfileBody>
     </PublicProviderIdentityLayout>;
   }
 
