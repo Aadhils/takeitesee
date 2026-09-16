@@ -97,6 +97,7 @@ export default function RoleIdentityMediaHeader({ context, displayName, subtitle
 
   const hasAvatar = Boolean(identity?.has_avatar && identity.avatar_url);
   const hasBanner = Boolean(identity?.has_banner && identity.banner_url);
+  const visibleMeta = context === 'customer' ? '' : meta;
 
   return <section className={styles.shell} aria-label="Profile identity media">
     <div className={`${styles.banner} ${bannerClass}`}>
@@ -115,7 +116,7 @@ export default function RoleIdentityMediaHeader({ context, displayName, subtitle
       <div className={styles.identity}>
         <div className={styles.identityTop}><h2>{displayName}</h2><span className={styles.scopePill}>{scopeLabel(identity?.scope ?? (context === 'customer' ? 'customer' : 'professional'), tamil)}</span></div>
         <p className={styles.subtitle}>{subtitle}</p>
-        {meta ? <p className={styles.meta}>{meta}</p> : null}
+        {visibleMeta ? <p className={styles.meta}>{visibleMeta}</p> : null}
       </div>
       <div className={styles.workspaceSwitch}>
         <GlobalWorkspaceSwitcher fallbackName={displayName} tamil={tamil} triggerVariant="identity" />
