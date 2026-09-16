@@ -32,6 +32,13 @@ test('Business storefront customer actions and catalog remain intact', () => {
   assert.ok(businessContent.includes('services={storefrontServices.map'));
 });
 
+test('canonical Business body suppresses the duplicate legacy service section below QuickBook', () => {
+  assert.ok(wrapperCss.includes('BusinessStorefrontQuickBook is the canonical service action surface'));
+  assert.ok(wrapperCss.includes(':global(.profile-layout main > .detail-section:last-child)'));
+  assert.ok(wrapperCss.includes('display: none'));
+  assert.ok(businessContent.includes('<BusinessStorefrontQuickBook'));
+});
+
 test('Professional handle composition remains outside the Business-only wrapper', () => {
   const professionalBranch = handlePage.split("if (resolved.identity_type === 'professional')")[1] ?? '';
   assert.ok(professionalBranch.includes('<PublicProviderIdentityLayout kind="professional"'));
