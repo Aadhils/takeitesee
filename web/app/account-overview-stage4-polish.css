@@ -1,0 +1,26 @@
+@media (max-width: 900px) {
+  .account-layout > .account-sidebar > .account-sidebar-heading {
+    display: none !important;
+  }
+
+  .account-content > .customer-social-dashboard > .eyebrow,
+  .account-content > .customer-social-dashboard > p {
+    display: none !important;
+  }
+
+  .account-content > .customer-social-dashboard > h1 {
+    max-width: 100%;
+    margin: 0 0 12px;
+    font-size: clamp(1.65rem, 4.8vw, 2.2rem) !important;
+    line-height: 1.08 !important;
+    letter-spacing: -.035em;
+  }
+}
+
+@media (max-width: 640px) {
+  .account-content > .customer-social-dashboard > h1 {
+    margin-bottom: 10px;
+    font-size: clamp(1.5rem, 7vw, 1.85rem) !important;
+    line-height: 1.05 !important;
+  }
+}

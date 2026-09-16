@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { productionAuthProvider } from '../../../../server/auth/session';
-import { createSupabaseServerClient } from '../../../../lib/supabase/server';
+import { createSupabaseServiceClient } from '../../../../lib/supabase/service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -8,7 +8,12 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   try {
     await productionAuthProvider.requireCustomer(request);
-    const supabase = await createSupabaseServerClient();
+
+    // Customer requirement posting needs the active marketplace taxonomy, but the
+    // underlying governance tables intentionally keep browser/session reads scoped
+    // to Admin/Provider workflows. Resolve this safe read-only projection on the
+    // server after authenticating the Customer instead of weakening those RLS rules.
+    const supabase = createSupabaseServiceClient();
     const [{ data: categories, error: categoryError }, { data: locations, error: locationError }] = await Promise.all([
       supabase
         .from('platform_categories')
