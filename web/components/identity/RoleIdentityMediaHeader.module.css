@@ -210,14 +210,26 @@
   overflow-wrap: anywhere;
 }
 
+.workspaceSwitch {
+  grid-column: 3;
+  grid-row: 1;
+  align-self: start;
+  justify-self: end;
+  min-width: 44px;
+  padding-top: 14px;
+  z-index: 5;
+}
+
 .avatarControls {
+  grid-column: 2 / -1;
+  grid-row: 2;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
   min-width: 0;
-  padding-top: 14px;
+  padding-top: 0;
 }
 
 .secondaryButton,
@@ -344,15 +356,26 @@
 
   .identity {
     padding-top: 10px;
+    padding-right: 54px;
   }
 
   .identity h2 {
     font-size: 1.15rem;
   }
 
+  .workspaceSwitch {
+    position: absolute;
+    top: 10px;
+    right: 16px;
+    grid-column: auto;
+    grid-row: auto;
+    padding-top: 0;
+  }
+
   .avatarControls,
   .hint {
     grid-column: 1 / -1;
+    grid-row: auto;
     justify-content: flex-start;
     padding-top: 0;
   }
@@ -386,6 +409,14 @@
 
   .avatarWrap {
     margin-top: -32px;
+  }
+
+  .identity {
+    padding-right: 50px;
+  }
+
+  .workspaceSwitch {
+    right: 12px;
   }
 
   .avatarControls {
