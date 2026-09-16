@@ -3,11 +3,12 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../../../', import.meta.url);
-const [appShellSource, globalSwitcherSource, globalSwitcherCss, identityHeaderSource, accountSwitcherSource, routeSource, globalsCss] = await Promise.all([
+const [appShellSource, globalSwitcherSource, globalSwitcherCss, identityHeaderSource, identityHeaderCss, accountSwitcherSource, routeSource, globalsCss] = await Promise.all([
   readFile(new URL('components/layout/AppShell.tsx', root), 'utf8'),
   readFile(new URL('components/layout/GlobalWorkspaceSwitcher.tsx', root), 'utf8'),
   readFile(new URL('components/layout/GlobalWorkspaceSwitcher.module.css', root), 'utf8'),
   readFile(new URL('components/identity/RoleIdentityMediaHeader.tsx', root), 'utf8'),
+  readFile(new URL('components/identity/RoleIdentityMediaHeader.module.css', root), 'utf8'),
   readFile(new URL('components/account/WorkspaceSwitcher.tsx', root), 'utf8'),
   readFile(new URL('app/api/account/workspaces/route.ts', root), 'utf8'),
   readFile(new URL('app/globals.css', root), 'utf8'),
@@ -39,6 +40,15 @@ test('identity switch trigger is circular and the overlay escapes the sticky fil
   assert.ok(globalSwitcherCss.includes('.panel{position:fixed'));
   assert.ok(globalSwitcherCss.includes('z-index:1001'));
   assert.ok(!globalSwitcherCss.includes('.panel{position:absolute'));
+});
+
+test('phone identity hero floats the switch control on the banner edge without squeezing profile text', () => {
+  assert.ok(identityHeaderCss.includes('@media (max-width: 720px)'));
+  assert.ok(identityHeaderCss.includes('padding-right: 0;'));
+  assert.ok(identityHeaderCss.includes('.workspaceSwitch {\n    position: absolute;\n    top: -22px;'));
+  assert.ok(identityHeaderCss.includes('right: 16px;'));
+  assert.ok(!identityHeaderCss.includes('padding-right: 54px;'));
+  assert.ok(!identityHeaderCss.includes('padding-right: 50px;'));
 });
 
 test('workspace switcher stays responsive as desktop popover and mobile bottom sheet', () => {
