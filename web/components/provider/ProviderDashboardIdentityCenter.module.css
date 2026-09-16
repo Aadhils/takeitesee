@@ -21,30 +21,15 @@
   gap: 16px;
 }
 
-.identity {
-  display: flex;
-  min-width: 0;
-  align-items: flex-start;
-  gap: 14px;
-}
-
-.identity > div,
+.detailsHeading,
 .sectionHead > div,
 .roleTop > div,
 .launchPanel > div {
   min-width: 0;
 }
 
-.avatar {
-  display: grid;
-  flex: 0 0 48px;
-  width: 48px;
-  height: 48px;
-  place-items: center;
-  border-radius: 15px;
-  background: var(--color-secondary);
-  color: var(--color-primary-strong);
-  font-weight: 900;
+.detailsHeading {
+  max-width: 68ch;
 }
 
 .eyebrow {
@@ -101,6 +86,11 @@
   gap: 8px;
 }
 
+.badges {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+}
+
 .preview {
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(240px, .75fr);
@@ -153,13 +143,13 @@
 }
 
 .actions :global(.button) {
-  min-height: 42px;
+  min-height: 44px;
 }
 
 .secondaryLink,
 .setupLink {
   display: inline-flex;
-  min-height: 42px;
+  min-height: 44px;
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-md);
@@ -329,6 +319,10 @@
     width: 100%;
   }
 
+  .badges {
+    justify-content: flex-start;
+  }
+
   .actions :global(.button),
   .secondaryLink,
   .setupLink {
@@ -350,17 +344,6 @@
 }
 
 @media (max-width: 480px) {
-  .identity {
-    gap: 10px;
-  }
-
-  .avatar {
-    flex-basis: 42px;
-    width: 42px;
-    height: 42px;
-    border-radius: 13px;
-  }
-
   .facts {
     grid-template-columns: 1fr 1fr;
   }
