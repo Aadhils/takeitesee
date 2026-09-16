@@ -1,0 +1,144 @@
+.registryJourney {
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.registryJourney :global(.page-intro),
+.registryJourney :global(.section-stack),
+.registryJourney :global(.card),
+.registryJourney :global(.card) > div,
+.registryJourney form,
+.registryJourney label {
+  min-width: 0;
+}
+
+.registryJourney :global(.page-intro) h1,
+.registryJourney :global(.page-intro) p,
+.registryJourney :global(.section-stack) h2,
+.registryJourney :global(.card) h3,
+.registryJourney :global(.card) p,
+.registryJourney :global(.card) strong,
+.registryJourney :global(.eyebrow),
+.registryJourney :global(.summary-note),
+.registryJourney a,
+.registryJourney label {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.registryJourney input,
+.registryJourney select,
+.registryJourney textarea,
+.registryJourney button {
+  max-width: 100%;
+}
+
+.registryJourney input,
+.registryJourney select,
+.registryJourney textarea {
+  width: 100%;
+  min-width: 0;
+}
+
+.registryJourney textarea {
+  resize: vertical;
+}
+
+.registryJourney button {
+  min-height: 44px;
+  white-space: normal;
+}
+
+.registryJourney :global(.page-intro) > a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.reviewActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .625rem;
+  align-items: stretch;
+}
+
+.reviewActions button {
+  flex: 0 1 auto;
+}
+
+.categoryCard {
+  min-width: 0;
+}
+
+.categoryCard form {
+  min-width: 0;
+}
+
+.statusLine {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .registryJourney :global(.container) {
+    min-width: 0;
+  }
+
+  .registryJourney :global(.card) {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .registryJourney {
+    width: 100%;
+  }
+
+  .registryJourney :global(.page-intro),
+  .registryJourney :global(.card),
+  .registryJourney :global(.section-stack) {
+    min-width: 0;
+  }
+
+  .reviewActions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .reviewActions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .registryJourney input,
+  .registryJourney select,
+  .registryJourney textarea {
+    font-size: 16px;
+  }
+
+  .registryJourney :global(.card) form > button,
+  .registryJourney :global(.card) form:not(.reviewActions) > button {
+    width: 100%;
+  }
+
+  .registryJourney :global(.page-intro) > a {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .reviewActions {
+    grid-template-columns: 1fr;
+  }
+
+  .registryJourney textarea {
+    min-height: 7.5rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .registryJourney {
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+}
