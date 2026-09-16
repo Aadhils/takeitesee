@@ -6,3 +6,8 @@
 .body :global(.profile-hero) {
   display: none;
 }
+
+/* BusinessStorefrontQuickBook is the canonical service action surface above this legacy profile body. */
+.body :global(.profile-layout main > .detail-section:last-child) {
+  display: none;
+}
