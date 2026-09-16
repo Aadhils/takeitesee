@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './GlobalWorkspaceSwitcher.module.css';
 
 type WorkspaceKind = 'customer' | 'professional' | 'business' | 'admin' | 'super_admin';
@@ -40,7 +40,7 @@ export default function GlobalWorkspaceSwitcher({
   const [error, setError] = useState('');
   const rootRef = useRef<HTMLDivElement | null>(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       const response = await fetch('/api/account/workspaces', { cache: 'no-store' });
       const payload = await response.json() as WorkspacePayload;
@@ -53,9 +53,9 @@ export default function GlobalWorkspaceSwitcher({
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to load profiles.');
     }
-  };
+  }, [pathname]);
 
-  useEffect(() => { void load(); }, [pathname]);
+  useEffect(() => { void load(); }, [load]);
 
   useEffect(() => {
     if (!open) return;
@@ -70,7 +70,7 @@ export default function GlobalWorkspaceSwitcher({
       document.removeEventListener('keydown', closeOnEscape);
       document.removeEventListener('mousedown', closeOnOutside);
     };
-  }, [open, pathname]);
+  }, [load, open]);
 
   const current = useMemo(() => workspaces.find((workspace) => workspace.id === active), [active, workspaces]);
   const triggerName = current?.display_name || fallbackName;
