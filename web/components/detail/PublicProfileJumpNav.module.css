@@ -1,0 +1,62 @@
+.shell {
+  position: sticky;
+  top: 70px;
+  z-index: 15;
+  width: min(100% - 2rem, 1180px);
+  margin: .75rem auto 0;
+  padding: .4rem;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 8px 24px rgb(29 28 54 / 8%);
+  backdrop-filter: blur(14px);
+}
+
+.rail {
+  display: flex;
+  gap: .4rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.rail::-webkit-scrollbar {
+  display: none;
+}
+
+.item {
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: .55rem .85rem;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.item:hover,
+.item:focus-visible {
+  outline: none;
+  background: var(--color-selected);
+  color: var(--color-primary-strong);
+}
+
+@media (max-width: 700px) {
+  .shell {
+    top: 66px;
+    width: calc(100% - 1rem);
+    margin-top: .5rem;
+    padding: .3rem;
+    border-radius: 14px;
+  }
+
+  .item {
+    min-height: 44px;
+    padding-inline: .75rem;
+    font-size: .72rem;
+  }
+}
