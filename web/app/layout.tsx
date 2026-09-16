@@ -12,6 +12,7 @@ import './responsive-admin.css';
 import './products-mobile-polish.css';
 import './account-mobile-navigation.css';
 import './account-real-device-fix.css';
+import './account-shell-signout-responsive.css';
 import './bookings-real-device-fix.css';
 
 const siteUrl = 'https://www.takeitesee.com';
