@@ -34,7 +34,8 @@ test('Professional public talents career services and portfolio remain intact', 
 });
 
 test('Business handle composition remains on the Business-only wrapper', () => {
-  const businessBranch = handlePage.split("if (resolved.identity_type === 'business')")[1]?.split("if (resolved.identity_type === 'professional')")[0] ?? '';
+  const renderSource = handlePage.split('export default async function PublicHandlePage')[1] ?? '';
+  const businessBranch = renderSource.split("if (resolved.identity_type === 'business')")[1]?.split("if (resolved.identity_type === 'professional')")[0] ?? '';
   assert.ok(businessBranch.includes('<CanonicalBusinessStorefrontBody>'));
   assert.ok(!businessBranch.includes('<CanonicalProfessionalProfileBody>'));
 });
