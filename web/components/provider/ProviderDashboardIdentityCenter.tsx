@@ -74,14 +74,14 @@ export default function ProviderDashboardIdentityCenter({ onProfileUpdated }: { 
   const [roleForm, setRoleForm] = useState<RoleForm>(emptyRoleForm);
 
   const copy = useMemo(() => tamil ? {
-    eyebrow: 'Provider identity', title: 'உங்கள் Profile & marketplace identity', subtitle: 'Profile, talents மற்றும் public readiness-ஐ Dashboard-லேயே manage செய்யுங்கள்.',
+    eyebrow: 'Profile details', title: 'Public profile விவரங்கள்', subtitle: 'மேலே உள்ள photo & banner identity-க்கு கீழே, customers பார்க்கும் பெயர், description மற்றும் service area-ஐ இங்கே manage செய்யுங்கள்.',
     professional: 'Professional', business: 'Business', verified: 'Verified', pending: 'Verification pending', ready: 'Profile ready', needs: 'Profile needs work',
     editProfile: 'Edit profile', addRole: 'Add role', profileName: 'Professional headline / display name', businessName: 'Business display name', description: 'Provider description', area: 'Service area', save: 'Save profile', cancel: 'Cancel', saved: 'Profile saved.',
     roles: 'Talents & roles', rolesHelp: 'ஒவ்வொரு skill-ஐ compact card-ஆ manage செய்யுங்கள்.', roleTitle: 'Role / talent title', summary: 'Short role summary', experience: 'Experience years (optional)', serviceBookings: 'Service bookings', more: 'More opportunity options', freelance: 'Freelance', partTime: 'Part-time', fullTime: 'Full-time', contract: 'Contract', activeRole: 'Keep this role active', saveRole: 'Save role', updateRole: 'Update role', edit: 'Edit', delete: 'Delete', roleSaved: 'Role saved.', duplicate: 'இந்த role ஏற்கனவே உள்ளது. Existing role-ல் Edit பயன்படுத்துங்கள்.',
     noRoles: 'உங்கள் முதல் role-ஐ சேர்க்கவும்', noRolesBody: 'Web Developer, Driver, Designer போன்ற talents-ஐ தனித்தனி role ஆக வைத்துக்கொள்ளலாம்.',
     setup: 'Continue provider setup', publicReadiness: 'Public readiness', services: 'Services', active: 'active', launch: 'Marketplace setup', launchBody: 'Category, location approval, availability மற்றும் service launch-ஐ தொடர்ந்து முடிக்கவும்.',
   } : {
-    eyebrow: 'Provider identity', title: 'Your profile & marketplace identity', subtitle: 'Manage your profile, talents and public readiness directly from the Dashboard.',
+    eyebrow: 'Profile details', title: 'Public profile details', subtitle: 'Keep the name, description and service area customers see aligned with the photo and banner identity above.',
     professional: 'Professional', business: 'Business', verified: 'Verified', pending: 'Verification pending', ready: 'Profile ready', needs: 'Profile needs work',
     editProfile: 'Edit profile', addRole: 'Add role', profileName: 'Professional headline / display name', businessName: 'Business display name', description: 'Provider description', area: 'Service area', save: 'Save profile', cancel: 'Cancel', saved: 'Profile saved.',
     roles: 'Talents & roles', rolesHelp: 'Manage each skill as one compact role card.', roleTitle: 'Role / talent title', summary: 'Short role summary', experience: 'Experience years (optional)', serviceBookings: 'Service bookings', more: 'More opportunity options', freelance: 'Freelance', partTime: 'Part-time', fullTime: 'Full-time', contract: 'Contract', activeRole: 'Keep this role active', saveRole: 'Save role', updateRole: 'Update role', edit: 'Edit', delete: 'Delete', roleSaved: 'Role saved.', duplicate: 'This role already exists. Use Edit on the existing role instead.',
@@ -179,10 +179,7 @@ export default function ProviderDashboardIdentityCenter({ onProfileUpdated }: { 
   return <section id="provider-profile" className={styles.center} aria-label="Provider profile and identity controls">
     <Card className={styles.panel}>
       <div className={styles.header}>
-        <div className={styles.identity}>
-          <span className={styles.avatar} aria-hidden="true">{profile.display_name.slice(0, 2).toUpperCase()}</span>
-          <div><span className={styles.eyebrow}>{copy.eyebrow}</span><h2>{copy.title}</h2><p>{copy.subtitle}</p></div>
-        </div>
+        <div className={styles.detailsHeading}><span className={styles.eyebrow}>{copy.eyebrow}</span><h2>{copy.title}</h2><p>{copy.subtitle}</p></div>
         <div className={styles.badges}><Badge tone="info">{profile.provider_type === 'business' ? copy.business : copy.professional}</Badge><Badge tone={profile.verified ? 'success' : 'warning'}>{profile.verified ? copy.verified : copy.pending}</Badge><Badge tone={complete ? 'success' : 'warning'}>{complete ? copy.ready : copy.needs}</Badge></div>
       </div>
 
