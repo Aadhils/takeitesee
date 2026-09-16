@@ -36,13 +36,13 @@ test('Account overview actions size from the rail container and keep only an edg
   assert.ok(fallbackSource.includes('scroll-snap-stop: always;'));
 });
 
-test('Account workspace cards use the same container-relative edge-hint snap treatment', () => {
-  assert.ok(workspaceSource.includes('grid-auto-columns:calc(100% - 10px)'));
-  assert.ok(!workspaceSource.includes('grid-auto-columns:min(92vw,344px)'));
-  assert.ok(workspaceSource.includes('scroll-snap-type:x mandatory'));
-  assert.ok(workspaceSource.includes('scroll-padding-inline:2px 14px'));
-  assert.ok(workspaceSource.includes('scroll-snap-stop:always'));
-  assert.ok(workspaceSource.includes('padding:0 14px 6px 2px'));
+test('Account workspace cards stack inside the phone viewport instead of using a swipe rail', () => {
+  assert.ok(workspaceSource.includes('grid-template-columns:minmax(0,1fr)'));
+  assert.ok(workspaceSource.includes('overflow:visible'));
+  assert.ok(workspaceSource.includes('.card{min-width:0'));
+  assert.ok(workspaceSource.includes('.name{overflow-wrap:anywhere}'));
+  assert.ok(!workspaceSource.includes('grid-auto-flow:column'));
+  assert.ok(!workspaceSource.includes('scroll-snap-type:x mandatory'));
 });
 
 test('Account booking metrics stay as a compact 2 by 2 grid on phones', () => {

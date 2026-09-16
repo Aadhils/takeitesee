@@ -356,7 +356,7 @@
 
   .identity {
     padding-top: 10px;
-    padding-right: 54px;
+    padding-right: 0;
   }
 
   .identity h2 {
@@ -365,7 +365,7 @@
 
   .workspaceSwitch {
     position: absolute;
-    top: 10px;
+    top: -22px;
     right: 16px;
     grid-column: auto;
     grid-row: auto;
@@ -409,10 +409,6 @@
 
   .avatarWrap {
     margin-top: -32px;
-  }
-
-  .identity {
-    padding-right: 50px;
   }
 
   .workspaceSwitch {
