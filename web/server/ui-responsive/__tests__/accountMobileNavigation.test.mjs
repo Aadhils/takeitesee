@@ -67,7 +67,7 @@ test('notification attention stays inside More and narrow phones use a two-colum
   assert.ok(!cssSource.includes('bottom: calc(var(--responsive-mobile-nav-height) + 12px + env(safe-area-inset-bottom));'));
 });
 
-test('Account Overview keeps the action rail swipeable, stacks workspace cards, and preserves the two-column stat grid on phones', () => {
+test('Account Overview keeps action and workspace rails swipeable and preserves the two-column stat grid on phones', () => {
   assert.ok(authenticatedAccountSource.includes('customer-overview-action-grid'));
   assert.ok(authenticatedAccountSource.includes('customer-overview-action-card'));
   assert.ok(authenticatedAccountSource.includes('customer-overview-stat-grid'));
@@ -80,11 +80,12 @@ test('Account Overview keeps the action rail swipeable, stacks workspace cards, 
   assert.ok(cssSource.includes('scroll-padding-inline: 2px 14px;'));
   assert.ok(cssSource.includes('scroll-snap-stop: always;'));
   assert.ok(cssSource.includes('.customer-social-dashboard .customer-overview-stat-grid {\n    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;'));
-  assert.ok(workspaceCssSource.includes('grid-template-columns:minmax(0,1fr)'));
-  assert.ok(workspaceCssSource.includes('overflow:visible'));
+  assert.ok(workspaceCssSource.includes('grid-auto-flow:column'));
+  assert.ok(workspaceCssSource.includes('grid-auto-columns:calc(100% - 18px)'));
+  assert.ok(workspaceCssSource.includes('overflow-x:auto'));
+  assert.ok(workspaceCssSource.includes('scroll-snap-type:x mandatory'));
+  assert.ok(workspaceCssSource.includes('scroll-snap-stop:always'));
   assert.ok(workspaceCssSource.includes('.card{min-width:0'));
-  assert.ok(!workspaceCssSource.includes('grid-auto-flow:column'));
-  assert.ok(!workspaceCssSource.includes('scroll-snap-type:x mandatory'));
 });
 
 test('Saved Products empty state keeps the CTA attached and centered while data semantics remain unchanged', () => {
