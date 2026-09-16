@@ -25,6 +25,22 @@ type ProviderContext = {
 };
 type ProviderNavLink = { href: string; label: string };
 type ProviderNavGroup = { id: string; label: string; links: ProviderNavLink[] };
+type MobileNavIcon = 'home' | 'leads' | 'bookings' | 'messages' | 'profile';
+
+function ProviderMobileNavIcon({ icon }: { icon: MobileNavIcon }) {
+  const paths: Record<MobileNavIcon, React.ReactNode> = {
+    home: <><path d="M3 10.8 12 3l9 7.8"/><path d="M5.5 9.5V21h13V9.5"/><path d="M9.5 21v-6h5v6"/></>,
+    leads: <><path d="M12 3 4.5 7.2 12 11.5l7.5-4.3L12 3Z"/><path d="M4.5 12.2 12 16.5l7.5-4.3"/><path d="M4.5 17.2 12 21l7.5-3.8"/></>,
+    bookings: <><rect x="4" y="5.5" width="16" height="15" rx="2.5"/><path d="M8 3v5M16 3v5M4 10h16"/><path d="m9 15 2 2 4-4"/></>,
+    messages: <><path d="M5 5.5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8l-5 3v-3H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z"/><path d="M7.5 10h9M7.5 13.5h6"/></>,
+    profile: <><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></>,
+  };
+  return <svg className="provider-mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[icon]}</svg>;
+}
+
+function ProviderSettingsIcon() {
+  return <svg className="provider-mobile-settings-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a8 8 0 0 0-1.7-1L14.5 3h-5L9 6.1a8 8 0 0 0-1.7 1l-2.4-1-2 3.4L5 11a7 7 0 0 0 0 2l-2.1 1.5 2 3.4 2.4-1a8 8 0 0 0 1.7 1l.5 3.1h5l.5-3.1a8 8 0 0 0 1.7-1l2.4 1 2-3.4L18.9 13c.1-.3.1-.7.1-1Z"/></svg>;
+}
 
 export function LiveProviderShell({ children, active }: { children: React.ReactNode; active: string }) {
   const { t, locale } = useIdentityWorkspaceTranslations();
@@ -239,12 +255,12 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
     {link.href === '/provider/orders' && requestedProductOrders > 0 ? <span className="provider-nav-count">{countLabel(requestedProductOrders)}</span> : null}
   </Link>;
 
-  const mobilePrimaryLinks = [
-    { href: '/provider', label: t('provider.dashboard'), icon: '⌂' },
-    { href: '/provider/leads', label: t('provider.leads'), icon: '◇' },
-    { href: '/provider/bookings', label: t('provider.bookings'), icon: '▣' },
-    { href: '/provider/messages', label: t('provider.messages'), icon: '✉' },
-    { href: '/provider/profile', label: t('provider.profile'), icon: '◯' },
+  const mobilePrimaryLinks: Array<{ href: string; label: string; icon: MobileNavIcon }> = [
+    { href: '/provider', label: t('provider.dashboard'), icon: 'home' },
+    { href: '/provider/leads', label: t('provider.leads'), icon: 'leads' },
+    { href: '/provider/bookings', label: t('provider.bookings'), icon: 'bookings' },
+    { href: '/provider/messages', label: t('provider.messages'), icon: 'messages' },
+    { href: '/provider/profile', label: t('provider.profile'), icon: 'profile' },
   ];
 
   const mobilePrimaryHrefs = new Set(mobilePrimaryLinks.map((link) => link.href));
@@ -295,7 +311,7 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
             <strong>{displayName}</strong>
             <span>{workspaceIdentity}</span>
           </div>
-          <Link href="/account/settings" className="provider-mobile-settings-link" aria-label={tamil ? 'Account அமைப்புகள்' : 'Account settings'}>⚙</Link>
+          <Link href="/account/settings" className="provider-mobile-settings-link" aria-label={tamil ? 'Account அமைப்புகள்' : 'Account settings'}><ProviderSettingsIcon /></Link>
         </div>
         <nav className="provider-mobile-primary-nav" aria-label={tamil ? 'Provider முக்கிய வழிசெலுத்தல்' : 'Provider primary navigation'}>
           {mobilePrimaryLinks.map((link) => <Link
@@ -304,7 +320,7 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
             aria-current={active === link.href ? 'page' : undefined}
             key={link.href}
           >
-            <span aria-hidden="true">{link.icon}</span>
+            <ProviderMobileNavIcon icon={link.icon} />
             <span>{link.label}</span>
             {link.href === '/provider/leads' && unreadLeads > 0 ? <em>{countLabel(unreadLeads)}</em> : null}
             {link.href === '/provider/bookings' && pending > 0 ? <em>{countLabel(pending)}</em> : null}
@@ -358,11 +374,12 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
         .provider-mobile-identity-copy strong, .provider-mobile-identity-copy span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .provider-mobile-identity-copy strong { color: var(--color-ink); font-size: .82rem; }
         .provider-mobile-identity-copy span { color: var(--color-ink-muted); font-size: .68rem; }
-        .provider-mobile-settings-link { flex: 0 0 auto; display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid var(--color-border); border-radius: 50%; background: var(--color-surface); color: var(--color-primary-strong); font-size: 1rem; }
+        .provider-mobile-settings-link { flex: 0 0 auto; display: grid; width: 40px; height: 40px; place-items: center; border: 1px solid var(--color-border); border-radius: 50%; background: var(--color-surface); color: var(--color-primary-strong); }
+        .provider-mobile-settings-icon { width: 19px; height: 19px; }
         .provider-mobile-primary-nav { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; }
-        .provider-mobile-primary-nav a { position: relative; display: grid; min-width: 0; min-height: 50px; place-items: center; align-content: center; gap: 3px; padding: 5px 2px; border-radius: 12px; color: var(--color-ink-muted); font-size: .61rem; font-weight: 750; line-height: 1.05; text-align: center; }
-        .provider-mobile-primary-nav a > span:first-child { font-size: 1.05rem; }
-        .provider-mobile-primary-nav a > span:nth-child(2) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .provider-mobile-primary-nav a { position: relative; display: grid; min-width: 0; min-height: 54px; place-items: center; align-content: center; gap: 4px; padding: 5px 2px; border-radius: 12px; color: var(--color-ink-muted); font-size: .61rem; font-weight: 750; line-height: 1.05; text-align: center; }
+        .provider-mobile-nav-icon { width: 21px; height: 21px; }
+        .provider-mobile-primary-nav a > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .provider-mobile-primary-nav a.provider-mobile-nav-active { background: var(--color-selected); color: var(--color-primary-strong); }
         .provider-mobile-primary-nav em { position: absolute; top: 3px; right: 7px; display: grid; min-width: 16px; height: 16px; place-items: center; padding: 0 3px; border-radius: 999px; background: var(--color-primary); color: #fff; font-size: .58rem; font-style: normal; }
         .provider-mobile-more-tools { border-top: 1px solid var(--color-border); }
@@ -379,8 +396,8 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
 
       @media (max-width: 390px) {
         .provider-mobile-social-shell { margin-inline: -2px; padding: 7px; border-radius: 16px; }
-        .provider-mobile-primary-nav a { min-height: 48px; font-size: .58rem; }
-        .provider-mobile-primary-nav a > span:first-child { font-size: 1rem; }
+        .provider-mobile-primary-nav a { min-height: 52px; font-size: .58rem; }
+        .provider-mobile-nav-icon { width: 20px; height: 20px; }
       }
     `}</style>
   </div>;
