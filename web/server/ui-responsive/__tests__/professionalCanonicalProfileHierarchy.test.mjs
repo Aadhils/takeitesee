@@ -3,10 +3,11 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../../../', import.meta.url);
-const [handlePage, wrapperSource, wrapperCss, professionalContent] = await Promise.all([
+const [handlePage, wrapperSource, wrapperCss, profileCss, professionalContent] = await Promise.all([
   readFile(new URL('app/[handle]/page.tsx', root), 'utf8'),
   readFile(new URL('components/detail/CanonicalProfessionalProfileBody.tsx', root), 'utf8'),
   readFile(new URL('components/detail/CanonicalProfessionalProfileBody.module.css', root), 'utf8'),
+  readFile(new URL('components/detail/PublicProviderProfile.module.css', root), 'utf8'),
   readFile(new URL('components/detail/ProfessionalPublicProfileContent.tsx', root), 'utf8'),
 ]);
 
@@ -43,6 +44,17 @@ test('canonical Professional service cards keep readable metadata and touch-frie
   assert.ok(wrapperCss.includes('width: 100%'));
   assert.ok(wrapperCss.includes('min-height: 48px'));
   assert.ok(wrapperCss.includes('white-space: normal'));
+});
+
+test('Professional talent and career cards stay compact and wrap safely on mobile', () => {
+  assert.ok(profileCss.includes('.talentCardTop h3'));
+  assert.ok(profileCss.includes('.careerItemTop'));
+  assert.ok(profileCss.includes('.careerSignals > *'));
+  assert.ok(profileCss.includes('overflow-wrap: anywhere'));
+  assert.ok(profileCss.includes('@media (max-width: 760px)'));
+  assert.ok(profileCss.includes('.talentCard {\n    gap: 11px;\n    padding: 15px;'));
+  assert.ok(profileCss.includes('.careerItem {\n    gap: 5px;\n    padding: 13px;'));
+  assert.ok(profileCss.includes('.careerGrid {\n    gap: 4px;'));
 });
 
 test('Business handle composition remains on the Business-only wrapper', () => {
