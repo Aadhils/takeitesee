@@ -38,6 +38,7 @@ type Booking = {
 
 type DashboardIconKey = 'alert' | 'profile' | 'service' | 'schedule' | 'lead' | 'message' | 'booking' | 'job' | 'people' | 'resume' | 'portfolio';
 type DashboardLink = { href: string; label: string; detail: string; icon: DashboardIconKey };
+type DashboardJumpLink = { href: string; label: string; route?: boolean };
 type MetricTone = 'neutral' | 'success' | 'warning' | 'info';
 
 function zonedDateTimeToEpoch(date: string, time: string, timeZone: string) {
@@ -233,6 +234,20 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
         { href: '/provider/portfolio', label: 'Portfolio', detail: 'Show customers your previous work.', icon: 'portfolio' },
       ];
 
+  const dashboardJumpLinks: DashboardJumpLink[] = profile
+    ? [
+        { href: '#provider-dashboard-overview', label: 'Overview' },
+        { href: '#provider-profile', label: profile.provider_type === 'business' ? 'Business profile' : 'Professional profile' },
+        { href: '#provider-marketplace-launch', label: 'Marketplace' },
+        { href: '#provider-booking-availability', label: 'Availability' },
+        { href: '#provider-service-reach', label: 'Reach' },
+        { href: '#provider-booking-inbox', label: 'Bookings' },
+        profile.provider_type === 'business'
+          ? { href: '/provider/products', label: 'Products', route: true }
+          : { href: '/provider/jobs/applications', label: 'Career', route: true },
+      ]
+    : [];
+
   const dashboardTitle = profile?.provider_type === 'business' ? 'Business dashboard' : profile?.provider_type === 'professional' ? 'Professional dashboard' : 'Provider dashboard';
   const dashboardDescription = profile?.provider_type === 'business'
     ? 'Your business command center for profile, services, customer work and hiring.'
@@ -244,13 +259,22 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
   const followUpActions = nextSteps.slice(1);
 
   return <LiveProviderShell active="/provider">
-    <div className={styles.dashboardStack}>
+    <div id="provider-dashboard-overview" className={styles.dashboardStack}>
       <ProviderHeading
         eyebrow={profile ? roleLabel : 'Provider workspace'}
         title={dashboardTitle}
         description={dashboardDescription}
         action={profile ? <Link href="/provider#provider-profile" className="button button-secondary">Edit profile & identity</Link> : undefined}
       />
+
+      {profile ? <nav className={styles.jumpNav} aria-label="Dashboard quick navigation">
+        <span className={styles.jumpLabel}>Jump to</span>
+        <div className={styles.jumpRail}>
+          {dashboardJumpLinks.map((item) => item.route
+            ? <Link href={item.href} className={`${styles.jumpLink} ${styles.jumpRoute}`} key={item.href}>{item.label}<span aria-hidden="true">↗</span></Link>
+            : <a href={item.href} className={styles.jumpLink} key={item.href}>{item.label}</a>)}
+        </div>
+      </nav> : null}
 
       {loading ? <Card className={styles.supportCard}><p>Preparing your workspace overview…</p></Card> : null}
       {profileError ? <Card className={styles.supportCard}><p role="alert" style={{ color: 'var(--color-danger)' }}>{profileError}</p><Link href="/provider/setup" className="text-link">Open provider setup</Link></Card> : null}
