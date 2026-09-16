@@ -1,0 +1,112 @@
+/* Stage 4 real-device account-shell hardening.
+   Keep this layer after the shared account responsive styles so desktop never renders
+   the mobile account navigation and signed-out /account stays a clean auth surface. */
+
+@media (min-width: 901px) {
+  .account-sidebar .account-mobile-nav {
+    display: none !important;
+  }
+
+  .account-sidebar .account-desktop-nav {
+    display: grid !important;
+  }
+}
+
+/* AuthenticatedAccount renders this pair only for the signed-out account state.
+   Collapse the authenticated Customer shell around it without changing auth semantics. */
+.account-layout:has(> .account-content > .account-page-heading .account-actions a[href="/login"].button-primary) {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  padding-bottom: clamp(28px, 5vw, 64px);
+}
+
+.account-layout:has(> .account-content > .account-page-heading .account-actions a[href="/login"].button-primary) > .account-sidebar {
+  display: none !important;
+}
+
+.account-layout:has(> .account-content > .account-page-heading .account-actions a[href="/login"].button-primary) > .account-content {
+  width: min(100%, 720px);
+  margin-inline: auto;
+}
+
+.account-layout:has(> .account-content > .account-page-heading .account-actions a[href="/login"].button-primary) .account-page-heading {
+  display: grid;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  gap: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 24px;
+  background: var(--color-surface);
+  padding: clamp(24px, 4vw, 42px);
+  box-shadow: var(--shadow-sm);
+}
+
+.account-layout:has(> .account-content > .account-page-heading .account-actions a[href="/login"].button-primary) .account-page-heading > * {
+  min-width: 0;
+}
+
+.account-layout:has(> .account-content > .account-page-heading .account-actions a[href="/login"].button-primary) .account-page-heading h1 {
+  margin: 2px 0 0;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  line-height: 1.02;
+  overflow-wrap: anywhere;
+}
+
+.account-layout:has(> .account-content > .account-page-heading .account-actions a[href="/login"].button-primary) .account-page-heading p {
+  margin: 0;
+  color: var(--color-ink-muted);
+  overflow-wrap: anywhere;
+}
+
+.account-layout:has(> .account-content > .account-page-heading .account-actions a[href="/login"].button-primary) .account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.account-layout:has(> .account-content > .account-page-heading .account-actions a[href="/login"].button-primary) .account-actions .button {
+  min-height: 44px;
+}
+
+@media (max-width: 900px) {
+  .account-layout:has(> .account-content > .account-page-heading .account-actions a[href="/login"].button-primary) {
+    padding-bottom: calc(var(--responsive-mobile-nav-height, 72px) + env(safe-area-inset-bottom) + 28px);
+  }
+
+  .account-layout:has(> .account-content > .account-page-heading .account-actions a[href="/login"].button-primary) > .account-content {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .account-layout:has(> .account-content > .account-page-heading .account-actions a[href="/login"].button-primary) .account-page-heading {
+    gap: 8px;
+    border-radius: 18px;
+    padding: 20px 18px;
+  }
+
+  .account-layout:has(> .account-content > .account-page-heading .account-actions a[href="/login"].button-primary) .account-page-heading h1 {
+    font-size: clamp(2rem, 11vw, 2.8rem);
+  }
+
+  .account-layout:has(> .account-content > .account-page-heading .account-actions a[href="/login"].button-primary) .account-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .account-layout:has(> .account-content > .account-page-heading .account-actions a[href="/login"].button-primary) .account-actions .button {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+    text-align: center;
+  }
+}
+
+@media (max-width: 390px) {
+  .account-layout:has(> .account-content > .account-page-heading .account-actions a[href="/login"].button-primary) .account-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
