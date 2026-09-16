@@ -33,6 +33,18 @@ test('Professional public talents career services and portfolio remain intact', 
   assert.ok(professionalContent.includes('<PortfolioMediaSafetyPanel'));
 });
 
+test('canonical Professional service cards keep readable metadata and touch-friendly mobile CTAs', () => {
+  assert.ok(wrapperCss.includes(':global(.profile-service)'));
+  assert.ok(wrapperCss.includes('grid-template-columns: minmax(0, 1fr) auto'));
+  assert.ok(wrapperCss.includes(':global(.profile-service p:last-of-type)'));
+  assert.ok(wrapperCss.includes('overflow-wrap: anywhere'));
+  assert.ok(wrapperCss.includes('@media (max-width: 700px)'));
+  assert.ok(wrapperCss.includes('grid-template-columns: 1fr'));
+  assert.ok(wrapperCss.includes('width: 100%'));
+  assert.ok(wrapperCss.includes('min-height: 48px'));
+  assert.ok(wrapperCss.includes('white-space: normal'));
+});
+
 test('Business handle composition remains on the Business-only wrapper', () => {
   const renderSource = handlePage.split('export default async function PublicHandlePage')[1] ?? '';
   const businessBranch = renderSource.split("if (resolved.identity_type === 'business')")[1]?.split("if (resolved.identity_type === 'professional')")[0] ?? '';
