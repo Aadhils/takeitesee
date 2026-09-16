@@ -1,0 +1,73 @@
+.shell {
+  padding-top: 1rem;
+}
+
+.statusCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.copy {
+  min-width: 0;
+}
+
+.title,
+.note {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.title {
+  display: block;
+  margin-top: .3rem;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.note {
+  max-width: 76ch;
+  margin: .35rem 0 0;
+  line-height: 1.55;
+}
+
+.statusCard :global(.badge) {
+  flex: 0 0 auto;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .shell {
+    padding-top: .75rem;
+  }
+
+  .statusCard {
+    align-items: stretch;
+    flex-direction: column;
+    gap: .75rem;
+  }
+
+  .statusCard :global(.badge) {
+    width: fit-content;
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 390px) {
+  .shell {
+    padding-top: .6rem;
+  }
+
+  .statusCard {
+    gap: .65rem;
+  }
+
+  .statusCard :global(.badge) {
+    width: 100%;
+    justify-content: center;
+  }
+}
