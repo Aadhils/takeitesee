@@ -50,43 +50,19 @@ export function WorkspaceSwitcher({ currentWorkspace, compact = false }: { curre
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to switch workspace.'); setSwitching(null); }
   }
 
+  if (compact) return null;
   if (!workspaces.length && !error) return null;
-
-  const quickSwitch = workspaces.length > 1 ? <div className={`${styles.quickSwitch}${compact ? ` ${styles.quickSwitchCompact}` : ''}`} aria-label={tamil ? 'Workspace விரைவாக மாற்று' : 'Quick workspace switch'}>
-    <div className={styles.quickSwitchLabel}>{tamil ? 'விரைவு மாற்றம்' : 'Quick switch'}</div>
-    <div className={styles.quickSwitchOptions}>
-      {workspaces.map((workspace) => {
-        const selected = workspace.id === active;
-        return <button
-          key={`quick-${workspace.id}`}
-          className={`${styles.quickSwitchButton} ${selected ? styles.quickSwitchCurrent : ''}`}
-          type="button"
-          disabled={switching !== null || selected}
-          onClick={() => void switchWorkspace(workspace.id)}
-          aria-current={selected ? 'page' : undefined}
-        >
-          <span className={styles.quickSwitchRole}>{workspace.label}</span>
-          <span className={styles.quickSwitchName}>{workspace.display_name}</span>
-          {selected ? <span className={styles.quickSwitchState}>{tamil ? 'தற்போது' : 'Current'}</span> : switching === workspace.id ? <span className={styles.quickSwitchState}>{tamil ? 'மாற்றப்படுகிறது…' : 'Switching…'}</span> : null}
-        </button>;
-      })}
-    </div>
-    {error ? <div className={styles.error} role="alert">{error}</div> : null}
-  </div> : null;
-
-  if (compact) return quickSwitch;
 
   const providerWorkspace = workspaces.find((workspace) => workspace.id === 'professional' || workspace.id === 'business');
   const pendingProfile = addableProfiles.find((profile) => profile.pending);
   const choices = addableProfiles.filter((profile) => !profile.pending);
 
   return <section className={styles.section} id="workspaces" aria-labelledby="workspace-switcher-title">
-    {quickSwitch}
     <div className={styles.heading}>
       <h2 id="workspace-switcher-title">{tamil ? 'என் Profiles & Workspaces' : 'My profiles & workspaces'}</h2>
       <p>{tamil ? 'உங்கள் Customer workspace, நீங்கள் தேர்ந்தெடுத்த ஒரு Provider workspace மற்றும் அனுமதி உள்ள platform workspace-கள் இடையே மாறுங்கள்.' : 'Switch between your Customer workspace, your chosen Provider workspace and permitted platform workspaces.'}</p>
     </div>
-    {error && !quickSwitch ? <div className={styles.error} role="alert">{error}</div> : null}
+    {error ? <div className={styles.error} role="alert">{error}</div> : null}
     <div className={styles.grid}>
       {workspaces.map((workspace) => { const selected = workspace.id === active; const roleSummary = workspace.id === 'professional' || workspace.id === 'business' ? providerRoleSummary(workspace.id, tamil) : null; return <article className={`${styles.card} ${selected ? styles.cardActive : ''}`} key={workspace.id}>
         <div className={styles.row}><div><div className={styles.role}>{workspace.label}</div><div className={styles.name}>{workspace.display_name}</div></div>{selected ? <span className={`${styles.badge} ${styles.activeBadge}`}>{tamil ? 'தற்போது' : 'Current'}</span> : workspace.verified ? <span className={styles.badge}>Verified</span> : null}</div>
