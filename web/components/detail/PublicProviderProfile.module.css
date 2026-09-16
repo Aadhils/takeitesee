@@ -6,6 +6,7 @@
 
 .talentCard {
   display: grid;
+  min-width: 0;
   align-content: start;
   gap: 14px;
   padding: 20px;
@@ -13,15 +14,22 @@
 
 .talentCardTop {
   display: flex;
+  min-width: 0;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
+}
+
+.talentCardTop > div,
+.careerItemTop > div {
+  min-width: 0;
 }
 
 .talentCardTop h3 {
   margin: 5px 0 0;
   font-size: 1.18rem;
   line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .talentCard > p {
@@ -29,13 +37,21 @@
   color: var(--color-ink-muted);
   font-size: .86rem;
   line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .opportunities,
 .careerSignals {
   display: flex;
+  min-width: 0;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.opportunities > *,
+.careerSignals > * {
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .snapshotCard {
@@ -55,10 +71,12 @@
   background: var(--color-surface-muted);
   color: var(--color-ink-muted);
   line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .careerBlock {
   display: grid;
+  min-width: 0;
   gap: 12px;
   margin-top: 20px;
 }
@@ -66,15 +84,19 @@
 .careerBlock h3 {
   margin: 0;
   font-size: 1.05rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .careerTimeline {
   display: grid;
+  min-width: 0;
   gap: 10px;
 }
 
 .careerItem {
   display: grid;
+  min-width: 0;
   gap: 7px;
   padding: 16px;
   border: 1px solid var(--color-border);
@@ -83,19 +105,25 @@
 }
 
 .careerItem strong {
+  min-width: 0;
   font-size: .98rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .careerItem span,
 .careerItem p {
+  min-width: 0;
   margin: 0;
   color: var(--color-ink-muted);
   font-size: .86rem;
   line-height: 1.55;
+  overflow-wrap: anywhere;
 }
 
 .careerItemTop {
   display: flex;
+  min-width: 0;
   align-items: flex-start;
   justify-content: space-between;
   gap: 14px;
@@ -108,6 +136,7 @@
 
 .careerGrid {
   display: grid;
+  min-width: 0;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
@@ -166,14 +195,85 @@
     grid-template-columns: 1fr;
   }
 
+  .talentGrid {
+    gap: 12px;
+  }
+
+  .talentCard {
+    gap: 12px;
+    padding: 16px;
+  }
+
   .talentCardTop,
   .careerItemTop {
     flex-direction: column;
+    gap: 8px;
+  }
+
+  .talentCardTop h3 {
+    margin-top: 4px;
+    font-size: 1.08rem;
+    line-height: 1.3;
+  }
+
+  .talentCard > p,
+  .careerItem span,
+  .careerItem p {
+    font-size: .84rem;
+    line-height: 1.5;
+  }
+
+  .opportunities,
+  .careerSignals {
+    gap: 6px;
+  }
+
+  .careerBlock {
     gap: 10px;
+    margin-top: 16px;
+  }
+
+  .careerTimeline,
+  .careerGrid {
+    gap: 10px;
+  }
+
+  .careerItem {
+    gap: 6px;
+    padding: 14px;
+  }
+
+  .careerItem strong {
+    font-size: .94rem;
+  }
+
+  .careerNote {
+    padding: 12px 14px;
+    font-size: .86rem;
+    line-height: 1.5;
   }
 
   .mediaPreview img,
   .mediaPreview video {
     height: 250px;
+  }
+}
+
+@media (max-width: 420px) {
+  .talentCard,
+  .careerItem {
+    padding: 13px;
+  }
+
+  .talentCardTop h3 {
+    font-size: 1.02rem;
+  }
+
+  .careerBlock h3 {
+    font-size: 1rem;
+  }
+
+  .careerNote {
+    padding: 11px 12px;
   }
 }
