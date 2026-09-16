@@ -290,10 +290,16 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
           })}
         </div>
       </nav>
-      <Link href="/account#workspaces" className="provider-exit-link">{tamil ? 'என் Profiles' : 'My profiles'}</Link>
-      {publicProfileHref ? <Link href={publicProfileHref} target="_blank" rel="noreferrer" className="provider-exit-link">{publicProfileLabel} ↗</Link> : null}
-      {showPublicReadinessLink ? <Link href="/provider/public-readiness" className="provider-exit-link">{publicProfileSetupLabel}</Link> : null}
-      <Link href="/" className="provider-exit-link">{t('provider.viewMarketplace')}</Link>
+      <div className="provider-sidebar-utilities" aria-label={tamil ? 'Workspace மற்றும் account கருவிகள்' : 'Workspace and account tools'}>
+        <span className="provider-nav-section-title">{tamil ? 'Workspace & Account' : 'Workspace & account'}</span>
+        <div className="provider-sidebar-utility-links">
+          <Link href="/account#workspaces" className="provider-exit-link">{tamil ? 'என் Profiles' : 'My profiles'}</Link>
+          {publicProfileHref ? <Link href={publicProfileHref} target="_blank" rel="noreferrer" className="provider-exit-link">{publicProfileLabel} ↗</Link> : null}
+          {showPublicReadinessLink ? <Link href="/provider/public-readiness" className="provider-exit-link">{publicProfileSetupLabel}</Link> : null}
+          <Link href="/account/settings" className="provider-exit-link">{tamil ? 'Account அமைப்புகள்' : 'Account settings'}</Link>
+          <Link href="/" className="provider-exit-link">{t('provider.viewMarketplace')}</Link>
+        </div>
+      </div>
     </aside>
     <main className="provider-content">
       {active === '/provider' && provider ? <RoleIdentityMediaHeader
@@ -372,6 +378,11 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
       .provider-nav-group[open] summary::after { transform: rotate(90deg); }
       .provider-nav-group summary:hover { color: var(--color-primary-strong); }
       .provider-nav-group-links { display: grid; gap: 4px; margin-top: 2px; }
+      .provider-sidebar-utilities { display: grid; gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--color-border); }
+      .provider-sidebar-utility-links { display: grid; gap: 4px; }
+      .provider-sidebar-utility-links .provider-exit-link { display: flex; min-height: 40px; align-items: center; padding: 8px 10px; border-radius: 10px; }
+      .provider-sidebar-utility-links .provider-exit-link:hover,
+      .provider-sidebar-utility-links .provider-exit-link:focus-visible { background: var(--color-selected); color: var(--color-primary-strong); }
 
       @media (max-width: 900px) {
         .provider-social-layout { display: block; }
