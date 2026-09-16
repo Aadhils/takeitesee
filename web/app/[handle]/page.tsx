@@ -3,6 +3,7 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import PublicProviderIdentityLayout from '../../components/detail/PublicProviderIdentityLayout';
+import CanonicalBusinessStorefrontBody from '../../components/detail/CanonicalBusinessStorefrontBody';
 import BusinessPublicProfileContent, {
   loadPublicBusiness,
   publicBusinessSeoText,
@@ -166,8 +167,10 @@ export default async function PublicHandlePage({ params }: { params: Promise<{ h
     if (!record) notFound();
 
     return <PublicProviderIdentityLayout kind="business" providerId={resolved.identity_id}>
-      <BusinessShopPublicStatus businessId={resolved.identity_id} />
-      <BusinessPublicProfileContent providerId={resolved.identity_id} canonicalUrl={canonical} />
+      <CanonicalBusinessStorefrontBody>
+        <BusinessShopPublicStatus businessId={resolved.identity_id} />
+        <BusinessPublicProfileContent providerId={resolved.identity_id} canonicalUrl={canonical} />
+      </CanonicalBusinessStorefrontBody>
     </PublicProviderIdentityLayout>;
   }
 
