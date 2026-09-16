@@ -15,7 +15,23 @@ import type { CustomerBooking } from '../../types/booking-domain';
 
 type AccountNavLink = { href: string; label: string; badge?: number };
 type AccountNavGroup = { id: string; eyebrow: string; title: string; links: AccountNavLink[] };
-type MobileQuickLink = { href: string; label: string; icon: string; badge?: number; badgeLabel?: string };
+type CustomerMobileIcon = 'bookings' | 'orders' | 'needs' | 'messages' | 'profile';
+type MobileQuickLink = { href: string; label: string; icon: CustomerMobileIcon; badge?: number; badgeLabel?: string };
+
+function CustomerMobileNavIcon({ icon }: { icon: CustomerMobileIcon }) {
+  const paths: Record<CustomerMobileIcon, React.ReactNode> = {
+    bookings: <><rect x="4" y="5.5" width="16" height="15" rx="2.5"/><path d="M8 3v5M16 3v5M4 10h16"/><path d="m9 15 2 2 4-4"/></>,
+    orders: <><path d="m12 3 8 4.5-8 4.5-8-4.5L12 3Z"/><path d="M4 7.5V16l8 5 8-5V7.5M12 12v9"/></>,
+    needs: <><path d="M6 4h12a2 2 0 0 1 2 2v14H4V6a2 2 0 0 1 2-2Z"/><path d="M8 9h8M8 13h8M8 17h5"/></>,
+    messages: <><path d="M5 5.5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8l-5 3v-3H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z"/><path d="M7.5 10h9M7.5 13.5h6"/></>,
+    profile: <><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></>,
+  };
+  return <svg className="customer-mobile-quick-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[icon]}</svg>;
+}
+
+function CustomerSettingsIcon() {
+  return <svg className="customer-mobile-settings-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a8 8 0 0 0-1.7-1L14.5 3h-5L9 6.1a8 8 0 0 0-1.7 1l-2.4-1-2 3.4L5 11a7 7 0 0 0 0 2l-2.1 1.5 2 3.4 2.4-1a8 8 0 0 0 1.7 1l.5 3.1h5l.5-3.1a8 8 0 0 0 1.7-1l2.4 1 2-3.4L18.9 13c.1-.3.1-.7.1-1Z"/></svg>;
+}
 
 export default function AuthenticatedAccount() {
   const { t, locale } = useIdentityWorkspaceTranslations();
@@ -101,11 +117,11 @@ export default function AuthenticatedAccount() {
   ];
 
   const mobileQuickLinks: MobileQuickLink[] = [
-    { href: '/bookings', label: tamil ? 'Bookings' : 'Bookings', icon: '▣' },
-    { href: '/orders', label: tamil ? 'Orders' : 'Orders', icon: '□', badge: productOrderUnreadCount, badgeLabel: tamil ? 'புதிய order updates' : 'new order updates' },
-    { href: '/requirements', label: tamil ? 'தேவைகள்' : 'Needs', icon: '◇', badge: proposalUnreadCount, badgeLabel: tamil ? 'புதிய proposals' : 'new proposals' },
-    { href: '/messages', label: tamil ? 'செய்திகள்' : 'Messages', icon: '✉' },
-    { href: '/account/profile', label: tamil ? 'Profile' : 'Profile', icon: '◯' },
+    { href: '/bookings', label: tamil ? 'Bookings' : 'Bookings', icon: 'bookings' },
+    { href: '/orders', label: tamil ? 'Orders' : 'Orders', icon: 'orders', badge: productOrderUnreadCount, badgeLabel: tamil ? 'புதிய order updates' : 'new order updates' },
+    { href: '/requirements', label: tamil ? 'தேவைகள்' : 'Needs', icon: 'needs', badge: proposalUnreadCount, badgeLabel: tamil ? 'புதிய proposals' : 'new proposals' },
+    { href: '/messages', label: tamil ? 'செய்திகள்' : 'Messages', icon: 'messages' },
+    { href: '/account/profile', label: tamil ? 'Profile' : 'Profile', icon: 'profile' },
   ];
 
   return (
@@ -120,12 +136,12 @@ export default function AuthenticatedAccount() {
             <strong>{user.name}</strong>
             <span>{tamil ? 'Customer workspace' : 'Customer workspace'}</span>
           </div>
-          <Link href="/account/settings" className="customer-mobile-quick-settings" aria-label={tamil ? 'Account அமைப்புகள்' : 'Account settings'}>⚙</Link>
+          <Link href="/account/settings" className="customer-mobile-quick-settings" aria-label={tamil ? 'Account அமைப்புகள்' : 'Account settings'}><CustomerSettingsIcon /></Link>
         </div>
         <nav className="customer-mobile-quick-nav" aria-label={tamil ? 'Customer முக்கிய வழிசெலுத்தல்' : 'Customer primary navigation'}>
           {mobileQuickLinks.map((link) => <Link href={link.href} key={link.href} aria-label={link.badge ? `${link.label}, ${link.badge} ${link.badgeLabel ?? 'new updates'}` : link.label}>
             <span className="customer-mobile-quick-icon" aria-hidden="true">
-              {link.icon}
+              <CustomerMobileNavIcon icon={link.icon} />
               {link.badge ? <span className="customer-mobile-quick-badge">{link.badge > 99 ? '99+' : link.badge}</span> : null}
             </span>
             <span>{link.label}</span>
@@ -210,15 +226,15 @@ export default function AuthenticatedAccount() {
           .customer-mobile-quick-settings {
             flex: 0 0 auto;
             display: grid;
-            width: 34px;
-            height: 34px;
+            width: 40px;
+            height: 40px;
             place-items: center;
             border: 1px solid var(--color-border);
             border-radius: 50%;
             background: var(--color-surface);
             color: var(--color-primary-strong);
-            font-size: 1rem;
           }
+          .customer-mobile-settings-svg { width: 19px; height: 19px; }
           .customer-mobile-quick-nav {
             display: grid;
             grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -227,10 +243,10 @@ export default function AuthenticatedAccount() {
           .customer-mobile-quick-nav a {
             display: grid;
             min-width: 0;
-            min-height: 48px;
+            min-height: 54px;
             place-items: center;
             align-content: center;
-            gap: 3px;
+            gap: 4px;
             padding: 5px 2px;
             border-radius: 12px;
             color: var(--color-ink-muted);
@@ -246,10 +262,13 @@ export default function AuthenticatedAccount() {
           }
           .customer-mobile-quick-nav .customer-mobile-quick-icon {
             position: relative;
+            display: grid;
+            width: 22px;
+            height: 22px;
+            place-items: center;
             overflow: visible;
-            font-size: 1.03rem;
-            line-height: 1;
           }
+          .customer-mobile-quick-svg { width: 21px; height: 21px; }
           .customer-mobile-quick-badge {
             position: absolute;
             top: -8px;
