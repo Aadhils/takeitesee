@@ -3,12 +3,13 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../../../', import.meta.url);
-const [identityCss, storefrontCss, mediaHeaderCss, productDetailSource, storefrontProductsSource, foundationCss] = await Promise.all([
+const [identityCss, storefrontCss, mediaHeaderCss, productDetailSource, storefrontProductsSource, storefrontProductsCss, foundationCss] = await Promise.all([
   readFile(new URL('components/detail/PublicProviderIdentity.module.css', root), 'utf8'),
   readFile(new URL('components/detail/BusinessStorefrontQuickBook.module.css', root), 'utf8'),
   readFile(new URL('components/identity/RoleIdentityMediaHeader.module.css', root), 'utf8'),
   readFile(new URL('app/products/[productId]/page.tsx', root), 'utf8'),
   readFile(new URL('components/detail/BusinessStorefrontProducts.tsx', root), 'utf8'),
+  readFile(new URL('components/detail/BusinessStorefrontProducts.module.css', root), 'utf8'),
   readFile(new URL('app/responsive-foundation.css', root), 'utf8'),
 ]);
 
@@ -35,8 +36,12 @@ test('identity media controls meet touch target requirements and collapse safely
 
 test('product detail and storefront product actions retain existing wrap-safe layout contracts', () => {
   assert.ok(productDetailSource.includes("flexWrap: 'wrap'"));
-  assert.ok(storefrontProductsSource.includes("gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))'"));
-  assert.ok(storefrontProductsSource.includes("aspectRatio: '4 / 3'"));
+  assert.ok(storefrontProductsSource.includes('className={styles.grid}'));
+  assert.ok(storefrontProductsSource.includes('className={styles.image}'));
+  assert.match(storefrontProductsCss, /\.grid\s*\{[\s\S]*?grid-template-columns:\s*repeat\(auto-fit, minmax\(min\(250px, 100%\), 1fr\)\)/);
+  assert.match(storefrontProductsCss, /\.image\s*\{[\s\S]*?aspect-ratio:\s*4 \/ 3/);
+  assert.match(storefrontProductsCss, /\.orderForm :global\(\.button\)\s*\{[\s\S]*?min-height:\s*44px/);
+  assert.match(storefrontProductsCss, /@media \(max-width: 640px\)[\s\S]*?\.orderForm :global\(\.button\)\s*\{[\s\S]*?min-height:\s*48px/);
 });
 
 test('customer and public pages remain protected by the global responsive foundation', () => {

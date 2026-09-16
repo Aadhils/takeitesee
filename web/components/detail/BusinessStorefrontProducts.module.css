@@ -1,0 +1,147 @@
+.section {
+  min-width: 0;
+  padding-top: 1rem;
+}
+
+.intro {
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.intro h2,
+.intro p {
+  overflow-wrap: anywhere;
+}
+
+.grid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
+  gap: 1rem;
+}
+
+.card {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: .8rem;
+  overflow: hidden;
+  scroll-margin-top: 7rem;
+}
+
+.image {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.summary,
+.orderForm,
+.orderForm > * {
+  min-width: 0;
+}
+
+.summary :global(.eyebrow) {
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.name {
+  margin: .35rem 0;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.price {
+  display: block;
+  max-width: 100%;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.description,
+.note,
+.feedback {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.description {
+  line-height: 1.6;
+}
+
+.orderForm {
+  display: grid;
+  gap: .75rem;
+}
+
+.orderForm :global(.button) {
+  width: 100%;
+  min-height: 44px;
+  justify-content: center;
+  white-space: normal;
+  text-align: center;
+}
+
+.note,
+.feedback {
+  line-height: 1.5;
+}
+
+.feedback a {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .section {
+    padding-top: .75rem;
+  }
+
+  .grid {
+    gap: .75rem;
+  }
+
+  .card {
+    gap: .7rem;
+    padding: 16px;
+  }
+
+  .image {
+    border-radius: 10px;
+  }
+
+  .orderForm {
+    gap: .65rem;
+  }
+
+  .orderForm :global(.button) {
+    min-height: 48px;
+  }
+}
+
+@media (max-width: 390px) {
+  .card {
+    padding: 14px;
+  }
+
+  .name {
+    font-size: 1rem;
+  }
+
+  .price {
+    font-size: .94rem;
+  }
+
+  .description,
+  .note,
+  .feedback {
+    font-size: .86rem;
+    line-height: 1.5;
+  }
+}
