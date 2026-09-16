@@ -1,0 +1,117 @@
+.categoryRequestsJourney {
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.categoryRequestsJourney section,
+.categoryRequestsJourney article,
+.categoryRequestsJourney :global(.card),
+.categoryRequestsJourney form,
+.categoryRequestsJourney label,
+.categoryRequestsJourney div {
+  min-width: 0;
+}
+
+.categoryRequestsJourney h1,
+.categoryRequestsJourney h2,
+.categoryRequestsJourney h3,
+.categoryRequestsJourney p,
+.categoryRequestsJourney strong,
+.categoryRequestsJourney span,
+.categoryRequestsJourney a,
+.categoryRequestsJourney label {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.categoryRequestsJourney input,
+.categoryRequestsJourney select,
+.categoryRequestsJourney textarea {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.requestForm {
+  min-width: 0;
+}
+
+.submitAction {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.requestHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: .75rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.requestIdentity {
+  min-width: 0;
+  flex: 1 1 240px;
+}
+
+.statusPill {
+  flex: 0 0 auto;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.categoryRequestsJourney :global(.text-link) {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+}
+
+@media (max-width: 760px) {
+  .categoryRequestsJourney section,
+  .categoryRequestsJourney article,
+  .categoryRequestsJourney :global(.card) {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .categoryRequestsJourney input,
+  .categoryRequestsJourney select,
+  .categoryRequestsJourney textarea {
+    font-size: 16px;
+  }
+
+  .categoryRequestsJourney textarea {
+    min-height: 8rem;
+  }
+
+  .submitAction {
+    width: 100%;
+  }
+
+  .categoryRequestsJourney :global(.text-link) {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .requestHeader {
+    gap: .55rem;
+  }
+
+  .statusPill {
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 420px) {
+  .categoryRequestsJourney {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+}
