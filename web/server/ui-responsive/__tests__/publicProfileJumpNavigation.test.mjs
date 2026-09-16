@@ -25,12 +25,30 @@ test('canonical Business storefront exposes services products and about jump tar
 });
 
 test('jump rail only renders targets present on the current public profile', () => {
-  assert.ok(nav.includes('setAvailable(new Set(items.filter((item) => Boolean(targetFor(item.selector)))'));
+  assert.ok(nav.includes('resolved = items.flatMap((item) =>'));
+  assert.ok(nav.includes('setAvailable(new Set(resolved.map(({ item }) => item.id)))'));
   assert.ok(nav.includes('const visibleItems = items.filter((item) => available.has(item.id))'));
   assert.ok(nav.includes('if (!visibleItems.length) return null'));
 });
 
-test('jump navigation is sticky, horizontally scrollable and touch-friendly', () => {
+test('jump navigation tracks the current section while scrolling', () => {
+  assert.ok(nav.includes('const [activeId, setActiveId] = useState<string | null>(null)'));
+  assert.ok(nav.includes("window.addEventListener('scroll', scheduleActiveUpdate, { passive: true })"));
+  assert.ok(nav.includes('candidate.target.getBoundingClientRect().top <= offset'));
+  assert.ok(nav.includes('window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 4'));
+  assert.ok(nav.includes("aria-current={activeId === item.id ? 'location' : undefined}"));
+  assert.ok(nav.includes('activeId === item.id ? styles.active :'));
+  assert.ok(css.includes('.active'));
+});
+
+test('active jump item stays visible in the horizontal rail', () => {
+  assert.ok(nav.includes('const railRef = useRef<HTMLDivElement | null>(null)'));
+  assert.ok(nav.includes('const itemRefs = useRef<Record<string, HTMLButtonElement | null>>({})'));
+  assert.ok(nav.includes("rail.scrollTo({ left: Math.max(0, itemLeft - edge), behavior: 'smooth' })"));
+  assert.ok(nav.includes("rail.scrollTo({ left: itemRight - rail.clientWidth + edge, behavior: 'smooth' })"));
+});
+
+test('jump navigation remains sticky, smooth and touch-friendly', () => {
   assert.ok(css.includes('position: sticky'));
   assert.ok(css.includes('overflow-x: auto'));
   assert.ok(css.includes('min-height: 44px'));
