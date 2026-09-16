@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import styles from './GlobalWorkspaceSwitcher.module.css';
 
 type WorkspaceKind = 'customer' | 'professional' | 'business' | 'admin' | 'super_admin';
@@ -33,12 +34,14 @@ export default function GlobalWorkspaceSwitcher({
   attentionLabel?: string;
 }) {
   const pathname = usePathname();
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [workspaces, setWorkspaces] = useState<WorkspaceOption[]>([]);
   const [active, setActive] = useState<WorkspaceKind>('customer');
   const [switching, setSwitching] = useState<WorkspaceKind | null>(null);
   const [error, setError] = useState('');
-  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [anchor, setAnchor] = useState({ top: 80, right: 16 });
 
   const load = useCallback(async () => {
     try {
@@ -55,22 +58,35 @@ export default function GlobalWorkspaceSwitcher({
     }
   }, [pathname]);
 
+  const updateAnchor = useCallback(() => {
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setAnchor({
+      top: Math.max(12, rect.bottom + 10),
+      right: Math.max(12, window.innerWidth - rect.right),
+    });
+  }, []);
+
+  useEffect(() => { setMounted(true); }, []);
   useEffect(() => { void load(); }, [load]);
 
   useEffect(() => {
     if (!open) return;
     void load();
+    updateAnchor();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setOpen(false); };
-    const closeOnOutside = (event: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(event.target as Node)) setOpen(false);
-    };
     document.addEventListener('keydown', closeOnEscape);
-    document.addEventListener('mousedown', closeOnOutside);
+    window.addEventListener('resize', updateAnchor);
+    window.visualViewport?.addEventListener('resize', updateAnchor);
     return () => {
+      document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', closeOnEscape);
-      document.removeEventListener('mousedown', closeOnOutside);
+      window.removeEventListener('resize', updateAnchor);
+      window.visualViewport?.removeEventListener('resize', updateAnchor);
     };
-  }, [load, open]);
+  }, [load, open, updateAnchor]);
 
   const current = useMemo(() => workspaces.find((workspace) => workspace.id === active), [active, workspaces]);
   const triggerName = current?.display_name || fallbackName;
@@ -95,13 +111,65 @@ export default function GlobalWorkspaceSwitcher({
     }
   }
 
-  return <div className={styles.root} ref={rootRef}>
+  const overlayStyle = {
+    '--switcher-top': `${anchor.top}px`,
+    '--switcher-right': `${anchor.right}px`,
+  } as CSSProperties;
+
+  const overlay = open && mounted ? createPortal(<>
     <button
+      type="button"
+      className={styles.backdrop}
+      aria-label={tamil ? 'Profile switcher மூடு' : 'Close profile switcher'}
+      onClick={() => setOpen(false)}
+    />
+    <section
+      className={styles.panel}
+      style={overlayStyle}
+      role="dialog"
+      aria-modal="true"
+      aria-label={tamil ? 'Profile மாற்று' : 'Switch profile'}
+    >
+      <div className={styles.sheetHandle} aria-hidden="true" />
+      <div className={styles.heading}>
+        <div><span>TAKEITESEE ACCOUNT</span><h2>{tamil ? 'Profile மாற்று' : 'Switch profile'}</h2></div>
+        <button type="button" className={styles.close} onClick={() => setOpen(false)} aria-label={tamil ? 'மூடு' : 'Close'}>×</button>
+      </div>
+
+      <div className={styles.list}>
+        {workspaces.map((workspace) => {
+          const selected = workspace.id === active;
+          return <button
+            type="button"
+            className={`${styles.workspace}${selected ? ` ${styles.workspaceCurrent}` : ''}`}
+            key={workspace.id}
+            disabled={selected || Boolean(switching)}
+            onClick={() => void switchWorkspace(workspace.id)}
+            aria-current={selected ? 'page' : undefined}
+          >
+            <span className={styles.avatar} aria-hidden="true">{initials(workspace.display_name)}</span>
+            <span className={styles.workspaceText}><strong>{workspace.display_name}</strong><small>{workspace.label}{workspace.verified ? ` · ${tamil ? 'சரிபார்க்கப்பட்டது' : 'Verified'}` : ''}</small></span>
+            <span className={styles.state}>{selected ? '✓' : switching === workspace.id ? '…' : '›'}</span>
+          </button>;
+        })}
+      </div>
+
+      {error ? <p className={styles.error} role="alert">{error}</p> : null}
+      <Link className={styles.manage} href="/account" onClick={() => setOpen(false)}>{tamil ? 'Account & profiles நிர்வகிக்க' : 'Manage account & profiles'}</Link>
+    </section>
+  </>, document.body) : null;
+
+  return <div className={styles.root}>
+    <button
+      ref={triggerRef}
       type="button"
       className={styles.trigger}
       aria-haspopup="dialog"
       aria-expanded={open}
-      onClick={() => setOpen((value) => !value)}
+      onClick={() => {
+        updateAnchor();
+        setOpen((value) => !value);
+      }}
     >
       <span className={styles.triggerAvatar} aria-hidden="true">{initials(triggerName)}</span>
       <span className={styles.triggerText}>
@@ -111,37 +179,6 @@ export default function GlobalWorkspaceSwitcher({
       <span className={styles.chevron} aria-hidden="true">⌄</span>
       {attentionCount > 0 ? <span className={styles.attention} aria-label={attentionLabel}>{attentionCount > 99 ? '99+' : attentionCount}</span> : null}
     </button>
-
-    {open ? <>
-      <button type="button" className={styles.backdrop} aria-label={tamil ? 'Profile switcher மூடு' : 'Close profile switcher'} onClick={() => setOpen(false)} />
-      <section className={styles.panel} role="dialog" aria-modal="false" aria-label={tamil ? 'Profile மாற்று' : 'Switch profile'}>
-        <div className={styles.sheetHandle} aria-hidden="true" />
-        <div className={styles.heading}>
-          <div><span>TAKEITESEE ACCOUNT</span><h2>{tamil ? 'Profile மாற்று' : 'Switch profile'}</h2></div>
-          <button type="button" className={styles.close} onClick={() => setOpen(false)} aria-label={tamil ? 'மூடு' : 'Close'}>×</button>
-        </div>
-
-        <div className={styles.list}>
-          {workspaces.map((workspace) => {
-            const selected = workspace.id === active;
-            return <button
-              type="button"
-              className={`${styles.workspace}${selected ? ` ${styles.workspaceCurrent}` : ''}`}
-              key={workspace.id}
-              disabled={selected || Boolean(switching)}
-              onClick={() => void switchWorkspace(workspace.id)}
-              aria-current={selected ? 'page' : undefined}
-            >
-              <span className={styles.avatar} aria-hidden="true">{initials(workspace.display_name)}</span>
-              <span className={styles.workspaceText}><strong>{workspace.display_name}</strong><small>{workspace.label}{workspace.verified ? ` · ${tamil ? 'சரிபார்க்கப்பட்டது' : 'Verified'}` : ''}</small></span>
-              <span className={styles.state}>{selected ? '✓' : switching === workspace.id ? '…' : '›'}</span>
-            </button>;
-          })}
-        </div>
-
-        {error ? <p className={styles.error} role="alert">{error}</p> : null}
-        <Link className={styles.manage} href="/account" onClick={() => setOpen(false)}>{tamil ? 'Account & profiles நிர்வகிக்க' : 'Manage account & profiles'}</Link>
-      </section>
-    </> : null}
+    {overlay}
   </div>;
 }
