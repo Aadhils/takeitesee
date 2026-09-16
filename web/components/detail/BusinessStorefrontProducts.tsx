@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Button, Input, Textarea } from '../ui/primitives';
 import { useLanguage } from '../i18n/LanguageProvider';
+import styles from './BusinessStorefrontProducts.module.css';
 
 type PublicProduct = {
   id: string;
@@ -99,40 +100,39 @@ export default function BusinessStorefrontProducts({ products }: { products: Pub
     }
   };
 
-  return <section className="container section-stack" aria-label={tamil ? 'Business products' : 'Business products'} style={{ paddingTop: '1rem' }}>
-    <div className="page-intro" style={{ marginBottom: 0 }}>
+  return <section className={`container section-stack ${styles.section}`} aria-label={tamil ? 'Business products' : 'Business products'}>
+    <div className={`page-intro ${styles.intro}`}>
       <span className="eyebrow">Business sales</span>
       <h2>Products</h2>
       <p>{tamil
         ? 'Platform review செய்யப்பட்ட current revision products மட்டும் இங்கே தெரியும். Customer order request அனுப்பலாம்; TakeItEsee payment/Cashfree இந்த stage-ல் செயல்படாது.'
         : 'Only platform-reviewed current product revisions appear here. Customers can send an order request; TakeItEsee payment and Cashfree are not active at this stage.'}</p>
     </div>
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
+    <div className={styles.grid}>
       {products.map((product) => {
         const draft = draftFor(product.id);
         const state = feedback[product.id];
         const available = product.stock_mode !== 'out_of_stock';
         const shouldTryImage = product.has_primary_image !== false && !imageFailures[product.id];
         return <article
-          className="card"
+          className={`card ${styles.card}`}
           id={`product-${product.id}`}
           key={product.id}
-          style={{ display: 'grid', gap: '.8rem', alignContent: 'start', scrollMarginTop: '7rem', overflow: 'hidden' }}
         >
           {shouldTryImage ? <img
             src={productImageHref(product.id)}
             alt={`${product.name} product`}
-            style={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'cover', borderRadius: '12px', display: 'block' }}
+            className={styles.image}
             onError={() => setImageFailures((current) => ({ ...current, [product.id]: true }))}
           /> : null}
-          <div>
+          <div className={styles.summary}>
             <span className="eyebrow">{stockLabel(product.stock_mode)}</span>
-            <h3 style={{ margin: '.35rem 0' }}>{product.name}</h3>
-            <strong>{money(product)} / {product.unit_label}</strong>
+            <h3 className={styles.name}>{product.name}</h3>
+            <strong className={styles.price}>{money(product)} / {product.unit_label}</strong>
           </div>
-          {product.description ? <p style={{ margin: 0, lineHeight: 1.6 }}>{product.description}</p> : null}
+          {product.description ? <p className={styles.description}>{product.description}</p> : null}
 
-          {available ? <div style={{ display: 'grid', gap: '.75rem' }}>
+          {available ? <div className={styles.orderForm}>
             <Input
               label={tamil ? 'Quantity' : 'Quantity'}
               type="number"
@@ -155,15 +155,15 @@ export default function BusinessStorefrontProducts({ products }: { products: Pub
             <Button type="button" loading={Boolean(state?.busy)} onClick={() => void requestOrder(product)}>
               {tamil ? 'Request order' : 'Request order'}
             </Button>
-            <p className="muted" style={{ margin: 0 }}>
+            <p className={`muted ${styles.note}`}>
               {tamil
                 ? 'இது order request மட்டும். Online payment அல்லது automatic stock deduction இல்லை.'
                 : 'This sends an order request only. There is no online payment or automatic stock deduction.'}
             </p>
-            {state?.message ? <p role={state.error ? 'alert' : 'status'} style={{ margin: 0, color: state.error ? 'var(--danger, #b42318)' : 'var(--color-primary-strong)' }}>
+            {state?.message ? <p className={styles.feedback} role={state.error ? 'alert' : 'status'} style={{ color: state.error ? 'var(--danger, #b42318)' : 'var(--color-primary-strong)' }}>
               {state.message} {!state.error ? <Link href="/orders">{tamil ? 'என் orders பார்க்க' : 'View my orders'}</Link> : null}
             </p> : null}
-          </div> : <p className="muted" style={{ margin: 0 }}>{tamil ? 'இந்த product தற்போது order செய்ய முடியாது.' : 'This product is not currently available to order.'}</p>}
+          </div> : <p className={`muted ${styles.note}`}>{tamil ? 'இந்த product தற்போது order செய்ய முடியாது.' : 'This product is not currently available to order.'}</p>}
         </article>;
       })}
     </div>
