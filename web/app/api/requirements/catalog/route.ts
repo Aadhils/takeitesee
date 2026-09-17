@@ -1,43 +1,44 @@
 import { NextResponse } from 'next/server';
 import { productionAuthProvider } from '../../../../server/auth/session';
-import { createSupabaseServiceClient } from '../../../../lib/supabase/service';
+import { createSupabaseServerClient } from '../../../../lib/supabase/server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+type RequirementCatalog = {
+  categories?: Array<{ id: string; name: string; code: string }>;
+  locations?: Array<{ id: string; name: string; code: string; timezone?: string | null }>;
+};
+
 export async function GET(request: Request) {
   try {
     await productionAuthProvider.requireCustomer(request);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Authentication required.' },
+      { status: 401 },
+    );
+  }
 
-    // Customer requirement posting needs the active marketplace taxonomy, but the
-    // underlying governance tables intentionally keep browser/session reads scoped
-    // to Admin/Provider workflows. Resolve this safe read-only projection on the
-    // server after authenticating the Customer instead of weakening those RLS rules.
-    const supabase = createSupabaseServiceClient();
-    const [{ data: categories, error: categoryError }, { data: locations, error: locationError }] = await Promise.all([
-      supabase
-        .from('platform_categories')
-        .select('id,parent_id,code,name,sort_order')
-        .eq('active', true)
-        .order('sort_order', { ascending: true })
-        .order('name', { ascending: true }),
-      supabase
-        .from('platform_locations')
-        .select('id,parent_id,type,code,name,country_code,timezone')
-        .eq('active', true)
-        .eq('type', 'city')
-        .order('name', { ascending: true }),
-    ]);
-    if (categoryError) throw new Error(categoryError.message);
-    if (locationError) throw new Error(locationError.message);
+  try {
+    // Customer requirement posting needs a small read-only projection of active
+    // marketplace taxonomy. The underlying governance tables remain private; the
+    // authenticated RPC exposes only leaf categories and city choices.
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.rpc('get_customer_requirement_catalog');
+    if (error) throw new Error(error.message);
 
-    const parentIds = new Set((categories ?? []).map((row) => row.parent_id).filter(Boolean));
-    const leafCategories = (categories ?? []).filter((row) => !parentIds.has(row.id));
-
-    return NextResponse.json({ categories: leafCategories, locations: locations ?? [] }, {
+    const catalog = (data ?? {}) as RequirementCatalog;
+    return NextResponse.json({
+      categories: catalog.categories ?? [],
+      locations: catalog.locations ?? [],
+    }, {
       headers: { 'Cache-Control': 'no-store, max-age=0' },
     });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to load requirement options.' }, { status: 401 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Unable to load requirement options.' },
+      { status: 500 },
+    );
   }
 }
