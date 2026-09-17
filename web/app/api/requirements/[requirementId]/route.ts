@@ -16,12 +16,33 @@ type PublicServiceRow = {
   professional_id: string | null;
   business_id: string | null;
 };
+type RequirementCatalog = {
+  categories?: Array<{ id: string; name: string; code: string }>;
+  locations?: Array<{ id: string; name: string; code: string; timezone?: string | null }>;
+};
 
 function fallbackProposalContext(proposal: ProposalRecord, status: MarketplaceEligibility) {
   return {
     ...proposal,
     provider_marketplace_status: status,
     provider_profile_href: null,
+  };
+}
+
+function hydrateRequirementTaxonomy(requirement: Record<string, unknown>, catalogValue: unknown) {
+  const catalog = (catalogValue ?? {}) as RequirementCatalog;
+  const categoryId = String(requirement.category_id ?? '');
+  const locationId = String(requirement.location_id ?? '');
+  const category = catalog.categories?.find((row) => row.id === categoryId) ?? null;
+  const location = catalog.locations?.find((row) => row.id === locationId) ?? null;
+  return {
+    ...requirement,
+    platform_categories: category
+      ? { name: category.name, code: category.code }
+      : requirement.platform_categories,
+    platform_locations: location
+      ? { name: location.name, code: location.code, timezone: location.timezone ?? null }
+      : requirement.platform_locations,
   };
 }
 
@@ -69,9 +90,6 @@ async function enrichProposalMarketplaceContext(value: unknown) {
       };
     });
   } catch {
-    // Public eligibility context is advisory UI data. A transient anon/RLS read failure
-    // must not hide the customer's requirement; the accept RPC independently rechecks
-    // Provider/service eligibility before awarding.
     return proposals.map((proposal) => fallbackProposalContext(proposal, 'unavailable'));
   }
 }
@@ -86,6 +104,7 @@ export async function GET(request: Request, context: RouteContext) {
       { data: events, error: eventError },
       { data: proposals, error: proposalError },
       { data: conversation, error: conversationError },
+      { data: catalog, error: catalogError },
     ] = await Promise.all([
       supabase
         .from('customer_requirements')
@@ -105,14 +124,19 @@ export async function GET(request: Request, context: RouteContext) {
         .eq('requirement_id', requirementId)
         .eq('customer_id', session.user_id)
         .maybeSingle(),
+      supabase.rpc('get_customer_requirement_catalog'),
     ]);
     if (error) throw new Error(error.message);
     if (!requirement) return NextResponse.json({ error: 'Requirement was not found.' }, { status: 404 });
     if (eventError) throw new Error(eventError.message);
     if (proposalError) throw new Error(proposalError.message);
     const enrichedProposals = await enrichProposalMarketplaceContext(proposals ?? []);
+    const hydratedRequirement = hydrateRequirementTaxonomy(
+      requirement as unknown as Record<string, unknown>,
+      catalogError ? null : catalog,
+    );
     return NextResponse.json({
-      requirement,
+      requirement: hydratedRequirement,
       events: events ?? [],
       proposals: enrichedProposals,
       conversation_id: conversationError ? null : conversation?.id ?? null,
