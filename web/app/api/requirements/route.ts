@@ -58,6 +58,11 @@ type ProposalAttention = {
   latest_unread_proposal_reference: string | null;
 };
 
+type RequirementCatalog = {
+  categories?: Array<{ id: string; name: string; code: string }>;
+  locations?: Array<{ id: string; name: string; code: string; timezone?: string | null }>;
+};
+
 const requirementIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const proposalReferencePattern = /^PROP-[A-Z0-9-]{6,40}$/i;
 
@@ -90,16 +95,22 @@ function proposalNotificationTarget(targetPath: string | null) {
   }
 }
 
-function safeRequirement(row: RequirementRow, attention: ProposalAttention | null = blankProposalAttention()) {
+function safeRequirement(
+  row: RequirementRow,
+  attention: ProposalAttention | null = blankProposalAttention(),
+  catalog: RequirementCatalog | null = null,
+) {
   const category = related(row.platform_categories);
   const location = related(row.platform_locations);
+  const categoryName = String(category?.name ?? catalog?.categories?.find((item) => item.id === row.category_id)?.name ?? '');
+  const locationName = String(location?.name ?? catalog?.locations?.find((item) => item.id === row.location_id)?.name ?? '');
   return {
     id: row.id,
     reference: row.requirement_reference,
     category_id: row.category_id,
-    category_name: String(category?.name ?? ''),
+    category_name: categoryName,
     location_id: row.location_id,
-    location_name: String(location?.name ?? ''),
+    location_name: locationName,
     title: row.title,
     description: row.description,
     service_mode: row.service_mode,
@@ -148,7 +159,7 @@ export async function GET(request: Request) {
     if (!rows.length) return NextResponse.json({ requirements: [], proposal_attention_status: 'ready' });
 
     const requirementIds = rows.map((row) => row.id);
-    const [proposalResult, notificationResult] = await Promise.all([
+    const [proposalResult, notificationResult, catalogResult] = await Promise.all([
       supabase
         .from('requirement_proposals')
         .select('requirement_id,proposal_reference,status,submitted_at')
@@ -161,11 +172,13 @@ export async function GET(request: Request) {
         .eq('event_type', 'requirement_proposal_received')
         .is('read_at', null)
         .order('created_at', { ascending: false }),
+      supabase.rpc('get_customer_requirement_catalog'),
     ]);
+    const catalog = catalogResult.error ? null : ((catalogResult.data ?? {}) as RequirementCatalog);
 
     if (proposalResult.error || notificationResult.error) {
       return NextResponse.json({
-        requirements: rows.map((row) => safeRequirement(row, null)),
+        requirements: rows.map((row) => safeRequirement(row, null, catalog)),
         proposal_attention_status: 'unavailable',
       });
     }
@@ -194,7 +207,7 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({
-      requirements: rows.map((row) => safeRequirement(row, attentionByRequirement.get(row.id) ?? blankProposalAttention())),
+      requirements: rows.map((row) => safeRequirement(row, attentionByRequirement.get(row.id) ?? blankProposalAttention(), catalog)),
       proposal_attention_status: 'ready',
     });
   } catch (error) {
@@ -250,14 +263,20 @@ export async function POST(request: Request) {
     if (error || !data) throw new Error(error?.message ?? 'Requirement could not be posted.');
 
     const created = data as unknown as RequirementRow;
-    const { data: hydrated, error: hydrateError } = await supabase
-      .from('customer_requirements')
-      .select(requirementSelect)
-      .eq('id', created.id)
-      .maybeSingle();
+    const [{ data: hydrated, error: hydrateError }, catalogResult] = await Promise.all([
+      supabase
+        .from('customer_requirements')
+        .select(requirementSelect)
+        .eq('id', created.id)
+        .maybeSingle(),
+      supabase.rpc('get_customer_requirement_catalog'),
+    ]);
     if (hydrateError) throw new Error(hydrateError.message);
+    const catalog = catalogResult.error ? null : ((catalogResult.data ?? {}) as RequirementCatalog);
 
-    return NextResponse.json({ requirement: safeRequirement((hydrated ?? created) as unknown as RequirementRow) }, { status: 201 });
+    return NextResponse.json({
+      requirement: safeRequirement((hydrated ?? created) as unknown as RequirementRow, undefined, catalog),
+    }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Requirement could not be posted.';
     const status = /authentication|required|own/i.test(message) ? 403 : 400;
