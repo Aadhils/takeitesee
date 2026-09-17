@@ -114,6 +114,7 @@ export default function CustomerRequirementsManager({ prefill = {} }: { prefill?
   const prefillApplied = useRef(false);
 
   const [categoryId, setCategoryId] = useState('');
+  const [categorySearch, setCategorySearch] = useState('');
   const [locationId, setLocationId] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -126,6 +127,7 @@ export default function CustomerRequirementsManager({ prefill = {} }: { prefill?
   const [preferredStartTime, setPreferredStartTime] = useState('');
   const [expectedDurationHours, setExpectedDurationHours] = useState('');
   const [schedulePattern, setSchedulePattern] = useState<SchedulePattern>('one_time');
+  const [showOneTimeDetails, setShowOneTimeDetails] = useState(false);
   const [recurrenceFrequency, setRecurrenceFrequency] = useState<RecurrenceFrequency>('weekly');
   const [recurrenceInterval, setRecurrenceInterval] = useState('1');
   const [recurrenceCount, setRecurrenceCount] = useState('4');
@@ -146,6 +148,26 @@ export default function CustomerRequirementsManager({ prefill = {} }: { prefill?
   const recurrenceBadgeLabel = tamil ? 'மீளும் சேவை' : 'Recurring';
   const weekdayLabel = tamil ? 'சேவை நடைபெறும் வார நாட்கள்' : 'Service weekdays';
   const weekdayHelp = tamil ? 'முதல் சேவை தேதியும் தேர்ந்தெடுத்த வார நாளில் இருக்க வேண்டும்.' : 'The first service date must fall on one of the selected weekdays.';
+  const categorySearchLabel = tamil ? 'Service category தேடுங்கள்' : 'Find a service category';
+  const categorySearchPlaceholder = tamil ? 'உதாரணம்: website, tax, catering…' : 'Example: website, tax, catering…';
+  const moreDetailsLabel = tamil ? 'மேலும் விவரங்கள்' : 'More details';
+  const hideDetailsLabel = tamil ? 'விருப்ப விவரங்களை மறை' : 'Hide optional details';
+
+  const categoryMatches = useMemo(() => {
+    const needle = normalized(categorySearch);
+    if (!needle) return catalog.categories;
+    return catalog.categories.filter((row) => normalized(`${row.name} ${row.code}`).includes(needle));
+  }, [catalog.categories, categorySearch]);
+  const visibleCategories = useMemo(() => {
+    if (!categorySearch.trim()) return catalog.categories;
+    const selected = catalog.categories.find((row) => row.id === categoryId) ?? null;
+    if (!selected || categoryMatches.some((row) => row.id === selected.id)) return categoryMatches;
+    return [selected, ...categoryMatches];
+  }, [catalog.categories, categoryId, categoryMatches, categorySearch]);
+  const draftStarted = Boolean(
+    title.trim() || description.trim() || categorySearch.trim() || budgetType !== 'negotiable'
+    || serviceMode !== 'onsite' || schedulePattern !== 'one_time' || neededBy || preferredStartTime || expectedDurationHours,
+  );
 
   const budgetLabel = (row: Requirement) => {
     if (row.budget_type === 'negotiable') return t('req.budgetNegotiable');
@@ -215,7 +237,8 @@ export default function CustomerRequirementsManager({ prefill = {} }: { prefill?
   const resetForm = () => {
     setTitle(''); setDescription(''); setServiceMode('onsite'); setBudgetType('negotiable');
     setBudgetMin(''); setBudgetMax(''); setCurrency('INR'); setNeededBy(''); setPreferredStartTime(''); setExpectedDurationHours('');
-    setSchedulePattern('one_time'); setRecurrenceFrequency('weekly'); setRecurrenceInterval('1'); setRecurrenceCount('4'); setRecurrenceWeekdays([]);
+    setSchedulePattern('one_time'); setShowOneTimeDetails(false); setCategorySearch('');
+    setRecurrenceFrequency('weekly'); setRecurrenceInterval('1'); setRecurrenceCount('4'); setRecurrenceWeekdays([]);
     setPrefillNotice(false);
   };
 
@@ -289,8 +312,8 @@ export default function CustomerRequirementsManager({ prefill = {} }: { prefill?
     } finally { setActionId(''); }
   };
 
-  return <div style={{ display: 'grid', gap: '1.25rem' }}>
-    <section>
+  return <div className={`requirement-manager${draftStarted ? ' requirement-manager-drafting' : ''}`} style={{ display: 'grid', gap: '1.25rem' }}>
+    <section className="requirement-intro">
       <span className="eyebrow">{t('req.marketplace')}</span>
       <h1>{t('req.postNeed')}</h1>
       <p className="detail-copy">{t('req.intro')}</p>
@@ -307,11 +330,25 @@ export default function CustomerRequirementsManager({ prefill = {} }: { prefill?
       </div>
     </Card> : null}
 
-    <Card className="policy-card">
+    <Card className="policy-card requirement-form-card">
       <div className="section-heading"><div><span className="eyebrow">{t('req.new')}</span><h2>{t('req.tell')}</h2></div><Badge tone="info">{t('req.customerPost')}</Badge></div>
       <form onSubmit={submit} style={{ display: 'grid', gap: '1rem', marginTop: '1rem' }}>
+        <div className="requirement-category-search">
+          <Input
+            label={categorySearchLabel}
+            value={categorySearch}
+            onChange={(event) => setCategorySearch(event.target.value)}
+            placeholder={categorySearchPlaceholder}
+            autoComplete="off"
+          />
+          {categorySearch ? <span className="summary-note">
+            {categoryMatches.length > 0
+              ? (tamil ? `${categoryMatches.length} பொருத்தமான category` : `${categoryMatches.length} matching ${categoryMatches.length === 1 ? 'category' : 'categories'}`)
+              : (tamil ? 'பொருத்தமான category கிடைக்கவில்லை. Search-ஐ மாற்றிப் பாருங்கள்.' : 'No matching categories. Try a different search.')}
+          </span> : null}
+        </div>
         <Select label={t('req.serviceCategory')} required value={categoryId} onChange={(event) => setCategoryId(event.target.value)} disabled={loading || !catalog.categories.length}>
-          {catalog.categories.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}
+          {visibleCategories.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}
         </Select>
         <Select label={t('req.city')} required value={locationId} onChange={(event) => setLocationId(event.target.value)} disabled={loading || !catalog.locations.length}>
           {catalog.locations.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}
@@ -329,14 +366,25 @@ export default function CustomerRequirementsManager({ prefill = {} }: { prefill?
           {budgetType === 'range' ? <Input label={t('req.maximumBudget')} type="number" min="1" step="1" required value={budgetMax} onChange={(event) => setBudgetMax(event.target.value)} /> : null}
         </div> : null}
         <Select label={t('req.currency')} value={currency} onChange={(event) => setCurrency(event.target.value as 'INR' | 'USD')}><option value="INR">INR</option><option value="USD">USD</option></Select>
-        <Select label={scheduleLabel} value={schedulePattern} onChange={(event) => { const next = event.target.value as SchedulePattern; setSchedulePattern(next); if (next !== 'recurring') setRecurrenceWeekdays([]); }}>
+        <Select label={scheduleLabel} value={schedulePattern} onChange={(event) => {
+          const next = event.target.value as SchedulePattern;
+          setSchedulePattern(next);
+          if (next !== 'recurring') setRecurrenceWeekdays([]);
+          if (next === 'recurring') setShowOneTimeDetails(true);
+        }}>
           <option value="one_time">{oneTimeLabel}</option><option value="recurring">{recurringLabel}</option>
         </Select>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+        {schedulePattern === 'one_time' ? <div className="requirement-more-details-toggle">
+          <Button type="button" variant="quiet" aria-expanded={showOneTimeDetails} onClick={() => setShowOneTimeDetails((current) => !current)}>
+            {showOneTimeDetails ? hideDetailsLabel : moreDetailsLabel}
+          </Button>
+          <span className="summary-note">{tamil ? 'தேதி, நேரம் மற்றும் கால அளவு — அனைத்தும் விருப்பம்.' : 'Date, time and duration are optional.'}</span>
+        </div> : null}
+        {schedulePattern === 'recurring' || showOneTimeDetails || neededBy || preferredStartTime || expectedDurationHours ? <div className="requirement-schedule-details" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
           <Input label={schedulePattern === 'recurring' ? (tamil ? 'முதல் சேவை தேதி' : 'First service date') : t('req.neededOptional')} type="date" min={today} required={schedulePattern === 'recurring'} value={neededBy} onChange={(event) => { setNeededBy(event.target.value); if (!event.target.value) setPreferredStartTime(''); }} />
           <Input label={preferredTimeLabel} type="time" value={preferredStartTime} onChange={(event) => setPreferredStartTime(event.target.value)} disabled={!neededBy} />
           <Input label={durationLabel} type="number" min="0.25" max="168" step="0.25" value={expectedDurationHours} onChange={(event) => setExpectedDurationHours(event.target.value)} placeholder="10" />
-        </div>
+        </div> : null}
         {schedulePattern === 'recurring' ? <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
             <Select label={recurrenceFrequencyLabel} value={recurrenceFrequency} onChange={(event) => { const next = event.target.value as RecurrenceFrequency; setRecurrenceFrequency(next); if (next !== 'weekly') setRecurrenceWeekdays([]); }}>
@@ -356,7 +404,10 @@ export default function CustomerRequirementsManager({ prefill = {} }: { prefill?
             <span className="summary-note">{weekdayHelp}</span>
           </div> : null}
         </> : null}
-        <Button type="submit" loading={submitting} disabled={loading || !categoryId || !locationId}>{t('req.post')}</Button>
+        <Button className="requirement-primary-submit" type="submit" loading={submitting} disabled={loading || !categoryId || !locationId}>{t('req.post')}</Button>
+        {draftStarted ? <div className="requirement-mobile-sticky-submit" aria-label={tamil ? 'Requirement post action' : 'Post requirement action'}>
+          <Button type="submit" loading={submitting} disabled={loading || !categoryId || !locationId}>{t('req.post')}</Button>
+        </div> : null}
       </form>
     </Card>
 
