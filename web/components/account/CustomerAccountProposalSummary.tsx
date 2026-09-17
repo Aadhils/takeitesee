@@ -70,6 +70,7 @@ export default function CustomerAccountProposalSummary({ onUnreadChange }: Custo
   const attentionRows = useMemo(() => proposalRows.filter((row) => (row.unread_proposal_count ?? 0) > 0), [proposalRows]);
   const totalUnread = useMemo(() => attentionRows.reduce((sum, row) => sum + Math.max(0, row.unread_proposal_count ?? 0), 0), [attentionRows]);
   const visibleRows = proposalRows.slice(0, 3);
+  const hasRequirements = rows.length > 0;
 
   useEffect(() => {
     onUnreadChange?.(available ? totalUnread : 0);
@@ -129,12 +130,16 @@ export default function CustomerAccountProposalSummary({ onUnreadChange }: Custo
     ? (tamil ? `${totalUnread} புதிய provider proposal${totalUnread === 1 ? '' : 's'}` : `${totalUnread} new provider proposal${totalUnread === 1 ? '' : 's'}`)
     : visibleRows.length > 0
       ? (tamil ? 'Provider proposals அனைத்தும் பார்த்துவிட்டீர்கள்' : 'You are up to date on provider proposals')
-      : (tamil ? 'Provider proposals இன்னும் வரவில்லை' : 'No provider proposals yet');
+      : hasRequirements
+        ? (tamil ? 'Provider replies க்காக காத்திருக்கிறது' : 'Waiting for provider replies')
+        : (tamil ? 'ஒரு தேவை பதிவு செய்து provider proposals பெறுங்கள்' : 'Post a need to get provider proposals');
   const stateHelp = totalUnread > 0
     ? (tamil ? 'நீங்கள் post செய்த requirements-க்கு providers reply செய்துள்ளனர். புதிய replies-ஐ இங்கே review செய்யலாம்.' : 'Providers replied to your posted requirements. Review the newest replies here.')
     : visibleRows.length > 0
       ? (tamil ? 'புதிய reply இல்லை. முன்பு வந்த provider proposals கீழே கிடைக்கும்.' : 'There are no unread replies. Previous provider proposals remain available below.')
-      : (tamil ? 'நீங்கள் requirement post செய்த பிறகு verified provider reply செய்தால் அது இங்கே காட்டப்படும்.' : 'When you post a requirement and a verified provider responds, the reply will appear here.');
+      : hasRequirements
+        ? (tamil ? 'உங்கள் requirement live-ல் உள்ளது. Matching verified provider reply செய்தவுடன் அது இங்கே தோன்றும்.' : 'Your requirement is live. Matching verified providers can respond and their proposals will appear here.')
+        : (tamil ? 'தேவையை பதிவு செய்யுங்கள் → verified providers reply செய்வார்கள் → proposals compare செய்து சரியான provider-ஐ தேர்வு செய்யலாம்.' : 'Post what you need → verified providers can reply → compare proposals and choose the right provider.');
 
   return <section id="proposal-attention" ref={focusTargetRef} tabIndex={-1} className="customer-account-proposal-focus-target" aria-label={tamil ? 'Provider proposals' : 'Provider proposals'}>
     <Card className="customer-account-proposal-summary">
@@ -147,17 +152,19 @@ export default function CustomerAccountProposalSummary({ onUnreadChange }: Custo
         <div className="customer-account-proposal-summary-badges">
           {totalUnread > 0
             ? <Badge tone="info">{totalUnread} {tamil ? 'புதிய reply' : totalUnread === 1 ? 'new reply' : 'new replies'}</Badge>
-            : <Badge tone="neutral">{visibleRows.length > 0 ? (tamil ? 'புதிய reply இல்லை' : 'All caught up') : (tamil ? 'Replies க்காக காத்திருக்கிறது' : 'Waiting for replies')}</Badge>}
+            : <Badge tone="neutral">{visibleRows.length > 0 ? (tamil ? 'புதிய reply இல்லை' : 'All caught up') : hasRequirements ? (tamil ? 'Replies க்காக காத்திருக்கிறது' : 'Waiting for replies') : (tamil ? 'Post செய்ய தயார்' : 'Ready to post')}</Badge>}
           {proposalRows.length > 0 ? <Badge tone="neutral">{proposalRows.length} {tamil ? 'requirements-ல் proposals' : proposalRows.length === 1 ? 'requirement with proposals' : 'requirements with proposals'}</Badge> : null}
         </div>
       </div>
 
       {visibleRows.length === 0 ? <div className="customer-account-proposal-empty">
         <div>
-          <strong>{tamil ? 'ஒரு service தேவைப்படுகிறதா?' : 'Need a service?'}</strong>
-          <p className="summary-note">{tamil ? 'Requirement post செய்யுங்கள். Matching verified providers proposals அனுப்பலாம்; புதிய replies இங்கே தோன்றும்.' : 'Post a requirement and matching verified providers can send proposals. New replies will show up here.'}</p>
+          <strong>{hasRequirements ? (tamil ? 'உங்கள் requirement live-ல் உள்ளது' : 'Your requirement is live') : (tamil ? 'ஒரு service தேவைப்படுகிறதா?' : 'Need a service?')}</strong>
+          <p className="summary-note">{hasRequirements
+            ? (tamil ? 'Provider reply வந்தவுடன் புதிய proposal இங்கே காட்டப்படும். Requirement-ஐ update அல்லது manage செய்யலாம்.' : 'New provider replies will appear here. You can update or manage your requirement anytime.')
+            : (tamil ? 'Requirement post செய்யுங்கள். Matching verified providers proposals அனுப்பலாம்; புதிய replies இங்கே தோன்றும்.' : 'Post a requirement and matching verified providers can send proposals. New replies will show up here.')}</p>
         </div>
-        <Button type="button" variant="secondary" onClick={() => router.push('/requirements')}>{tamil ? 'Requirement post / manage செய்' : 'Post or manage requirements'}</Button>
+        <Button type="button" variant="secondary" onClick={() => router.push('/requirements')}>{hasRequirements ? (tamil ? 'Requirements நிர்வகிக்க' : 'Manage requirements') : (tamil ? 'Requirement post செய்' : 'Post a requirement')}</Button>
       </div> : <div className="customer-account-proposal-list">
         {visibleRows.map((row) => {
           const unread = Math.max(0, row.unread_proposal_count ?? 0);
@@ -177,7 +184,7 @@ export default function CustomerAccountProposalSummary({ onUnreadChange }: Custo
       </div>}
 
       <style jsx global>{`
-        .customer-account-proposal-focus-target { scroll-margin-top: 96px; outline: none; }
+        .customer-account-proposal-focus-target { margin-top: 16px; scroll-margin-top: 96px; outline: none; }
         .customer-account-proposal-focus-target:focus > .customer-account-proposal-summary { box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 22%, transparent), var(--shadow-md); }
         .customer-account-proposal-summary { display: grid; gap: .9rem; }
         .customer-account-proposal-summary-badges, .customer-account-proposal-titleline { display: flex; gap: .45rem; flex-wrap: wrap; align-items: center; }
@@ -191,6 +198,7 @@ export default function CustomerAccountProposalSummary({ onUnreadChange }: Custo
         .customer-account-proposal-empty > div { display: grid; gap: .25rem; min-width: 0; }
         .customer-account-proposal-empty strong { color: var(--color-ink); font-size: .95rem; }
         @media (max-width: 720px) {
+          .customer-account-proposal-focus-target { margin-top: 12px; }
           .customer-account-proposal-summary-badges { justify-content: flex-start; }
           .customer-account-proposal-row, .customer-account-proposal-empty { align-items: stretch; flex-direction: column; }
           .customer-account-proposal-empty .button { width: 100%; min-height: 44px; }

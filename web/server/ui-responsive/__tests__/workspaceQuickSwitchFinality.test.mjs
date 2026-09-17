@@ -14,12 +14,14 @@ const [appShellSource, globalSwitcherSource, globalSwitcherCss, identityHeaderSo
   readFile(new URL('app/globals.css', root), 'utf8'),
 ]);
 
-test('primary workspace switching lives beside the identity hero with a deep-page header fallback', () => {
+test('primary workspace switching lives beside the identity hero while deep pages use a simple account link', () => {
   assert.ok(appShellSource.includes("import GlobalWorkspaceSwitcher from './GlobalWorkspaceSwitcher';"));
   assert.ok(appShellSource.includes('<GlobalWorkspaceSwitcher fallbackName={currentUser.name}'));
   assert.ok(identityHeaderSource.includes("import GlobalWorkspaceSwitcher from '../layout/GlobalWorkspaceSwitcher';"));
   assert.ok(identityHeaderSource.includes('triggerVariant="identity"'));
-  assert.ok(globalSwitcherSource.includes("triggerVariant === 'full' && (pathname === '/account' || pathname === '/provider')"));
+  assert.ok(globalSwitcherSource.includes("const isIdentityHome = pathname === '/account' || pathname === '/provider';"));
+  assert.ok(globalSwitcherSource.includes("if (triggerVariant === 'full' && pathname !== '/')"));
+  assert.ok(globalSwitcherSource.includes('className={styles.compactAccountLink}'));
   assert.ok(globalSwitcherSource.includes("tamil ? 'Profile மாற்று' : 'Switch profile'"));
   assert.ok(globalSwitcherSource.includes("fetch('/api/account/workspaces'"));
   assert.ok(globalSwitcherSource.includes("method: 'POST'"));
@@ -40,6 +42,11 @@ test('identity switch trigger is circular and the overlay escapes the sticky fil
   assert.ok(globalSwitcherCss.includes('.panel{position:fixed'));
   assert.ok(globalSwitcherCss.includes('z-index:1001'));
   assert.ok(!globalSwitcherCss.includes('.panel{position:absolute'));
+});
+
+test('deep-page account fallback disappears on phone and tablet where bottom navigation already provides Account', () => {
+  assert.ok(globalSwitcherCss.includes('.compactAccountLink{position:relative;display:inline-flex'));
+  assert.ok(globalSwitcherCss.includes('@media(max-width:900px){.compactAccountLink{display:none}'));
 });
 
 test('phone identity hero floats the switch control on the banner edge without squeezing profile text', () => {

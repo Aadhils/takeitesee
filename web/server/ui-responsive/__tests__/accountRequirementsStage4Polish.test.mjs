@@ -3,36 +3,49 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../../../', import.meta.url);
-const [layoutSource, accountPolishCss, proposalSource, catalogRouteSource] = await Promise.all([
+const [layoutSource, accountPolishCss, requirementCtaCss, proposalSource, catalogRouteSource, catalogMigrationSource] = await Promise.all([
   readFile(new URL('app/layout.tsx', root), 'utf8'),
   readFile(new URL('app/account-overview-stage4-polish.css', root), 'utf8'),
+  readFile(new URL('app/post-requirement-mobile-cta.css', root), 'utf8'),
   readFile(new URL('components/account/CustomerAccountProposalSummary.tsx', root), 'utf8'),
   readFile(new URL('app/api/requirements/catalog/route.ts', root), 'utf8'),
+  readFile(new URL('database/migrations/20260917182000_customer_requirement_catalog_rpc.sql', root), 'utf8'),
 ]);
 
 test('mobile and tablet account overview removes redundant identity chrome and compacts the welcome hero', () => {
   assert.ok(layoutSource.includes("import './account-overview-stage4-polish.css';"));
   assert.match(accountPolishCss, /@media \(max-width: 900px\)[\s\S]*?\.account-layout > \.account-sidebar > \.account-sidebar-heading\s*\{\s*display:\s*none !important/);
   assert.match(accountPolishCss, /\.customer-social-dashboard > \.eyebrow,[\s\S]*?\.customer-social-dashboard > p\s*\{\s*display:\s*none !important/);
-  assert.match(accountPolishCss, /\.customer-social-dashboard > h1\s*\{[\s\S]*?font-size:\s*clamp\(1\.65rem, 4\.8vw, 2\.2rem\) !important/);
+  assert.match(accountPolishCss, /\.customer-social-dashboard > h1\s*\{[\s\S]*?font-size:\s*clamp\(1\.3rem, 3\.8vw, 1\.65rem\) !important/);
 });
 
-test('customer proposal attention reads as a friendly proposal inbox', () => {
+test('customer proposal attention explains the requirement to proposal journey', () => {
   assert.ok(proposalSource.includes('Proposal inbox'));
-  assert.ok(proposalSource.includes('No provider proposals yet'));
-  assert.ok(proposalSource.includes('When you post a requirement and a verified provider responds, the reply will appear here.'));
-  assert.ok(proposalSource.includes('Post or manage requirements'));
+  assert.ok(proposalSource.includes('Post a need to get provider proposals'));
+  assert.ok(proposalSource.includes('Post what you need → verified providers can reply → compare proposals and choose the right provider.'));
+  assert.ok(proposalSource.includes('Waiting for provider replies'));
+  assert.ok(proposalSource.includes('Post a requirement'));
+  assert.ok(proposalSource.includes('margin-top: 16px'));
 });
 
-test('customer requirement catalog authenticates first then resolves active marketplace taxonomy server-side', () => {
-  assert.ok(catalogRouteSource.includes("createSupabaseServiceClient"));
-  assert.ok(!catalogRouteSource.includes('createSupabaseServerClient'));
+test('mobile and tablet surfaces a persistent post requirement action', () => {
+  assert.ok(layoutSource.includes("import './post-requirement-mobile-cta.css';"));
+  assert.match(requirementCtaCss, /@media \(max-width: 900px\)/);
+  assert.match(requirementCtaCss, /\.header-requirement\s*\{[\s\S]*?display:\s*inline-flex !important/);
+  assert.ok(requirementCtaCss.includes('position: fixed'));
+  assert.ok(requirementCtaCss.includes('bottom: calc(78px + env(safe-area-inset-bottom))'));
+});
+
+test('customer requirement catalog uses an authenticated RPC without weakening governance table RLS', () => {
+  assert.ok(catalogRouteSource.includes('createSupabaseServerClient'));
+  assert.ok(!catalogRouteSource.includes('createSupabaseServiceClient'));
   const authIndex = catalogRouteSource.indexOf('await productionAuthProvider.requireCustomer(request)');
-  const serviceIndex = catalogRouteSource.indexOf('const supabase = createSupabaseServiceClient()');
+  const rpcIndex = catalogRouteSource.indexOf("supabase.rpc('get_customer_requirement_catalog')");
   assert.ok(authIndex >= 0);
-  assert.ok(serviceIndex > authIndex);
-  assert.ok(catalogRouteSource.includes(".from('platform_categories')"));
-  assert.ok(catalogRouteSource.includes(".from('platform_locations')"));
-  assert.ok(catalogRouteSource.includes(".eq('active', true)"));
-  assert.ok(catalogRouteSource.includes(".eq('type', 'city')"));
+  assert.ok(rpcIndex > authIndex);
+  assert.ok(catalogMigrationSource.includes('security definer'));
+  assert.ok(catalogMigrationSource.includes("if auth.uid() is null"));
+  assert.ok(catalogMigrationSource.includes("location.type::text = 'city'"));
+  assert.ok(catalogMigrationSource.includes('revoke all on function public.get_customer_requirement_catalog() from anon;'));
+  assert.ok(catalogMigrationSource.includes('grant execute on function public.get_customer_requirement_catalog() to authenticated;'));
 });

@@ -95,7 +95,7 @@ export default function GlobalWorkspaceSwitcher({
   const triggerName = current?.display_name || fallbackName;
   const triggerRole = current?.label || (tamil ? 'வாடிக்கையாளர்' : 'Customer');
   const switchLabel = tamil ? 'Profile மாற்று' : 'Switch profile';
-  const hideFullTriggerOnIdentityHome = triggerVariant === 'full' && (pathname === '/account' || pathname === '/provider');
+  const isIdentityHome = pathname === '/account' || pathname === '/provider';
 
   async function switchWorkspace(workspace: WorkspaceKind) {
     if (workspace === active || switching) return;
@@ -164,7 +164,14 @@ export default function GlobalWorkspaceSwitcher({
     </section>
   </>, document.body) : null;
 
-  if (hideFullTriggerOnIdentityHome) return null;
+  if (triggerVariant === 'full' && pathname !== '/') {
+    if (isIdentityHome) return null;
+    return <Link className={styles.compactAccountLink} href="/account" aria-label={tamil ? 'Account திற' : 'Open account'}>
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3.25" /><path d="M5.5 20c.8-4.2 3-6.2 6.5-6.2s5.7 2 6.5 6.2" /></svg>
+      <span>{tamil ? 'Account' : 'Account'}</span>
+      {attentionCount > 0 ? <span className={styles.attention} aria-label={attentionLabel}>{attentionCount > 99 ? '99+' : attentionCount}</span> : null}
+    </Link>;
+  }
 
   return <div className={`${styles.root}${triggerVariant === 'identity' ? ` ${styles.rootIdentity}` : ''}`}>
     <button
