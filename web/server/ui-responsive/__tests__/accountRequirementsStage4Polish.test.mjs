@@ -3,13 +3,24 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../../../', import.meta.url);
-const [layoutSource, accountPolishCss, requirementCtaCss, proposalSource, catalogRouteSource, catalogMigrationSource] = await Promise.all([
+const [
+  layoutSource,
+  accountPolishCss,
+  requirementCtaCss,
+  proposalSource,
+  catalogRouteSource,
+  catalogMigrationSource,
+  requirementsRouteSource,
+  requirementDetailRouteSource,
+] = await Promise.all([
   readFile(new URL('app/layout.tsx', root), 'utf8'),
   readFile(new URL('app/account-overview-stage4-polish.css', root), 'utf8'),
   readFile(new URL('app/post-requirement-mobile-cta.css', root), 'utf8'),
   readFile(new URL('components/account/CustomerAccountProposalSummary.tsx', root), 'utf8'),
   readFile(new URL('app/api/requirements/catalog/route.ts', root), 'utf8'),
   readFile(new URL('database/migrations/20260917182000_customer_requirement_catalog_rpc.sql', root), 'utf8'),
+  readFile(new URL('app/api/requirements/route.ts', root), 'utf8'),
+  readFile(new URL('app/api/requirements/[requirementId]/route.ts', root), 'utf8'),
 ]);
 
 test('mobile and tablet account overview removes redundant identity chrome and compacts the welcome hero', () => {
@@ -48,4 +59,14 @@ test('customer requirement catalog uses an authenticated RPC without weakening g
   assert.ok(catalogMigrationSource.includes("location.type::text = 'city'"));
   assert.ok(catalogMigrationSource.includes('revoke all on function public.get_customer_requirement_catalog() from anon;'));
   assert.ok(catalogMigrationSource.includes('grant execute on function public.get_customer_requirement_catalog() to authenticated;'));
+});
+
+test('requirement list and detail hydrate canonical category and city names through the authenticated catalog projection', () => {
+  assert.ok(requirementsRouteSource.includes("supabase.rpc('get_customer_requirement_catalog')"));
+  assert.ok(requirementsRouteSource.includes('catalog?.locations?.find((item) => item.id === row.location_id)?.name'));
+  assert.ok(requirementsRouteSource.includes('catalog?.categories?.find((item) => item.id === row.category_id)?.name'));
+  assert.ok(requirementDetailRouteSource.includes("supabase.rpc('get_customer_requirement_catalog')"));
+  assert.ok(requirementDetailRouteSource.includes('hydrateRequirementTaxonomy'));
+  assert.ok(requirementDetailRouteSource.includes('platform_locations: location'));
+  assert.ok(requirementDetailRouteSource.includes('platform_categories: category'));
 });
