@@ -47,10 +47,12 @@ function statusLabel(value: string | null | undefined) {
   return (value || 'unknown').replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-export function MarketplaceMessagingWorkspace({ initialConversationId = '' }: { initialConversationId?: string }) {
+type MessageWorkspace = 'customer' | 'provider';
+
+export function MarketplaceMessagingWorkspace({ initialConversationId = '', workspace }: { initialConversationId?: string; workspace: MessageWorkspace }) {
   const { locale, t, status } = useOperationalTranslations();
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
-  const [selectedId, setSelectedId] = useState(initialConversationId);
+  const [selectedId, setSelectedId] = useState('');
   const [detail, setDetail] = useState<ConversationDetail | null>(null);
   const [messages, setMessages] = useState<MessageRow[]>([]);
   const [safety, setSafety] = useState<SafetyState>({ blocked_by_me: false, messaging_blocked: false });
@@ -100,14 +102,20 @@ export function MarketplaceMessagingWorkspace({ initialConversationId = '' }: { 
   const loadInbox = useCallback(async (silent = false) => {
     if (!silent) setLoadingInbox(true);
     try {
-      const response = await fetch('/api/messages', { cache: 'no-store' });
+      const response = await fetch(`/api/messages?workspace=${workspace}`, { cache: 'no-store' });
       const payload = await response.json() as { conversations?: ConversationSummary[]; error?: string };
       if (!response.ok) throw new Error(payload.error || 'Message inbox could not be loaded.');
       const rows = payload.conversations ?? [];
-      setConversations(rows); setSelectedId((current) => current || rows[0]?.id || ''); setError('');
+      setConversations(rows);
+      setSelectedId((current) => {
+        if (current && rows.some((row) => row.id === current)) return current;
+        if (initialConversationId) return rows.some((row) => row.id === initialConversationId) ? initialConversationId : '';
+        return rows[0]?.id || '';
+      });
+      setError('');
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Message inbox could not be loaded.'); }
     finally { if (!silent) setLoadingInbox(false); }
-  }, []);
+  }, [initialConversationId, workspace]);
 
   const loadSafety = useCallback(async (conversationId: string) => {
     if (!conversationId) { setSafety({ blocked_by_me: false, messaging_blocked: false }); return; }
