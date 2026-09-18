@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../../../', import.meta.url);
-const [messagesRoute, conversationRoute, notificationsRoute, customerShell, providerShell, workspace, customerMessagesRoute, customerMessagesPage, providerMessagesRoute, roleContextMigration] = await Promise.all([
+const [messagesRoute, conversationRoute, notificationsRoute, customerShell, providerShell, workspace, customerMessagesRoute, customerMessagesPage, providerMessagesRoute, roleContextMigration, messagingResponsive] = await Promise.all([
   readFile(new URL('app/api/messages/route.ts', root), 'utf8'),
   readFile(new URL('app/api/messages/[conversationId]/route.ts', root), 'utf8'),
   readFile(new URL('app/api/notifications/route.ts', root), 'utf8'),
@@ -14,6 +14,7 @@ const [messagesRoute, conversationRoute, notificationsRoute, customerShell, prov
   readFile(new URL('components/messages/CustomerMessagesPage.tsx', root), 'utf8'),
   readFile(new URL('app/provider/messages/page.tsx', root), 'utf8'),
   readFile(new URL('database/migrations/20260918114849_message_workspace_role_context.sql', root), 'utf8'),
+  readFile(new URL('components/messages/MarketplaceMessagingResponsive.module.css', root), 'utf8'),
 ]);
 
 test('message inbox exposes one unread-count mode from the existing inbox RPC', () => {
@@ -86,4 +87,11 @@ test('messaging migration keeps customer account names separate from Provider id
   assert.ok(roleContextMigration.includes("'sender_name',private.marketplace_participant_display_name"));
   assert.ok(roleContextMigration.includes("sender_name:=private.marketplace_participant_display_name"));
   assert.ok(roleContextMigration.includes("set search_path = ''"));
+});
+
+
+test('mobile message thread yields vertical scrolling to the page', () => {
+  assert.ok(messagingResponsive.includes('@media (max-width: 760px)'));
+  assert.ok(messagingResponsive.includes('max-height: none !important'));
+  assert.ok(messagingResponsive.includes('overflow-y: visible !important'));
 });
