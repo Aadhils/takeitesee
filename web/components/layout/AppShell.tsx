@@ -192,6 +192,23 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         .shell-icon { display: block; width: 20px; height: 20px; }
         .skip-link { position: fixed; top: 10px; left: 10px; z-index: 100; border-radius: 8px; background: var(--color-primary-strong); color: #fff; padding: 10px 14px; font-weight: 700; transform: translateY(calc(-100% - 24px)); pointer-events: none; transition: transform .15s ease; }
         .takeitesee-keyboard-nav .skip-link:focus { transform: translateY(0); pointer-events: auto; outline: 3px solid color-mix(in srgb, var(--color-primary) 28%, transparent); outline-offset: 2px; }
+        @media (hover: none), (pointer: coarse) {
+          .skip-link,
+          .takeitesee-keyboard-nav .skip-link:focus {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            margin: -1px !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+            clip: rect(0 0 0 0) !important;
+            clip-path: inset(50%) !important;
+            white-space: nowrap !important;
+            border: 0 !important;
+            transform: none !important;
+            pointer-events: none !important;
+          }
+        }
         .page-frame:focus { outline: none; }
         .page-frame, .shell-bar, .footer-inner { min-width: 0; }
         .page-intro h1, .account-page-heading h1, .provider-workspace h1 { overflow-wrap: anywhere; }
