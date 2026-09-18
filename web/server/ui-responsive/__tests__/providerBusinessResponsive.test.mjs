@@ -12,10 +12,10 @@ const [dashboardCss, reachCss, locationCss, availabilityCss, portfolioCss, found
   readFile(new URL('app/responsive-foundation.css', root), 'utf8'),
 ]);
 
-test('provider dashboard cards retain tablet and phone collapse contracts', () => {
-  assert.match(dashboardCss, /@media \(max-width: 1100px\)[\s\S]*?\.metricsGrid\s*\{\s*grid-template-columns:\s*repeat\(2/);
+test('provider dashboard cards retain compact tablet and phone contracts', () => {
+  assert.match(dashboardCss, /\.providerActivityStrip\s*\{[\s\S]*?grid-template-columns:\s*repeat\(3/);
+  assert.match(dashboardCss, /@media \(max-width: 780px\)[\s\S]*?\.providerActivityStrip\s*\{[\s\S]*?overflow-x:\s*auto/);
   assert.match(dashboardCss, /@media \(max-width: 780px\)[\s\S]*?\.primaryGrid, \.supportGrid\s*\{\s*grid-template-columns:\s*1fr/);
-  assert.match(dashboardCss, /@media \(max-width: 560px\)[\s\S]*?\.metricsGrid\s*\{\s*grid-template-columns:\s*1fr/);
   assert.match(dashboardCss, /@media \(max-width: 560px\)[\s\S]*?\.actionGrid\s*\{\s*grid-template-columns:\s*1fr/);
 });
 
