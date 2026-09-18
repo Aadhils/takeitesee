@@ -134,8 +134,10 @@
   }
 
   .shell div[style*="max-height: 55vh"] {
-    max-height: 48vh !important;
-    padding-right: 2px !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+    overscroll-behavior-y: auto;
+    padding-right: 0 !important;
   }
 
   .shell div[style*="max-width: 82%"] {
