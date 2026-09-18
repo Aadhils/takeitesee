@@ -60,6 +60,26 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
   const accountAttentionHref = proposalUnreadCount > 0 ? '/account#proposal-attention' : '/account';
 
   useEffect(() => {
+    const root = document.documentElement;
+    const enableKeyboardNav = (event: KeyboardEvent) => {
+      if (event.key === 'Tab') root.classList.add('takeitesee-keyboard-nav');
+    };
+    const disableKeyboardNav = () => root.classList.remove('takeitesee-keyboard-nav');
+    const resetKeyboardNav = () => disableKeyboardNav();
+    window.addEventListener('keydown', enableKeyboardNav, true);
+    window.addEventListener('pointerdown', disableKeyboardNav, true);
+    window.addEventListener('touchstart', disableKeyboardNav, true);
+    window.addEventListener('pageshow', resetKeyboardNav);
+    return () => {
+      disableKeyboardNav();
+      window.removeEventListener('keydown', enableKeyboardNav, true);
+      window.removeEventListener('pointerdown', disableKeyboardNav, true);
+      window.removeEventListener('touchstart', disableKeyboardNav, true);
+      window.removeEventListener('pageshow', resetKeyboardNav);
+    };
+  }, []);
+
+  useEffect(() => {
     let active = true;
     const syncUser = async () => {
       if (isSupabaseConfigured()) {
@@ -171,7 +191,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         img, svg, video, canvas { max-width: 100%; height: auto; }
         .shell-icon { display: block; width: 20px; height: 20px; }
         .skip-link { position: fixed; top: 10px; left: 10px; z-index: 100; border-radius: 8px; background: var(--color-primary-strong); color: #fff; padding: 10px 14px; font-weight: 700; transform: translateY(calc(-100% - 24px)); pointer-events: none; transition: transform .15s ease; }
-        .skip-link:focus-visible { transform: translateY(0); pointer-events: auto; outline: 3px solid color-mix(in srgb, var(--color-primary) 28%, transparent); outline-offset: 2px; }
+        .takeitesee-keyboard-nav .skip-link:focus { transform: translateY(0); pointer-events: auto; outline: 3px solid color-mix(in srgb, var(--color-primary) 28%, transparent); outline-offset: 2px; }
         .page-frame:focus { outline: none; }
         .page-frame, .shell-bar, .footer-inner { min-width: 0; }
         .page-intro h1, .account-page-heading h1, .provider-workspace h1 { overflow-wrap: anywhere; }
