@@ -51,6 +51,7 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [declineOpen, setDeclineOpen] = useState(false);
+  const [requirementLinked, setRequirementLinked] = useState<boolean | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
   const loadBooking = useCallback(async () => {
@@ -131,15 +132,15 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
           <div><dt>{t('providerBooking.customerNote')}</dt><dd>{booking.customer_notes || t('providerBooking.noNote')}</dd></div>
         </dl><Badge tone="neutral">{t('providerBooking.payment')} {booking.payment_status}</Badge>
       </Card>
-      <ProviderRequirementOccurrenceContext bookingId={booking.id} locale={locale} />
-      <Card className="provider-detail-card"><span className="eyebrow">{t('providerBooking.nextAction')}</span><h2>{t('providerBooking.controls')}</h2>
+      <ProviderRequirementOccurrenceContext bookingId={booking.id} locale={locale} onResolved={setRequirementLinked} />
+      {requirementLinked === false ? <Card className="provider-detail-card"><span className="eyebrow">{t('providerBooking.nextAction')}</span><h2>{t('providerBooking.controls')}</h2>
         {booking.status === 'pending' ? <><p>{t('providerBooking.pendingHelp')}</p><div className="provider-actions"><Button type="button" disabled={busy} onClick={() => void act('accept')}>{t('providerBooking.accept')}</Button><Button type="button" variant="quiet" disabled={busy} onClick={() => setDeclineOpen(true)}>{t('providerBooking.decline')}</Button></div></> : null}
         {booking.status === 'rescheduled' ? <><p>{t('providerBooking.rescheduleHelp')}</p><div className="provider-actions"><Button type="button" disabled={busy} onClick={() => void act('accept')}>{t('providerBooking.acceptNew')}</Button><Button type="button" variant="quiet" disabled={busy} onClick={() => setDeclineOpen(true)}>{t('providerBooking.declineNew')}</Button></div></> : null}
         {booking.status === 'confirmed' && attendanceTerminal ? <p>{t('providerBooking.attendanceTerminal')}</p> : null}
         {booking.status === 'confirmed' && !attendanceTerminal ? <>{completion?.allowed ? <><p>{t('providerBooking.canComplete')}</p><Button type="button" disabled={busy} onClick={() => void act('complete')}>{busy ? t('reason.updating') : t('providerBooking.markComplete')}</Button></> : <><p>{t('providerBooking.completeOnlyAfter')}</p><p className="summary-note">{t('providerBooking.completionAfter')} {completion?.label}.</p><Button type="button" disabled>{t('providerBooking.markComplete')}</Button></>}</> : null}
         {booking.status === 'completed' ? <p>{t('providerBooking.completedHelp')}</p> : null}
         {booking.status === 'cancelled' ? <p>{t('providerBooking.cancelledHelp')}</p> : null}
-      </Card>
+      </Card> : null}
       <ProviderCashCollectionPanel bookingId={booking.id} bookingStatus={booking.status} paymentStatus={booking.payment_status} amount={booking.quoted_price} currency={booking.currency} onUpdated={loadBooking} />
       <div style={{ gridColumn: '1 / -1' }}><BookingCloseoutPanel bookingId={booking.id} viewer="provider" /></div>
       <div style={{ gridColumn: '1 / -1' }}>
