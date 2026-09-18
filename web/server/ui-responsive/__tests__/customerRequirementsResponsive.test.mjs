@@ -67,8 +67,9 @@ test('Proposal comparison cards and provider context remain responsive', () => {
 
 test('Requirement and proposal lifecycle semantics remain present', () => {
   assert.ok(detailSource.includes("decision: 'accept' | 'decline'"));
-  assert.ok(detailSource.includes('Selecting ${proposal.provider_display_name} awards this requirement'));
-  assert.ok(detailSource.includes('This action does not start a payment'));
+  assert.ok(detailSource.includes('Choose & schedule'));
+  assert.ok(detailSource.includes('One confirmation chooses the provider and creates the first service booking'));
+  assert.ok(detailSource.includes('No payment starts now'));
   assert.ok(detailSource.includes('conversationId ? `/messages?conversation='));
   assert.ok(managerSource.includes("RequirementStatus = 'open' | 'paused' | 'awarded' | 'fulfilled' | 'cancelled'"));
   assert.ok(managerSource.includes('href={`/requirements/${encodeURIComponent(row.id)}`}'));
