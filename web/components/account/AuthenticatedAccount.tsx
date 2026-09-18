@@ -156,8 +156,24 @@ export default function AuthenticatedAccount() {
 
       <CustomerSmartAttention bookings={bookings} />
 
-      <CustomerProductOrderAttention onUnreadChange={setProductOrderUnreadCount} />
-      <CustomerAccountProposalSummary onUnreadChange={setProposalUnreadCount} />
+      <details className="customer-secondary-activity">
+        <summary>
+          <span>
+            <strong>{tamil ? 'மேலும் activity' : 'More activity'}</strong>
+            <small>{tamil ? 'Proposals, order updates & history' : 'Proposals, order updates & history'}</small>
+          </span>
+          <span className="customer-secondary-activity-meta">
+            {proposalUnreadCount + productOrderUnreadCount > 0
+              ? <span className="customer-secondary-activity-count">{proposalUnreadCount + productOrderUnreadCount > 99 ? '99+' : proposalUnreadCount + productOrderUnreadCount}</span>
+              : <span>{tamil ? 'Details' : 'Details'}</span>}
+            <span aria-hidden="true" className="customer-secondary-activity-caret">⌄</span>
+          </span>
+        </summary>
+        <div className="customer-secondary-activity-body">
+          <CustomerProductOrderAttention onUnreadChange={setProductOrderUnreadCount} />
+          <CustomerAccountProposalSummary onUnreadChange={setProposalUnreadCount} />
+        </div>
+      </details>
 
       <section className="dashboard-grid customer-overview-action-grid" aria-label={tamil ? 'Customer வழிசெலுத்தல்' : 'Customer navigation'}>
         {navigationGroups.map((group) => (
@@ -190,8 +206,66 @@ export default function AuthenticatedAccount() {
         .customer-mobile-quick-shell { display: none; }
         .customer-account-action-with-badge { display: inline-flex; align-items: center; gap: .42rem; }
         .customer-account-action-badge { display: inline-grid; min-width: 18px; height: 18px; place-items: center; padding: 0 4px; border-radius: 999px; background: var(--color-primary-strong); color: white; font-size: .58rem; font-weight: 850; line-height: 1; }
+        .customer-secondary-activity {
+          margin-top: 12px;
+          border: 1px solid var(--color-border);
+          border-radius: 16px;
+          background: var(--color-surface);
+          box-shadow: var(--shadow-sm);
+        }
+        .customer-secondary-activity > summary {
+          display: flex;
+          min-height: 58px;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 10px 14px;
+          cursor: pointer;
+          list-style: none;
+        }
+        .customer-secondary-activity > summary::-webkit-details-marker { display: none; }
+        .customer-secondary-activity > summary > span:first-child { min-width: 0; display: grid; gap: 2px; }
+        .customer-secondary-activity > summary strong { color: var(--color-ink); font-size: .88rem; }
+        .customer-secondary-activity > summary small { color: var(--color-ink-muted); font-size: .72rem; line-height: 1.35; }
+        .customer-secondary-activity-meta {
+          display: inline-flex;
+          flex: 0 0 auto;
+          align-items: center;
+          gap: 8px;
+          color: var(--color-ink-muted);
+          font-size: .72rem;
+          font-weight: 750;
+        }
+        .customer-secondary-activity-count {
+          display: grid;
+          min-width: 22px;
+          height: 22px;
+          place-items: center;
+          padding: 0 5px;
+          border-radius: 999px;
+          background: var(--color-primary-strong);
+          color: white;
+          font-size: .62rem;
+          font-weight: 850;
+        }
+        .customer-secondary-activity-caret { font-size: 1rem; transition: transform .16s ease; }
+        .customer-secondary-activity[open] .customer-secondary-activity-caret { transform: rotate(180deg); }
+        .customer-secondary-activity-body {
+          display: grid;
+          gap: 12px;
+          border-top: 1px solid var(--color-border);
+          padding: 12px;
+        }
+        .customer-secondary-activity-body .customer-product-order-attention-card,
+        .customer-secondary-activity-body .customer-account-proposal-summary {
+          box-shadow: none;
+        }
 
         @media (max-width: 900px) {
+          .customer-secondary-activity { margin-top: 10px; border-radius: 14px; }
+          .customer-secondary-activity > summary { min-height: 54px; padding: 9px 11px; }
+          .customer-secondary-activity > summary small { max-width: 62vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+          .customer-secondary-activity-body { padding: 10px; }
           .customer-mobile-quick-shell {
             position: sticky;
             top: 70px;
