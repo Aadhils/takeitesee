@@ -9,7 +9,7 @@ export default async function ProviderMessagesRoute({ searchParams }: { searchPa
   const conversationId = typeof params.conversation === 'string' ? params.conversation : '';
   return <LiveProviderShell active="/provider/messages">
     <div className={styles.shell}>
-      <MarketplaceMessagingWorkspace initialConversationId={conversationId} />
+      <MarketplaceMessagingWorkspace initialConversationId={conversationId} workspace="provider" />
     </div>
   </LiveProviderShell>;
 }

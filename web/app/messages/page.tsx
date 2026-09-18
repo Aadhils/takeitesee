@@ -12,10 +12,5 @@ export default async function MessagesRoute({ searchParams }: { searchParams: Se
 
   if (!session) redirect(`/login?returnTo=${encodeURIComponent(returnTo)}`);
 
-  const isProvider = session.roles.includes('professional') || session.roles.includes('business_owner');
-  if (isProvider) {
-    redirect(`/provider/messages${conversationId ? `?conversation=${encodeURIComponent(conversationId)}` : ''}`);
-  }
-
   return <CustomerMessagesPage initialConversationId={conversationId} />;
 }

@@ -24,7 +24,7 @@ export function CustomerMessagesPage({ initialConversationId = '' }: { initialCo
 
   return <LocalizedAccountShell active="/messages" customerName={customerName}>
     <div className={styles.shell}>
-      <MarketplaceMessagingWorkspace initialConversationId={initialConversationId} />
+      <MarketplaceMessagingWorkspace initialConversationId={initialConversationId} workspace="customer" />
     </div>
   </LocalizedAccountShell>;
 }

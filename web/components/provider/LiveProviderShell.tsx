@@ -134,7 +134,7 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
     const refresh = async () => {
       try {
         const [messageResponse, notificationResponse] = await Promise.all([
-          fetch('/api/messages?mode=unread-count', { cache: 'no-store' }),
+          fetch('/api/messages?mode=unread-count&workspace=provider', { cache: 'no-store' }),
           fetch('/api/notifications?mode=unread-count', { cache: 'no-store' }),
         ]);
         if (cancelled) return;
