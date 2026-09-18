@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../../../', import.meta.url);
-const [messagesRoute, conversationRoute, notificationsRoute, customerShell, providerShell, workspace, customerMessagesRoute, customerMessagesPage, providerMessagesRoute] = await Promise.all([
+const [messagesRoute, conversationRoute, notificationsRoute, customerShell, providerShell, workspace, customerMessagesRoute, customerMessagesPage, providerMessagesRoute, roleContextMigration] = await Promise.all([
   readFile(new URL('app/api/messages/route.ts', root), 'utf8'),
   readFile(new URL('app/api/messages/[conversationId]/route.ts', root), 'utf8'),
   readFile(new URL('app/api/notifications/route.ts', root), 'utf8'),
@@ -13,6 +13,7 @@ const [messagesRoute, conversationRoute, notificationsRoute, customerShell, prov
   readFile(new URL('app/messages/page.tsx', root), 'utf8'),
   readFile(new URL('components/messages/CustomerMessagesPage.tsx', root), 'utf8'),
   readFile(new URL('app/provider/messages/page.tsx', root), 'utf8'),
+  readFile(new URL('database/migrations/20260918114849_message_workspace_role_context.sql', root), 'utf8'),
 ]);
 
 test('message inbox exposes one unread-count mode from the existing inbox RPC', () => {
@@ -75,4 +76,14 @@ test('customer and provider message routes keep conversation role context isolat
   assert.ok(workspace.includes("fetch(`/api/messages?workspace=${workspace}`"));
   assert.ok(workspace.includes("rows.some((row) => row.id === initialConversationId) ? initialConversationId : ''"));
   assert.ok(workspace.includes("const [selectedId, setSelectedId] = useState('')"));
+});
+
+
+test('messaging migration keeps customer account names separate from Provider identity names', () => {
+  assert.ok(roleContextMigration.includes('private.marketplace_participant_display_name'));
+  assert.ok(roleContextMigration.includes("when participant_role = 'customer' then coalesce"));
+  assert.ok(roleContextMigration.includes("'counterpart_name',private.marketplace_participant_display_name"));
+  assert.ok(roleContextMigration.includes("'sender_name',private.marketplace_participant_display_name"));
+  assert.ok(roleContextMigration.includes("sender_name:=private.marketplace_participant_display_name"));
+  assert.ok(roleContextMigration.includes("set search_path = ''"));
 });
