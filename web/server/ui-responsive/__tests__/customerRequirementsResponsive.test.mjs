@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../../../', import.meta.url);
-const [requirementsPage, workspace, detailSource, managerSource, proposalAttentionSource, lifecycleSource, requirementsRouteSource, cssSource] = await Promise.all([
+const [requirementsPage, workspace, detailSource, managerSource, proposalAttentionSource, lifecycleSource, requirementsRouteSource, requirementDetailRouteSource, requirementCatalogRouteSource, customerSupabaseSource, cssSource] = await Promise.all([
   readFile(new URL('app/requirements/page.tsx', root), 'utf8'),
   readFile(new URL('components/requirements/CustomerRequirementWorkspace.tsx', root), 'utf8'),
   readFile(new URL('components/requirements/CustomerRequirementDetail.tsx', root), 'utf8'),
@@ -11,6 +11,9 @@ const [requirementsPage, workspace, detailSource, managerSource, proposalAttenti
   readFile(new URL('components/requirements/CustomerRequirementProposalAttention.tsx', root), 'utf8'),
   readFile(new URL('components/requirements/CustomerRequirementLifecycleOverview.tsx', root), 'utf8'),
   readFile(new URL('app/api/requirements/route.ts', root), 'utf8'),
+  readFile(new URL('app/api/requirements/[requirementId]/route.ts', root), 'utf8'),
+  readFile(new URL('app/api/requirements/catalog/route.ts', root), 'utf8'),
+  readFile(new URL('server/auth/customer-supabase.ts', root), 'utf8'),
   readFile(new URL('components/requirements/CustomerRequirementsResponsive.module.css', root), 'utf8'),
 ]);
 
@@ -90,4 +93,18 @@ test('Requirements list uses base owner rows and authenticated catalog hydration
   assert.ok(requirementsRouteSource.includes("catalog?.locations?.find((item) => item.id === row.location_id)"));
   assert.ok(!requirementsRouteSource.includes('platform_categories(name,code)'));
   assert.ok(!requirementsRouteSource.includes('platform_locations(name,code,timezone)'));
+});
+
+
+test('Customer Requirement API paths keep auth and RLS reads on one Supabase client', () => {
+  assert.ok(customerSupabaseSource.includes('const supabase = await createSupabaseServerClient()'));
+  assert.ok(customerSupabaseSource.includes('await supabase.auth.getUser()'));
+  assert.ok(requirementsRouteSource.includes("requireCustomerSupabase"));
+  assert.ok(requirementsRouteSource.includes("const { supabase, user } = await requireCustomerSupabase()"));
+  assert.ok(requirementsRouteSource.includes(".eq('customer_id', user.id)"));
+  assert.ok(!requirementsRouteSource.includes('productionAuthProvider.requireCustomer'));
+  assert.ok(requirementDetailRouteSource.includes("const { supabase, user } = await requireCustomerSupabase()"));
+  assert.ok(!requirementDetailRouteSource.includes('productionAuthProvider.requireCustomer'));
+  assert.ok(requirementCatalogRouteSource.includes("const { supabase } = await requireCustomerSupabase()"));
+  assert.ok(!requirementCatalogRouteSource.includes('productionAuthProvider.requireCustomer'));
 });
