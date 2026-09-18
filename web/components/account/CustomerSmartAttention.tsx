@@ -10,6 +10,7 @@ type RequirementAttentionRow = {
   id: string;
   reference: string;
   title: string;
+  status: 'open' | 'paused' | 'awarded' | 'fulfilled' | 'cancelled';
   unread_proposal_count: number | null;
   latest_proposal_reference: string | null;
   latest_unread_proposal_reference: string | null;
@@ -40,6 +41,7 @@ type ConversationSummary = {
 type SmartAttention =
   | { kind: 'completion'; title: string; body: string; href: string; badge: string; bookingId: string }
   | { kind: 'proposal'; title: string; body: string; href: string; badge: string; requirementId: string }
+  | { kind: 'schedule'; title: string; body: string; href: string; badge: string }
   | { kind: 'message'; title: string; body: string; href: string; badge: string }
   | { kind: 'order'; title: string; body: string; href: string; badge: string; orderId: string | null }
   | { kind: 'service'; title: string; body: string; href: string; badge: string }
@@ -54,6 +56,7 @@ export default function CustomerSmartAttention({ bookings }: { bookings: Custome
   const { locale } = useOperationalTranslations();
   const tamil = locale.toLowerCase().startsWith('ta');
   const [requirements, setRequirements] = useState<RequirementAttentionRow[]>([]);
+  const [unscheduledRequirement, setUnscheduledRequirement] = useState<RequirementAttentionRow | null>(null);
   const [orderCount, setOrderCount] = useState(0);
   const [latestOrder, setLatestOrder] = useState<ProductOrderNotification | null>(null);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
@@ -75,7 +78,25 @@ export default function CustomerSmartAttention({ bookings }: { bookings: Custome
       }),
     ]);
 
-    if (requirementsResult.status === 'fulfilled') setRequirements(requirementsResult.value.requirements ?? []);
+    if (requirementsResult.status === 'fulfilled') {
+      const rows = requirementsResult.value.requirements ?? [];
+      setRequirements(rows);
+      const awarded = rows.filter((row) => row.status === 'awarded').slice(0, 5);
+      if (!awarded.length) {
+        setUnscheduledRequirement(null);
+      } else {
+        const jobResults = await Promise.allSettled(awarded.map(async (row) => {
+          const response = await fetch(`/api/requirements/${encodeURIComponent(row.id)}/job`, { cache: 'no-store' });
+          if (!response.ok) throw new Error('Requirement service journey unavailable.');
+          const payload = await response.json() as { jobs?: Array<{ id?: string }> };
+          return { row, hasJob: (payload.jobs ?? []).length > 0 };
+        }));
+        const nextUnscheduled = jobResults.find((result) => result.status === 'fulfilled' && !result.value.hasJob);
+        setUnscheduledRequirement(nextUnscheduled && nextUnscheduled.status === 'fulfilled' ? nextUnscheduled.value.row : null);
+      }
+    } else {
+      setUnscheduledRequirement(null);
+    }
     if (ordersResult.status === 'fulfilled') {
       setOrderCount(Math.max(0, Number(ordersResult.value.unread_count ?? 0)));
       setLatestOrder(ordersResult.value.latest ?? null);
@@ -142,6 +163,18 @@ export default function CustomerSmartAttention({ bookings }: { bookings: Custome
       };
     }
 
+    if (unscheduledRequirement) {
+      return {
+        kind: 'schedule',
+        title: tamil ? 'Provider தேர்வு முடிந்தது — service time தேர்வு செய்யுங்கள்' : 'Provider chosen — choose your service time',
+        body: tamil
+          ? `“${unscheduledRequirement.title}” service-க்கு Provider already தேர்வு செய்யப்பட்டுள்ளார். Date/time தேர்வு செய்தால் journey அடுத்த stage-க்கு நகரும்.`
+          : `A provider is already chosen for “${unscheduledRequirement.title}”. Choose the date and time to move the service journey forward.`,
+        href: `/requirements/${encodeURIComponent(unscheduledRequirement.id)}#requirement-service-job`,
+        badge: tamil ? 'Action needed' : 'Action needed',
+      };
+    }
+
     const message = conversations.find((row) => Math.max(0, Number(row.unread_count ?? 0)) > 0);
     if (message) {
       const context = message.requirement_title || message.product_name || message.job_title || (tamil ? 'conversation' : 'conversation');
@@ -196,7 +229,7 @@ export default function CustomerSmartAttention({ bookings }: { bookings: Custome
       href: '/explore',
       badge: tamil ? 'Clear' : 'Clear',
     };
-  }, [bookings, conversations, latestOrder, orderCount, requirements, tamil]);
+  }, [bookings, conversations, latestOrder, orderCount, requirements, tamil, unscheduledRequirement]);
 
   const openAttention = async () => {
     if (opening) return;
@@ -232,6 +265,8 @@ export default function CustomerSmartAttention({ bookings }: { bookings: Custome
     ? (tamil ? 'Service-ஐ check செய்' : 'Review service')
     : attention.kind === 'proposal'
       ? (tamil ? 'Proposal review செய்' : 'Review proposal')
+      : attention.kind === 'schedule'
+        ? (tamil ? 'Service time தேர்வு செய்' : 'Choose service time')
       : attention.kind === 'message'
         ? (tamil ? 'Message திற' : 'Open message')
         : attention.kind === 'order'
@@ -251,7 +286,7 @@ export default function CustomerSmartAttention({ bookings }: { bookings: Custome
     <p className="detail-copy">{attention.body}</p>
     <div className="customer-smart-attention-actions">
       <Button type="button" variant={clear ? 'secondary' : 'primary'} loading={opening} onClick={() => void openAttention()}>{actionLabel}</Button>
-      {!clear && attention.kind !== 'service' ? <Button type="button" variant="quiet" onClick={() => router.push('/notifications')}>{tamil ? 'அனைத்து updates' : 'All updates'}</Button> : null}
+      {!clear && attention.kind !== 'service' && attention.kind !== 'schedule' ? <Button type="button" variant="quiet" onClick={() => router.push('/notifications')}>{tamil ? 'அனைத்து updates' : 'All updates'}</Button> : null}
     </div>
 
     <style jsx global>{`
