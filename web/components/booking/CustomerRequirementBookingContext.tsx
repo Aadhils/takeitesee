@@ -4,8 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Card } from '../ui/primitives';
 import { useOperationalTranslations } from '../i18n/OperationalTranslations';
-import BookingServiceExecutionGuide from './BookingServiceExecutionGuide';
-import RequirementCompletionGuide from './RequirementCompletionGuide';
+import SmartServiceJourneyGuide from './SmartServiceJourneyGuide';
 
 type RequirementBookingContext = {
   requirement_id: string;
@@ -49,7 +48,6 @@ export default function CustomerRequirementBookingContext({ bookingId }: { booki
       <Link className="button button-primary" href={chatHref}>{tamil ? 'Provider-க்கு message செய்' : 'Message provider'}</Link>
       <Link className="button button-secondary" href={`/requirements/${encodeURIComponent(context.requirement_id)}`}>{tamil ? 'Requirement பார்க்க' : 'Open requirement'}</Link>
     </div>
-    <BookingServiceExecutionGuide bookingId={bookingId} viewer="customer" />
-    <RequirementCompletionGuide bookingId={bookingId} viewer="customer" />
+    <SmartServiceJourneyGuide bookingId={bookingId} viewer="customer" chatHref={chatHref} />
   </Card>;
 }
