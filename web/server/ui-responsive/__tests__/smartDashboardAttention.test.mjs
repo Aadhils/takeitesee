@@ -72,3 +72,26 @@ test('Customer Smart Attention catches awarded services that still need a schedu
   assert.ok(customerAttention.includes('/requirements/${encodeURIComponent(unscheduledRequirement.id)}#requirement-service-job'));
   assert.ok(customerAttention.includes('Choose service time'));
 });
+
+
+test('Customer dashboard keeps detailed proposal and order activity collapsed behind one secondary control', () => {
+  assert.ok(customerDashboard.includes('<details className="customer-secondary-activity">'));
+  assert.ok(customerDashboard.includes("tamil ? 'மேலும் activity' : 'More activity'"));
+  assert.ok(customerDashboard.includes('Proposals, order updates & history'));
+  assert.ok(customerDashboard.includes('<CustomerProductOrderAttention onUnreadChange={setProductOrderUnreadCount} />'));
+  assert.ok(customerDashboard.includes('<CustomerAccountProposalSummary onUnreadChange={setProposalUnreadCount} />'));
+  assert.ok(
+    customerDashboard.indexOf('<CustomerSmartAttention bookings={bookings} />')
+      < customerDashboard.indexOf('<details className="customer-secondary-activity">'),
+  );
+});
+
+test('Customer secondary activity stays compact and touch-safe on mobile', () => {
+  assert.ok(customerDashboard.includes('.customer-secondary-activity > summary {'));
+  assert.ok(customerDashboard.includes('min-height: 58px'));
+  assert.ok(customerDashboard.includes('.customer-secondary-activity-count'));
+  assert.ok(customerDashboard.includes('.customer-secondary-activity[open] .customer-secondary-activity-caret'));
+  assert.ok(customerDashboard.includes('@media (max-width: 900px)'));
+  assert.ok(customerDashboard.includes('min-height: 54px'));
+  assert.ok(customerDashboard.includes('text-overflow: ellipsis'));
+});
