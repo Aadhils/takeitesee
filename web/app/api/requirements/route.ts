@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { productionAuthProvider } from '../../../server/auth/session';
-import { createSupabaseServerClient } from '../../../lib/supabase/server';
+import { requireCustomerSupabase } from '../../../server/auth/customer-supabase';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -135,14 +134,13 @@ function safeRequirement(
 
 const requirementSelect = 'id,requirement_reference,customer_id,category_id,location_id,title,description,service_mode,budget_type,budget_min_minor,budget_max_minor,currency,needed_by,preferred_start_time,expected_duration_minutes,schedule_pattern,recurrence_frequency,recurrence_interval,recurrence_count,recurrence_weekdays,status,published_at,closed_at,awarded_at,accepted_proposal_id,created_at,updated_at';
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const session = await productionAuthProvider.requireCustomer(request);
-    const supabase = await createSupabaseServerClient();
+    const { supabase, user } = await requireCustomerSupabase();
     const { data, error } = await supabase
       .from('customer_requirements')
       .select(requirementSelect)
-      .eq('customer_id', session.user_id)
+      .eq('customer_id', user.id)
       .order('created_at', { ascending: false });
     if (error) throw new Error(error.message);
 
@@ -159,7 +157,7 @@ export async function GET(request: Request) {
       supabase
         .from('notifications')
         .select('target_path,created_at')
-        .eq('recipient_user_id', session.user_id)
+        .eq('recipient_user_id', user.id)
         .eq('event_type', 'requirement_proposal_received')
         .is('read_at', null)
         .order('created_at', { ascending: false }),
@@ -208,7 +206,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    await productionAuthProvider.requireCustomer(request);
+    const { supabase } = await requireCustomerSupabase();
     const input = await request.json() as {
       idempotency_key?: string;
       category_id?: string;
@@ -230,7 +228,6 @@ export async function POST(request: Request) {
       recurrence_weekdays?: number[] | null;
     };
 
-    const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase.rpc('create_customer_requirement', {
       requested_idempotency_key: input.idempotency_key?.trim() ?? '',
       target_category_id: input.category_id ?? null,

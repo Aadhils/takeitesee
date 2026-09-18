@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { productionAuthProvider } from '../../../../server/auth/session';
-import { createSupabaseServerClient } from '../../../../lib/supabase/server';
+import { requireCustomerSupabase } from '../../../../server/auth/customer-supabase';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -94,11 +93,10 @@ async function enrichProposalMarketplaceContext(value: unknown) {
   }
 }
 
-export async function GET(request: Request, context: RouteContext) {
+export async function GET(_request: Request, context: RouteContext) {
   try {
-    const session = await productionAuthProvider.requireCustomer(request);
+    const { supabase, user } = await requireCustomerSupabase();
     const { requirementId } = await context.params;
-    const supabase = await createSupabaseServerClient();
     const [
       { data: requirement, error },
       { data: events, error: eventError },
@@ -110,7 +108,7 @@ export async function GET(request: Request, context: RouteContext) {
         .from('customer_requirements')
         .select('id,requirement_reference,customer_id,category_id,location_id,title,description,service_mode,budget_type,budget_min_minor,budget_max_minor,currency,needed_by,preferred_start_time,expected_duration_minutes,schedule_pattern,recurrence_frequency,recurrence_interval,recurrence_count,recurrence_weekdays,status,published_at,closed_at,awarded_at,accepted_proposal_id,created_at,updated_at,platform_categories(name,code),platform_locations(name,code,timezone)')
         .eq('id', requirementId)
-        .eq('customer_id', session.user_id)
+        .eq('customer_id', user.id)
         .maybeSingle(),
       supabase
         .from('customer_requirement_events')
@@ -122,7 +120,7 @@ export async function GET(request: Request, context: RouteContext) {
         .from('marketplace_conversations')
         .select('id,proposal_id,status')
         .eq('requirement_id', requirementId)
-        .eq('customer_id', session.user_id)
+        .eq('customer_id', user.id)
         .maybeSingle(),
       supabase.rpc('get_customer_requirement_catalog'),
     ]);
@@ -148,13 +146,12 @@ export async function GET(request: Request, context: RouteContext) {
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
-    await productionAuthProvider.requireCustomer(request);
+    const { supabase } = await requireCustomerSupabase();
     const { requirementId } = await context.params;
     const body = await request.json() as { status?: Status };
     if (!body.status || !['open', 'paused', 'fulfilled', 'cancelled'].includes(body.status)) {
       return NextResponse.json({ error: 'A valid requirement status is required.' }, { status: 400 });
     }
-    const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase.rpc('customer_update_requirement_status', {
       target_requirement_id: requirementId,
       target_status: body.status,
