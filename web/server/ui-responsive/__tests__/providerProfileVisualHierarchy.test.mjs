@@ -59,3 +59,11 @@ test('Provider management sections use smart progressive disclosure', () => {
   assert.ok(identitySource.includes('open={setupManagerOpen}'));
   assert.ok(identitySource.includes('setRolesManagerOpen(true)'));
 });
+
+
+test('Provider home avoids repeating identity status below the media hero', () => {
+  assert.ok(shellSource.includes("active !== '/provider' ? <div className=\"provider-mobile-identity-line\""));
+  assert.ok(shellSource.includes("active === '/provider' && provider"));
+  assert.ok(shellSource.includes('provider-mobile-primary-nav'));
+  assert.ok(shellSource.includes('provider-mobile-more-tools'));
+});
