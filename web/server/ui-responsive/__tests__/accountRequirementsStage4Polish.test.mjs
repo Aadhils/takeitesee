@@ -78,7 +78,7 @@ test('provider workspace keeps customer quick actions out of provider chrome', a
   assert.ok(shellSource.includes("!isProviderWorkspace ? <Link href=\"/requirements\" className=\"header-requirement\""));
 });
 
-test('skip link uses explicit keyboard modality so touch/browser restore cannot expose it', async () => {
+test('skip link uses keyboard modality and a touch-device hard hide', async () => {
   const shellSource = await readFile(new URL('components/layout/AppShell.tsx', root), 'utf8');
   assert.ok(shellSource.includes("event.key === 'Tab'"));
   assert.ok(shellSource.includes("root.classList.add('takeitesee-keyboard-nav')"));
@@ -86,6 +86,8 @@ test('skip link uses explicit keyboard modality so touch/browser restore cannot 
   assert.ok(shellSource.includes("window.addEventListener('touchstart', disableKeyboardNav, true)"));
   assert.ok(shellSource.includes("window.addEventListener('pageshow', resetKeyboardNav)"));
   assert.ok(shellSource.includes('.takeitesee-keyboard-nav .skip-link:focus'));
-  assert.ok(shellSource.includes('pointer-events: none'));
+  assert.ok(shellSource.includes('@media (hover: none), (pointer: coarse)'));
+  assert.ok(shellSource.includes('clip-path: inset(50%) !important'));
+  assert.ok(shellSource.includes('pointer-events: none !important'));
   assert.ok(!shellSource.includes('.skip-link:focus-visible'));
 });
