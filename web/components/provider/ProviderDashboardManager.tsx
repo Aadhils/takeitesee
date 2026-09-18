@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Badge, Card } from '../ui/primitives';
-import { ProviderHeading } from './ProviderPresentation';
 import { LiveProviderShell } from './LiveProviderShell';
 import ProviderDashboardIdentityCenter from './ProviderDashboardIdentityCenter';
 import styles from './ProviderDashboardManager.module.css';
@@ -168,9 +167,16 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
     return { needsAction, upcoming, completed };
   }, [bookings, now]);
 
-  const roleLabel = profile?.provider_type === 'business'
-    ? 'Business · Service business + Employer'
-    : 'Professional · Independent provider + Job seeker';
+  const providerRoleLabel = profile?.provider_type === 'business' ? 'Business' : 'Professional';
+  const providerStatusLabel = profile
+    ? profile.trust_status === 'suspended'
+      ? 'Suspended'
+      : profile.trust_status === 'reverification_required'
+        ? 'Re-verification'
+        : profile.verified
+          ? 'Verified'
+          : 'Verification pending'
+    : 'Provider workspace';
 
   const nextSteps = useMemo<DashboardLink[]>(() => {
     if (!profile) return [];
@@ -243,32 +249,22 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
       ]
     : [];
 
-  const dashboardTitle = profile?.provider_type === 'business' ? 'Business dashboard' : profile?.provider_type === 'professional' ? 'Professional dashboard' : 'Provider dashboard';
-  const dashboardDescription = profile?.provider_type === 'business'
-    ? 'Your business command center for profile, services, customer work and hiring.'
-    : profile?.provider_type === 'professional'
-      ? 'Your command center for profile, talents, services, customer work and career opportunities.'
-      : 'Your provider workspace at a glance.';
-
   const priorityAction = nextSteps[0] ?? null;
   const followUpActions = nextSteps.slice(1);
 
   return <LiveProviderShell active="/provider">
     <div id="provider-dashboard-overview" className={styles.dashboardStack}>
-      <ProviderHeading
-        eyebrow={profile ? roleLabel : 'Provider workspace'}
-        title={dashboardTitle}
-        description={dashboardDescription}
-        action={profile ? <Link href="/provider#provider-profile" className="button button-secondary">Edit profile & identity</Link> : undefined}
-      />
-
-      {profile ? <nav className={styles.jumpNav} aria-label="Dashboard quick navigation">
-        <span className={styles.jumpLabel}>Jump to</span>
-        <div className={styles.jumpRail}>
-          {dashboardJumpLinks.map((item) => item.route
-            ? <Link href={item.href} className={`${styles.jumpLink} ${styles.jumpRoute}`} key={item.href}>{item.label}<span aria-hidden="true">↗</span></Link>
-            : <a href={item.href} className={styles.jumpLink} key={item.href}>{item.label}</a>)}
+      {profile ? <nav className={styles.workspaceToolbar} aria-label="Provider workspace toolbar">
+        <div className={styles.workspaceIdentity}>
+          <span className={styles.workspaceRole}>{providerRoleLabel}</span>
+          <Badge tone={profile.trust_status === 'normal' && profile.verified ? 'success' : profile.trust_status === 'suspended' ? 'danger' : 'warning'}>{providerStatusLabel}</Badge>
         </div>
+        <div className={styles.workspaceRail}>
+          {dashboardJumpLinks.map((item) => item.route
+            ? <Link href={item.href} className={`${styles.workspaceLink} ${styles.workspaceRoute}`} key={item.href}>{item.label}<span aria-hidden="true">↗</span></Link>
+            : <a href={item.href} className={styles.workspaceLink} key={item.href}>{item.label}</a>)}
+        </div>
+        <Link href="/provider#provider-profile" className={styles.workspaceEdit}>Edit profile</Link>
       </nav> : null}
 
       {loading ? <Card className={styles.supportCard}><p>Preparing your workspace overview…</p></Card> : null}

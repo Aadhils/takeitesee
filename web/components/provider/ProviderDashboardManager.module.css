@@ -14,89 +14,106 @@
   scroll-margin-top: 148px;
 }
 
-.jumpNav {
+.workspaceToolbar {
   position: sticky;
   z-index: 8;
   top: 88px;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   min-width: 0;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   border: 1px solid rgb(221 216 239 / 88%);
-  border-radius: 16px;
-  padding: 9px 10px;
-  background: rgb(255 255 255 / 91%);
-  box-shadow: 0 10px 26px rgb(25 18 55 / 8%);
+  border-radius: 14px;
+  padding: 7px 8px;
+  background: rgb(255 255 255 / 93%);
+  box-shadow: 0 8px 22px rgb(25 18 55 / 7%);
   backdrop-filter: blur(14px);
 }
 
-.jumpLabel {
-  flex: 0 0 auto;
-  padding-left: 3px;
-  color: var(--color-ink-muted);
-  font-size: .68rem;
-  font-weight: 800;
-  letter-spacing: .07em;
-  text-transform: uppercase;
+.workspaceIdentity {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
 }
 
-.jumpRail {
+.workspaceRole {
+  color: var(--color-ink);
+  font-size: .74rem;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.workspaceRail {
   display: flex;
   min-width: 0;
-  flex: 1 1 auto;
-  gap: 7px;
+  gap: 5px;
   overflow-x: auto;
   overscroll-behavior-inline: contain;
-  padding: 1px 2px 2px;
+  padding: 1px;
   scrollbar-width: none;
   scroll-snap-type: x proximity;
 }
 
-.jumpRail::-webkit-scrollbar {
+.workspaceRail::-webkit-scrollbar {
   display: none;
 }
 
-.jumpLink {
+.workspaceLink,
+.workspaceEdit {
   display: inline-flex;
   min-height: 44px;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  border: 1px solid var(--color-border);
+  gap: 5px;
   border-radius: 999px;
-  padding: 0 13px;
-  background: var(--color-surface);
-  color: var(--color-ink);
-  font-size: .76rem;
-  font-weight: 750;
+  padding: 0 10px;
+  color: var(--color-ink-muted);
+  font-size: .7rem;
+  font-weight: 760;
   line-height: 1;
   white-space: nowrap;
   scroll-snap-align: start;
-  transition: border-color .16s ease, background .16s ease, color .16s ease, transform .16s ease;
 }
 
-.jumpLink:hover {
+.workspaceLink {
+  border: 1px solid transparent;
+}
+
+.workspaceLink:hover,
+.workspaceLink:focus-visible {
+  border-color: var(--color-border);
+  background: var(--color-selected);
+  color: var(--color-primary-strong);
+}
+
+.workspaceRoute {
+  color: var(--color-primary-strong);
+}
+
+.workspaceRoute span {
+  font-size: .76rem;
+  font-weight: 900;
+}
+
+.workspaceEdit {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-primary-strong);
+}
+
+.workspaceEdit:hover,
+.workspaceEdit:focus-visible {
   border-color: #c6bbef;
   background: var(--color-brand-subtle);
-  color: var(--color-primary-strong);
-  transform: translateY(-1px);
 }
 
-.jumpLink:focus-visible {
+.workspaceLink:focus-visible,
+.workspaceEdit:focus-visible {
   outline: 3px solid rgb(98 74 184 / 24%);
   outline-offset: 2px;
-}
-
-.jumpRoute {
-  border-color: #d3c9f5;
-  background: var(--color-brand-subtle);
-  color: var(--color-primary-strong);
-}
-
-.jumpRoute span {
-  font-size: .8rem;
-  font-weight: 900;
 }
 
 .roleStrip {
@@ -602,9 +619,10 @@
   .providerActivityStrip { grid-template-columns: repeat(3, minmax(104px, 1fr)); overflow-x: auto; scrollbar-width: none; }
   .providerActivityStrip::-webkit-scrollbar { display: none; }
   .providerActivityItem { min-height: 54px; padding: 8px 10px; }
-  .jumpNav { top: 70px; align-items: stretch; flex-direction: column; gap: 6px; padding: 8px; }
-  .jumpLabel { padding: 0 4px; }
-  .jumpRail { width: 100%; }
+  .workspaceToolbar { top: 70px; grid-template-columns: auto minmax(0, 1fr); gap: 6px; padding: 6px; }
+  .workspaceIdentity { padding-left: 2px; }
+  .workspaceEdit { display: none; }
+  .workspaceRail { width: 100%; }
   .roleStrip { align-items: flex-start; flex-direction: column; padding: 16px; }
   .roleMeta { width: 100%; justify-content: space-between; }
   .providerQuickGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -616,8 +634,10 @@
 }
 
 @media (max-width: 560px) {
-  .jumpNav { margin-inline: -2px; border-radius: 14px; }
-  .jumpLink { min-height: 42px; padding-inline: 12px; font-size: .74rem; }
+  .workspaceToolbar { margin-inline: -2px; border-radius: 13px; }
+  .workspaceLink { min-height: 44px; padding-inline: 9px; font-size: .68rem; }
+  .workspaceRole { font-size: .7rem; }
+  .workspaceIdentity :global(.badge) { display: none; }
   .metricsGrid { grid-template-columns: 1fr; }
   .metricCard { min-height: 132px; }
   .providerQuickGrid { gap: 6px; }
