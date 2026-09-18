@@ -530,6 +530,13 @@
   gap: 14px;
 }
 
+.supportCard {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+  padding: 20px;
+}
+
 .identityFacts,
 .bookingList {
   display: grid;
