@@ -52,7 +52,7 @@ test('deep-page account fallback disappears on phone and tablet where bottom nav
 test('phone identity hero floats the switch control on the banner edge without squeezing profile text', () => {
   assert.ok(identityHeaderCss.includes('@media (max-width: 720px)'));
   assert.ok(identityHeaderCss.includes('padding-right: 0;'));
-  assert.ok(identityHeaderCss.includes('.workspaceSwitch {\n    position: absolute;\n    top: -22px;'));
+  assert.ok(identityHeaderCss.includes('.workspaceSwitch {\n    position: absolute;\n    top: -20px;'));
   assert.ok(identityHeaderCss.includes('right: 16px;'));
   assert.ok(!identityHeaderCss.includes('padding-right: 54px;'));
   assert.ok(!identityHeaderCss.includes('padding-right: 50px;'));
@@ -85,4 +85,18 @@ test('workspace POST remains role gated', () => {
   assert.ok(routeSource.includes("workspace === 'professional' && session.roles.includes('professional')"));
   assert.ok(routeSource.includes("workspace === 'business' && session.roles.includes('business_owner')"));
   assert.ok(routeSource.includes("return NextResponse.json({ error: 'This workspace is not available for your account.' }, { status: 403 })"));
+});
+
+
+test('identity hero stays compact on desktop and mobile while preserving media actions', () => {
+  assert.ok(identityHeaderCss.includes('min-height: 140px'));
+  assert.ok(identityHeaderCss.includes('width: 92px'));
+  assert.ok(identityHeaderCss.includes('height: 92px'));
+  assert.ok(identityHeaderCss.includes('@media (max-width: 720px)'));
+  assert.ok(identityHeaderCss.includes('min-height: 112px'));
+  assert.ok(identityHeaderCss.includes('width: 70px'));
+  assert.ok(identityHeaderCss.includes('height: 70px'));
+  assert.ok(identityHeaderSource.includes("chooseUpload('banner')"));
+  assert.ok(identityHeaderSource.includes("chooseUpload('avatar')"));
+  assert.ok(identityHeaderSource.includes('triggerVariant="identity"'));
 });

@@ -140,3 +140,20 @@ test('Customer compact navigation avoids duplicate mobile navigation and stays h
   assert.ok(customerDashboard.includes('.customer-dashboard-more-link-row a { min-height: 38px; }'));
   assert.ok(customerDashboard.includes('className="customer-mobile-quick-shell"'));
 });
+
+
+test('Customer dashboard relies on the identity hero for workspace switching without a duplicate switcher section', () => {
+  assert.ok(customerDashboard.includes('<RoleIdentityMediaHeader context="customer"'));
+  assert.ok(!customerDashboard.includes("import { WorkspaceSwitcher } from './WorkspaceSwitcher'"));
+  assert.ok(!customerDashboard.includes('<WorkspaceSwitcher currentWorkspace="customer" />'));
+});
+
+test('Provider dashboard keeps Priority now ahead of profile editing and uses a compact activity strip', () => {
+  const priorityIndex = providerDashboard.indexOf('className={`${styles.priorityPanel}');
+  const profileIndex = providerDashboard.indexOf('<ProviderDashboardIdentityCenter onProfileUpdated={load} />');
+  assert.ok(priorityIndex >= 0);
+  assert.ok(profileIndex > priorityIndex);
+  assert.ok(providerDashboard.includes('className={styles.providerActivityStrip}'));
+  assert.ok(providerDashboard.includes('className={styles.providerActivityItem}'));
+  assert.ok(!providerDashboard.includes('<MetricCard '));
+});
