@@ -232,7 +232,7 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
     if (profile.provider_type === 'professional') items.push({ href: '/provider/jobs/applications', label: 'Check your career journey', detail: 'Applications, interviews and job progress in one place.', icon: 'job' });
     else items.push({ href: '/provider/jobs', label: 'Check your hiring pipeline', detail: 'Jobs, applicants, interviews and offers in one place.', icon: 'people' });
     return items.slice(0, 3);
-  }, [operations.needsAction.length, operations.upcoming.length, profile]);
+  }, [operations.needsAction, operations.upcoming, profile]);
 
   const customerActions: DashboardLink[] = [
     { href: '/provider/leads', label: 'Leads', detail: 'Review new customer opportunities.', icon: 'lead' },
