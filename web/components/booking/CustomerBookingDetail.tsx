@@ -129,7 +129,7 @@ export default function CustomerBookingDetail({ bookingId }: { bookingId: string
         <BookingCloseoutPanel bookingId={booking.bookingId} allowSupport viewer="customer" />
         <BookingAuditTimeline bookingId={booking.bookingId} refreshKey={booking.updatedAt} />
 
-        {booking.status === 'completed' ? <Card className="policy-card">
+        {booking.status === 'completed' ? <Card id="customer-review" className="policy-card">
           <span className="eyebrow">{t('book.customerReview')}</span>
           <h2>{review ? t('book.thanksReview') : closeoutWindow && !closeoutWindow.review_window_open ? t('book.reviewEnded') : t('book.howService')}</h2>
           {review ? <><div style={{ fontSize: '1.6rem', letterSpacing: '.2rem', margin: '.75rem 0' }}>{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</div>{review.comment ? <p>{review.comment}</p> : <p>{t('book.ratingSaved')}</p>}<Badge tone="success">{t('book.reviewSubmitted')}</Badge></>
