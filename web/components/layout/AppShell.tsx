@@ -49,6 +49,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
   const [proposalUnreadCount, setProposalUnreadCount] = useState(0);
   const pathname = usePathname();
   const isHomepage = pathname === '/';
+  const isProviderWorkspace = pathname === '/provider' || pathname.startsWith('/provider/');
   const { locale, setLocale, t } = useLanguage();
   const isTamil = locale === 'ta-IN';
   const productsActive = pathname === '/products' || pathname.startsWith('/products/');
@@ -112,7 +113,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
                 <option value="ta-IN">{t('language.tamil')}</option>
               </select>
             </label>
-            <Link href="/requirements" className="header-requirement">{t('nav.postRequirement')}</Link>
+            {!isProviderWorkspace ? <Link href="/requirements" className="header-requirement">{t('nav.postRequirement')}</Link> : null}
             {currentUser ? <GlobalWorkspaceSwitcher fallbackName={currentUser.name} tamil={isTamil} attentionCount={proposalUnreadCount} attentionLabel={proposalBadgeLabel} /> : <Link href={accountAttentionHref} className="header-login">
               <span className="header-account-icon" aria-hidden="true"><ShellIcon name="account" /></span>
               <span className="header-login-label">{t('nav.account')}</span>
@@ -169,8 +170,8 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         *, *::before, *::after { box-sizing: border-box; }
         img, svg, video, canvas { max-width: 100%; height: auto; }
         .shell-icon { display: block; width: 20px; height: 20px; }
-        .skip-link { position: fixed; top: 10px; left: 10px; z-index: 100; border-radius: 8px; background: var(--color-primary-strong); color: #fff; padding: 10px 14px; font-weight: 700; transform: translateY(-160%); transition: transform .15s ease; }
-        .skip-link:focus { transform: translateY(0); }
+        .skip-link { position: fixed; top: 10px; left: 10px; z-index: 100; border-radius: 8px; background: var(--color-primary-strong); color: #fff; padding: 10px 14px; font-weight: 700; transform: translateY(calc(-100% - 24px)); pointer-events: none; transition: transform .15s ease; }
+        .skip-link:focus-visible { transform: translateY(0); pointer-events: auto; outline: 3px solid color-mix(in srgb, var(--color-primary) 28%, transparent); outline-offset: 2px; }
         .page-frame:focus { outline: none; }
         .page-frame, .shell-bar, .footer-inner { min-width: 0; }
         .page-intro h1, .account-page-heading h1, .provider-workspace h1 { overflow-wrap: anywhere; }
