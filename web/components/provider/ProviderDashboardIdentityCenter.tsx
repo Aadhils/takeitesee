@@ -120,7 +120,7 @@ export default function ProviderDashboardIdentityCenter({ onProfileUpdated }: { 
       const profileReady = body.profile.display_name.trim().length >= 2
         && body.profile.description.trim().length >= 20
         && body.profile.location.trim().length >= 2;
-      setProfileManagerOpen((current) => current || !profileReady);
+      setProfileManagerOpen(!profileReady);
       setForm({ display_name: body.profile.display_name, description: body.profile.description, location: body.profile.location });
       if (body.profile.provider_type === 'professional') void loadRoles();
       else setRoles([]);
