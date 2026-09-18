@@ -103,19 +103,6 @@ function DashboardIcon({ name }: { name: DashboardIconKey }) {
   </svg>;
 }
 
-function ActionGrid({ links }: { links: DashboardLink[] }) {
-  return <div className={styles.actionGrid}>
-    {links.map((link) => <Link href={link.href} className={styles.actionCard} key={link.href}>
-      <div className={styles.actionCardTop}>
-        <span className={styles.actionIcon}><DashboardIcon name={link.icon} /></span>
-        <span className={styles.actionArrow} aria-hidden="true">↗</span>
-      </div>
-      <strong>{link.label}</strong>
-      <p>{link.detail}</p>
-    </Link>)}
-  </div>;
-}
-
 export default function ProviderDashboardManager({ children, workspaceVersion = 0 }: { children?: ReactNode; workspaceVersion?: number }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -220,25 +207,26 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
     return items.slice(0, 3);
   }, [operations.needsAction, operations.upcoming, profile]);
 
-  const customerActions: DashboardLink[] = [
-    { href: '/provider/leads', label: 'Leads', detail: 'Review new customer opportunities.', icon: 'lead' },
-    { href: '/provider/messages', label: 'Messages', detail: 'Continue active customer conversations.', icon: 'message' },
-    { href: '/provider/bookings', label: 'Bookings', detail: 'Manage requests and service delivery.', icon: 'booking' },
-    { href: '/provider/schedule', label: 'Schedule', detail: 'Plan availability and upcoming work.', icon: 'schedule' },
-  ];
-
-  const roleActions: DashboardLink[] = profile?.provider_type === 'business'
+  const providerQuickActions: DashboardLink[] = profile?.provider_type === 'business'
     ? [
-        { href: '/provider/jobs', label: 'Employer jobs', detail: 'Post jobs and manage the hiring journey.', icon: 'job' },
-        { href: '/provider/jobs/applicants', label: 'Applicant finder', detail: 'Review Professionals across your job posts.', icon: 'people' },
-        { href: '/provider/services', label: 'Business services', detail: 'Manage services customers can book.', icon: 'service' },
-        { href: '/provider/products', label: 'Business products', detail: 'Manage products in your public storefront.', icon: 'portfolio' },
+        { href: '/provider/leads', label: 'Leads', detail: 'Customer opportunities', icon: 'lead' },
+        { href: '/provider/messages', label: 'Messages', detail: 'Customer conversations', icon: 'message' },
+        { href: '/provider/bookings', label: 'Bookings', detail: 'Service delivery', icon: 'booking' },
+        { href: '/provider/schedule', label: 'Schedule', detail: 'Availability & work', icon: 'schedule' },
+        { href: '/provider/jobs', label: 'Employer jobs', detail: 'Hiring pipeline', icon: 'job' },
+        { href: '/provider/jobs/applicants', label: 'Applicants', detail: 'Candidate review', icon: 'people' },
+        { href: '/provider/services', label: 'Services', detail: 'Service catalog', icon: 'service' },
+        { href: '/provider/products', label: 'Products', detail: 'Storefront catalog', icon: 'portfolio' },
       ]
     : [
-        { href: '/jobs', label: 'Find jobs', detail: 'Browse jobs published by verified Businesses.', icon: 'job' },
-        { href: '/provider/jobs/applications', label: 'My applications', detail: 'Track applications and interviews.', icon: 'booking' },
-        { href: '/provider/resume', label: 'Resume & Career', detail: 'Keep your career profile ready to apply.', icon: 'resume' },
-        { href: '/provider/portfolio', label: 'Portfolio', detail: 'Show customers your previous work.', icon: 'portfolio' },
+        { href: '/provider/leads', label: 'Leads', detail: 'Customer opportunities', icon: 'lead' },
+        { href: '/provider/messages', label: 'Messages', detail: 'Customer conversations', icon: 'message' },
+        { href: '/provider/bookings', label: 'Bookings', detail: 'Service delivery', icon: 'booking' },
+        { href: '/provider/schedule', label: 'Schedule', detail: 'Availability & work', icon: 'schedule' },
+        { href: '/jobs', label: 'Find jobs', detail: 'Business opportunities', icon: 'job' },
+        { href: '/provider/jobs/applications', label: 'Applications', detail: 'Career journey', icon: 'booking' },
+        { href: '/provider/resume', label: 'Resume', detail: 'Career profile', icon: 'resume' },
+        { href: '/provider/portfolio', label: 'Portfolio', detail: 'Previous work', icon: 'portfolio' },
       ];
 
   const dashboardJumpLinks: DashboardJumpLink[] = profile
@@ -310,9 +298,18 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
           </Link>
         </section>
 
-        <section className={styles.primaryGrid} aria-label="Quick workspace actions">
-          <Card className={styles.commandCard}><div className="section-heading"><div><span className="eyebrow">Customer work</span><h2>Run your day</h2></div><Badge tone="info">Quick access</Badge></div><ActionGrid links={customerActions} /></Card>
-          <Card className={styles.commandCard}><div className="section-heading"><div><span className="eyebrow">{profile.provider_type === 'business' ? 'Hiring & business' : 'Career & presence'}</span><h2>{profile.provider_type === 'business' ? 'Grow your team' : 'Grow your opportunities'}</h2></div><Badge tone="info">{profile.provider_type === 'business' ? 'Employer' : 'Professional'}</Badge></div><ActionGrid links={roleActions} /></Card>
+        <section className={styles.providerQuickActions} aria-label="Provider quick actions">
+          <div className={styles.providerQuickHeading}>
+            <div><span className="eyebrow">Quick actions</span><h2>Go where you need</h2></div>
+            <Badge tone="info">{profile.provider_type === 'business' ? 'Business' : 'Professional'}</Badge>
+          </div>
+          <nav className={styles.providerQuickGrid} aria-label="Provider quick actions">
+            {providerQuickActions.map((link) => <Link href={link.href} className={styles.providerQuickLink} key={link.href}>
+              <span className={styles.providerQuickIcon}><DashboardIcon name={link.icon} /></span>
+              <span className={styles.providerQuickLabel}>{link.label}</span>
+              <small>{link.detail}</small>
+            </Link>)}
+          </nav>
         </section>
 
         <ProviderDashboardIdentityCenter onProfileUpdated={load} />

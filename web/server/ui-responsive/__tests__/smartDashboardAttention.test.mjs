@@ -157,3 +157,22 @@ test('Provider dashboard keeps Priority now ahead of profile editing and uses a 
   assert.ok(providerDashboard.includes('className={styles.providerActivityItem}'));
   assert.ok(!providerDashboard.includes('<MetricCard '));
 });
+
+
+test('Provider dashboard uses one compact quick-action surface instead of two large command panels', () => {
+  assert.ok(providerDashboard.includes('const providerQuickActions: DashboardLink[]'));
+  assert.ok(providerDashboard.includes('className={styles.providerQuickActions}'));
+  assert.ok(providerDashboard.includes('className={styles.providerQuickGrid}'));
+  assert.ok(providerDashboard.includes("href: '/provider/leads'"));
+  assert.ok(providerDashboard.includes("href: '/provider/messages'"));
+  assert.ok(providerDashboard.includes("href: '/provider/bookings'"));
+  assert.ok(providerDashboard.includes("href: '/provider/schedule'"));
+  assert.ok(providerDashboard.includes("href: '/provider/services'"));
+  assert.ok(providerDashboard.includes("href: '/provider/products'"));
+  assert.ok(providerDashboard.includes("href: '/jobs'"));
+  assert.ok(providerDashboard.includes("href: '/provider/jobs/applications'"));
+  assert.ok(!providerDashboard.includes('Run your day'));
+  assert.ok(!providerDashboard.includes('Grow your opportunities'));
+  assert.ok(!providerDashboard.includes('Grow your team'));
+  assert.ok(!providerDashboard.includes('<ActionGrid '));
+});

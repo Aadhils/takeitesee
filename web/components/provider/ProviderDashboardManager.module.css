@@ -440,78 +440,101 @@
   font-weight: 800;
 }
 
-.primaryGrid {
+.providerQuickActions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 9px;
 }
 
-.commandCard,
-.supportCard {
-  display: grid;
-  gap: 16px;
-  align-content: start;
-  padding: 20px;
+.providerQuickHeading {
+  display: flex;
+  min-width: 0;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.actionGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+.providerQuickHeading h2 {
+  margin: .15rem 0 0;
+  font-size: 1rem;
 }
 
-.actionCard {
+.providerQuickGrid {
   display: grid;
-  min-height: 116px;
-  align-content: start;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 8px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 13px;
-  background: var(--color-surface-raised);
-  transition: transform .18s ease, border-color .18s ease, background .18s ease;
 }
 
-.actionCard:hover {
+.providerQuickLink {
+  display: grid;
+  min-width: 0;
+  min-height: 78px;
+  place-items: center;
+  align-content: center;
+  gap: 5px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 8px 5px;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+
+.providerQuickLink:hover,
+.providerQuickLink:focus-visible {
   border-color: #c6bbef;
   background: var(--color-brand-subtle);
+  color: var(--color-primary-strong);
   transform: translateY(-1px);
 }
 
-.actionCardTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+.providerQuickIcon {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--color-secondary);
+  color: var(--color-primary-strong);
 }
 
-.actionIcon {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
+.providerQuickIcon svg {
+  width: 19px;
+  height: 19px;
 }
 
-.actionArrow {
-  color: var(--color-primary);
-  font-weight: 900;
-}
-
-.actionCard strong {
-  color: var(--color-ink);
-  font-size: .86rem;
-}
-
-.actionCard p {
-  margin: 0;
-  color: var(--color-ink-muted);
+.providerQuickLabel {
+  max-width: 100%;
+  overflow: hidden;
   font-size: .72rem;
-  line-height: 1.45;
+  font-weight: 800;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.providerQuickLink small {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--color-ink-muted);
+  font-size: .6rem;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .supportGrid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 14px;
+}
+
+.supportCard {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+  padding: 20px;
 }
 
 .identityFacts,
@@ -571,6 +594,7 @@
 
 @media (max-width: 1100px) {
   .metricsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .providerQuickGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
 @media (max-width: 780px) {
@@ -583,7 +607,8 @@
   .jumpRail { width: 100%; }
   .roleStrip { align-items: flex-start; flex-direction: column; padding: 16px; }
   .roleMeta { width: 100%; justify-content: space-between; }
-  .primaryGrid, .supportGrid { grid-template-columns: 1fr; }
+  .providerQuickGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .supportGrid { grid-template-columns: 1fr; }
   .priorityHeader { flex-direction: column; }
   .priorityActions { width: 100%; }
   .priorityActions :global(.button) { flex: 1 1 auto; }
@@ -595,9 +620,11 @@
   .jumpLink { min-height: 42px; padding-inline: 12px; font-size: .74rem; }
   .metricsGrid { grid-template-columns: 1fr; }
   .metricCard { min-height: 132px; }
-  .actionGrid { grid-template-columns: 1fr; }
-  .actionCard { min-height: 96px; }
-  .priorityPanel, .commandCard, .supportCard { padding: 16px; }
+  .providerQuickGrid { gap: 6px; }
+  .providerQuickLink { min-height: 68px; padding: 7px 3px; }
+  .providerQuickLink small { display: none; }
+  .providerQuickHeading { align-items: center; }
+  .priorityPanel, .supportCard { padding: 16px; }
   .priorityMain { align-items: flex-start; }
   .priorityIcon { width: 40px; height: 40px; }
   .identityFact { align-items: flex-start; flex-direction: column; gap: 3px; }
