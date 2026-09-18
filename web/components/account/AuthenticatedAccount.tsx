@@ -14,10 +14,9 @@ import { getBookingsForCustomer, getBookingsThroughConfiguredRepository } from '
 import type { User } from '../../types/auth-domain';
 import type { CustomerBooking } from '../../types/booking-domain';
 
-type AccountNavLink = { href: string; label: string; badge?: number };
-type AccountNavGroup = { id: string; eyebrow: string; title: string; links: AccountNavLink[] };
-type CustomerMobileIcon = 'bookings' | 'orders' | 'needs' | 'messages' | 'profile';
+type CustomerMobileIcon = 'bookings' | 'orders' | 'needs' | 'messages' | 'explore' | 'profile';
 type MobileQuickLink = { href: string; label: string; icon: CustomerMobileIcon; badge?: number; badgeLabel?: string };
+type DashboardQuickLink = { href: string; label: string; icon: CustomerMobileIcon; badge?: number };
 
 function CustomerMobileNavIcon({ icon }: { icon: CustomerMobileIcon }) {
   const paths: Record<CustomerMobileIcon, React.ReactNode> = {
@@ -25,6 +24,7 @@ function CustomerMobileNavIcon({ icon }: { icon: CustomerMobileIcon }) {
     orders: <><path d="m12 3 8 4.5-8 4.5-8-4.5L12 3Z"/><path d="M4 7.5V16l8 5 8-5V7.5M12 12v9"/></>,
     needs: <><path d="M6 4h12a2 2 0 0 1 2 2v14H4V6a2 2 0 0 1 2-2Z"/><path d="M8 9h8M8 13h8M8 17h5"/></>,
     messages: <><path d="M5 5.5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8l-5 3v-3H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z"/><path d="M7.5 10h9M7.5 13.5h6"/></>,
+    explore: <><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2.1 4.9-4.9 2.1 2.1-4.9 4.9-2.1Z"/></>,
     profile: <><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></>,
   };
   return <svg className="customer-mobile-quick-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[icon]}</svg>;
@@ -79,50 +79,32 @@ export default function AuthenticatedAccount() {
     setUser(undefined);
   };
 
-  const navigationGroups: AccountNavGroup[] = [
-    {
-      id: 'activity',
-      eyebrow: tamil ? 'என் செயல்பாடு' : 'My activity',
-      title: tamil ? 'Bookings, orders & conversations' : 'Bookings, orders & conversations',
-      links: [
-        { href: '/bookings', label: tamil ? 'என் Bookings' : 'My bookings' },
-        { href: '/orders', label: tamil ? 'என் Product Orders' : 'My product orders', badge: productOrderUnreadCount },
-        { href: '/messages', label: tamil ? 'செய்திகள்' : 'Messages' },
-        { href: '/notifications', label: t('account.notifications') },
-        { href: '/reviews', label: tamil ? 'மதிப்புரைகள்' : 'Reviews' },
-      ],
-    },
-    {
-      id: 'discover',
-      eyebrow: tamil ? 'தேடு & திட்டமிடு' : 'Discover & plan',
-      title: tamil ? 'சேவைகள், Products & தேவைகள்' : 'Services, Products & requirements',
-      links: [
-        { href: '/saved-services', label: tamil ? 'சேமித்த சேவைகள்' : 'Saved services' },
-        { href: '/saved-products', label: tamil ? 'சேமித்த Products' : 'Saved Products' },
-        { href: '/requirements', label: tamil ? 'என் தேவைகள்' : 'My requirements' },
-        { href: '/explore', label: tamil ? 'சேவைகள் தேடு' : 'Explore services' },
-        { href: '/products', label: tamil ? 'Products தேடு' : 'Browse Products' },
-      ],
-    },
-    {
-      id: 'account',
-      eyebrow: tamil ? 'கணக்கு & உதவி' : 'Account & help',
-      title: tamil ? 'Profile, settings & support' : 'Profile, settings & support',
-      links: [
-        { href: '/account/profile', label: t('account.profile') },
-        { href: '/account/settings', label: t('account.settings') },
-        { href: '/account/support', label: tamil ? 'Platform உதவி' : 'Platform support' },
-        { href: '/account/reports', label: tamil ? 'Safety reports' : 'Safety reports' },
-      ],
-    },
-  ];
-
   const mobileQuickLinks: MobileQuickLink[] = [
     { href: '/bookings', label: tamil ? 'Bookings' : 'Bookings', icon: 'bookings' },
     { href: '/orders', label: tamil ? 'Orders' : 'Orders', icon: 'orders', badge: productOrderUnreadCount, badgeLabel: tamil ? 'புதிய order updates' : 'new order updates' },
     { href: '/requirements', label: tamil ? 'தேவைகள்' : 'Needs', icon: 'needs', badge: proposalUnreadCount, badgeLabel: tamil ? 'புதிய proposals' : 'new proposals' },
     { href: '/messages', label: tamil ? 'செய்திகள்' : 'Messages', icon: 'messages' },
     { href: '/account/profile', label: tamil ? 'Profile' : 'Profile', icon: 'profile' },
+  ];
+
+  const dashboardQuickLinks: DashboardQuickLink[] = [
+    { href: '/bookings', label: tamil ? 'Bookings' : 'Bookings', icon: 'bookings' },
+    { href: '/orders', label: tamil ? 'Orders' : 'Orders', icon: 'orders', badge: productOrderUnreadCount },
+    { href: '/requirements', label: tamil ? 'தேவைகள்' : 'Needs', icon: 'needs', badge: proposalUnreadCount },
+    { href: '/messages', label: tamil ? 'செய்திகள்' : 'Messages', icon: 'messages' },
+    { href: '/explore', label: tamil ? 'Explore' : 'Explore', icon: 'explore' },
+    { href: '/account/profile', label: tamil ? 'Profile' : 'Profile', icon: 'profile' },
+  ];
+
+  const secondaryLinks = [
+    { href: '/notifications', label: t('account.notifications') },
+    { href: '/reviews', label: tamil ? 'Reviews' : 'Reviews' },
+    { href: '/saved-services', label: tamil ? 'Saved services' : 'Saved services' },
+    { href: '/saved-products', label: tamil ? 'Saved Products' : 'Saved Products' },
+    { href: '/products', label: tamil ? 'Products' : 'Products' },
+    { href: '/account/settings', label: t('account.settings') },
+    { href: '/account/support', label: tamil ? 'Platform உதவி' : 'Support' },
+    { href: '/account/reports', label: tamil ? 'Safety reports' : 'Safety reports' },
   ];
 
   return (
@@ -175,27 +157,38 @@ export default function AuthenticatedAccount() {
         </div>
       </details>
 
-      <section className="dashboard-grid customer-overview-action-grid" aria-label={tamil ? 'Customer வழிசெலுத்தல்' : 'Customer navigation'}>
-        {navigationGroups.map((group) => (
-          <Card className="customer-overview-action-card" key={group.id}>
-            <span className="eyebrow">{group.eyebrow}</span>
-            <h2>{group.title}</h2>
-            <nav className="account-secondary-actions" aria-label={group.eyebrow}>
-              {group.links.map((link) => <Link href={link.href} className={`account-action-chip${link.badge ? ' customer-account-action-with-badge' : ''}`} key={link.href}>
-                <span>{link.label}</span>
-                {link.badge ? <span className="customer-account-action-badge" aria-label={`${link.badge} new updates`}>{link.badge > 99 ? '99+' : link.badge}</span> : null}
-              </Link>)}
-            </nav>
-          </Card>
-        ))}
+      <section className="customer-dashboard-quick-actions" aria-label={tamil ? 'Customer quick actions' : 'Customer quick actions'}>
+        <div className="customer-dashboard-section-heading">
+          <div>
+            <span className="eyebrow">{tamil ? 'Quick actions' : 'Quick actions'}</span>
+            <h2>{tamil ? 'அடிக்கடி பயன்படுத்துவது' : 'Go where you need'}</h2>
+          </div>
+        </div>
+        <nav className="customer-dashboard-quick-grid" aria-label={tamil ? 'Customer quick actions' : 'Customer quick actions'}>
+          {dashboardQuickLinks.map((link) => <Link href={link.href} className="customer-dashboard-quick-link" key={link.href}>
+            <span className="customer-dashboard-quick-icon" aria-hidden="true"><CustomerMobileNavIcon icon={link.icon} /></span>
+            <span>{link.label}</span>
+            {link.badge ? <span className="customer-dashboard-quick-badge" aria-label={`${link.badge} new updates`}>{link.badge > 99 ? '99+' : link.badge}</span> : null}
+          </Link>)}
+        </nav>
       </section>
 
-      <div className="dashboard-stat-grid customer-overview-stat-grid">
-        <Card className="customer-overview-stat-card"><span className="eyebrow">{t('account.upcoming')}</span><h2>{summary.upcoming}</h2><p>{t('account.upcomingDetail')}</p></Card>
-        <Card className="customer-overview-stat-card"><span className="eyebrow">{t('account.completed')}</span><h2>{summary.completed}</h2><p>{t('account.completedDetail')}</p></Card>
-        <Card className="customer-overview-stat-card"><span className="eyebrow">{t('account.cancelled')}</span><h2>{summary.cancelled}</h2><p>{t('account.cancelledDetail')}</p></Card>
-        <Card className="customer-overview-stat-card"><span className="eyebrow">{t('account.total')}</span><h2>{summary.total}</h2><p>{t('account.totalDetail')}</p></Card>
-      </div>
+      <details className="customer-dashboard-more-links">
+        <summary>
+          <span>{tamil ? 'மேலும் shortcuts' : 'More shortcuts'}</span>
+          <span aria-hidden="true">⌄</span>
+        </summary>
+        <nav className="customer-dashboard-more-link-row" aria-label={tamil ? 'மேலும் customer shortcuts' : 'More customer shortcuts'}>
+          {secondaryLinks.map((link) => <Link href={link.href} key={link.href}>{link.label}</Link>)}
+        </nav>
+      </details>
+
+      <section className="customer-activity-strip" aria-label={tamil ? 'Booking activity summary' : 'Booking activity summary'}>
+        <Link href="/bookings" className="customer-activity-strip-item"><span>{t('account.upcoming')}</span><strong>{summary.upcoming}</strong></Link>
+        <Link href="/bookings" className="customer-activity-strip-item"><span>{t('account.completed')}</span><strong>{summary.completed}</strong></Link>
+        <Link href="/bookings" className="customer-activity-strip-item"><span>{t('account.cancelled')}</span><strong>{summary.cancelled}</strong></Link>
+        <Link href="/bookings" className="customer-activity-strip-item"><span>{t('account.total')}</span><strong>{summary.total}</strong></Link>
+      </section>
       {bookingError ? <p role="alert" style={{ color: '#b42318' }}>{t('account.bookingUnavailable')}: {bookingError}</p> : null}
 
       <div className="account-actions">
@@ -206,6 +199,101 @@ export default function AuthenticatedAccount() {
         .customer-mobile-quick-shell { display: none; }
         .customer-account-action-with-badge { display: inline-flex; align-items: center; gap: .42rem; }
         .customer-account-action-badge { display: inline-grid; min-width: 18px; height: 18px; place-items: center; padding: 0 4px; border-radius: 999px; background: var(--color-primary-strong); color: white; font-size: .58rem; font-weight: 850; line-height: 1; }
+        .customer-dashboard-quick-actions { display: grid; gap: 9px; margin-top: 14px; }
+        .customer-dashboard-section-heading h2 { margin: .15rem 0 0; font-size: 1rem; }
+        .customer-dashboard-quick-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+        .customer-dashboard-quick-link {
+          position: relative;
+          display: grid;
+          min-width: 0;
+          min-height: 74px;
+          place-items: center;
+          align-content: center;
+          gap: 6px;
+          padding: 9px 6px;
+          border: 1px solid var(--color-border);
+          border-radius: 14px;
+          background: var(--color-surface);
+          color: var(--color-ink);
+          font-size: .76rem;
+          font-weight: 780;
+          text-align: center;
+          box-shadow: var(--shadow-sm);
+        }
+        .customer-dashboard-quick-link:hover,
+        .customer-dashboard-quick-link:focus-visible { border-color: var(--color-primary); background: var(--color-selected); color: var(--color-primary-strong); }
+        .customer-dashboard-quick-icon { display: grid; width: 24px; height: 24px; place-items: center; color: var(--color-primary-strong); }
+        .customer-dashboard-quick-icon .customer-mobile-quick-svg { width: 23px; height: 23px; }
+        .customer-dashboard-quick-link > span:nth-child(2) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .customer-dashboard-quick-badge {
+          position: absolute;
+          top: 7px;
+          right: 8px;
+          display: grid;
+          min-width: 19px;
+          height: 19px;
+          place-items: center;
+          padding: 0 4px;
+          border-radius: 999px;
+          background: var(--color-primary-strong);
+          color: white;
+          font-size: .55rem;
+          font-weight: 850;
+        }
+        .customer-dashboard-more-links {
+          margin-top: 9px;
+          border-bottom: 1px solid var(--color-border);
+        }
+        .customer-dashboard-more-links > summary {
+          display: flex;
+          min-height: 42px;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          padding: 4px 2px;
+          cursor: pointer;
+          list-style: none;
+          color: var(--color-ink-muted);
+          font-size: .76rem;
+          font-weight: 760;
+        }
+        .customer-dashboard-more-links > summary::-webkit-details-marker { display: none; }
+        .customer-dashboard-more-link-row { display: flex; gap: 7px; flex-wrap: wrap; padding: 2px 0 11px; }
+        .customer-dashboard-more-link-row a {
+          display: inline-flex;
+          min-height: 36px;
+          align-items: center;
+          padding: 6px 10px;
+          border: 1px solid var(--color-border);
+          border-radius: 999px;
+          background: var(--color-surface);
+          color: var(--color-ink-muted);
+          font-size: .72rem;
+          font-weight: 720;
+        }
+        .customer-activity-strip {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 1px;
+          margin-top: 12px;
+          overflow: hidden;
+          border: 1px solid var(--color-border);
+          border-radius: 14px;
+          background: var(--color-border);
+        }
+        .customer-activity-strip-item {
+          display: flex;
+          min-width: 0;
+          min-height: 58px;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          padding: 9px 12px;
+          background: var(--color-surface);
+          color: var(--color-ink);
+        }
+        .customer-activity-strip-item span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-ink-muted); font-size: .7rem; font-weight: 720; }
+        .customer-activity-strip-item strong { flex: 0 0 auto; font-size: 1rem; }
         .customer-secondary-activity {
           margin-top: 12px;
           border: 1px solid var(--color-border);
@@ -262,6 +350,14 @@ export default function AuthenticatedAccount() {
         }
 
         @media (max-width: 900px) {
+          .customer-dashboard-quick-actions { display: none; }
+          .customer-dashboard-more-links { margin-top: 8px; }
+          .customer-dashboard-more-links > summary { min-height: 44px; }
+          .customer-dashboard-more-link-row { gap: 6px; }
+          .customer-dashboard-more-link-row a { min-height: 38px; }
+          .customer-activity-strip { grid-template-columns: repeat(4, minmax(92px, 1fr)); overflow-x: auto; scrollbar-width: none; }
+          .customer-activity-strip::-webkit-scrollbar { display: none; }
+          .customer-activity-strip-item { min-height: 54px; padding: 8px 10px; }
           .customer-secondary-activity { margin-top: 10px; border-radius: 14px; }
           .customer-secondary-activity > summary { min-height: 54px; padding: 9px 11px; }
           .customer-secondary-activity > summary small { max-width: 62vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
