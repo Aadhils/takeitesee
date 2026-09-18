@@ -67,19 +67,15 @@ test('notification attention stays inside More and narrow phones use a two-colum
   assert.ok(!cssSource.includes('bottom: calc(var(--responsive-mobile-nav-height) + 12px + env(safe-area-inset-bottom));'));
 });
 
-test('Account Overview keeps action and workspace rails swipeable and preserves the two-column stat grid on phones', () => {
-  assert.ok(authenticatedAccountSource.includes('customer-overview-action-grid'));
-  assert.ok(authenticatedAccountSource.includes('customer-overview-action-card'));
-  assert.ok(authenticatedAccountSource.includes('customer-overview-stat-grid'));
-  assert.ok(authenticatedAccountSource.includes('customer-overview-stat-card'));
-  assert.ok(cssSource.includes('.customer-social-dashboard .customer-overview-action-grid {'));
-  assert.ok(cssSource.includes('grid-auto-flow: column;'));
-  assert.ok(cssSource.includes('grid-auto-columns: calc(100% - 10px);'));
-  assert.ok(!cssSource.includes('grid-auto-columns: min(92vw, 344px);'));
-  assert.ok(cssSource.includes('scroll-snap-type: x mandatory;'));
-  assert.ok(cssSource.includes('scroll-padding-inline: 2px 14px;'));
-  assert.ok(cssSource.includes('scroll-snap-stop: always;'));
-  assert.ok(cssSource.includes('.customer-social-dashboard .customer-overview-stat-grid {\n    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;'));
+test('Account Overview uses compact navigation and activity while workspace cards remain swipeable', () => {
+  assert.ok(authenticatedAccountSource.includes('customer-dashboard-quick-actions'));
+  assert.ok(authenticatedAccountSource.includes('customer-dashboard-quick-grid'));
+  assert.ok(authenticatedAccountSource.includes('customer-dashboard-more-links'));
+  assert.ok(authenticatedAccountSource.includes('customer-activity-strip'));
+  assert.ok(authenticatedAccountSource.includes('.customer-dashboard-quick-actions { display: none; }'));
+  assert.ok(authenticatedAccountSource.includes('overflow-x: auto; scrollbar-width: none;'));
+  assert.ok(!authenticatedAccountSource.includes('customer-overview-action-grid'));
+  assert.ok(!authenticatedAccountSource.includes('customer-overview-stat-grid'));
   assert.ok(workspaceCssSource.includes('grid-auto-flow:column'));
   assert.ok(workspaceCssSource.includes('grid-auto-columns:calc(100% - 18px)'));
   assert.ok(workspaceCssSource.includes('overflow-x:auto'));

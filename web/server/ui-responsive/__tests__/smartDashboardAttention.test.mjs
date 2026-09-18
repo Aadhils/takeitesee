@@ -95,3 +95,48 @@ test('Customer secondary activity stays compact and touch-safe on mobile', () =>
   assert.ok(customerDashboard.includes('min-height: 54px'));
   assert.ok(customerDashboard.includes('text-overflow: ellipsis'));
 });
+
+
+test('Customer dashboard replaces large navigation cards with compact quick actions', () => {
+  assert.ok(customerDashboard.includes('className="customer-dashboard-quick-actions"'));
+  assert.ok(customerDashboard.includes('className="customer-dashboard-quick-grid"'));
+  assert.ok(customerDashboard.includes('grid-template-columns: repeat(6, minmax(0, 1fr))'));
+  assert.ok(customerDashboard.includes("href: '/bookings'"));
+  assert.ok(customerDashboard.includes("href: '/orders'"));
+  assert.ok(customerDashboard.includes("href: '/requirements'"));
+  assert.ok(customerDashboard.includes("href: '/messages'"));
+  assert.ok(customerDashboard.includes("href: '/explore'"));
+  assert.ok(customerDashboard.includes("href: '/account/profile'"));
+  assert.ok(!customerDashboard.includes('customer-overview-action-grid'));
+  assert.ok(!customerDashboard.includes('customer-overview-action-card'));
+});
+
+test('Customer dashboard folds low-frequency destinations into More shortcuts', () => {
+  assert.ok(customerDashboard.includes('className="customer-dashboard-more-links"'));
+  assert.ok(customerDashboard.includes("tamil ? 'மேலும் shortcuts' : 'More shortcuts'"));
+  assert.ok(customerDashboard.includes("href: '/notifications'"));
+  assert.ok(customerDashboard.includes("href: '/saved-services'"));
+  assert.ok(customerDashboard.includes("href: '/saved-products'"));
+  assert.ok(customerDashboard.includes("href: '/account/settings'"));
+  assert.ok(customerDashboard.includes("href: '/account/support'"));
+  assert.ok(customerDashboard.includes("href: '/account/reports'"));
+});
+
+test('Customer booking statistics are one compact activity strip instead of four cards', () => {
+  assert.ok(customerDashboard.includes('className="customer-activity-strip"'));
+  assert.ok(customerDashboard.includes('className="customer-activity-strip-item"'));
+  assert.ok(customerDashboard.includes('{summary.upcoming}'));
+  assert.ok(customerDashboard.includes('{summary.completed}'));
+  assert.ok(customerDashboard.includes('{summary.cancelled}'));
+  assert.ok(customerDashboard.includes('{summary.total}'));
+  assert.ok(!customerDashboard.includes('customer-overview-stat-grid'));
+  assert.ok(!customerDashboard.includes('customer-overview-stat-card'));
+});
+
+test('Customer compact navigation avoids duplicate mobile navigation and stays horizontally safe', () => {
+  assert.ok(customerDashboard.includes('.customer-dashboard-quick-actions { display: none; }'));
+  assert.ok(customerDashboard.includes('.customer-activity-strip { grid-template-columns: repeat(4, minmax(92px, 1fr)); overflow-x: auto;'));
+  assert.ok(customerDashboard.includes('.customer-dashboard-more-links > summary { min-height: 44px; }'));
+  assert.ok(customerDashboard.includes('.customer-dashboard-more-link-row a { min-height: 38px; }'));
+  assert.ok(customerDashboard.includes('className="customer-mobile-quick-shell"'));
+});
