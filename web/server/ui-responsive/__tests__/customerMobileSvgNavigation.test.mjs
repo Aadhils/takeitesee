@@ -6,7 +6,7 @@ const root = new URL('../../../', import.meta.url);
 const source = await readFile(new URL('components/account/AuthenticatedAccount.tsx', root), 'utf8');
 
 test('Customer mobile quick navigation uses accessible inline SVG icons instead of text symbols', () => {
-  assert.ok(source.includes("type CustomerMobileIcon = 'bookings' | 'orders' | 'needs' | 'messages' | 'profile'"));
+  assert.ok(source.includes("type CustomerMobileIcon = 'bookings' | 'orders' | 'needs' | 'messages' | 'explore' | 'profile'"));
   assert.ok(source.includes('function CustomerMobileNavIcon'));
   assert.ok(source.includes('className="customer-mobile-quick-svg"'));
   assert.ok(source.includes('<CustomerMobileNavIcon icon={link.icon} />'));
