@@ -312,13 +312,13 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
       /> : null}
 
       <section className="provider-mobile-social-shell" aria-label={tamil ? 'Provider விரைவு வழிசெலுத்தல்' : 'Provider quick navigation'}>
-        <div className="provider-mobile-identity-line">
+        {active !== '/provider' ? <div className="provider-mobile-identity-line">
           <div className="provider-mobile-identity-copy">
             <strong>{displayName}</strong>
             <span>{workspaceIdentity}</span>
           </div>
           <Link href="/account/settings" className="provider-mobile-settings-link" aria-label={tamil ? 'Account அமைப்புகள்' : 'Account settings'}><ProviderSettingsIcon /></Link>
-        </div>
+        </div> : null}
         <nav className="provider-mobile-primary-nav" aria-label={tamil ? 'Provider முக்கிய வழிசெலுத்தல்' : 'Provider primary navigation'}>
           {mobilePrimaryLinks.map((link) => <Link
             href={link.href}
