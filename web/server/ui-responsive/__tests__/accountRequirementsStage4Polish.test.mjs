@@ -48,9 +48,9 @@ test('mobile and tablet surfaces a persistent post requirement action', () => {
 });
 
 test('customer requirement catalog uses an authenticated RPC without weakening governance table RLS', () => {
-  assert.ok(catalogRouteSource.includes('createSupabaseServerClient'));
+  assert.ok(catalogRouteSource.includes('requireCustomerSupabase'));
   assert.ok(!catalogRouteSource.includes('createSupabaseServiceClient'));
-  const authIndex = catalogRouteSource.indexOf('await productionAuthProvider.requireCustomer(request)');
+  const authIndex = catalogRouteSource.indexOf('await requireCustomerSupabase()');
   const rpcIndex = catalogRouteSource.indexOf("supabase.rpc('get_customer_requirement_catalog')");
   assert.ok(authIndex >= 0);
   assert.ok(rpcIndex > authIndex);
