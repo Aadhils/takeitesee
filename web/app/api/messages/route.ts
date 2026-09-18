@@ -4,7 +4,20 @@ import { createSupabaseServerClient } from '../../../lib/supabase/server';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-type InboxRow = { unread_count?: number | null };
+type InboxRow = {
+  unread_count?: number | null;
+  participant_role?: 'customer' | 'provider' | 'applicant' | 'employer' | 'business' | null;
+};
+
+function scopeConversations(rows: InboxRow[], workspace: string | null) {
+  if (workspace === 'customer') {
+    return rows.filter((row) => row.participant_role === 'customer' || row.participant_role === 'applicant');
+  }
+  if (workspace === 'provider') {
+    return rows.filter((row) => row.participant_role === 'provider' || row.participant_role === 'business' || row.participant_role === 'employer');
+  }
+  return rows;
+}
 
 export async function GET(request: Request) {
   try {
@@ -17,12 +30,13 @@ export async function GET(request: Request) {
     const conversations = Array.isArray(data) ? data as InboxRow[] : [];
 
     const url = new URL(request.url);
+    const scopedConversations = scopeConversations(conversations, url.searchParams.get('workspace'));
     if (url.searchParams.get('mode') === 'unread-count') {
-      const unreadCount = conversations.reduce((sum, row) => sum + Math.max(0, Number(row.unread_count ?? 0)), 0);
+      const unreadCount = scopedConversations.reduce((sum, row) => sum + Math.max(0, Number(row.unread_count ?? 0)), 0);
       return NextResponse.json({ unread_count: unreadCount });
     }
 
-    return NextResponse.json({ conversations });
+    return NextResponse.json({ conversations: scopedConversations });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to load messages.' }, { status: 400 });
   }
