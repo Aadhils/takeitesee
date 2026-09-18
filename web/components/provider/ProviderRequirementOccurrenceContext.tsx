@@ -1,10 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Badge, Card } from '../ui/primitives';
-import BookingServiceExecutionGuide from '../booking/BookingServiceExecutionGuide';
-import RequirementCompletionGuide from '../booking/RequirementCompletionGuide';
+import SmartServiceJourneyGuide from '../booking/SmartServiceJourneyGuide';
 
 type RequirementStatus = 'open' | 'paused' | 'awarded' | 'fulfilled' | 'cancelled';
 type JobState = 'active' | 'declined' | 'cancelled' | 'service_completed' | 'fulfilled';
@@ -35,24 +34,33 @@ const WEEKDAY_NAMES = {
   ta: ['ஞாயி', 'திங்கள்', 'செவ்வாய்', 'புதன்', 'வியாழன்', 'வெள்ளி', 'சனி'],
 } as const;
 
-export default function ProviderRequirementOccurrenceContext({ bookingId, locale }: { bookingId: string; locale: string }) {
+export default function ProviderRequirementOccurrenceContext({ bookingId, locale, onResolved }: { bookingId: string; locale: string; onResolved?: (linked: boolean) => void }) {
   const [context, setContext] = useState<RequirementContext | null>(null);
   const [error, setError] = useState('');
 
+  const load = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/provider/bookings/${encodeURIComponent(bookingId)}/requirement-context`, { cache: 'no-store' });
+      const payload = await response.json() as { context?: RequirementContext | null; error?: string };
+      if (!response.ok) throw new Error(payload.error ?? 'Unable to load requirement context.');
+      setContext(payload.context ?? null);
+      setError('');
+      onResolved?.(Boolean(payload.context));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to load requirement context.');
+      onResolved?.(false);
+    }
+  }, [bookingId, onResolved]);
+
+  useEffect(() => { void load(); }, [load]);
   useEffect(() => {
-    let active = true;
-    void (async () => {
-      try {
-        const response = await fetch(`/api/provider/bookings/${encodeURIComponent(bookingId)}/requirement-context`, { cache: 'no-store' });
-        const payload = await response.json() as { context?: RequirementContext | null; error?: string };
-        if (!response.ok) throw new Error(payload.error ?? 'Unable to load requirement context.');
-        if (active) setContext(payload.context ?? null);
-      } catch (cause) {
-        if (active) setError(cause instanceof Error ? cause.message : 'Unable to load requirement context.');
-      }
-    })();
-    return () => { active = false; };
-  }, [bookingId]);
+    const refresh = (event: Event) => {
+      const detail = (event as CustomEvent<{ bookingId?: string }>).detail;
+      if (!detail?.bookingId || detail.bookingId === bookingId) void load();
+    };
+    window.addEventListener('booking:provider-list-refresh', refresh);
+    return () => window.removeEventListener('booking:provider-list-refresh', refresh);
+  }, [bookingId, load]);
 
   if (!context) return error ? <Card><p role="status" className="summary-note">{error}</p></Card> : null;
   const tamil = locale.toLowerCase().startsWith('ta');
@@ -97,8 +105,7 @@ export default function ProviderRequirementOccurrenceContext({ bookingId, locale
       <p className="summary-note">{tamil ? 'Booking schedule அல்லது service details பற்றி பேச வேண்டுமெனில், இந்த requirement-க்கான அதே private conversation-ஐ பயன்படுத்துங்கள்.' : 'Use the same private requirement conversation for booking schedule or service-detail coordination.'}</p>
       <div><Link className="button button-secondary" href={chatHref}>{tamil ? 'Customer-க்கு message செய்' : 'Message customer'}</Link></div>
     </div>
-    <BookingServiceExecutionGuide bookingId={bookingId} viewer="provider" />
-    <RequirementCompletionGuide bookingId={bookingId} viewer="provider" />
+    <SmartServiceJourneyGuide bookingId={bookingId} viewer="provider" chatHref={chatHref} />
     {context.requirement_status === 'fulfilled' && recurring ? <p className="summary-note">{tamil ? 'இந்த recurring requirement-ன் அனைத்து service occurrences-மும் நிறைவடைந்துள்ளன. இந்த context read-only final history ஆகும்.' : 'All service occurrences for this recurring requirement are complete. This context is now read-only final history.'}</p> : null}
 
     {context.recovery ? <div style={{ borderTop: '1px solid #e7eaf0', marginTop: '1rem', paddingTop: '1rem', display: 'grid', gap: '.45rem' }}>
