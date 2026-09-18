@@ -39,7 +39,6 @@ type Booking = {
 type DashboardIconKey = 'alert' | 'profile' | 'service' | 'schedule' | 'lead' | 'message' | 'booking' | 'job' | 'people' | 'resume' | 'portfolio';
 type DashboardLink = { href: string; label: string; detail: string; icon: DashboardIconKey };
 type DashboardJumpLink = { href: string; label: string; route?: boolean };
-type MetricTone = 'neutral' | 'success' | 'warning' | 'info';
 
 function zonedDateTimeToEpoch(date: string, time: string, timeZone: string) {
   try {
@@ -115,19 +114,6 @@ function ActionGrid({ links }: { links: DashboardLink[] }) {
       <p>{link.detail}</p>
     </Link>)}
   </div>;
-}
-
-function MetricCard({ href, label, value, detail, tone, icon }: { href: string; label: string; value: string; detail: string; tone: MetricTone; icon: DashboardIconKey }) {
-  const toneClass = tone === 'warning' ? styles.metricWarning : tone === 'success' ? styles.metricSuccess : tone === 'info' ? styles.metricInfo : '';
-  return <Link href={href} className={`${styles.metricCard} ${toneClass}`}>
-    <div className={styles.metricTop}>
-      <span className={styles.metricLabel}>{label}</span>
-      <span className={styles.metricIcon}><DashboardIcon name={icon} /></span>
-    </div>
-    <strong className={styles.metricValue}>{value}</strong>
-    <span className={styles.metricDetail}>{detail}</span>
-    <span className={styles.metricLinkHint}>Open details →</span>
-  </Link>;
 }
 
 export default function ProviderDashboardManager({ children, workspaceVersion = 0 }: { children?: ReactNode; workspaceVersion?: number }) {
@@ -301,14 +287,6 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
       {profileError ? <Card className={styles.supportCard}><p role="alert" style={{ color: 'var(--color-danger)' }}>{profileError}</p><Link href="/provider/setup" className="text-link">Open provider setup</Link></Card> : null}
 
       {profile ? <>
-        <ProviderDashboardIdentityCenter onProfileUpdated={load} />
-
-        <section className={styles.metricsGrid} aria-label="Workspace summary">
-          <MetricCard href="/provider/bookings" label="Needs action" value={bookingsError ? '—' : String(operations.needsAction.length)} detail={bookingsError ? 'Booking activity temporarily unavailable' : 'Requests, reschedules or completion tasks'} tone={bookingsError ? 'warning' : operations.needsAction.length ? 'warning' : 'success'} icon="alert" />
-          <MetricCard href="/provider/schedule" label="Upcoming work" value={bookingsError ? '—' : String(operations.upcoming.length)} detail={bookingsError ? 'Open Bookings to retry' : 'Future confirmed bookings'} tone={bookingsError ? 'warning' : 'info'} icon="schedule" />
-          <MetricCard href="/provider/services" label="Active services" value={`${profile.services_active}/${profile.services_total}`} detail={profile.services_active ? 'Visible service catalog' : 'Add or publish a service'} tone={profile.services_active ? 'success' : 'warning'} icon="service" />
-        </section>
-
         <Card className={`${styles.priorityPanel} ${priorityAction ? styles.priorityAttention : styles.priorityClear}`}>
           {priorityAction ? <>
             <div className={styles.priorityHeader}>
@@ -320,10 +298,24 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
           </> : <div className={styles.priorityMain}><span className={styles.priorityIcon}><DashboardIcon name="profile" /></span><div className={styles.priorityCopy}><span className="eyebrow">Priority now</span><h2>You are all caught up</h2><p>There is no urgent workspace action right now. New priorities will appear here automatically.</p></div></div>}
         </Card>
 
+        <section className={styles.providerActivityStrip} aria-label="Workspace summary">
+          <Link href="/provider/bookings" className={styles.providerActivityItem}>
+            <span>Needs action</span><strong>{bookingsError ? '—' : operations.needsAction.length}</strong>
+          </Link>
+          <Link href="/provider/schedule" className={styles.providerActivityItem}>
+            <span>Upcoming</span><strong>{bookingsError ? '—' : operations.upcoming.length}</strong>
+          </Link>
+          <Link href="/provider/services" className={styles.providerActivityItem}>
+            <span>Active services</span><strong>{profile.services_active}/{profile.services_total}</strong>
+          </Link>
+        </section>
+
         <section className={styles.primaryGrid} aria-label="Quick workspace actions">
           <Card className={styles.commandCard}><div className="section-heading"><div><span className="eyebrow">Customer work</span><h2>Run your day</h2></div><Badge tone="info">Quick access</Badge></div><ActionGrid links={customerActions} /></Card>
           <Card className={styles.commandCard}><div className="section-heading"><div><span className="eyebrow">{profile.provider_type === 'business' ? 'Hiring & business' : 'Career & presence'}</span><h2>{profile.provider_type === 'business' ? 'Grow your team' : 'Grow your opportunities'}</h2></div><Badge tone="info">{profile.provider_type === 'business' ? 'Employer' : 'Professional'}</Badge></div><ActionGrid links={roleActions} /></Card>
         </section>
+
+        <ProviderDashboardIdentityCenter onProfileUpdated={load} />
 
         <section className={styles.supportGrid} aria-label="Upcoming provider work">
           <Card className={styles.supportCard}>
