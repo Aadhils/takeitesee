@@ -35,6 +35,8 @@ test('phone inbox uses a compact horizontal conversation rail', () => {
 });
 
 test('thread bubbles, composer and actions remain touch and wrap safe', () => {
+  assert.match(css, /@media \(max-width: 980px\)[\s\S]*overscroll-behavior-y: auto/);
+  assert.match(css, /-webkit-overflow-scrolling: touch/);
   assert.match(css, /min-height: 44px/);
   assert.match(css, /max-width: 88% !important/);
   assert.match(css, /overflow-wrap: anywhere/);
