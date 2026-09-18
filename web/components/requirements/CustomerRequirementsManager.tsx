@@ -112,6 +112,7 @@ export default function CustomerRequirementsManager({ prefill = {} }: { prefill?
   const [notice, setNotice] = useState('');
   const [prefillNotice, setPrefillNotice] = useState(false);
   const prefillApplied = useRef(false);
+  const loadSequence = useRef(0);
 
   const [categoryId, setCategoryId] = useState('');
   const [categorySearch, setCategorySearch] = useState('');
@@ -191,6 +192,7 @@ export default function CustomerRequirementsManager({ prefill = {} }: { prefill?
   };
 
   const load = useCallback(async () => {
+    const sequence = ++loadSequence.current;
     setLoading(true); setError('');
     try {
       const [catalogResponse, requirementResponse] = await Promise.all([
@@ -203,6 +205,7 @@ export default function CustomerRequirementsManager({ prefill = {} }: { prefill?
       if (!requirementResponse.ok) throw new Error(requirementPayload.error || 'Requirements could not be loaded.');
       const nextCategories = catalogPayload.categories ?? [];
       const nextLocations = catalogPayload.locations ?? [];
+      if (sequence !== loadSequence.current) return;
       setCatalog({ categories: nextCategories, locations: nextLocations });
       setRequirements(requirementPayload.requirements ?? []);
 
@@ -222,11 +225,28 @@ export default function CustomerRequirementsManager({ prefill = {} }: { prefill?
         if (!locationId && nextLocations[0]) setLocationId(nextLocations[0].id);
       }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Requirement workspace could not be loaded.');
-    } finally { setLoading(false); }
+      if (sequence === loadSequence.current) setError(cause instanceof Error ? cause.message : 'Requirement workspace could not be loaded.');
+    } finally {
+      if (sequence === loadSequence.current) setLoading(false);
+    }
   }, [categoryId, locationId, prefill, tamil]);
 
   useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    const refresh = () => { if (document.visibilityState === 'visible') void load(); };
+    const refreshOnPageShow = () => { void load(); };
+    window.addEventListener('pageshow', refreshOnPageShow);
+    window.addEventListener('focus', refresh);
+    window.addEventListener('popstate', refreshOnPageShow);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      window.removeEventListener('pageshow', refreshOnPageShow);
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('popstate', refreshOnPageShow);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [load]);
 
   const toMinor = (value: string) => {
     const numeric = Number(value);
@@ -289,6 +309,7 @@ export default function CustomerRequirementsManager({ prefill = {} }: { prefill?
       const payload = await response.json() as { requirement?: Requirement; error?: string };
       if (!response.ok || !payload.requirement) throw new Error(payload.error || t('req.postFailed'));
       setRequirements((current) => [payload.requirement!, ...current.filter((row) => row.id !== payload.requirement!.id)]);
+      window.dispatchEvent(new Event('takeitesee:requirements-changed'));
       resetForm();
       setNotice(`${payload.requirement.reference} ${t('req.nowOpen')}`);
     } catch (cause) {
@@ -306,6 +327,7 @@ export default function CustomerRequirementsManager({ prefill = {} }: { prefill?
       const payload = await response.json() as { requirement?: { id: string; status: RequirementStatus; closed_at?: string | null; updated_at?: string }; error?: string };
       if (!response.ok || !payload.requirement) throw new Error(payload.error || t('req.updateFailedFallback'));
       setRequirements((current) => current.map((row) => row.id === requirementId ? { ...row, status: payload.requirement!.status, closed_at: payload.requirement!.closed_at ?? null, updated_at: payload.requirement!.updated_at ?? row.updated_at } : row));
+      window.dispatchEvent(new Event('takeitesee:requirements-changed'));
       setNotice(`${t('req.marked')}: ${status(nextStatus)}.`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t('req.updateFailedFallback'));

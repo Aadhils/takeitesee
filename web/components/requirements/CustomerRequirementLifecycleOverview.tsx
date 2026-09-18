@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Badge, Card } from '../ui/primitives';
 import { useOperationalTranslations } from '../i18n/OperationalTranslations';
 
@@ -20,23 +20,40 @@ export default function CustomerRequirementLifecycleOverview() {
   const tamil = locale.toLowerCase().startsWith('ta');
   const [requirements, setRequirements] = useState<RequirementSummary[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const loadSequence = useRef(0);
+
+  const load = useCallback(async () => {
+    const sequence = ++loadSequence.current;
+    try {
+      const response = await fetch('/api/requirements', { cache: 'no-store' });
+      if (!response.ok) return;
+      const payload = await response.json() as { requirements?: RequirementSummary[] };
+      if (sequence === loadSequence.current) setRequirements(payload.requirements ?? []);
+    } catch {
+      // This overview is supplementary and must not block the requirement workspace.
+    } finally {
+      if (sequence === loadSequence.current) setLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
 
   useEffect(() => {
-    let active = true;
-    void (async () => {
-      try {
-        const response = await fetch('/api/requirements', { cache: 'no-store' });
-        if (!response.ok) return;
-        const payload = await response.json() as { requirements?: RequirementSummary[] };
-        if (active) setRequirements(payload.requirements ?? []);
-      } catch {
-        // This overview is supplementary and must not block the requirement workspace.
-      } finally {
-        if (active) setLoaded(true);
-      }
-    })();
-    return () => { active = false; };
-  }, []);
+    const refresh = () => { if (document.visibilityState === 'visible') void load(); };
+    const refreshOnPageShow = () => { void load(); };
+    window.addEventListener('pageshow', refreshOnPageShow);
+    window.addEventListener('focus', refresh);
+    window.addEventListener('popstate', refreshOnPageShow);
+    window.addEventListener('takeitesee:requirements-changed', refreshOnPageShow);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      window.removeEventListener('pageshow', refreshOnPageShow);
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('popstate', refreshOnPageShow);
+      window.removeEventListener('takeitesee:requirements-changed', refreshOnPageShow);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [load]);
 
   const counts = useMemo(() => ({
     open: requirements.filter((row) => row.status === 'open' || row.status === 'paused').length,

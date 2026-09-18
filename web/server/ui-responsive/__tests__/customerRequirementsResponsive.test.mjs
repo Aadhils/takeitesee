@@ -3,11 +3,14 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../../../', import.meta.url);
-const [requirementsPage, workspace, detailSource, managerSource, cssSource] = await Promise.all([
+const [requirementsPage, workspace, detailSource, managerSource, proposalAttentionSource, lifecycleSource, requirementsRouteSource, cssSource] = await Promise.all([
   readFile(new URL('app/requirements/page.tsx', root), 'utf8'),
   readFile(new URL('components/requirements/CustomerRequirementWorkspace.tsx', root), 'utf8'),
   readFile(new URL('components/requirements/CustomerRequirementDetail.tsx', root), 'utf8'),
   readFile(new URL('components/requirements/CustomerRequirementsManager.tsx', root), 'utf8'),
+  readFile(new URL('components/requirements/CustomerRequirementProposalAttention.tsx', root), 'utf8'),
+  readFile(new URL('components/requirements/CustomerRequirementLifecycleOverview.tsx', root), 'utf8'),
+  readFile(new URL('app/api/requirements/route.ts', root), 'utf8'),
   readFile(new URL('components/requirements/CustomerRequirementsResponsive.module.css', root), 'utf8'),
 ]);
 
@@ -66,4 +69,25 @@ test('Requirement and proposal lifecycle semantics remain present', () => {
   assert.ok(detailSource.includes('conversationId ? `/messages?conversation='));
   assert.ok(managerSource.includes("RequirementStatus = 'open' | 'paused' | 'awarded' | 'fulfilled' | 'cancelled'"));
   assert.ok(managerSource.includes('href={`/requirements/${encodeURIComponent(row.id)}`}'));
+});
+
+
+test('Requirements list revalidates after browser restore and ignores stale overlapping loads', () => {
+  assert.ok(managerSource.includes('const loadSequence = useRef(0)'));
+  assert.ok(managerSource.includes("window.addEventListener('pageshow'"));
+  assert.ok(managerSource.includes("window.addEventListener('popstate'"));
+  assert.ok(managerSource.includes("document.addEventListener('visibilitychange'"));
+  assert.ok(managerSource.includes("takeitesee:requirements-changed"));
+  assert.ok(proposalAttentionSource.includes('const loadSequence = useRef(0)'));
+  assert.ok(proposalAttentionSource.includes("takeitesee:requirements-changed"));
+  assert.ok(lifecycleSource.includes('const loadSequence = useRef(0)'));
+  assert.ok(lifecycleSource.includes("takeitesee:requirements-changed"));
+});
+
+test('Requirements list uses base owner rows and authenticated catalog hydration without governance embeds', () => {
+  assert.ok(requirementsRouteSource.includes("supabase.rpc('get_customer_requirement_catalog')"));
+  assert.ok(requirementsRouteSource.includes("catalog?.categories?.find((item) => item.id === row.category_id)"));
+  assert.ok(requirementsRouteSource.includes("catalog?.locations?.find((item) => item.id === row.location_id)"));
+  assert.ok(!requirementsRouteSource.includes('platform_categories(name,code)'));
+  assert.ok(!requirementsRouteSource.includes('platform_locations(name,code,timezone)'));
 });
