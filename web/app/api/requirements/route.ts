@@ -33,8 +33,6 @@ type RequirementRow = {
   accepted_proposal_id: string | null;
   created_at: string;
   updated_at: string;
-  platform_categories?: { name?: string | null; code?: string | null } | Array<{ name?: string | null; code?: string | null }> | null;
-  platform_locations?: { name?: string | null; code?: string | null; timezone?: string | null } | Array<{ name?: string | null; code?: string | null; timezone?: string | null }> | null;
 };
 
 type ProposalSummaryRow = {
@@ -66,11 +64,6 @@ type RequirementCatalog = {
 const requirementIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const proposalReferencePattern = /^PROP-[A-Z0-9-]{6,40}$/i;
 
-function related(value: RequirementRow['platform_categories'] | RequirementRow['platform_locations']) {
-  const row = Array.isArray(value) ? value[0] : value;
-  return row && typeof row === 'object' ? row : null;
-}
-
 function blankProposalAttention(): ProposalAttention {
   return {
     proposal_count: 0,
@@ -100,10 +93,8 @@ function safeRequirement(
   attention: ProposalAttention | null = blankProposalAttention(),
   catalog: RequirementCatalog | null = null,
 ) {
-  const category = related(row.platform_categories);
-  const location = related(row.platform_locations);
-  const categoryName = String(category?.name ?? catalog?.categories?.find((item) => item.id === row.category_id)?.name ?? '');
-  const locationName = String(location?.name ?? catalog?.locations?.find((item) => item.id === row.location_id)?.name ?? '');
+  const categoryName = String(catalog?.categories?.find((item) => item.id === row.category_id)?.name ?? '');
+  const locationName = String(catalog?.locations?.find((item) => item.id === row.location_id)?.name ?? '');
   return {
     id: row.id,
     reference: row.requirement_reference,
@@ -142,7 +133,7 @@ function safeRequirement(
   };
 }
 
-const requirementSelect = 'id,requirement_reference,customer_id,category_id,location_id,title,description,service_mode,budget_type,budget_min_minor,budget_max_minor,currency,needed_by,preferred_start_time,expected_duration_minutes,schedule_pattern,recurrence_frequency,recurrence_interval,recurrence_count,recurrence_weekdays,status,published_at,closed_at,awarded_at,accepted_proposal_id,created_at,updated_at,platform_categories(name,code),platform_locations(name,code,timezone)';
+const requirementSelect = 'id,requirement_reference,customer_id,category_id,location_id,title,description,service_mode,budget_type,budget_min_minor,budget_max_minor,currency,needed_by,preferred_start_time,expected_duration_minutes,schedule_pattern,recurrence_frequency,recurrence_interval,recurrence_count,recurrence_weekdays,status,published_at,closed_at,awarded_at,accepted_proposal_id,created_at,updated_at';
 
 export async function GET(request: Request) {
   try {
