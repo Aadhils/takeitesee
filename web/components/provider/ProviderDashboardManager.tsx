@@ -175,11 +175,18 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
   }, []);
 
   const operations = useMemo(() => {
-    const needsAction = bookings.filter((booking) => !terminalCloseout(booking) && (
-      booking.status === 'pending'
-      || booking.status === 'rescheduled'
-      || (booking.status === 'confirmed' && (booking.attendance_outcome ?? 'pending') === 'pending' && bookingEndEpoch(booking) <= now)
-    ));
+    const needsAction = bookings
+      .filter((booking) => !terminalCloseout(booking) && (
+        booking.status === 'pending'
+        || booking.status === 'rescheduled'
+        || (booking.status === 'confirmed' && (booking.attendance_outcome ?? 'pending') === 'pending' && bookingEndEpoch(booking) <= now)
+      ))
+      .sort((left, right) => {
+        const rank = (booking: Booking) => booking.status === 'pending' ? 0 : booking.status === 'rescheduled' ? 1 : 2;
+        const rankDiff = rank(left) - rank(right);
+        if (rankDiff) return rankDiff;
+        return bookingEndEpoch(left) - bookingEndEpoch(right);
+      });
     const upcoming = bookings
       .filter((booking) => !terminalCloseout(booking) && booking.status === 'confirmed' && (booking.attendance_outcome ?? 'pending') === 'pending' && bookingEndEpoch(booking) > now)
       .sort((left, right) => bookingEndEpoch(left) - bookingEndEpoch(right))
@@ -205,13 +212,27 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
     if (profile.services_total === 0) items.push({ href: '/provider/services', label: 'Add your first service', detail: 'Create the service customers can discover and book.', icon: 'service' });
     else if (profile.services_active === 0) items.push({ href: '/provider/services', label: 'Publish an active service', detail: 'Your services exist but none are currently active.', icon: 'service' });
 
-    if (operations.needsAction.length > 0) items.push({ href: '/provider/bookings', label: `Handle ${operations.needsAction.length} booking action${operations.needsAction.length === 1 ? '' : 's'}`, detail: 'Review requests, reschedules or completion tasks.', icon: 'booking' });
-    else if (operations.upcoming.length > 0) items.push({ href: '/provider/schedule', label: 'Review your upcoming schedule', detail: `${operations.upcoming.length} confirmed booking${operations.upcoming.length === 1 ? '' : 's'} coming up.`, icon: 'schedule' });
+    if (operations.needsAction.length > 0) {
+      const booking = operations.needsAction[0];
+      const serviceLabel = booking.service_name || booking.booking_reference;
+      const remaining = operations.needsAction.length - 1;
+      const bookingCopy = booking.status === 'pending'
+        ? { label: `Confirm ${serviceLabel}`, detail: 'A customer is waiting for your response.' }
+        : booking.status === 'rescheduled'
+          ? { label: `Review the new time for ${serviceLabel}`, detail: 'The customer requested a schedule change.' }
+          : { label: `Finish the ${serviceLabel} service record`, detail: 'The scheduled service window has ended. Mark complete only if the service was delivered.' };
+      items.push({
+        href: `/provider/bookings/${encodeURIComponent(booking.id)}`,
+        label: bookingCopy.label,
+        detail: remaining > 0 ? `${bookingCopy.detail} ${remaining} more action${remaining === 1 ? '' : 's'} waiting.` : bookingCopy.detail,
+        icon: 'booking',
+      });
+    } else if (operations.upcoming.length > 0) items.push({ href: `/provider/bookings/${encodeURIComponent(operations.upcoming[0].id)}`, label: 'Your next service is ready', detail: `${operations.upcoming[0].service_name || operations.upcoming[0].booking_reference} · ${operations.upcoming[0].booking_date || 'Date pending'}${operations.upcoming[0].start_time ? ` · ${operations.upcoming[0].start_time}` : ''}.`, icon: 'schedule' });
 
     if (profile.provider_type === 'professional') items.push({ href: '/provider/jobs/applications', label: 'Check your career journey', detail: 'Applications, interviews and job progress in one place.', icon: 'job' });
     else items.push({ href: '/provider/jobs', label: 'Check your hiring pipeline', detail: 'Jobs, applicants, interviews and offers in one place.', icon: 'people' });
     return items.slice(0, 3);
-  }, [operations.needsAction.length, operations.upcoming.length, profile]);
+  }, [operations.needsAction, operations.upcoming, profile]);
 
   const customerActions: DashboardLink[] = [
     { href: '/provider/leads', label: 'Leads', detail: 'Review new customer opportunities.', icon: 'lead' },
