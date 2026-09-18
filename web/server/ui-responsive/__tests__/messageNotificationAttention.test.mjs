@@ -3,13 +3,16 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../../../', import.meta.url);
-const [messagesRoute, conversationRoute, notificationsRoute, customerShell, providerShell, workspace] = await Promise.all([
+const [messagesRoute, conversationRoute, notificationsRoute, customerShell, providerShell, workspace, customerMessagesRoute, customerMessagesPage, providerMessagesRoute] = await Promise.all([
   readFile(new URL('app/api/messages/route.ts', root), 'utf8'),
   readFile(new URL('app/api/messages/[conversationId]/route.ts', root), 'utf8'),
   readFile(new URL('app/api/notifications/route.ts', root), 'utf8'),
   readFile(new URL('components/account/LocalizedAccountShell.tsx', root), 'utf8'),
   readFile(new URL('components/provider/LiveProviderShell.tsx', root), 'utf8'),
   readFile(new URL('components/messages/MarketplaceMessagingWorkspace.tsx', root), 'utf8'),
+  readFile(new URL('app/messages/page.tsx', root), 'utf8'),
+  readFile(new URL('components/messages/CustomerMessagesPage.tsx', root), 'utf8'),
+  readFile(new URL('app/provider/messages/page.tsx', root), 'utf8'),
 ]);
 
 test('message inbox exposes one unread-count mode from the existing inbox RPC', () => {
@@ -17,6 +20,9 @@ test('message inbox exposes one unread-count mode from the existing inbox RPC', 
   assert.ok(messagesRoute.includes("url.searchParams.get('mode') === 'unread-count'"));
   assert.ok(messagesRoute.includes("supabase.rpc('get_marketplace_inbox')"));
   assert.ok(messagesRoute.includes('row.unread_count'));
+  assert.ok(messagesRoute.includes("url.searchParams.get('workspace')"));
+  assert.ok(messagesRoute.includes("row.participant_role === 'customer' || row.participant_role === 'applicant'"));
+  assert.ok(messagesRoute.includes("row.participant_role === 'provider' || row.participant_role === 'business' || row.participant_role === 'employer'"));
   assert.ok(messagesRoute.includes('unread_count: unreadCount'));
 });
 
@@ -37,7 +43,7 @@ test('notification feed resolves legacy message destinations to the exact custom
 });
 
 test('Customer navigation keeps Messages and Notifications attention live and separate', () => {
-  assert.ok(customerShell.includes("fetch('/api/messages?mode=unread-count'"));
+  assert.ok(customerShell.includes("fetch('/api/messages?mode=unread-count&workspace=customer'"));
   assert.ok(customerShell.includes("fetch('/api/notifications?mode=unread-count'"));
   assert.ok(customerShell.includes("window.addEventListener('marketplace-messages-attention-refresh', refresh)"));
   assert.ok(customerShell.includes("window.addEventListener('notifications-attention-refresh', refresh)"));
@@ -47,7 +53,7 @@ test('Customer navigation keeps Messages and Notifications attention live and se
 
 test('Provider navigation exposes the same message and notification attention on desktop and mobile', () => {
   assert.ok(providerShell.includes("{ href: '/notifications'"));
-  assert.ok(providerShell.includes("fetch('/api/messages?mode=unread-count'"));
+  assert.ok(providerShell.includes("fetch('/api/messages?mode=unread-count&workspace=provider'"));
   assert.ok(providerShell.includes("fetch('/api/notifications?mode=unread-count'"));
   assert.ok(providerShell.includes("link.href === '/provider/messages' && messageUnreadCount > 0"));
   assert.ok(providerShell.includes("link.href === '/notifications' && notificationUnreadCount > 0"));
@@ -58,4 +64,15 @@ test('Provider navigation exposes the same message and notification attention on
 test('message workspace refreshes both navigation attention sources immediately after a thread is read', () => {
   assert.ok(workspace.includes("window.dispatchEvent(new Event('marketplace-messages-attention-refresh'))"));
   assert.ok(workspace.includes("window.dispatchEvent(new Event('notifications-attention-refresh'))"));
+});
+
+
+test('customer and provider message routes keep conversation role context isolated', () => {
+  assert.ok(!customerMessagesRoute.includes("session.roles.includes('professional')"));
+  assert.ok(!customerMessagesRoute.includes("redirect(`/provider/messages"));
+  assert.ok(customerMessagesPage.includes('workspace="customer"'));
+  assert.ok(providerMessagesRoute.includes('workspace="provider"'));
+  assert.ok(workspace.includes("fetch(`/api/messages?workspace=${workspace}`"));
+  assert.ok(workspace.includes("rows.some((row) => row.id === initialConversationId) ? initialConversationId : ''"));
+  assert.ok(workspace.includes("const [selectedId, setSelectedId] = useState('')"));
 });
