@@ -70,3 +70,17 @@ test('requirement list and detail hydrate canonical category and city names thro
   assert.ok(requirementDetailRouteSource.includes('platform_locations: location'));
   assert.ok(requirementDetailRouteSource.includes('platform_categories: category'));
 });
+
+
+test('provider workspace keeps customer quick actions out of provider chrome', async () => {
+  const shellSource = await readFile(new URL('components/layout/AppShell.tsx', root), 'utf8');
+  assert.ok(shellSource.includes("const isProviderWorkspace = pathname === '/provider' || pathname.startsWith('/provider/')"));
+  assert.ok(shellSource.includes("!isProviderWorkspace ? <Link href=\"/requirements\" className=\"header-requirement\""));
+});
+
+test('skip link stays hidden for touch focus and appears for keyboard focus', async () => {
+  const shellSource = await readFile(new URL('components/layout/AppShell.tsx', root), 'utf8');
+  assert.ok(shellSource.includes('.skip-link:focus-visible'));
+  assert.ok(shellSource.includes('pointer-events: none'));
+  assert.ok(!shellSource.includes('.skip-link:focus { transform: translateY(0); }'));
+});
