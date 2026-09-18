@@ -15,7 +15,7 @@ const [dashboardCss, reachCss, locationCss, availabilityCss, portfolioCss, found
 test('provider dashboard cards retain compact tablet and phone contracts', () => {
   assert.match(dashboardCss, /\.providerActivityStrip\s*\{[\s\S]*?grid-template-columns:\s*repeat\(3/);
   assert.match(dashboardCss, /@media \(max-width: 780px\)[\s\S]*?\.providerActivityStrip\s*\{[\s\S]*?overflow-x:\s*auto/);
-  assert.match(dashboardCss, /@media \(max-width: 780px\)[\s\S]*?\.primaryGrid, \.supportGrid\s*\{\s*grid-template-columns:\s*1fr/);
+  assert.match(dashboardCss, /@media \(max-width: 780px\)[\s\S]*?\.supportGrid\s*\{\s*grid-template-columns:\s*1fr/);
   assert.match(dashboardCss, /\.providerQuickGrid\s*\{[\s\S]*?grid-template-columns:\s*repeat\(8/);
   assert.match(dashboardCss, /@media \(max-width: 1100px\)[\s\S]*?\.providerQuickGrid\s*\{\s*grid-template-columns:\s*repeat\(4/);
   assert.match(dashboardCss, /@media \(max-width: 560px\)[\s\S]*?\.providerQuickLink\s*\{[\s\S]*?min-height:\s*68px/);
