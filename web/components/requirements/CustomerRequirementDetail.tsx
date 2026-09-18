@@ -90,6 +90,9 @@ export default function CustomerRequirementDetail({ requirementId }: { requireme
   const [busy, setBusy] = useState(false);
   const [proposalBusyId, setProposalBusyId] = useState('');
   const [pendingAcceptId, setPendingAcceptId] = useState('');
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [scheduleTime, setScheduleTime] = useState('');
+  const [scheduleNotes, setScheduleNotes] = useState('');
   const tamil = locale.toLowerCase().startsWith('ta');
   const durationLabel = (minutes: number | null) => {
     if (minutes == null) return t('common.flexible');
@@ -149,6 +152,51 @@ export default function CustomerRequirementDetail({ requirementId }: { requireme
     finally { setProposalBusyId(''); }
   };
 
+  const beginChooseAndSchedule = (proposalId: string) => {
+    if (!requirement) return;
+    setPendingAcceptId(proposalId);
+    setScheduleDate(requirement.needed_by || '');
+    setScheduleTime(requirement.preferred_start_time ? requirement.preferred_start_time.slice(0, 5) : '');
+    setScheduleNotes('');
+    setError('');
+    setNotice('');
+  };
+
+  const chooseAndSchedule = async (proposalId: string) => {
+    if (proposalBusyId) return;
+    if (!scheduleDate || !scheduleTime) {
+      setError(tamil ? 'Service date மற்றும் start time தேர்வு செய்யுங்கள்.' : 'Choose a service date and start time.');
+      return;
+    }
+    setProposalBusyId(proposalId); setError(''); setNotice('');
+    try {
+      const response = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/proposals/${encodeURIComponent(proposalId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          decision: 'accept',
+          booking_date: scheduleDate,
+          start_time: scheduleTime,
+          notes: scheduleNotes,
+        }),
+      });
+      const payload = await response.json() as { booking?: { booking_reference?: string }; error?: string };
+      if (!response.ok || !payload.booking) throw new Error(payload.error || (tamil ? 'Provider மற்றும் service time-ஐ உறுதி செய்ய முடியவில்லை.' : 'Provider and service time could not be confirmed.'));
+      setPendingAcceptId('');
+      setScheduleDate('');
+      setScheduleTime('');
+      setScheduleNotes('');
+      setNotice(tamil
+        ? `Provider தேர்வு செய்து service schedule உருவாக்கப்பட்டது${payload.booking.booking_reference ? `: ${payload.booking.booking_reference}` : ''}.`
+        : `Provider chosen and service scheduled${payload.booking.booking_reference ? `: ${payload.booking.booking_reference}` : ''}.`);
+      await load();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : (tamil ? 'Provider மற்றும் service time-ஐ உறுதி செய்ய முடியவில்லை.' : 'Provider and service time could not be confirmed.'));
+    } finally {
+      setProposalBusyId('');
+    }
+  };
+
   if (!requirement) return <div style={{ display: 'grid', gap: '1rem' }}><Link href="/requirements">← {t('req.back')}</Link><Card><p>{error || t('common.loading')}</p></Card></div>;
   const categoryName = relationName(requirement.platform_categories);
   const locationName = relationName(requirement.platform_locations);
@@ -167,6 +215,9 @@ export default function CustomerRequirementDetail({ requirementId }: { requireme
   });
   const acceptedProposal = proposals.find((proposal) => proposal.id === requirement.accepted_proposal_id || proposal.status === 'accepted') ?? null;
   const chatHref = conversationId ? `/messages?conversation=${encodeURIComponent(conversationId)}` : '/messages';
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const minimumScheduleDate = requirement.needed_by && requirement.needed_by > today ? requirement.needed_by : today;
 
   return <div style={{ display: 'grid', gap: '1rem' }}>
     <Link href="/requirements">← {t('req.back')}</Link>
@@ -180,19 +231,19 @@ export default function CustomerRequirementDetail({ requirementId }: { requireme
     </Card>
 
     {requirement.status === 'awarded' ? <Card className="policy-card">
-      <div className="section-heading"><div><span className="eyebrow">{tamil ? 'Provider தேர்வு முடிந்தது' : 'Provider selected'}</span><h2>{tamil ? 'அடுத்ததாக என்ன செய்ய வேண்டும்?' : 'What happens next?'}</h2></div><Badge tone="success">{acceptedProposal?.provider_display_name || (tamil ? 'Selected Provider' : 'Selected provider')}</Badge></div>
-      <p className="detail-copy">{tamil ? 'முதலில் private chat-ல் service date, start time மற்றும் தேவையான விவரங்களை Provider உடன் உறுதி செய்யுங்கள். பிறகு கீழே உள்ள Service job பகுதியில் schedule உருவாக்குங்கள்; அதுவே Provider-ன் Bookings workspace-க்கு service booking ஆக செல்லும்.' : 'First confirm the service date, start time and remaining details with the selected provider in the private chat. Then schedule the service in the Service job section below; that creates the booking that appears in the provider Bookings workspace.'}</p>
+      <div className="section-heading"><div><span className="eyebrow">{tamil ? 'MY SERVICE' : 'MY SERVICE'}</span><h2>{acceptedProposal ? `${acceptedProposal.service_name} · ${acceptedProposal.provider_display_name}` : (tamil ? 'உங்கள் service journey' : 'Your service journey')}</h2></div><Badge tone="success">{tamil ? 'Provider தேர்வு முடிந்தது' : 'Provider chosen'}</Badge></div>
+      <p className="detail-copy">{tamil ? 'Provider தேர்வு முடிந்தது. இதே journey-ல் service time, chat, booking மற்றும் completion அனைத்தையும் தொடரலாம் — வேறு workflow நினைவில் வைத்துக்கொள்ள வேண்டாம்.' : 'Your provider is chosen. Continue the service time, chat, booking and completion from this same journey — no separate workflow to remember.'}</p>
       <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', marginTop: '.75rem' }}>
-        <Link className="button button-primary" href={chatHref}>{tamil ? 'Selected Provider-க்கு message செய்' : 'Message selected provider'}</Link>
-        <Link className="button button-secondary" href="#requirement-service-job">{tamil ? 'Service schedule உருவாக்கு' : 'Schedule service'}</Link>
+        <Link className="button button-primary" href="#requirement-service-job">{tamil ? 'Service journey தொடரு' : 'Continue service journey'}</Link>
+        <Link className="button button-secondary" href={chatHref}>{tamil ? 'Provider-க்கு message செய்' : 'Message provider'}</Link>
       </div>
     </Card> : null}
 
     <Card className="policy-card">
       <div className="section-heading"><div><span className="eyebrow">{t('req.providerProposals')}</span><h2>{t('req.compareProviders')}</h2></div><Badge tone="info">{proposals.length}</Badge></div>
       {submittedProposals.length > 0 && canReviewProposals ? <div className="customer-proposal-compare-guide">
-        <strong>{tamil ? 'Provider-ஐ தேர்வு செய்வதற்கு முன் compare செய்யுங்கள்' : 'Compare before selecting a provider'}</strong>
-        <p>{tamil ? 'Provider identity, current marketplace eligibility, public profile, service, quote basis, amount, start date மற்றும் proposal message அனைத்தையும் பார்த்து முடிவு செய்யுங்கள். Select செய்த பிறகு இந்த requirement அந்த Provider-க்கு award ஆகும்.' : 'Review provider identity, current marketplace eligibility, public profile, service, quote basis, amount, start date and proposal message before deciding. Selecting a provider awards this requirement to that provider.'}</p>
+        <strong>{tamil ? 'Compare செய்து, ஒரே step-ல் Provider + time தேர்வு செய்யுங்கள்' : 'Compare, then choose your provider and time in one step'}</strong>
+        <p>{tamil ? 'Provider profile, service, quote மற்றும் message-ஐ பார்த்து முடிவு செய்யுங்கள். “Choose & schedule” மூலம் Provider selection மற்றும் முதல் service booking ஒரே confirmation-ல் முடியும்.' : 'Review the provider profile, service, quote and message. “Choose & schedule” completes provider selection and the first service booking in one confirmation.'}</p>
         <div className="customer-proposal-compare-badges"><Badge tone="info">{submittedProposals.length} {tamil ? 'active proposals' : 'active proposals'}</Badge>{submittedProfessionalCount > 0 ? <Badge tone="neutral">{submittedProfessionalCount} {tamil ? 'Professional' : submittedProfessionalCount === 1 ? 'Professional' : 'Professionals'}</Badge> : null}{submittedBusinessCount > 0 ? <Badge tone="neutral">{submittedBusinessCount} {tamil ? 'Business' : submittedBusinessCount === 1 ? 'Business' : 'Businesses'}</Badge> : null}</div>
         {submittedPricingBases.size > 1 ? <p className="summary-note">{tamil ? 'கவனம்: சில recurring proposals per-occurrence quote, சில whole-requirement quote. இந்த amounts-ஐ நேரடியாக cheapest என்று compare செய்ய வேண்டாம்.' : 'Note: these recurring proposals use different quote bases. Per-occurrence and whole-requirement amounts are not directly comparable.'}</p> : null}
       </div> : null}
@@ -210,13 +261,23 @@ export default function CustomerRequirementDetail({ requirementId }: { requireme
             {proposal.provider_profile_href ? <Link className="button button-secondary" href={proposal.provider_profile_href}>{tamil ? 'Public profile பார்க்க' : 'View public profile'}</Link> : null}
           </div>
           <div className="customer-proposal-message"><span className="eyebrow">{tamil ? 'Provider message' : 'Provider message'}</span><p className="detail-copy">{proposal.message}</p></div>
-          {pendingAccept ? <div className="customer-proposal-confirm" role="region" aria-label={tamil ? 'Provider தேர்வு உறுதி' : 'Confirm provider selection'}>
-            <strong>{tamil ? 'இந்த Provider-ஐ தேர்வு செய்வதை உறுதி செய்யவா?' : 'Confirm this provider selection?'}</strong>
-            <p>{tamil ? `${proposal.provider_display_name}-ஐ தேர்வு செய்தால் இந்த requirement award ஆகும்; மற்ற submitted proposals decline ஆகும். இந்த action payment-ஐ தொடங்காது. Provider/service eligibility final submit-ல் server-side மீண்டும் check செய்யப்படும்.` : `Selecting ${proposal.provider_display_name} awards this requirement and declines the other submitted proposals. This action does not start a payment. Provider/service eligibility is rechecked server-side at final selection.`}</p>
-            <dl className="review-details"><div><dt>{tamil ? 'Provider' : 'Provider'}</dt><dd>{proposal.provider_display_name} · {status(proposal.provider_type)}</dd></div><div><dt>{t('common.service')}</dt><dd>{proposal.service_name}</dd></div><div><dt>{t('common.quote')}</dt><dd>{formatMoney(proposal.amount_minor, proposal.currency, locale)}</dd></div><div><dt>{tamil ? 'Quote basis' : 'Quote basis'}</dt><dd>{pricingBasisLabel(proposal.pricing_basis || 'per_occurrence')}</dd></div><div><dt>{t('common.estimatedStart')}</dt><dd>{proposal.estimated_start_date || t('common.flexible')}</dd></div></dl>
-            <div className="customer-proposal-confirm-actions"><Button type="button" loading={proposalBusyId === proposal.id} disabled={currentlyIneligible} onClick={() => void decideProposal(proposal.id, 'accept')}>{tamil ? 'ஆம், இந்த Provider-ஐ தேர்வு செய்' : 'Yes, select this provider'}</Button><Button type="button" variant="quiet" disabled={proposalBusyId === proposal.id} onClick={() => setPendingAcceptId('')}>{tamil ? 'Compare செய்ய திரும்பு' : 'Keep comparing'}</Button></div>
+          {pendingAccept ? <div className="customer-proposal-confirm customer-proposal-smart-schedule" role="region" aria-label={tamil ? 'Provider மற்றும் service time உறுதி' : 'Choose provider and service time'}>
+            <strong>{tamil ? `${proposal.provider_display_name} உடன் service-ஐ schedule செய்யவா?` : `Choose & schedule with ${proposal.provider_display_name}`}</strong>
+            <p>{tamil ? 'இந்த ஒரே confirmation Provider-ஐ தேர்வு செய்து முதல் service booking-ஐ உருவாக்கும். மற்ற submitted proposals decline ஆகும். Payment இப்போது தொடங்காது; eligibility மற்றும் availability server-side மீண்டும் verify செய்யப்படும்.' : 'One confirmation chooses the provider and creates the first service booking. Other submitted proposals are declined. No payment starts now; eligibility and availability are rechecked on the server.'}</p>
+            <dl className="review-details"><div><dt>{tamil ? 'Provider' : 'Provider'}</dt><dd>{proposal.provider_display_name} · {status(proposal.provider_type)}</dd></div><div><dt>{t('common.service')}</dt><dd>{proposal.service_name}</dd></div><div><dt>{t('common.quote')}</dt><dd>{formatMoney(proposal.amount_minor, proposal.currency, locale)}</dd></div><div><dt>{tamil ? 'Quote basis' : 'Quote basis'}</dt><dd>{pricingBasisLabel(proposal.pricing_basis || 'per_occurrence')}</dd></div></dl>
+            <div className="customer-smart-schedule-grid">
+              <label className="field"><span className="field-label">{tamil ? 'Service date' : 'Service date'}</span><input className="field-control" type="date" min={minimumScheduleDate} value={scheduleDate} onChange={(event) => setScheduleDate(event.target.value)} required /></label>
+              <label className="field"><span className="field-label">{tamil ? 'Start time' : 'Start time'}</span><input className="field-control" type="time" value={scheduleTime} onChange={(event) => setScheduleTime(event.target.value)} required /></label>
+            </div>
+            <label className="field"><span className="field-label">{tamil ? 'Service note (optional)' : 'Service note (optional)'}</span><textarea className="field-control field-textarea" rows={2} maxLength={1000} value={scheduleNotes} onChange={(event) => setScheduleNotes(event.target.value)} placeholder={tamil ? 'Chat-ல் ஒப்புக்கொண்ட access/details இருந்தால் சேர்க்கவும்.' : 'Add access details or anything already agreed in chat.'} /></label>
+            <p className="summary-note">{tamil ? 'Time unavailable என்றால் Provider selection save ஆகாது; வேறு time தேர்வு செய்து மீண்டும் try செய்யலாம்.' : 'If the time is unavailable, the provider selection is not saved. Choose another time and try again.'}</p>
+            <div className="customer-proposal-confirm-actions">
+              <Button type="button" loading={proposalBusyId === proposal.id} disabled={currentlyIneligible || !scheduleDate || !scheduleTime} onClick={() => void chooseAndSchedule(proposal.id)}>{tamil ? 'Provider + time உறுதி செய்' : 'Confirm provider & time'}</Button>
+              <Button type="button" variant="secondary" loading={proposalBusyId === proposal.id} disabled={currentlyIneligible} onClick={() => void decideProposal(proposal.id, 'accept')}>{tamil ? 'Time பின்னர் தேர்வு செய்' : 'Choose time later'}</Button>
+              <Button type="button" variant="quiet" disabled={proposalBusyId === proposal.id} onClick={() => setPendingAcceptId('')}>{tamil ? 'Compare செய்ய திரும்பு' : 'Keep comparing'}</Button>
+            </div>
           </div> : null}
-          <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', alignItems: 'start' }}>{proposal.status === 'submitted' && canReviewProposals && !pendingAccept && !currentlyIneligible ? <><Button type="button" loading={proposalBusyId === proposal.id} onClick={() => setPendingAcceptId(proposal.id)}>{tamil ? 'இந்த Provider-ஐ தேர்வு செய்' : 'Select this provider'}</Button><Button type="button" variant="quiet" loading={proposalBusyId === proposal.id} onClick={() => void decideProposal(proposal.id, 'decline')}>{t('req.decline')}</Button></> : proposal.status === 'submitted' && canReviewProposals && !pendingAccept ? <Button type="button" variant="quiet" loading={proposalBusyId === proposal.id} onClick={() => void decideProposal(proposal.id, 'decline')}>{t('req.decline')}</Button> : null}<MarketplaceReportForm targetType="proposal" targetId={proposal.id} label={t('req.reportProposal')} /></div>
+          <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', alignItems: 'start' }}>{proposal.status === 'submitted' && canReviewProposals && !pendingAccept && !currentlyIneligible ? <><Button type="button" loading={proposalBusyId === proposal.id} onClick={() => beginChooseAndSchedule(proposal.id)}>{tamil ? 'Choose & schedule' : 'Choose & schedule'}</Button><Button type="button" variant="quiet" loading={proposalBusyId === proposal.id} onClick={() => void decideProposal(proposal.id, 'decline')}>{t('req.decline')}</Button></> : proposal.status === 'submitted' && canReviewProposals && !pendingAccept ? <Button type="button" variant="quiet" loading={proposalBusyId === proposal.id} onClick={() => void decideProposal(proposal.id, 'decline')}>{t('req.decline')}</Button> : null}<MarketplaceReportForm targetType="proposal" targetId={proposal.id} label={t('req.reportProposal')} /></div>
           {proposal.status === 'accepted' ? <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center', flexWrap: 'wrap', marginTop: '.6rem' }}><Link className="button button-secondary" href={chatHref}>{t('req.openChat')}</Link><p className="summary-note">{t('req.privateOnly')}</p></div> : null}
         </div>; })}
       </div>}
@@ -240,7 +301,14 @@ export default function CustomerRequirementDetail({ requirementId }: { requireme
       .customer-proposal-confirm { display: grid; gap: .75rem; margin: 1rem 0; padding: 1rem; border: 1px solid var(--color-primary); border-radius: 14px; background: var(--color-selected); }
       .customer-proposal-confirm > p { margin: 0; }
       .customer-proposal-confirm-actions { display: flex; gap: .6rem; flex-wrap: wrap; }
-      @media (max-width: 720px) { .customer-provider-current-context { align-items: flex-start; flex-direction: column; } }
+      .customer-smart-schedule-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+      .customer-proposal-smart-schedule .field-textarea { min-height: 84px; }
+      @media (max-width: 720px) {
+        .customer-provider-current-context { align-items: flex-start; flex-direction: column; }
+        .customer-smart-schedule-grid { grid-template-columns: 1fr; }
+        .customer-proposal-confirm-actions { display: grid; grid-template-columns: 1fr; }
+        .customer-proposal-confirm-actions .button { width: 100%; }
+      }
     `}</style>
   </div>;
 }
