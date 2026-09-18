@@ -63,7 +63,7 @@
 .workspaceLink,
 .workspaceEdit {
   display: inline-flex;
-  min-height: 38px;
+  min-height: 44px;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
@@ -635,8 +635,9 @@
 
 @media (max-width: 560px) {
   .workspaceToolbar { margin-inline: -2px; border-radius: 13px; }
-  .workspaceLink { min-height: 36px; padding-inline: 9px; font-size: .68rem; }
+  .workspaceLink { min-height: 44px; padding-inline: 9px; font-size: .68rem; }
   .workspaceRole { font-size: .7rem; }
+  .workspaceIdentity :global(.badge) { display: none; }
   .metricsGrid { grid-template-columns: 1fr; }
   .metricCard { min-height: 132px; }
   .providerQuickGrid { gap: 6px; }
