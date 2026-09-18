@@ -39,6 +39,7 @@ test('Dashboard identity center preserves profile and Professional role contract
 });
 
 test('Dashboard role editing remains progressive and mobile-friendly', () => {
+  assert.ok(identitySource.includes('className={styles.managementDisclosure}'));
   assert.ok(identitySource.includes('<details className={styles.more}>'));
   assert.ok(identitySource.includes('role.id !== editingRoleId'));
   assert.ok(identitySource.includes('aria-live="assertive"'));
@@ -47,6 +48,10 @@ test('Dashboard role editing remains progressive and mobile-friendly', () => {
   assert.ok(cssSource.includes('grid-auto-columns: minmax(245px'));
   assert.ok(cssSource.includes('flex: 0 0 18px'));
   assert.ok(cssSource.includes('safe-area-inset-bottom'));
+  assert.ok(cssSource.includes('.managementSummary'));
+  assert.ok(cssSource.includes('min-height: 58px'));
+  assert.ok(cssSource.includes('.managementBody'));
+  assert.ok(cssSource.includes('.launchCompactBody'));
 });
 
 test('Provider Profile mutation uses the owner-scoped RPC instead of direct table writes', () => {
