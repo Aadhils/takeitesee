@@ -70,7 +70,7 @@ export default function LocalizedAccountShell({ children, active, customerName, 
     let activeRequest = true;
     const load = async () => {
       try {
-        const response = await fetch('/api/messages?mode=unread-count', { cache: 'no-store' });
+        const response = await fetch('/api/messages?mode=unread-count&workspace=customer', { cache: 'no-store' });
         if (!response.ok || !activeRequest) return;
         const payload = await response.json() as { unread_count?: number };
         if (Number.isFinite(payload.unread_count)) setMessageUnreadCount(Math.max(0, Number(payload.unread_count)));
