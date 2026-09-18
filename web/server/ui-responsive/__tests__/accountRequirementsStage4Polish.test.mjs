@@ -78,9 +78,14 @@ test('provider workspace keeps customer quick actions out of provider chrome', a
   assert.ok(shellSource.includes("!isProviderWorkspace ? <Link href=\"/requirements\" className=\"header-requirement\""));
 });
 
-test('skip link stays hidden for touch focus and appears for keyboard focus', async () => {
+test('skip link uses explicit keyboard modality so touch/browser restore cannot expose it', async () => {
   const shellSource = await readFile(new URL('components/layout/AppShell.tsx', root), 'utf8');
-  assert.ok(shellSource.includes('.skip-link:focus-visible'));
+  assert.ok(shellSource.includes("event.key === 'Tab'"));
+  assert.ok(shellSource.includes("root.classList.add('takeitesee-keyboard-nav')"));
+  assert.ok(shellSource.includes("window.addEventListener('pointerdown', disableKeyboardNav, true)"));
+  assert.ok(shellSource.includes("window.addEventListener('touchstart', disableKeyboardNav, true)"));
+  assert.ok(shellSource.includes("window.addEventListener('pageshow', resetKeyboardNav)"));
+  assert.ok(shellSource.includes('.takeitesee-keyboard-nav .skip-link:focus'));
   assert.ok(shellSource.includes('pointer-events: none'));
-  assert.ok(!shellSource.includes('.skip-link:focus { transform: translateY(0); }'));
+  assert.ok(!shellSource.includes('.skip-link:focus-visible'));
 });
