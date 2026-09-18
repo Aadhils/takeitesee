@@ -72,6 +72,9 @@ export default function ProviderDashboardIdentityCenter({ onProfileUpdated }: { 
   const [roleError, setRoleError] = useState('');
   const [roleNotice, setRoleNotice] = useState('');
   const [roleForm, setRoleForm] = useState<RoleForm>(emptyRoleForm);
+  const [profileManagerOpen, setProfileManagerOpen] = useState(false);
+  const [rolesManagerOpen, setRolesManagerOpen] = useState(false);
+  const [setupManagerOpen, setSetupManagerOpen] = useState(false);
 
   const copy = useMemo(() => tamil ? {
     eyebrow: 'Profile details', title: 'Public profile விவரங்கள்', subtitle: 'மேலே உள்ள photo & banner identity-க்கு கீழே, customers பார்க்கும் பெயர், description மற்றும் service area-ஐ இங்கே manage செய்யுங்கள்.',
@@ -96,7 +99,9 @@ export default function ProviderDashboardIdentityCenter({ onProfileUpdated }: { 
       const response = await fetch('/api/provider/profile/roles', { cache: 'no-store' });
       const body = await response.json() as { roles?: ProfessionalRole[]; error?: string };
       if (!response.ok) throw new Error(body.error ?? 'Unable to load roles.');
-      setRoles(body.roles ?? []);
+      const nextRoles = body.roles ?? [];
+      setRoles(nextRoles);
+      if (nextRoles.length === 0) setRolesManagerOpen(true);
     } catch (cause) {
       setRoleError(cause instanceof Error ? cause.message : 'Unable to load roles.');
     } finally {
@@ -112,6 +117,10 @@ export default function ProviderDashboardIdentityCenter({ onProfileUpdated }: { 
       const body = await response.json() as { profile?: Profile; error?: string };
       if (!response.ok || !body.profile) throw new Error(body.error ?? 'Unable to load provider profile.');
       setProfile(body.profile);
+      const profileReady = body.profile.display_name.trim().length >= 2
+        && body.profile.description.trim().length >= 20
+        && body.profile.location.trim().length >= 2;
+      setProfileManagerOpen(!profileReady);
       setForm({ display_name: body.profile.display_name, description: body.profile.description, location: body.profile.location });
       if (body.profile.provider_type === 'professional') void loadRoles();
       else setRoles([]);
@@ -139,8 +148,9 @@ export default function ProviderDashboardIdentityCenter({ onProfileUpdated }: { 
     finally { setSaving(false); }
   };
 
-  const startNewRole = () => { setEditingRoleId(null); setRoleForm(emptyRoleForm); setRoleError(''); setRoleNotice(''); setRoleEditorOpen(true); };
+  const startNewRole = () => { setRolesManagerOpen(true); setEditingRoleId(null); setRoleForm(emptyRoleForm); setRoleError(''); setRoleNotice(''); setRoleEditorOpen(true); };
   const startEditRole = (role: ProfessionalRole) => {
+    setRolesManagerOpen(true);
     setEditingRoleId(role.id); setRoleError(''); setRoleNotice(''); setRoleEditorOpen(true);
     setRoleForm({ title: role.title, summary: role.summary ?? '', experience_years: role.experience_years === null ? '' : String(role.experience_years), service_bookings_enabled: role.service_bookings_enabled, freelance_enabled: role.freelance_enabled, part_time_enabled: role.part_time_enabled, full_time_enabled: role.full_time_enabled, contract_enabled: role.contract_enabled, active: role.active });
   };
@@ -177,47 +187,107 @@ export default function ProviderDashboardIdentityCenter({ onProfileUpdated }: { 
   if (!profile) return <Card className={styles.panel}><p className="field-error" role="alert">{error || 'Provider profile unavailable.'}</p></Card>;
 
   return <section id="provider-profile" className={styles.center} aria-label="Provider profile and identity controls">
-    <Card className={styles.panel}>
-      <div className={styles.header}>
-        <div className={styles.detailsHeading}><span className={styles.eyebrow}>{copy.eyebrow}</span><h2>{copy.title}</h2><p>{copy.subtitle}</p></div>
-        <div className={styles.badges}><Badge tone="info">{profile.provider_type === 'business' ? copy.business : copy.professional}</Badge><Badge tone={profile.verified ? 'success' : 'warning'}>{profile.verified ? copy.verified : copy.pending}</Badge><Badge tone={complete ? 'success' : 'warning'}>{complete ? copy.ready : copy.needs}</Badge></div>
+    <details
+      className={styles.managementDisclosure}
+      open={profileManagerOpen}
+      onToggle={(event) => setProfileManagerOpen(event.currentTarget.open)}
+    >
+      <summary className={styles.managementSummary}>
+        <div className={styles.managementSummaryCopy}>
+          <span className={styles.eyebrow}>{copy.eyebrow}</span>
+          <strong>{profile.display_name || copy.title}</strong>
+          <small>{profile.location || copy.area} · {profile.services_active} {copy.active} / {profile.services_total} {copy.services.toLowerCase()}</small>
+        </div>
+        <div className={styles.managementSummaryMeta}>
+          <Badge tone={profile.verified ? 'success' : 'warning'}>{profile.verified ? copy.verified : copy.pending}</Badge>
+          <Badge tone={complete ? 'success' : 'warning'}>{complete ? copy.ready : copy.needs}</Badge>
+          <span className={styles.managementCaret} aria-hidden="true">⌄</span>
+        </div>
+      </summary>
+
+      <div className={styles.managementBody}>
+        {notice ? <p className={styles.notice} role="status">{notice}</p> : null}
+        {error ? <p className="field-error" role="alert">{error}</p> : null}
+
+        <div className={styles.preview}>
+          <div><strong>{profile.display_name}</strong><p>{profile.description || (tamil ? 'Short provider description சேர்க்கவும்.' : 'Add a short provider description.')}</p></div>
+          <div className={styles.facts}><span><small>{copy.area}</small><strong>{profile.location || '—'}</strong></span><span><small>{copy.services}</small><strong>{profile.services_active} {copy.active} · {profile.services_total}</strong></span></div>
+        </div>
+
+        <div className={styles.actions}>
+          <Button type="button" onClick={() => setEditing((value) => !value)}>{copy.editProfile}</Button>
+          <Link href="/provider/public-readiness" className={styles.secondaryLink}>{copy.publicReadiness}</Link>
+        </div>
+
+        {editing ? <form className={styles.editor} onSubmit={saveProfile}>
+          <div className={styles.twoColumns}><Input label={profile.provider_type === 'business' ? copy.businessName : copy.profileName} value={form.display_name} onChange={(event) => setForm((current) => ({ ...current, display_name: event.target.value }))} required maxLength={120} /><Input label={copy.area} value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} required maxLength={160} /></div>
+          <Textarea label={copy.description} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} maxLength={1200} rows={3} />
+          <div className={styles.actions}><Button type="submit" loading={saving}>{copy.save}</Button><Button type="button" variant="secondary" onClick={() => { setEditing(false); setForm({ display_name: profile.display_name, description: profile.description, location: profile.location }); }}>{copy.cancel}</Button></div>
+        </form> : null}
       </div>
+    </details>
 
-      {notice ? <p className={styles.notice} role="status">{notice}</p> : null}
-      {error ? <p className="field-error" role="alert">{error}</p> : null}
+    {profile.provider_type === 'professional' ? <details
+      className={styles.managementDisclosure}
+      open={rolesManagerOpen}
+      onToggle={(event) => setRolesManagerOpen(event.currentTarget.open)}
+    >
+      <summary className={styles.managementSummary}>
+        <div className={styles.managementSummaryCopy}>
+          <span className={styles.eyebrow}>{copy.professional}</span>
+          <strong>{copy.roles}</strong>
+          <small>{rolesLoading ? (tamil ? 'Roles load ஆகிறது…' : 'Loading roles…') : roles.length ? `${roles.length} ${roles.length === 1 ? 'role' : 'roles'}` : copy.noRoles}</small>
+        </div>
+        <div className={styles.managementSummaryMeta}>
+          <Badge tone={roles.some((role) => role.active) ? 'success' : 'neutral'}>{roles.filter((role) => role.active).length} active</Badge>
+          <span className={styles.managementCaret} aria-hidden="true">⌄</span>
+        </div>
+      </summary>
 
-      <div className={styles.preview}>
-        <div><strong>{profile.display_name}</strong><p>{profile.description || (tamil ? 'Short provider description சேர்க்கவும்.' : 'Add a short provider description.')}</p></div>
-        <div className={styles.facts}><span><small>{copy.area}</small><strong>{profile.location || '—'}</strong></span><span><small>{copy.services}</small><strong>{profile.services_active} {copy.active} · {profile.services_total}</strong></span></div>
+      <div className={styles.managementBody}>
+        <div className={styles.sectionHead}>
+          <div><p>{copy.rolesHelp}</p></div>
+          {!roleEditorOpen ? <Button type="button" onClick={startNewRole}>{copy.addRole}</Button> : null}
+        </div>
+        {roleNotice ? <p className={styles.notice} role="status">{roleNotice}</p> : null}
+        {roleError && !roleEditorOpen ? <p className="field-error" role="alert">{roleError}</p> : null}
+        {rolesLoading ? <p>{tamil ? 'Roles load ஆகிறது…' : 'Loading roles…'}</p> : null}
+        {!rolesLoading && roles.length === 0 ? <EmptyState title={copy.noRoles} action={<Button type="button" onClick={startNewRole}>{copy.addRole}</Button>}>{copy.noRolesBody}</EmptyState> : null}
+        {roles.length ? <div className={styles.roleRail}>{roles.map((role) => <article className={styles.roleCard} key={role.id}><div className={styles.roleTop}><div><h3>{role.title}</h3><small>{role.experience_years === null ? (tamil ? 'Experience குறிப்பிடவில்லை' : 'Experience not specified') : `${role.experience_years} years experience`}</small></div><Badge tone={role.active ? 'success' : 'neutral'}>{role.active ? 'Active' : 'Paused'}</Badge></div><p>{role.summary || (tamil ? 'Short summary சேர்க்கவும்.' : 'Add a short summary.')}</p><div className={styles.chips}>{role.service_bookings_enabled ? <Badge tone="info">{copy.serviceBookings}</Badge> : null}{role.freelance_enabled ? <Badge tone="info">{copy.freelance}</Badge> : null}{role.part_time_enabled ? <Badge tone="info">{copy.partTime}</Badge> : null}{role.full_time_enabled ? <Badge tone="info">{copy.fullTime}</Badge> : null}{role.contract_enabled ? <Badge tone="info">{copy.contract}</Badge> : null}</div><div className={styles.actions}><Button type="button" variant="secondary" onClick={() => startEditRole(role)} disabled={roleSaving}>{copy.edit}</Button><Button type="button" variant="danger" onClick={() => void deleteRole(role)} disabled={roleSaving}>{copy.delete}</Button></div></article>)}</div> : null}
+
+        {roleEditorOpen ? <form className={styles.roleEditor} onSubmit={saveRole}>
+          <div className={styles.twoColumns}><Input label={copy.roleTitle} value={roleForm.title} onChange={(event) => { setRoleError(''); setRoleForm((current) => ({ ...current, title: event.target.value })); }} required minLength={2} maxLength={120} /><Input label={copy.experience} type="number" min={0} max={80} step={1} value={roleForm.experience_years} onChange={(event) => setRoleForm((current) => ({ ...current, experience_years: event.target.value }))} /></div>
+          <Textarea label={copy.summary} value={roleForm.summary} onChange={(event) => setRoleForm((current) => ({ ...current, summary: event.target.value }))} maxLength={1200} rows={3} />
+          <Checkbox label={copy.serviceBookings} checked={roleForm.service_bookings_enabled} onChange={(event) => setRoleForm((current) => ({ ...current, service_bookings_enabled: event.target.checked }))} />
+          <details className={styles.more}><summary>{copy.more}</summary><div className={styles.optionGrid}><Checkbox label={copy.freelance} checked={roleForm.freelance_enabled} onChange={(event) => setRoleForm((current) => ({ ...current, freelance_enabled: event.target.checked }))} /><Checkbox label={copy.partTime} checked={roleForm.part_time_enabled} onChange={(event) => setRoleForm((current) => ({ ...current, part_time_enabled: event.target.checked }))} /><Checkbox label={copy.fullTime} checked={roleForm.full_time_enabled} onChange={(event) => setRoleForm((current) => ({ ...current, full_time_enabled: event.target.checked }))} /><Checkbox label={copy.contract} checked={roleForm.contract_enabled} onChange={(event) => setRoleForm((current) => ({ ...current, contract_enabled: event.target.checked }))} /><Checkbox label={copy.activeRole} checked={roleForm.active} onChange={(event) => setRoleForm((current) => ({ ...current, active: event.target.checked }))} /></div></details>
+          {roleError ? <p className="field-error" role="alert" aria-live="assertive">{roleError}</p> : null}
+          <div className={styles.actions}><Button type="submit" loading={roleSaving}>{editingRoleId ? copy.updateRole : copy.saveRole}</Button><Button type="button" variant="secondary" onClick={closeRoleEditor}>{copy.cancel}</Button></div>
+        </form> : null}
       </div>
+    </details> : null}
 
-      <div className={styles.actions}><Button type="button" onClick={() => setEditing((value) => !value)}>{copy.editProfile}</Button>{profile.provider_type === 'professional' && !roleEditorOpen ? <Button type="button" variant="secondary" onClick={startNewRole}>{copy.addRole}</Button> : null}<Link href="/provider/public-readiness" className={styles.secondaryLink}>{copy.publicReadiness}</Link></div>
-
-      {editing ? <form className={styles.editor} onSubmit={saveProfile}>
-        <div className={styles.twoColumns}><Input label={profile.provider_type === 'business' ? copy.businessName : copy.profileName} value={form.display_name} onChange={(event) => setForm((current) => ({ ...current, display_name: event.target.value }))} required maxLength={120} /><Input label={copy.area} value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} required maxLength={160} /></div>
-        <Textarea label={copy.description} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} maxLength={1200} rows={3} />
-        <div className={styles.actions}><Button type="submit" loading={saving}>{copy.save}</Button><Button type="button" variant="secondary" onClick={() => { setEditing(false); setForm({ display_name: profile.display_name, description: profile.description, location: profile.location }); }}>{copy.cancel}</Button></div>
-      </form> : null}
-    </Card>
-
-    {profile.provider_type === 'professional' ? <Card className={styles.panel}>
-      <div className={styles.sectionHead}><div><span className={styles.eyebrow}>{copy.professional}</span><h2>{copy.roles}</h2><p>{copy.rolesHelp}</p></div>{!roleEditorOpen ? <Button type="button" onClick={startNewRole}>{copy.addRole}</Button> : null}</div>
-      {roleNotice ? <p className={styles.notice} role="status">{roleNotice}</p> : null}
-      {roleError && !roleEditorOpen ? <p className="field-error" role="alert">{roleError}</p> : null}
-      {rolesLoading ? <p>{tamil ? 'Roles load ஆகிறது…' : 'Loading roles…'}</p> : null}
-      {!rolesLoading && roles.length === 0 ? <EmptyState title={copy.noRoles} action={<Button type="button" onClick={startNewRole}>{copy.addRole}</Button>}>{copy.noRolesBody}</EmptyState> : null}
-      {roles.length ? <div className={styles.roleRail}>{roles.map((role) => <article className={styles.roleCard} key={role.id}><div className={styles.roleTop}><div><h3>{role.title}</h3><small>{role.experience_years === null ? (tamil ? 'Experience குறிப்பிடவில்லை' : 'Experience not specified') : `${role.experience_years} years experience`}</small></div><Badge tone={role.active ? 'success' : 'neutral'}>{role.active ? 'Active' : 'Paused'}</Badge></div><p>{role.summary || (tamil ? 'Short summary சேர்க்கவும்.' : 'Add a short summary.')}</p><div className={styles.chips}>{role.service_bookings_enabled ? <Badge tone="info">{copy.serviceBookings}</Badge> : null}{role.freelance_enabled ? <Badge tone="info">{copy.freelance}</Badge> : null}{role.part_time_enabled ? <Badge tone="info">{copy.partTime}</Badge> : null}{role.full_time_enabled ? <Badge tone="info">{copy.fullTime}</Badge> : null}{role.contract_enabled ? <Badge tone="info">{copy.contract}</Badge> : null}</div><div className={styles.actions}><Button type="button" variant="secondary" onClick={() => startEditRole(role)} disabled={roleSaving}>{copy.edit}</Button><Button type="button" variant="danger" onClick={() => void deleteRole(role)} disabled={roleSaving}>{copy.delete}</Button></div></article>)}</div> : null}
-
-      {roleEditorOpen ? <form className={styles.roleEditor} onSubmit={saveRole}>
-        <div className={styles.twoColumns}><Input label={copy.roleTitle} value={roleForm.title} onChange={(event) => { setRoleError(''); setRoleForm((current) => ({ ...current, title: event.target.value })); }} required minLength={2} maxLength={120} /><Input label={copy.experience} type="number" min={0} max={80} step={1} value={roleForm.experience_years} onChange={(event) => setRoleForm((current) => ({ ...current, experience_years: event.target.value }))} /></div>
-        <Textarea label={copy.summary} value={roleForm.summary} onChange={(event) => setRoleForm((current) => ({ ...current, summary: event.target.value }))} maxLength={1200} rows={3} />
-        <Checkbox label={copy.serviceBookings} checked={roleForm.service_bookings_enabled} onChange={(event) => setRoleForm((current) => ({ ...current, service_bookings_enabled: event.target.checked }))} />
-        <details className={styles.more}><summary>{copy.more}</summary><div className={styles.optionGrid}><Checkbox label={copy.freelance} checked={roleForm.freelance_enabled} onChange={(event) => setRoleForm((current) => ({ ...current, freelance_enabled: event.target.checked }))} /><Checkbox label={copy.partTime} checked={roleForm.part_time_enabled} onChange={(event) => setRoleForm((current) => ({ ...current, part_time_enabled: event.target.checked }))} /><Checkbox label={copy.fullTime} checked={roleForm.full_time_enabled} onChange={(event) => setRoleForm((current) => ({ ...current, full_time_enabled: event.target.checked }))} /><Checkbox label={copy.contract} checked={roleForm.contract_enabled} onChange={(event) => setRoleForm((current) => ({ ...current, contract_enabled: event.target.checked }))} /><Checkbox label={copy.activeRole} checked={roleForm.active} onChange={(event) => setRoleForm((current) => ({ ...current, active: event.target.checked }))} /></div></details>
-        {roleError ? <p className="field-error" role="alert" aria-live="assertive">{roleError}</p> : null}
-        <div className={styles.actions}><Button type="submit" loading={roleSaving}>{editingRoleId ? copy.updateRole : copy.saveRole}</Button><Button type="button" variant="secondary" onClick={closeRoleEditor}>{copy.cancel}</Button></div>
-      </form> : null}
-    </Card> : null}
-
-    <Card className={`${styles.panel} ${styles.launchPanel}`}><div><span className={styles.eyebrow}>{copy.launch}</span><h2>{complete ? (tamil ? 'Profile ready — marketplace-க்கு connect செய்யுங்கள்' : 'Profile ready — connect it to the marketplace') : (tamil ? 'Profile basics-ஐ முடிக்கவும்' : 'Finish your profile basics')}</h2><p>{copy.launchBody}</p></div><Link href="/provider/setup" className={styles.setupLink}>{copy.setup}</Link></Card>
+    <details
+      className={`${styles.managementDisclosure} ${styles.setupDisclosure}`}
+      open={setupManagerOpen}
+      onToggle={(event) => setSetupManagerOpen(event.currentTarget.open)}
+    >
+      <summary className={styles.managementSummary}>
+        <div className={styles.managementSummaryCopy}>
+          <span className={styles.eyebrow}>{copy.launch}</span>
+          <strong>{complete ? (tamil ? 'Profile ready — marketplace setup' : 'Profile ready — marketplace setup') : (tamil ? 'Profile basics-ஐ முடிக்கவும்' : 'Finish your profile basics')}</strong>
+          <small>{complete ? (tamil ? 'Category, location, availability & launch' : 'Category, location, availability & launch') : copy.launchBody}</small>
+        </div>
+        <div className={styles.managementSummaryMeta}>
+          <Badge tone={complete ? 'success' : 'warning'}>{complete ? copy.ready : copy.needs}</Badge>
+          <span className={styles.managementCaret} aria-hidden="true">⌄</span>
+        </div>
+      </summary>
+      <div className={styles.managementBody}>
+        <div className={styles.launchCompactBody}>
+          <p>{copy.launchBody}</p>
+          <Link href="/provider/setup" className={styles.setupLink}>{copy.setup}</Link>
+        </div>
+      </div>
+    </details>
   </section>;
 }
