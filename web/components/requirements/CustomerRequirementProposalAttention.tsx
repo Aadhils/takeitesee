@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Badge, Button, Card } from '../ui/primitives';
 import { useOperationalTranslations } from '../i18n/OperationalTranslations';
 
@@ -42,25 +42,45 @@ export default function CustomerRequirementProposalAttention() {
   const [attentionAvailable, setAttentionAvailable] = useState(true);
   const [error, setError] = useState('');
   const [openingId, setOpeningId] = useState('');
+  const loadSequence = useRef(0);
   const tamil = locale.toLowerCase().startsWith('ta');
 
   const load = useCallback(async () => {
+    const sequence = ++loadSequence.current;
     setLoading(true);
     setError('');
     try {
       const response = await fetch('/api/requirements', { cache: 'no-store' });
       const payload = await response.json() as RequirementAttentionPayload;
       if (!response.ok) throw new Error(payload.error || 'Proposal activity could not be loaded.');
+      if (sequence !== loadSequence.current) return;
       setRows(payload.requirements ?? []);
       setAttentionAvailable(payload.proposal_attention_status !== 'unavailable');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Proposal activity could not be loaded.');
+      if (sequence === loadSequence.current) setError(cause instanceof Error ? cause.message : 'Proposal activity could not be loaded.');
     } finally {
-      setLoading(false);
+      if (sequence === loadSequence.current) setLoading(false);
     }
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    const refresh = () => { if (document.visibilityState === 'visible') void load(); };
+    const refreshOnPageShow = () => { void load(); };
+    window.addEventListener('pageshow', refreshOnPageShow);
+    window.addEventListener('focus', refresh);
+    window.addEventListener('popstate', refreshOnPageShow);
+    window.addEventListener('takeitesee:requirements-changed', refreshOnPageShow);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      window.removeEventListener('pageshow', refreshOnPageShow);
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('popstate', refreshOnPageShow);
+      window.removeEventListener('takeitesee:requirements-changed', refreshOnPageShow);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [load]);
 
   const totalUnread = useMemo(
     () => rows.reduce((sum, row) => sum + Math.max(0, row.unread_proposal_count ?? 0), 0),
