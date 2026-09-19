@@ -22,8 +22,7 @@ function statusTone(status: ProviderApplication['status']) {
 }
 
 export function ProviderOnboarding() {
-  const { t, locale } = useIdentityWorkspaceTranslations();
-  const tamil = locale.toLowerCase().startsWith('ta');
+  const { t } = useIdentityWorkspaceTranslations();
   const [payload, setPayload] = useState<OnboardingPayload | null>(null);
   const [form, setForm] = useState({ provider_type: 'professional' as ProviderType, display_name: '', description: '', location: '' });
   const [acknowledged, setAcknowledged] = useState(false);
@@ -97,17 +96,16 @@ export function ProviderOnboarding() {
   const pending = payload?.applications.find((application) => application.status === 'pending') ?? null;
   const previous = latest && latest.status !== 'approved' && latest.status !== 'pending' ? latest : null;
   const canApply = !provider && !pending && availableTypes.length > 0;
-  const opposite = provider?.provider_type === 'professional' ? 'Business' : 'Professional';
 
   return <div className="auth-page provider-onboarding-page">
     <section className="page-intro">
       <span className="eyebrow">{t('onboarding.title')}</span>
-      <h1>{provider ? (tamil ? `உங்கள் ${provider.provider_type === 'professional' ? 'Professional' : 'Business'} provider identity.` : `Your ${provider.provider_type === 'professional' ? 'Professional' : 'Business'} provider identity.`) : pending ? (tamil ? 'Provider application review-ல் உள்ளது.' : 'Provider application under review.') : (tamil ? 'உங்கள் Provider identity-ஐ தேர்வு செய்யுங்கள்.' : 'Choose your Provider identity.')}</h1>
+      <h1>{provider
+        ? (provider.provider_type === 'professional' ? t('onboarding.identityHeadlineProfessional') : t('onboarding.identityHeadlineBusiness'))
+        : pending ? t('onboarding.pendingIdentityHeadline') : t('onboarding.chooseIdentityHeadline')}</h1>
       <p>{provider
-        ? (tamil ? `இந்த account ${provider.provider_type === 'professional' ? 'Professional' : 'Business'} provider-ஆக பதிவு செய்யப்பட்டுள்ளது. ${opposite} identity-க்கு தனி TakeItEsee account தேவை.` : `This account is registered as a ${provider.provider_type === 'professional' ? 'Professional' : 'Business'} provider. A separate TakeItEsee account is required for a ${opposite} identity.`)
-        : pending
-          ? (tamil ? 'நீங்கள் ஒரு provider type தேர்வு செய்து விட்டீர்கள். Approval முன் மாற்ற வேண்டுமெனில் இந்த application-ஐ withdraw செய்யலாம்.' : 'You have selected one provider type. Withdraw this application before approval if you need to change that choice.')
-          : (tamil ? 'Professional அல்லது Business — இந்த account-க்கு ஒரு Provider identity மட்டும் தேர்வு செய்யலாம்.' : 'Choose either Professional or Business. This account can register only one Provider identity.')}</p>
+        ? (provider.provider_type === 'professional' ? t('onboarding.identityBodyProfessional') : t('onboarding.identityBodyBusiness'))
+        : pending ? t('onboarding.pendingIdentityBody') : t('onboarding.chooseIdentityBody')}</p>
     </section>
 
     {error ? <Alert title={t('onboarding.attention')} tone="warning">{error}</Alert> : null}
@@ -116,16 +114,16 @@ export function ProviderOnboarding() {
       <Card>
         <div className="section-heading"><div><span className="eyebrow">{provider.provider_type === 'business' ? t('onboarding.businessProvider') : t('onboarding.professionalProvider')}</span><h2>{provider.display_name}</h2></div><Badge tone={provider.verified ? 'success' : 'warning'}>{provider.verified ? t('onboarding.verified') : t('onboarding.verificationPending')}</Badge></div>
         <p>{provider.location || t('onboarding.locationUnset')}</p>
-        <Alert title={tamil ? 'ஒரு account · ஒரு Provider identity' : 'One account · one Provider identity'} tone="info">{tamil ? `இந்த provider identity active ஆன பிறகு ${opposite} profile-ஐ இதே account-ல் சேர்க்க முடியாது. ${opposite} provider ஆக செயல்பட தனி account பயன்படுத்தவும்.` : `After this Provider identity is active, the same account cannot add a ${opposite} profile. Use a separate account to operate as a ${opposite} provider.`}</Alert>
+        <Alert title={t('onboarding.oneAccountIdentity')} tone="info">{provider.provider_type === 'professional' ? t('onboarding.lockedBodyProfessional') : t('onboarding.lockedBodyBusiness')}</Alert>
       </Card>
-      <Card><div className="button-row"><Link href="/account#workspaces" className="button button-secondary">{tamil ? 'Profiles & workspaces' : 'Profiles & workspaces'}</Link><Link href="/provider" className="button button-primary">{t('onboarding.openWorkspace')}</Link></div></Card>
+      <Card><div className="button-row"><Link href="/account#workspaces" className="button button-secondary">{t('onboarding.profilesWorkspaces')}</Link><Link href="/provider" className="button button-primary">{t('onboarding.openWorkspace')}</Link></div></Card>
     </div> : null}
 
     {pending && !provider ? <Card>
       <div className="section-heading"><div><span className="eyebrow">{t('onboarding.applicationStatus')}</span><h2>{pending.display_name}</h2></div><Badge tone="warning">{t('onboarding.pendingReview')}</Badge></div>
       <p>{pending.provider_type === 'business' ? t('onboarding.businessProvider') : t('onboarding.professionalProvider')} · {pending.location}</p>
       {pending.description ? <p>{pending.description}</p> : null}
-      <p className="summary-note">{tamil ? `இந்த ${pending.provider_type === 'professional' ? 'Professional' : 'Business'} தேர்வு review pending நிலையில் உள்ளது; மற்ற provider type தற்போது lock செய்யப்பட்டுள்ளது.` : `Your ${pending.provider_type === 'professional' ? 'Professional' : 'Business'} choice is pending review; the other provider type is currently locked.`}</p>
+      <p className="summary-note">{pending.provider_type === 'professional' ? t('onboarding.pendingLockProfessional') : t('onboarding.pendingLockBusiness')}</p>
       <Button type="button" variant="quiet" disabled={busy} onClick={() => void withdraw(pending.id)}>{busy ? t('onboarding.updating') : t('onboarding.withdraw')}</Button>
     </Card> : null}
 
@@ -133,14 +131,14 @@ export function ProviderOnboarding() {
       {previous ? <Card><div className="section-heading"><div><span className="eyebrow">{t('onboarding.previous')}</span><h2>{previous.display_name}</h2></div><Badge tone={statusTone(previous.status)}>{statusLabel(previous.status)}</Badge></div>{previous.review_note ? <p><strong>{t('onboarding.platformNote')}:</strong> {previous.review_note}</p> : null}<p className="summary-note">{previous.status === 'rejected' ? t('onboarding.rejectedHelp') : t('onboarding.newHelp')}</p></Card> : null}
 
       <Card className="auth-card">
-        <h2>{tamil ? 'Provider identity application' : 'Provider identity application'}</h2>
-        <Alert title={tamil ? 'தேர்வை கவனமாக செய்யுங்கள்' : 'Choose carefully'} tone="warning">{tamil ? 'Approval கிடைத்த பிறகு இந்த account தேர்வு செய்த Provider identity-க்கு lock ஆகும். மற்ற Provider type-க்கு தனி TakeItEsee account தேவை.' : 'After approval, this account is locked to the selected Provider identity. The other Provider type requires a separate TakeItEsee account.'}</Alert>
+        <h2>{t('onboarding.application')}</h2>
+        <Alert title={t('onboarding.chooseCarefully')} tone="warning">{t('onboarding.identityLockWarning')}</Alert>
         <form onSubmit={submit} style={{ display: 'grid', gap: '.9rem' }}>
           <label className="field"><span className="field-label">{t('onboarding.providerType')}</span><select className="field-control" value={form.provider_type} onChange={(event) => { setForm({ ...form, provider_type: event.target.value as ProviderType }); setAcknowledged(false); }}>{availableTypes.map((providerType) => <option value={providerType} key={providerType}>{providerType === 'professional' ? t('onboarding.professionalIndividual') : t('onboarding.businessCompany')}</option>)}</select></label>
           <Input label={form.provider_type === 'business' ? t('onboarding.businessName') : t('onboarding.professionalName')} required maxLength={120} value={form.display_name} onChange={(event) => setForm({ ...form, display_name: event.target.value })} />
           <Input label={form.provider_type === 'business' ? t('onboarding.businessArea') : t('onboarding.primaryArea')} required maxLength={160} value={form.location} onChange={(event) => setForm({ ...form, location: event.target.value })} />
           <label className="field"><span className="field-label">{t('onboarding.aboutOptional')}</span><textarea className="field-control" rows={5} maxLength={1200} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder={t('onboarding.aboutPlaceholder')} /></label>
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '.65rem', lineHeight: 1.5 }}><input type="checkbox" checked={acknowledged} onChange={(event) => setAcknowledged(event.target.checked)} style={{ marginTop: '.25rem' }} /><span>{tamil ? `இந்த account-ல் ${form.provider_type === 'professional' ? 'Professional' : 'Business'} Provider identity மட்டும் register செய்யப்படும்; மற்ற type-க்கு தனி account தேவை என்பதை புரிந்துகொண்டேன்.` : `I understand this account will register only the ${form.provider_type === 'professional' ? 'Professional' : 'Business'} Provider identity and the other type requires a separate account.`}</span></label>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '.65rem', lineHeight: 1.5 }}><input type="checkbox" checked={acknowledged} onChange={(event) => setAcknowledged(event.target.checked)} style={{ marginTop: '.25rem' }} /><span>{form.provider_type === 'professional' ? t('onboarding.acknowledgeProfessional') : t('onboarding.acknowledgeBusiness')}</span></label>
           <Button type="submit" loading={busy} disabled={!acknowledged || busy}>{t('onboarding.submit')}</Button>
         </form>
       </Card>
