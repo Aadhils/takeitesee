@@ -68,9 +68,9 @@ test('Customer Smart Attention catches awarded services that still need a schedu
   assert.ok(customerAttention.includes("/api/requirements/${encodeURIComponent(row.id)}/job"));
   assert.ok(customerAttention.includes('(payload.jobs ?? []).length > 0'));
   assert.ok(customerAttention.includes("kind: 'schedule'"));
-  assert.ok(customerAttention.includes('Provider chosen — choose your service time'));
+  assert.ok(customerAttention.includes("t('customer.attention.scheduleTitle')"));
   assert.ok(customerAttention.includes('/requirements/${encodeURIComponent(unscheduledRequirement.id)}#requirement-service-job'));
-  assert.ok(customerAttention.includes('Choose service time'));
+  assert.ok(customerAttention.includes("t('customer.attention.chooseServiceTime')"));
 });
 
 
