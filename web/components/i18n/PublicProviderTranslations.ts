@@ -367,6 +367,12 @@ const tamil: Record<PublicProviderKey, string> = {
   'publicProvider.businessProducts.viewOrders': 'என் orders பார்க்க',
   'publicProvider.businessProducts.unavailable': 'இந்த product தற்போது order செய்ய முடியாது.',
   'publicProvider.businessProducts.requestError': 'இந்த order request-ஐ அனுப்ப முடியவில்லை.',
+  'publicProvider.serviceShare.byProvider': '{providerName} வழங்கும் {serviceName} — TakeItEsee',
+  'publicProvider.serviceShare.onPlatform': '{serviceName} — TakeItEsee',
+  'publicProvider.serviceShare.shared': 'பகிரப்பட்டது ✓',
+  'publicProvider.serviceShare.copied': 'இணைப்பு நகலெடுக்கப்பட்டது ✓',
+  'publicProvider.serviceShare.action': 'சேவையை பகிர்',
+  'publicProvider.serviceShare.error': 'இந்த browser-ல் share/copy செய்ய முடியவில்லை.',
 };
 
 const catalogs = { 'en-IN': english, 'ta-IN': tamil } as const;
