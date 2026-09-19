@@ -19,7 +19,7 @@ test('Provider mobile More tools renders grouped sections plus workspace utiliti
   assert.ok(source.includes('className="provider-mobile-more-panel"'));
   assert.ok(source.includes('className="provider-mobile-more-section"'));
   assert.ok(source.includes('className="provider-mobile-more-section-title"'));
-  assert.ok(source.includes("'Workspace & account'"));
+  assert.ok(source.includes("t('provider.shell.workspaceAccount')"));
   assert.ok(source.includes('href="/account#workspaces"'));
   assert.ok(source.includes('href="/account/settings"'));
 });
