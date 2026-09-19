@@ -661,7 +661,7 @@
   .providerQuickLink small { display: none; }
   .providerQuickHeading { align-items: center; }
   .nextServiceCompact { grid-template-columns: auto minmax(0, 1fr); padding: 9px 10px; }
-  .nextServiceAction { grid-column: 2; justify-self: start; min-height: 42px; }
+  .nextServiceAction { grid-column: 2; justify-self: start; min-height: 44px; }
   .priorityPanel, .supportCard { padding: 16px; }
   .priorityMain { align-items: flex-start; }
   .priorityIcon { width: 40px; height: 40px; }
