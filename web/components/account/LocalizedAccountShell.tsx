@@ -17,6 +17,12 @@ export default function LocalizedAccountShell({ children, active, customerName, 
   const moreLabel = t('account.more');
   const resolvedUnreadCount = unreadCount ?? fetchedUnreadCount;
   const countLabel = (value: number) => value > 99 ? '99+' : String(value);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.body.classList.add('customer-workspace-active');
+    return () => { document.body.classList.remove('customer-workspace-active'); };
+  }, []);
   const links = [
     { href: '/account', label: t('account.overview'), mobileLabel: t('account.overview') },
     { href: '/account/profile', label: t('account.profile'), mobileLabel: t('account.profile') },
