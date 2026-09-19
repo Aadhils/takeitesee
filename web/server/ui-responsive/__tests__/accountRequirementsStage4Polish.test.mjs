@@ -31,11 +31,11 @@ test('mobile and tablet account overview removes redundant identity chrome and c
 });
 
 test('customer proposal attention explains the requirement to proposal journey', () => {
-  assert.ok(proposalSource.includes('Proposal inbox'));
-  assert.ok(proposalSource.includes('Post a need to get provider proposals'));
-  assert.ok(proposalSource.includes('Post what you need → verified providers can reply → compare proposals and choose the right provider.'));
-  assert.ok(proposalSource.includes('Waiting for provider replies'));
-  assert.ok(proposalSource.includes('Post a requirement'));
+  assert.ok(proposalSource.includes("t('customer.proposals.inbox')"));
+  assert.ok(proposalSource.includes("t('customer.proposals.postNeedTitle')"));
+  assert.ok(proposalSource.includes("t('customer.proposals.postNeedHelp')"));
+  assert.ok(proposalSource.includes("t('customer.proposals.waitingTitle')"));
+  assert.ok(proposalSource.includes("t('customer.proposals.postRequirement')"));
   assert.ok(proposalSource.includes('margin-top: 16px'));
 });
 
