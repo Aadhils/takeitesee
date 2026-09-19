@@ -171,7 +171,7 @@ export default function ProviderDashboardBookingInbox() {
 
       {!loading && !error ? <div className={styles.counts}>
         <span><strong>{needsActionCount}</strong> {t('provider.bookingInbox.needsAction')}</span>
-        <span><strong>{upcomingCount}</strong> {t('provider.bookingInbox.upcoming')Count}</span>
+        <span><strong>{upcomingCount}</strong> {t('provider.bookingInbox.upcomingCount')}</span>
       </div> : null}
 
       {!loading && !error && visible.length === 0 ? <div className={styles.empty}>
