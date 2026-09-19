@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Card } from '../ui/primitives';
-import { useLanguage } from '../i18n/LanguageProvider';
+import { usePasswordRecoveryTranslations } from '../i18n/PasswordRecoveryTranslations';
 import { createSupabaseBrowserClient } from '../../lib/supabase/browser';
 import { isSupabaseConfigured } from '../../services/auth-adapter';
 import { ResetPasswordForm } from './AuthForms';
@@ -19,8 +19,7 @@ function hasRecoveryCallbackHint() {
 }
 
 export function PasswordRecoveryBoundary() {
-  const { locale } = useLanguage();
-  const tamil = locale === 'ta-IN';
+  const { t } = usePasswordRecoveryTranslations();
   const [state, setState] = useState<RecoveryGateState>('checking');
 
   useEffect(() => {
@@ -62,24 +61,24 @@ export function PasswordRecoveryBoundary() {
   if (state === 'checking') {
     return <div className="auth-page">
       <section className="page-intro">
-        <span className="eyebrow">{tamil ? 'பாதுகாப்பான password reset' : 'Secure password reset'}</span>
-        <h1>{tamil ? 'Recovery link-ஐ சரிபார்க்கிறது…' : 'Checking your recovery link…'}</h1>
-        <p>{tamil ? 'இந்த password reset request Supabase recovery session-இலிருந்து வந்ததா என்பதை சரிபார்க்கிறது.' : 'Checking that this password reset came from a valid Supabase recovery session.'}</p>
+        <span className="eyebrow">{t('recovery.eyebrow')}</span>
+        <h1>{t('recovery.checking.title')}</h1>
+        <p>{t('recovery.checking.body')}</p>
       </section>
-      <Card><p>{tamil ? 'Recovery session-ஐ சரிபார்க்கிறது…' : 'Checking recovery session…'}</p></Card>
+      <Card><p>{t('recovery.checking.session')}</p></Card>
     </div>;
   }
 
   return <div className="auth-page">
     <section className="page-intro">
-      <span className="eyebrow">{tamil ? 'பாதுகாப்பான password reset' : 'Secure password reset'}</span>
-      <h1>{tamil ? 'இந்த recovery link active இல்லை.' : 'This recovery link is not active.'}</h1>
-      <p>{tamil ? 'புதிய password-reset email request செய்து அதில் வரும் சமீபத்திய recovery link-ஐ திறக்கவும்.' : 'Request a new password-reset email and open the latest recovery link.'}</p>
+      <span className="eyebrow">{t('recovery.eyebrow')}</span>
+      <h1>{t('recovery.invalid.title')}</h1>
+      <p>{t('recovery.invalid.body')}</p>
     </section>
     <Card className="auth-card">
-      <p>{tamil ? 'சாதாரண signed-in session மட்டும் password recovery form-ஐ திறக்காது.' : 'A normal signed-in session does not unlock the password recovery form.'}</p>
-      <Link href="/forgot-password" className="button button-primary">{tamil ? 'புதிய reset email request செய்' : 'Request another reset email'}</Link>
-      <p className="auth-switch"><Link href="/login" className="text-link">{tamil ? 'Sign in-க்கு திரும்பவும்' : 'Back to sign in'}</Link></p>
+      <p>{t('recovery.invalid.sessionBoundary')}</p>
+      <Link href="/forgot-password" className="button button-primary">{t('recovery.invalid.requestAnother')}</Link>
+      <p className="auth-switch"><Link href="/login" className="text-link">{t('recovery.invalid.backToSignIn')}</Link></p>
     </Card>
   </div>;
 }
