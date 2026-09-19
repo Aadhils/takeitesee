@@ -31,7 +31,8 @@ test('Business Products keeps CRUD, revision review and readiness contracts unch
   assert.ok(source.includes("method: 'POST'"));
   assert.ok(source.includes("method: 'PATCH'"));
   assert.ok(source.includes('/launch`'));
-  assert.ok(source.includes("method: 'DELETE'"));
+  assert.ok(source.includes("method: 'POST' | 'DELETE'"));
+  assert.ok(source.includes("changeLaunch(product, 'DELETE')"));
   assert.ok(source.includes('review_revision'));
   assert.ok(source.includes('marketplace_disclosure_complete'));
   assert.ok(source.includes("readiness.trust_status === 'suspended'"));
