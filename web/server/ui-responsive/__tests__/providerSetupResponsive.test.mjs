@@ -40,8 +40,8 @@ test('Existing Provider Setup readiness and controlled-launch semantics remain p
   assert.ok(managerSource.includes("method: 'DELETE'"));
   assert.ok(managerSource.includes('marketplace_disclosure_complete'));
   assert.ok(managerSource.includes('trust_status'));
-  assert.ok(managerSource.includes('Approve category & location'));
-  assert.ok(managerSource.includes('Request platform approval'));
-  assert.ok(managerSource.includes('Withdraw request'));
+  assert.ok(managerSource.includes("t('setup.step.scope.label')"));
+  assert.ok(managerSource.includes("t('setup.form.requestApproval')"));
+  assert.ok(managerSource.includes("t('setup.launch.withdraw')"));
   assert.ok(managerSource.includes("href=\"/provider/services\""));
 });
