@@ -27,6 +27,7 @@ test('Saved Jobs workspace uses a shared EN/TA catalog with exact key parity', (
   assert.ok(!source.includes('useIdentityWorkspaceTranslations'));
   assert.ok(!source.includes("startsWith('ta')"));
   assert.ok(!source.includes('const ta'));
+  assert.ok(!source.includes('ta ?'));
   assert.ok(!/[\u0B80-\u0BFF]/u.test(source));
 });
 
