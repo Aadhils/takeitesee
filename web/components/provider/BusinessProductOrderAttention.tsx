@@ -16,8 +16,7 @@ type ProductOrder = {
 };
 
 export default function BusinessProductOrderAttention() {
-  const { locale } = useIdentityWorkspaceTranslations();
-  const tamil = locale.toLowerCase().startsWith('ta');
+  const { t } = useIdentityWorkspaceTranslations();
   const [business, setBusiness] = useState(false);
   const [orders, setOrders] = useState<ProductOrder[]>([]);
 
@@ -70,23 +69,21 @@ export default function BusinessProductOrderAttention() {
   const count = requestedOrders.length;
   const countLabel = count > 99 ? '99+' : String(count);
 
-  return <aside className={styles.attention} aria-label={tamil ? 'புதிய product orders' : 'New product orders'} aria-live="polite">
+  return <aside className={styles.attention} aria-label={t('provider.business.newOrdersLabel')} aria-live="polite">
     <div className={styles.heading}>
       <div className={styles.copy}>
-        <span className="eyebrow">{tamil ? 'Order attention' : 'Order attention'}</span>
-        <strong>{tamil ? `${countLabel} புதிய product order${count === 1 ? '' : 's'}` : `${countLabel} new product order${count === 1 ? '' : 's'}`}</strong>
+        <span className="eyebrow">{t('provider.business.orderAttention')}</span>
+        <strong>{countLabel} {count === 1 ? t('provider.business.orderSingular') : t('provider.business.orderPlural')}</strong>
       </div>
       <Badge tone="warning">{countLabel}</Badge>
     </div>
-    <p className={styles.latest}>{tamil
-      ? `${latest.customer_name_snapshot} · ${latest.product_name_snapshot}`
-      : `${latest.customer_name_snapshot} requested ${latest.product_name_snapshot}`}</p>
+    <p className={styles.latest}>{latest.customer_name_snapshot} · {t('provider.business.requested')} {latest.product_name_snapshot}</p>
     <div className={styles.actions}>
       <Link href={`/provider/orders/${encodeURIComponent(latest.id)}`} className="button button-primary">
-        {tamil ? 'Latest order பார்க்க' : 'Review latest order'}
+        {t('provider.business.reviewLatestOrder')}
       </Link>
       <Link href="/provider/orders" className={`button button-secondary ${styles.allOrders}`}>
-        {tamil ? 'அனைத்து orders' : 'All orders'}
+        {t('provider.business.allOrders')}
       </Link>
     </div>
   </aside>;
