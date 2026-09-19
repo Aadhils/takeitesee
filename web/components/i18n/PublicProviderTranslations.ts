@@ -196,6 +196,19 @@ const english = {
   'publicProvider.savedService.removeError': 'Unable to remove saved service.',
   'publicProvider.savedService.saveError': 'Unable to save service.',
   'publicProvider.savedService.updateError': 'Unable to update saved service.',
+  'publicProvider.productShare.byBusiness': '{productName} by {businessName} on TakeItEsee',
+  'publicProvider.productShare.onPlatform': '{productName} on TakeItEsee',
+  'publicProvider.productShare.shared': 'Shared ✓',
+  'publicProvider.productShare.copied': 'Link copied ✓',
+  'publicProvider.productShare.action': 'Share product',
+  'publicProvider.productShare.error': 'This browser could not share or copy the product link.',
+  'publicProvider.savedProduct.signIn': 'Sign in to save Product',
+  'publicProvider.savedProduct.saved': 'Saved ✓',
+  'publicProvider.savedProduct.save': 'Save Product',
+  'publicProvider.savedProduct.loadError': 'Unable to load saved Product state.',
+  'publicProvider.savedProduct.removeError': 'Unable to remove saved Product.',
+  'publicProvider.savedProduct.saveError': 'Unable to save Product.',
+  'publicProvider.savedProduct.updateError': 'Unable to update saved Product.',
 } as const;
 
 type PublicProviderKey = keyof typeof english;
@@ -393,6 +406,19 @@ const tamil: Record<PublicProviderKey, string> = {
   'publicProvider.savedService.removeError': 'சேமித்த சேவையை remove செய்ய முடியவில்லை.',
   'publicProvider.savedService.saveError': 'சேவையை save செய்ய முடியவில்லை.',
   'publicProvider.savedService.updateError': 'சேமித்த சேவை நிலையை update செய்ய முடியவில்லை.',
+  'publicProvider.productShare.byBusiness': '{businessName} வழங்கும் {productName} — TakeItEsee',
+  'publicProvider.productShare.onPlatform': '{productName} — TakeItEsee',
+  'publicProvider.productShare.shared': 'பகிரப்பட்டது ✓',
+  'publicProvider.productShare.copied': 'இணைப்பு நகலெடுக்கப்பட்டது ✓',
+  'publicProvider.productShare.action': 'Product பகிர்',
+  'publicProvider.productShare.error': 'இந்த browser-ல் share/copy செய்ய முடியவில்லை.',
+  'publicProvider.savedProduct.signIn': 'Product சேமிக்க Sign in',
+  'publicProvider.savedProduct.saved': 'சேமிக்கப்பட்டது ✓',
+  'publicProvider.savedProduct.save': 'Product சேமி',
+  'publicProvider.savedProduct.loadError': 'சேமித்த Product நிலையை load செய்ய முடியவில்லை.',
+  'publicProvider.savedProduct.removeError': 'சேமித்த Product-ஐ remove செய்ய முடியவில்லை.',
+  'publicProvider.savedProduct.saveError': 'Product-ஐ save செய்ய முடியவில்லை.',
+  'publicProvider.savedProduct.updateError': 'சேமித்த Product நிலையை update செய்ய முடியவில்லை.',
 };
 
 const catalogs = { 'en-IN': english, 'ta-IN': tamil } as const;
