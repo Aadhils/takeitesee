@@ -8,6 +8,40 @@
   box-shadow: 0 16px 44px rgba(23, 32, 54, .08);
 }
 
+
+.customerShell {
+  border-radius: 20px;
+  box-shadow: 0 12px 32px rgba(23, 32, 54, .07);
+}
+
+.customerShell .banner {
+  min-height: 112px;
+}
+
+.customerShell .content {
+  padding-bottom: 13px;
+}
+
+.customerShell .avatarWrap,
+.customerShell .avatar,
+.customerShell .avatarFallback {
+  width: 78px;
+  height: 78px;
+}
+
+.customerShell .avatarWrap {
+  margin-top: -34px;
+}
+
+.customerShell .avatar,
+.customerShell .avatarFallback {
+  border-radius: 22px 22px 22px 8px;
+}
+
+.customerShell .avatarFallback {
+  font-size: 1.45rem;
+}
+
 .banner {
   position: relative;
   min-height: 140px;
