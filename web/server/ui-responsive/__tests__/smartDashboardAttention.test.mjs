@@ -100,7 +100,7 @@ test('Customer secondary activity stays compact and touch-safe on mobile', () =>
 test('Customer dashboard replaces large navigation cards with compact quick actions', () => {
   assert.ok(customerDashboard.includes('className="customer-dashboard-quick-actions"'));
   assert.ok(customerDashboard.includes('className="customer-dashboard-quick-grid"'));
-  assert.ok(customerDashboard.includes('grid-template-columns: repeat(3, minmax(0, 1fr))'));
+  assert.ok(customerDashboard.includes('grid-template-columns: repeat(6, minmax(0, 1fr))'));
   assert.ok(customerDashboard.includes("href: '/bookings'"));
   assert.ok(customerDashboard.includes("href: '/orders'"));
   assert.ok(customerDashboard.includes("href: '/requirements'"));
