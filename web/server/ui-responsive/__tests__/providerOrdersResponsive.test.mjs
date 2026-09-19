@@ -3,11 +3,12 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../../../', import.meta.url);
-const [listSource, detailSource, cssSource, routeSource] = await Promise.all([
+const [listSource, detailSource, cssSource, routeSource, translationsSource] = await Promise.all([
   readFile(new URL('components/provider/ProviderOrdersManager.tsx', root), 'utf8'),
   readFile(new URL('components/provider/ProviderOrderDetail.tsx', root), 'utf8'),
   readFile(new URL('components/provider/ProviderOrders.module.css', root), 'utf8'),
   readFile(new URL('app/provider/orders/[orderId]/page.tsx', root), 'utf8'),
+  readFile(new URL('components/i18n/IdentityWorkspaceTranslations.ts', root), 'utf8'),
 ]);
 
 test('Business product orders use a compact lifecycle inbox', () => {
@@ -23,7 +24,7 @@ test('Business product orders use a compact lifecycle inbox', () => {
 
 test('Business order summaries route to a dedicated provider detail page', () => {
   assert.ok(listSource.includes('href={`/provider/orders/${encodeURIComponent(order.id)}`}'));
-  assert.ok(listSource.includes('View order details'));
+  assert.ok(listSource.includes("t('provider.orders.viewDetails')"));
   assert.ok(routeSource.includes("ProviderOrderDetail from '../../../../components/provider/ProviderOrderDetail'"));
   assert.ok(routeSource.includes('ProviderOrderDetail orderId={orderId}'));
   assert.ok(detailSource.includes("fetch('/api/provider/orders', { cache: 'no-store' })"));
@@ -37,7 +38,7 @@ test('Business order detail preserves provider transition semantics', () => {
   assert.ok(detailSource.includes("transition('accept')"));
   assert.ok(detailSource.includes("transition('decline')"));
   assert.ok(detailSource.includes("transition('fulfill')"));
-  assert.ok(detailSource.includes('Message Customer'));
+  assert.ok(detailSource.includes("t('provider.orders.messageCustomer')"));
 });
 
 test('Business order detail is responsive and action-first on mobile', () => {
@@ -55,7 +56,10 @@ test('Business order detail is responsive and action-first on mobile', () => {
 });
 
 test('Business product order journey keeps the non-payment boundary explicit', () => {
-  assert.ok(listSource.includes('Payment and Cashfree are not active here'));
-  assert.ok(detailSource.includes('non-payment order-request flow'));
-  assert.ok(detailSource.includes('TakeItEsee payment and Cashfree are not active for this order'));
+  assert.ok(listSource.includes("t('provider.orders.intro')"));
+  assert.ok(detailSource.includes("t('provider.orders.flowNotice')"));
+  assert.ok(translationsSource.includes('Payment and Cashfree are not active here'));
+  assert.ok(translationsSource.includes('TakeItEsee payment and Cashfree are not active for this order'));
+  assert.ok(translationsSource.includes('Payment/Cashfree இங்கு செயல்படாது.'));
+  assert.ok(translationsSource.includes('TakeItEsee payment/Cashfree இந்த order-ல் செயல்படாது.'));
 });
