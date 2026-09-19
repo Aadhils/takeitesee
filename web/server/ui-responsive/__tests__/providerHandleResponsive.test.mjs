@@ -17,8 +17,8 @@ test('legacy Provider Handle route returns to the Dashboard handle section', () 
 test('Provider Dashboard owns compact public handle controls', () => {
   assert.ok(entrySource.includes('ProviderDashboardHandleCenter'));
   assert.ok(centerSource.includes('id="provider-handle"'));
-  assert.ok(centerSource.includes('Your @handle'));
-  assert.ok(centerSource.includes('Change handle'));
+  assert.ok(centerSource.includes("t('provider.handle.title')"));
+  assert.ok(centerSource.includes("t('provider.handle.change')"));
 });
 
 test('Dashboard handle workflow preserves the existing Provider handle API contract', () => {
