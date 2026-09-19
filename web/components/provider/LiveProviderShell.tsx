@@ -48,29 +48,28 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
   const [messageUnreadCount, setMessageUnreadCount] = useState(0);
   const [notificationUnreadCount, setNotificationUnreadCount] = useState(0);
   const activeLinkRef = useRef<HTMLAnchorElement | null>(null);
-  const tamil = locale.toLowerCase().startsWith('ta');
 
   const providerNavGroups = useMemo<ProviderNavGroup[]>(() => {
     const groups: ProviderNavGroup[] = [
       {
         id: 'customer-work',
-        label: tamil ? 'வாடிக்கையாளர் வேலை' : 'Customer work',
+        label: t('provider.shell.customerWork'),
         links: [
           { href: '/provider/leads', label: t('provider.leads') },
           { href: '/provider/messages', label: t('provider.messages') },
-          { href: '/notifications', label: tamil ? 'அறிவிப்புகள்' : 'Notifications' },
+          { href: '/notifications', label: t('provider.shell.notifications') },
           { href: '/provider/bookings', label: t('provider.bookings') },
           { href: '/provider/schedule', label: t('provider.schedule') },
         ],
       },
       {
         id: 'services-trust',
-        label: tamil ? 'சேவைகள் & நம்பிக்கை' : 'Services & trust',
+        label: t('provider.shell.servicesTrust'),
         links: [
           { href: '/provider/setup', label: t('provider.setup') },
           { href: '/provider/services', label: t('provider.services') },
-          { href: '/provider/public-readiness', label: tamil ? 'Public profile தயார்நிலை' : 'Public profile readiness' },
-          { href: '/provider/handle', label: 'Public @handle' },
+          { href: '/provider/public-readiness', label: t('provider.shell.publicProfileReadiness') },
+          { href: '/provider/handle', label: t('provider.shell.publicHandle') },
           { href: '/provider/verification', label: t('provider.verification') },
           { href: '/provider/reviews', label: t('provider.reviews') },
         ],
@@ -80,11 +79,11 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
     if (provider?.provider_type === 'professional') {
       groups.push({
         id: 'professional-career',
-        label: tamil ? 'Profile & Career' : 'Presence & career',
+        label: t('provider.shell.presenceCareer'),
         links: [
-          { href: '/provider/portfolio', label: tamil ? 'வேலை Portfolio' : 'Portfolio' },
-          { href: '/provider/resume', label: 'Resume & Career' },
-          { href: '/provider/jobs', label: 'Jobs & Applications' },
+          { href: '/provider/portfolio', label: t('provider.shell.portfolio') },
+          { href: '/provider/resume', label: t('provider.shell.resumeCareer') },
+          { href: '/provider/jobs', label: t('provider.shell.jobsApplications') },
           { href: '/provider/profile', label: t('provider.profile') },
         ],
       });
@@ -105,12 +104,12 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
 
     groups.push({
       id: 'earnings',
-      label: tamil ? 'வருவாய்' : 'Earnings',
+      label: t('provider.shell.earningsGroup'),
       links: [{ href: '/provider/earnings', label: t('provider.earnings') }],
     });
 
     return groups;
-  }, [provider?.provider_type, t, tamil]);
+  }, [provider?.provider_type, t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -233,11 +232,11 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
       : `/professionals/${encodeURIComponent(provider.id)}`
     : null;
   const publicProfileLabel = provider?.provider_type === 'business'
-    ? (tamil ? 'Public storefront பார்க்க' : 'View public storefront')
-    : (tamil ? 'Public profile பார்க்க' : 'View public profile');
+    ? t('provider.shell.viewPublicStorefront')
+    : t('provider.shell.viewPublicProfile');
   const publicProfileSetupLabel = provider?.provider_type === 'business'
-    ? (tamil ? 'Public storefront முடிக்க' : 'Finish public storefront')
-    : (tamil ? 'Public profile முடிக்க' : 'Finish public profile');
+    ? t('provider.shell.finishPublicStorefront')
+    : t('provider.shell.finishPublicProfile');
   const showPublicReadinessLink = Boolean(provider && provider.trust_status === 'normal' && !provider.public_profile_ready);
 
   const navLink = (link: ProviderNavLink) => <Link
@@ -278,25 +277,25 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
       <nav aria-label={t('provider.nav')}>
         <div className="provider-nav-groups">
           <div className="provider-nav-overview">
-            <span className="provider-nav-section-title">{tamil ? 'மேலோட்டம்' : 'Overview'}</span>
+            <span className="provider-nav-section-title">{t('provider.shell.overview')}</span>
             {navLink({ href: '/provider', label: t('provider.dashboard') })}
           </div>
           {providerNavGroups.map((group) => {
             const activeGroup = group.links.some((link) => active === link.href);
             return <details className="provider-nav-group" open={activeGroup || undefined} key={group.id}>
-              <summary aria-label={`${group.label} navigation`}>{group.label}</summary>
+              <summary aria-label={`${group.label} ${t('provider.shell.navigationSuffix')}`}>{group.label}</summary>
               <div className="provider-nav-group-links">{group.links.map(navLink)}</div>
             </details>;
           })}
         </div>
       </nav>
-      <div className="provider-sidebar-utilities" aria-label={tamil ? 'Workspace மற்றும் account கருவிகள்' : 'Workspace and account tools'}>
-        <span className="provider-nav-section-title">{tamil ? 'Workspace & Account' : 'Workspace & account'}</span>
+      <div className="provider-sidebar-utilities" aria-label={t('provider.shell.workspaceAccountTools')}>
+        <span className="provider-nav-section-title">{t('provider.shell.workspaceAccount')}</span>
         <div className="provider-sidebar-utility-links">
-          <Link href="/account#workspaces" className="provider-exit-link">{tamil ? 'என் Profiles' : 'My profiles'}</Link>
+          <Link href="/account#workspaces" className="provider-exit-link">{t('provider.shell.myProfiles')}</Link>
           {publicProfileHref ? <Link href={publicProfileHref} target="_blank" rel="noreferrer" className="provider-exit-link">{publicProfileLabel} ↗</Link> : null}
           {showPublicReadinessLink ? <Link href="/provider/public-readiness" className="provider-exit-link">{publicProfileSetupLabel}</Link> : null}
-          <Link href="/account/settings" className="provider-exit-link">{tamil ? 'Account அமைப்புகள்' : 'Account settings'}</Link>
+          <Link href="/account/settings" className="provider-exit-link">{t('provider.shell.accountSettings')}</Link>
           <Link href="/" className="provider-exit-link">{t('provider.viewMarketplace')}</Link>
         </div>
       </div>
@@ -306,20 +305,20 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
         context="provider"
         displayName={provider.display_name}
         subtitle={provider.provider_type === 'business'
-          ? 'Business · Service business + Employer'
-          : 'Professional · Independent provider + Job seeker'}
-        meta={provider.location || (tamil ? 'Service area இன்னும் சேர்க்கப்படவில்லை' : 'Service area not set')}
+          ? t('provider.shell.businessSubtitle')
+          : t('provider.shell.professionalSubtitle')}
+        meta={provider.location || t('provider.shell.serviceAreaNotSet')}
       /> : null}
 
-      <section className="provider-mobile-social-shell" aria-label={tamil ? 'Provider விரைவு வழிசெலுத்தல்' : 'Provider quick navigation'}>
+      <section className="provider-mobile-social-shell" aria-label={t('provider.shell.quickNavigation')}>
         {active !== '/provider' ? <div className="provider-mobile-identity-line">
           <div className="provider-mobile-identity-copy">
             <strong>{displayName}</strong>
             <span>{workspaceIdentity}</span>
           </div>
-          <Link href="/account/settings" className="provider-mobile-settings-link" aria-label={tamil ? 'Account அமைப்புகள்' : 'Account settings'}><ProviderSettingsIcon /></Link>
+          <Link href="/account/settings" className="provider-mobile-settings-link" aria-label={t('provider.shell.accountSettings')}><ProviderSettingsIcon /></Link>
         </div> : null}
-        <nav className="provider-mobile-primary-nav" aria-label={tamil ? 'Provider முக்கிய வழிசெலுத்தல்' : 'Provider primary navigation'}>
+        <nav className="provider-mobile-primary-nav" aria-label={t('provider.shell.primaryNavigation')}>
           {mobilePrimaryLinks.map((link) => <Link
             href={link.href}
             className={active === link.href ? 'provider-mobile-nav-active' : ''}
@@ -334,7 +333,7 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
           </Link>)}
         </nav>
         <details className="provider-mobile-more-tools">
-          <summary>{tamil ? 'மேலும் கருவிகள்' : 'More tools'}</summary>
+          <summary>{t('provider.shell.moreTools')}</summary>
           <div className="provider-mobile-more-panel">
             {mobileMoreGroups.map((group) => <section className="provider-mobile-more-section" key={group.id}>
               <span className="provider-mobile-more-section-title">{group.label}</span>
@@ -347,13 +346,13 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
               </div>
             </section>)}
             <section className="provider-mobile-more-section provider-mobile-more-utilities">
-              <span className="provider-mobile-more-section-title">{tamil ? 'Workspace & Account' : 'Workspace & account'}</span>
+              <span className="provider-mobile-more-section-title">{t('provider.shell.workspaceAccount')}</span>
               <div className="provider-mobile-more-grid">
-                <Link href="/account#workspaces"><span>{tamil ? 'என் Profiles' : 'My profiles'}</span></Link>
+                <Link href="/account#workspaces"><span>{t('provider.shell.myProfiles')}</span></Link>
                 {publicProfileHref ? <Link href={publicProfileHref} target="_blank" rel="noreferrer"><span>{publicProfileLabel} ↗</span></Link> : null}
                 {showPublicReadinessLink ? <Link href="/provider/public-readiness"><span>{publicProfileSetupLabel}</span></Link> : null}
                 <Link href="/"><span>{t('provider.viewMarketplace')}</span></Link>
-                <Link href="/account/settings"><span>{tamil ? 'Account அமைப்புகள்' : 'Account settings'}</span></Link>
+                <Link href="/account/settings"><span>{t('provider.shell.accountSettings')}</span></Link>
               </div>
             </section>
           </div>
