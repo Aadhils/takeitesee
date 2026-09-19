@@ -77,7 +77,7 @@ test('confirmed provider ownership never exposes another provider identity', () 
   assert.ok(routeSource.includes('if (!providerOwned && pendingType)'));
   assert.ok(routeSource.includes('else if (!providerOwned && !pendingType)'));
   assert.ok(routeSource.includes("provider_identity_policy: 'single_provider'"));
-  assert.ok(accountSwitcherSource.includes("This account's Provider identity is final as"));
+  assert.ok(accountSwitcherSource.includes("t('workspace.switcher.finalBody')"));
   assert.ok(!accountSwitcherSource.includes('To operate a ${opposite} provider identity'));
 });
 

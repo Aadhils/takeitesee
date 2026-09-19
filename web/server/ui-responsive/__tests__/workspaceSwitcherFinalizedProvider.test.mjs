@@ -18,6 +18,6 @@ test('customer workspace cards collapse once a finalized provider workspace exis
 });
 
 test('provider onboarding and pending-review content remain available before finality', () => {
-  assert.ok(switcherSource.includes('Start earning on TakeItEsee'));
-  assert.ok(switcherSource.includes('Provider application under review'));
+  assert.ok(switcherSource.includes("t('workspace.switcher.startEarning')"));
+  assert.ok(switcherSource.includes("t('workspace.switcher.reviewHeading')"));
 });
