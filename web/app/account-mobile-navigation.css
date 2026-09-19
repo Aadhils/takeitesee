@@ -43,7 +43,7 @@
   .account-sidebar .account-mobile-nav {
     display: grid !important;
     grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 6px;
+    gap: 4px;
     max-width: 100%;
     overflow: visible;
     border: 0;
@@ -54,18 +54,18 @@
   .account-mobile-more > summary {
     display: flex;
     min-width: 0;
-    min-height: 48px;
+    min-height: 44px;
     align-items: center;
     justify-content: center;
     border: 1px solid var(--color-border);
-    border-radius: 12px;
+    border-radius: 11px;
     background: var(--color-surface);
     color: var(--color-ink-muted);
-    padding: 7px 6px;
+    padding: 5px 5px;
     text-align: center;
     white-space: nowrap;
     overflow-wrap: normal;
-    font-size: .74rem;
+    font-size: .7rem;
     font-weight: 750;
     line-height: 1.15;
     box-shadow: var(--shadow-sm);
@@ -185,16 +185,16 @@
   }
 
   .account-sidebar .account-mobile-nav {
-    gap: 4px;
+    gap: 3px;
   }
 
   .account-sidebar .account-mobile-nav > a,
   .account-mobile-more > summary {
-    min-height: 50px;
-    padding-top: 6px;
-    padding-bottom: 6px;
+    min-height: 44px;
+    padding-top: 5px;
+    padding-bottom: 5px;
     padding-left: 3px;
-    font-size: .66rem;
+    font-size: .64rem;
   }
 
   .account-mobile-more > summary {

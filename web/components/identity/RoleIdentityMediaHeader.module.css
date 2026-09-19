@@ -354,11 +354,24 @@
     gap: 6px;
   }
 
+  .customerShell .bannerActions {
+    top: 8px;
+    right: 8px;
+    left: 8px;
+  }
+
   .mediaButton,
   .mediaButtonDanger {
     min-height: 44px;
     padding: 7px 10px;
     font-size: .7rem;
+  }
+
+  .customerShell .mediaButton,
+  .customerShell .mediaButtonDanger {
+    padding: 6px 9px;
+    background: rgba(18, 25, 48, .58);
+    font-size: .66rem;
   }
 
   .content {
@@ -440,6 +453,12 @@
 
   .customerShell .banner {
     min-height: 92px;
+  }
+
+  .customerShell .mediaButton,
+  .customerShell .mediaButtonDanger {
+    padding-inline: 8px;
+    font-size: .64rem;
   }
 
   .content {
