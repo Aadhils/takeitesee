@@ -61,6 +61,16 @@ const tamilKeys = catalogKeys(providerSource, 'tamil');
 const localizedMarketplaceKeys = (keys) => keys.filter((key) => key.startsWith('explore.') || key.startsWith('empty.')).sort();
 
 const requiredExploreKeys = [
+  'explore.filters',
+  'explore.filterServices',
+  'explore.filterHelp',
+  'explore.showOneService',
+  'explore.showManyServices',
+  'explore.updatingResults',
+  'explore.nearMe',
+  'explore.activeFilters',
+  'explore.closeFilterMenu',
+  'explore.closeSortMenu',
   'explore.availabilityLabel',
   'explore.availabilityAny',
   'explore.availabilityNowOnly',
