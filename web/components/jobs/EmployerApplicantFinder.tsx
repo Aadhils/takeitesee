@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
+import { useProviderJobsTranslations, type ProviderJobsKey } from '../i18n/ProviderJobsTranslations';
 import styles from './JobMarketplace.module.css';
 
 type Job = { id: string; title: string; status: string };
@@ -30,20 +30,43 @@ type Workspace = {
   conversations: Conversation[];
 };
 type SortMode = 'newest' | 'oldest' | 'profile' | 'job';
-
 type VerificationFilter = '' | 'verified' | 'unverified';
 
-function label(value: string) {
+const localizedLabelKeys: Partial<Record<string, ProviderJobsKey>> = {
+  submitted: 'providerJobs.applicantFinder.status.submitted',
+  shortlisted: 'providerJobs.applicantFinder.status.shortlisted',
+  interview: 'providerJobs.applicantFinder.status.interview',
+  hired: 'providerJobs.applicantFinder.status.hired',
+  rejected: 'providerJobs.applicantFinder.status.rejected',
+  withdrawn: 'providerJobs.applicantFinder.status.withdrawn',
+  draft: 'providerJobs.applicantFinder.jobStatus.draft',
+  open: 'providerJobs.applicantFinder.jobStatus.open',
+  closed: 'providerJobs.applicantFinder.jobStatus.closed',
+  filled: 'providerJobs.applicantFinder.jobStatus.filled',
+};
+
+function fallbackLabel(value: string) {
   return value.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function localizedLabel(value: string, t: (key: ProviderJobsKey) => string) {
+  const key = localizedLabelKeys[value];
+  return key ? t(key) : fallbackLabel(value);
 }
 
 function normalized(value?: string | null) {
   return (value ?? '').trim().toLocaleLowerCase();
 }
 
+function interpolate(template: string, values: Record<string, string | number>) {
+  return Object.entries(values).reduce(
+    (result, [key, value]) => result.replaceAll(`{${key}}`, String(value)),
+    template,
+  );
+}
+
 export function EmployerApplicantFinder() {
-  const { locale } = useIdentityWorkspaceTranslations();
-  const ta = locale.toLowerCase().startsWith('ta');
+  const { locale, t } = useProviderJobsTranslations();
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,17 +82,17 @@ export function EmployerApplicantFinder() {
       try {
         const response = await fetch('/api/provider/job-marketplace', { cache: 'no-store' });
         const payload = await response.json() as (Workspace & { error?: string }) | { mode?: string; error?: string };
-        if (!response.ok) throw new Error(payload.error || 'Unable to load applicants.');
-        if (payload.mode !== 'business') throw new Error('Business hiring workspace is required to use Applicant Finder.');
+        if (!response.ok) throw new Error(payload.error || t('providerJobs.applicantFinder.loadFallback'));
+        if (payload.mode !== 'business') throw new Error(t('providerJobs.applicantFinder.businessRequired'));
         if (active) setWorkspace(payload as Workspace);
       } catch (cause) {
-        if (active) setError(cause instanceof Error ? cause.message : 'Unable to load applicants.');
+        if (active) setError(cause instanceof Error ? cause.message : t('providerJobs.applicantFinder.loadFallback'));
       } finally {
         if (active) setLoading(false);
       }
     })();
     return () => { active = false; };
-  }, []);
+  }, [t]);
 
   const jobsById = useMemo(() => new Map((workspace?.jobs ?? []).map((job) => [job.id, job])), [workspace]);
   const professionalsById = useMemo(() => new Map((workspace?.professionals ?? []).map((profile) => [profile.id, profile])), [workspace]);
@@ -123,53 +146,59 @@ export function EmployerApplicantFinder() {
     setSortMode('newest');
   }
 
-  if (loading) return <div className={styles.empty}>{ta ? 'Applicants ஏற்றப்படுகின்றனர்…' : 'Loading applicants…'}</div>;
-  if (error || !workspace) return <div className={`${styles.alert} ${styles.error}`}>{error || 'Applicant Finder is unavailable.'}</div>;
+  if (loading) return <div className={styles.empty}>{t('providerJobs.applicantFinder.loading')}</div>;
+  if (error || !workspace) return <div className={`${styles.alert} ${styles.error}`}>{error || t('providerJobs.applicantFinder.unavailable')}</div>;
+
+  const totalLabel = interpolate(t('providerJobs.applicantFinder.applicantsOf'), { total: workspace.applications.length });
+  const matchingLabel = interpolate(
+    t(filteredApplications.length === 1 ? 'providerJobs.applicantFinder.matchingOne' : 'providerJobs.applicantFinder.matchingMany'),
+    { count: filteredApplications.length },
+  );
 
   return <div className={styles.page}>
     <section className={styles.hero}>
       <div className={styles.heroMain}>
-        <span className={styles.eyebrow}>{ta ? 'Employer discovery' : 'Employer discovery'}</span>
-        <h1>{ta ? 'Applicant Finder' : 'Applicant finder'}</h1>
-        <p className={styles.muted}>{ta ? 'Job, application stage, verification மற்றும் keyword மூலம் applicants-ஐ வேகமாக shortlist செய்யுங்கள்.' : 'Find the right applicants quickly by job, hiring stage, verification state and keyword.'}</p>
+        <span className={styles.eyebrow}>{t('providerJobs.applicantFinder.heroEyebrow')}</span>
+        <h1>{t('providerJobs.applicantFinder.title')}</h1>
+        <p className={styles.muted}>{t('providerJobs.applicantFinder.intro')}</p>
       </div>
       <div className={styles.heroActions}>
-        <Link className={`${styles.button} ${styles.secondary}`} href="/provider/jobs">{ta ? 'Hiring workspace திரும்ப' : 'Back to hiring workspace'}</Link>
+        <Link className={`${styles.button} ${styles.secondary}`} href="/provider/jobs">{t('providerJobs.applicantFinder.back')}</Link>
       </div>
     </section>
 
     {!workspace.applications.length ? <div className={`${styles.empty} ${styles.emptyState}`}>
       <span className={styles.emptyIcon}>◎</span>
-      <strong>{ta ? 'Applicants இன்னும் இல்லை' : 'No applicants yet'}</strong>
-      <span>{ta ? 'Applications வந்த பிறகு இந்த finder பயன்படுத்தலாம்.' : 'This finder becomes useful as applications arrive for your jobs.'}</span>
-      <Link className={styles.button} href="/provider/jobs">{ta ? 'Hiring workspace பார்க்க' : 'Open hiring workspace'}</Link>
+      <strong>{t('providerJobs.applicantFinder.emptyTitle')}</strong>
+      <span>{t('providerJobs.applicantFinder.emptyBody')}</span>
+      <Link className={styles.button} href="/provider/jobs">{t('providerJobs.applicantFinder.openHiring')}</Link>
     </div> : <>
-      <section className={`${styles.card} ${styles.section}`} aria-label="Applicant discovery filters">
+      <section className={`${styles.card} ${styles.section}`} aria-label={t('providerJobs.applicantFinder.filtersAria')}>
         <div className={styles.sectionHeading}>
           <div>
-            <span className={styles.eyebrow}>Applicant discovery</span>
-            <h2>{ta ? 'Candidates தேடுங்கள்' : 'Search candidates'}</h2>
-            <p className={styles.muted}>{ta ? 'இந்த filters existing hiring data-ஐ மட்டும் organize செய்கின்றன; application status மாற்றாது.' : 'These controls only organize existing hiring data and do not change application status.'}</p>
+            <span className={styles.eyebrow}>{t('providerJobs.applicantFinder.filtersEyebrow')}</span>
+            <h2>{t('providerJobs.applicantFinder.filtersTitle')}</h2>
+            <p className={styles.muted}>{t('providerJobs.applicantFinder.filtersBody')}</p>
           </div>
-          <div className={styles.jobMetric}><strong>{filteredApplications.length}</strong><span>{ta ? `/ ${workspace.applications.length} applicants` : `of ${workspace.applications.length} applicants`}</span></div>
+          <div className={styles.jobMetric}><strong>{filteredApplications.length}</strong><span>{totalLabel}</span></div>
         </div>
 
         <div className={styles.formGrid}>
-          <label className={`${styles.label} ${styles.wide}`}>Keyword<input className={styles.input} type="search" value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder={ta ? 'Headline, location, job, cover note…' : 'Headline, location, job, cover note…'} /></label>
-          <label className={styles.label}>Job<select className={styles.select} value={jobId} onChange={(event) => setJobId(event.target.value)}><option value="">{ta ? 'All jobs' : 'All jobs'}</option>{jobsWithApplicants.map((job) => <option key={job.id} value={job.id}>{job.title}</option>)}</select></label>
-          <label className={styles.label}>Stage<select className={styles.select} value={stage} onChange={(event) => setStage(event.target.value)}><option value="">{ta ? 'All stages' : 'All stages'}</option>{stages.map((value) => <option key={value} value={value}>{label(value)}</option>)}</select></label>
-          <label className={styles.label}>Professional<select className={styles.select} value={verification} onChange={(event) => setVerification(event.target.value as VerificationFilter)}><option value="">{ta ? 'All profiles' : 'All profiles'}</option><option value="verified">Verified</option><option value="unverified">Not verified</option></select></label>
-          <label className={styles.label}>Sort<select className={styles.select} value={sortMode} onChange={(event) => setSortMode(event.target.value as SortMode)}><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="profile">Profile A–Z</option><option value="job">Job A–Z</option></select></label>
+          <label className={`${styles.label} ${styles.wide}`}>{t('providerJobs.applicantFinder.keyword')}<input className={styles.input} type="search" value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder={t('providerJobs.applicantFinder.keywordPlaceholder')} /></label>
+          <label className={styles.label}>{t('providerJobs.applicantFinder.job')}<select className={styles.select} value={jobId} onChange={(event) => setJobId(event.target.value)}><option value="">{t('providerJobs.applicantFinder.allJobs')}</option>{jobsWithApplicants.map((job) => <option key={job.id} value={job.id}>{job.title}</option>)}</select></label>
+          <label className={styles.label}>{t('providerJobs.applicantFinder.stage')}<select className={styles.select} value={stage} onChange={(event) => setStage(event.target.value)}><option value="">{t('providerJobs.applicantFinder.allStages')}</option>{stages.map((value) => <option key={value} value={value}>{localizedLabel(value, t)}</option>)}</select></label>
+          <label className={styles.label}>{t('providerJobs.applicantFinder.professional')}<select className={styles.select} value={verification} onChange={(event) => setVerification(event.target.value as VerificationFilter)}><option value="">{t('providerJobs.applicantFinder.allProfiles')}</option><option value="verified">{t('providerJobs.applicantFinder.verified')}</option><option value="unverified">{t('providerJobs.applicantFinder.notVerified')}</option></select></label>
+          <label className={styles.label}>{t('providerJobs.applicantFinder.sort')}<select className={styles.select} value={sortMode} onChange={(event) => setSortMode(event.target.value as SortMode)}><option value="newest">{t('providerJobs.applicantFinder.sortNewest')}</option><option value="oldest">{t('providerJobs.applicantFinder.sortOldest')}</option><option value="profile">{t('providerJobs.applicantFinder.sortProfile')}</option><option value="job">{t('providerJobs.applicantFinder.sortJob')}</option></select></label>
         </div>
 
-        {hasFilters ? <div className={styles.row}><span className={styles.muted}>{ta ? `${filteredApplications.length} matching applicants` : `${filteredApplications.length} matching ${filteredApplications.length === 1 ? 'applicant' : 'applicants'}`}</span><button className={`${styles.button} ${styles.secondary}`} type="button" onClick={clearFilters}>{ta ? 'Filters clear செய்ய' : 'Clear filters'}</button></div> : null}
+        {hasFilters ? <div className={styles.row}><span className={styles.muted}>{matchingLabel}</span><button className={`${styles.button} ${styles.secondary}`} type="button" onClick={clearFilters}>{t('providerJobs.applicantFinder.clearFilters')}</button></div> : null}
       </section>
 
       {filteredApplications.length === 0 ? <div className={`${styles.empty} ${styles.emptyState}`}>
         <span className={styles.emptyIcon}>⌕</span>
-        <strong>{ta ? 'Matching applicants இல்லை' : 'No applicants match these filters'}</strong>
-        <span>{ta ? 'ஒரு filter-ஐ மாற்றி அல்லது clear செய்து மீண்டும் பாருங்கள்.' : 'Broaden or clear a filter to see more candidates.'}</span>
-        <button className={`${styles.button} ${styles.secondary}`} type="button" onClick={clearFilters}>{ta ? 'அனைத்து filters clear செய்ய' : 'Clear all filters'}</button>
+        <strong>{t('providerJobs.applicantFinder.noMatchTitle')}</strong>
+        <span>{t('providerJobs.applicantFinder.noMatchBody')}</span>
+        <button className={`${styles.button} ${styles.secondary}`} type="button" onClick={clearFilters}>{t('providerJobs.applicantFinder.clearAll')}</button>
       </div> : <div className={styles.jobList}>{filteredApplications.map((application) => {
         const job = jobsById.get(application.job_posting_id);
         const profile = professionalsById.get(application.professional_id);
@@ -177,18 +206,18 @@ export function EmployerApplicantFinder() {
         return <article className={styles.jobCard} key={application.id}>
           <div className={styles.row}>
             <div>
-              <div className={styles.meta}><span className={styles.statusPill}>{label(application.status)}</span><span className={styles.pill}>{profile?.verified ? 'Verified Professional' : 'Not verified'}</span>{job?.status ? <span className={styles.pill}>{label(job.status)} job</span> : null}</div>
-              <Link href={`/professionals/${application.professional_id}`} className={styles.profileLink}><h3>{profile?.headline || 'Professional applicant'}</h3></Link>
+              <div className={styles.meta}><span className={styles.statusPill}>{localizedLabel(application.status, t)}</span><span className={styles.pill}>{profile?.verified ? t('providerJobs.applicantFinder.verifiedProfessional') : t('providerJobs.applicantFinder.notVerified')}</span>{job?.status ? <span className={styles.pill}>{localizedLabel(job.status, t)} {t('providerJobs.applicantFinder.jobSuffix')}</span> : null}</div>
+              <Link href={`/professionals/${application.professional_id}`} className={styles.profileLink}><h3>{profile?.headline || t('providerJobs.applicantFinder.professionalFallback')}</h3></Link>
               {profile?.service_area ? <div className={styles.muted}>⌖ {profile.service_area}</div> : null}
-              <div className={styles.muted}>{job?.title ?? 'Job opportunity'} · Applied {new Date(application.applied_at).toLocaleDateString(locale)}</div>
+              <div className={styles.muted}>{job?.title ?? t('providerJobs.applicantFinder.jobFallback')} · {t('providerJobs.applicantFinder.applied')} {new Date(application.applied_at).toLocaleDateString(locale)}</div>
             </div>
-            <div className={styles.jobMetric}><span>{ta ? 'Stage' : 'Stage'}</span><strong>{label(application.status)}</strong></div>
+            <div className={styles.jobMetric}><span>{t('providerJobs.applicantFinder.stageMetric')}</span><strong>{localizedLabel(application.status, t)}</strong></div>
           </div>
-          {application.cover_note ? <p>{application.cover_note.length > 320 ? `${application.cover_note.slice(0, 320)}…` : application.cover_note}</p> : <p className={styles.muted}>{ta ? 'Cover note இல்லை.' : 'No cover note provided.'}</p>}
+          {application.cover_note ? <p>{application.cover_note.length > 320 ? `${application.cover_note.slice(0, 320)}…` : application.cover_note}</p> : <p className={styles.muted}>{t('providerJobs.applicantFinder.noCoverNote')}</p>}
           <div className={styles.actions}>
-            <Link className={styles.button} href={`/professionals/${application.professional_id}`}>{ta ? 'Profile பார்க்க' : 'View profile'}</Link>
-            {conversation ? <Link className={`${styles.button} ${styles.secondary}`} href={`/provider/messages?conversation=${conversation.id}`}>{ta ? 'Private Message' : 'Private message'}</Link> : null}
-            <Link className={`${styles.button} ${styles.secondary}`} href="/provider/jobs">{ta ? 'Hiring actions' : 'Hiring actions'}</Link>
+            <Link className={styles.button} href={`/professionals/${application.professional_id}`}>{t('providerJobs.applicantFinder.viewProfile')}</Link>
+            {conversation ? <Link className={`${styles.button} ${styles.secondary}`} href={`/provider/messages?conversation=${conversation.id}`}>{t('providerJobs.applicantFinder.privateMessage')}</Link> : null}
+            <Link className={`${styles.button} ${styles.secondary}`} href="/provider/jobs">{t('providerJobs.applicantFinder.hiringActions')}</Link>
           </div>
         </article>;
       })}</div>}
