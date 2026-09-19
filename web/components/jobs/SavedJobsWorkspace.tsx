@@ -115,7 +115,7 @@ export function SavedJobsWorkspace() {
       return <article className={styles.jobCard} key={saved.job_posting_id}>
         <div className={styles.row}>
           <div><div className={styles.meta}><span className={styles.statusPill}>{t('savedJobs.savedLabel')}</span><span className={styles.pill}>{localizedLabel(job.employment_type, t)}</span><span className={styles.pill}>{localizedLabel(job.workplace_type, t)}</span></div><h3>{job.title}</h3><div className={styles.muted}>{job.business?.name ?? t('savedJobs.verifiedBusinessFallback')}</div></div>
-          <div className={styles.jobMetric}><span>{ta ? 'Saved' : 'Saved'}</span><strong>{new Date(saved.saved_at).toLocaleDateString(locale)}</strong></div>
+          <div className={styles.jobMetric}><span>{t('savedJobs.savedLabel')}</span><strong>{new Date(saved.saved_at).toLocaleDateString(locale)}</strong></div>
         </div>
         {job.location ? <div className={styles.jobFacts}><span>⌖ {job.location}</span></div> : null}
         <p>{job.description.length > 220 ? `${job.description.slice(0, 220)}…` : job.description}</p>
