@@ -93,11 +93,11 @@ export function LiveProviderShell({ children, active }: { children: React.ReactN
     if (provider?.provider_type === 'business') {
       groups.push({
         id: 'business-hiring',
-        label: tamil ? 'Hiring & Business' : 'Hiring & business',
+        label: t('provider.business.navigation'),
         links: [
-          { href: '/provider/products', label: tamil ? 'Products' : 'Products' },
-          { href: '/provider/orders', label: tamil ? 'Product orders' : 'Product orders' },
-          { href: '/provider/jobs', label: 'Employer Jobs' },
+          { href: '/provider/products', label: t('provider.dashboard.products') },
+          { href: '/provider/orders', label: t('provider.business.productOrders') },
+          { href: '/provider/jobs', label: t('provider.dashboard.employerJobs') },
           { href: '/provider/profile', label: t('provider.profile') },
         ],
       });
