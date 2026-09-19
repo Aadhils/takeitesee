@@ -3,11 +3,12 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../../../', import.meta.url);
-const [routeSource, managerSource, mediaSource, journeyCss] = await Promise.all([
+const [routeSource, managerSource, mediaSource, journeyCss, translationsSource] = await Promise.all([
   readFile(new URL('app/provider/products/page.tsx', root), 'utf8'),
   readFile(new URL('components/provider/ProviderProductsManager.tsx', root), 'utf8'),
   readFile(new URL('components/provider/ProductPrimaryImageControl.tsx', root), 'utf8'),
   readFile(new URL('components/provider/ProviderProductsResponsive.module.css', root), 'utf8'),
+  readFile(new URL('components/i18n/IdentityWorkspaceTranslations.ts', root), 'utf8'),
 ]);
 
 test('Business Products route uses the responsive journey wrapper', () => {
@@ -37,7 +38,8 @@ test('Business Products data, launch and readiness contracts remain present', ()
   assert.ok(managerSource.includes('marketplace_disclosure_complete'));
   assert.ok(managerSource.includes("readiness.trust_status === 'suspended'"));
   assert.ok(managerSource.includes("readiness.trust_status === 'reverification_required'"));
-  assert.ok(managerSource.includes('TakeItEsee payment and Cashfree are still disabled.'));
+  assert.ok(managerSource.includes("t('provider.products.revisionLaunchBody')"));
+  assert.ok(translationsSource.includes('TakeItEsee payment and Cashfree are still disabled.'));
 });
 
 test('Business Products primary image revision contract remains present', () => {

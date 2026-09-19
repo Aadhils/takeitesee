@@ -105,8 +105,7 @@ function launchTone(status: LaunchStatus | 'needs_review') {
 }
 
 export default function ProviderProductsManager() {
-  const { locale } = useIdentityWorkspaceTranslations();
-  const tamil = locale.toLowerCase().startsWith('ta');
+  const { locale, t } = useIdentityWorkspaceTranslations();
   const [products, setProducts] = useState<Product[]>([]);
   const [readiness, setReadiness] = useState<ProviderReadiness | null>(null);
   const [draft, setDraft] = useState<ProductDraft>(emptyDraft);
@@ -127,19 +126,19 @@ export default function ProviderProductsManager() {
       ]);
       const productPayload = await productResponse.json() as { products?: Product[]; error?: string };
       const profilePayload = await profileResponse.json() as { profile?: ProviderReadiness; error?: string };
-      if (!productResponse.ok || !productPayload.products) throw new Error(productPayload.error || 'Unable to load products.');
-      if (!profileResponse.ok || !profilePayload.profile) throw new Error(profilePayload.error || 'Unable to load Business readiness.');
-      if (profilePayload.profile.provider_type !== 'business') throw new Error('Business Provider identity is required to manage products.');
+      if (!productResponse.ok || !productPayload.products) throw new Error(productPayload.error || t('provider.products.loadFallback'));
+      if (!profileResponse.ok || !profilePayload.profile) throw new Error(profilePayload.error || t('provider.products.readinessFallback'));
+      if (profilePayload.profile.provider_type !== 'business') throw new Error(t('provider.products.businessRequired'));
       setProducts(productPayload.products);
       setReadiness(profilePayload.profile);
     } catch (cause) {
       setProducts([]);
       setReadiness(null);
-      setError(cause instanceof Error ? cause.message : 'Unable to load products.');
+      setError(cause instanceof Error ? cause.message : t('provider.products.loadFallback'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -159,9 +158,9 @@ export default function ProviderProductsManager() {
   };
 
   const catalogActivationBlocker = () => {
-    if (!readiness) return tamil ? 'Business readiness load ஆன பிறகு Active செய்யுங்கள்.' : 'Wait for Business readiness to load before setting a product Active.';
-    if (readiness.trust_status === 'suspended') return tamil ? 'Provider suspension resolve ஆன பிறகே Product catalog-ஐ மீண்டும் Active செய்யலாம்.' : 'Resolve the Provider suspension before reactivating the Product catalog.';
-    if (readiness.trust_status === 'reverification_required') return tamil ? 'Fresh Provider verification approve ஆன பிறகே Product catalog-ஐ Active செய்யலாம்.' : 'Fresh Provider verification must be approved before the Product catalog can be Active.';
+    if (!readiness) return t('provider.products.activationWait');
+    if (readiness.trust_status === 'suspended') return t('provider.products.suspensionBlocker');
+    if (readiness.trust_status === 'reverification_required') return t('provider.products.reverificationBlocker');
     return null;
   };
 
@@ -190,12 +189,12 @@ export default function ProviderProductsManager() {
         body: JSON.stringify(productPayload(draft)),
       });
       const payload = await response.json() as { product?: Product; error?: string };
-      if (!response.ok || !payload.product) throw new Error(payload.error || 'Unable to create product.');
+      if (!response.ok || !payload.product) throw new Error(payload.error || t('provider.products.createFallback'));
       setDraft(emptyDraft);
       await load();
-      setNotice(tamil ? 'Product catalog-ல் சேமிக்கப்பட்டது. Active ஆக்கிய பின் public launch review-க்கு submit செய்யலாம்.' : 'Product saved to your catalog. Set it Active when ready, then submit it for public launch review.');
+      setNotice(t('provider.products.createdNotice'));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to create product.');
+      setError(cause instanceof Error ? cause.message : t('provider.products.createFallback'));
     } finally {
       setSaving(false);
     }
@@ -214,12 +213,12 @@ export default function ProviderProductsManager() {
         body: JSON.stringify(productPayload(editDraft)),
       });
       const payload = await response.json() as { product?: Product; error?: string };
-      if (!response.ok || !payload.product) throw new Error(payload.error || 'Unable to update product.');
+      if (!response.ok || !payload.product) throw new Error(payload.error || t('provider.products.updateFallback'));
       setEditingId(null);
       await load();
-      setNotice(tamil ? 'Product மாற்றங்கள் சேமிக்கப்பட்டன. Review-sensitive content மாறியிருந்தால் புதிய revision approval தேவை.' : 'Product changes saved. If review-sensitive content changed, the new revision needs approval.');
+      setNotice(t('provider.products.updatedNotice'));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to update product.');
+      setError(cause instanceof Error ? cause.message : t('provider.products.updateFallback'));
     } finally {
       setSaving(false);
     }
@@ -238,13 +237,13 @@ export default function ProviderProductsManager() {
         body: JSON.stringify({ status }),
       });
       const payload = await response.json() as { product?: Product; error?: string };
-      if (!response.ok || !payload.product) throw new Error(payload.error || 'Unable to update product status.');
+      if (!response.ok || !payload.product) throw new Error(payload.error || t('provider.products.statusFallback'));
       await load();
       setNotice(status === 'active'
-        ? (tamil ? 'Product catalog மீண்டும் Active செய்யப்பட்டது. Public visibility current approval மற்றும் Business readiness gates-ஐ தொடர்ந்து மதிக்கும்.' : 'Product catalog reactivated. Public visibility still follows the current approval and Business readiness gates.')
-        : (tamil ? 'Product catalog status மாற்றப்பட்டது.' : 'Product catalog status updated.'));
+        ? t('provider.products.reactivatedNotice')
+        : t('provider.products.statusUpdatedNotice'));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to update product status.');
+      setError(cause instanceof Error ? cause.message : t('provider.products.statusFallback'));
     } finally {
       setSaving(false);
     }
@@ -257,13 +256,13 @@ export default function ProviderProductsManager() {
     try {
       const response = await fetch(`/api/provider/products/${encodeURIComponent(product.id)}/launch`, { method });
       const payload = await response.json() as { launch?: ProductLaunch; error?: string };
-      if (!response.ok || !payload.launch) throw new Error(payload.error || 'Unable to update product launch review.');
+      if (!response.ok || !payload.launch) throw new Error(payload.error || t('provider.products.launchFallback'));
       await load();
       setNotice(method === 'POST'
-        ? (tamil ? `Revision ${product.review_revision} public launch review-க்கு அனுப்பப்பட்டது.` : `Revision ${product.review_revision} was submitted for public launch review.`)
-        : (tamil ? 'Pending public launch request திரும்பப் பெறப்பட்டது.' : 'Pending public launch request was withdrawn.'));
+        ? `${t('provider.products.revision')} ${product.review_revision} ${t('provider.products.launchSubmittedSuffix')}`
+        : t('provider.products.launchWithdrawnNotice'));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to update product launch review.');
+      setError(cause instanceof Error ? cause.message : t('provider.products.launchFallback'));
     } finally {
       setSaving(false);
     }
@@ -279,63 +278,59 @@ export default function ProviderProductsManager() {
 
   const formFields = (value: ProductDraft, update: <K extends keyof ProductDraft>(key: K, next: ProductDraft[K]) => void) => <>
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '.8rem' }}>
-      <Input label={tamil ? 'Product பெயர்' : 'Product name'} required maxLength={160} value={value.name} onChange={(event) => update('name', event.target.value)} />
-      <Input label="SKU" maxLength={64} value={value.sku} onChange={(event) => update('sku', event.target.value)} hint={tamil ? 'Optional; இந்த Business-ல் unique.' : 'Optional; unique within this Business.'} />
-      <Input label={tamil ? 'விலை' : 'Price'} required type="number" min="0" step="0.01" value={value.price} onChange={(event) => update('price', event.target.value)} />
-      <Input label={tamil ? 'Currency code' : 'Currency'} required maxLength={3} value={value.currency} onChange={(event) => update('currency', event.target.value.toUpperCase())} />
-      <Input label={tamil ? 'Unit' : 'Unit label'} required maxLength={40} value={value.unit_label} onChange={(event) => update('unit_label', event.target.value)} placeholder="item" />
-      <Select label={tamil ? 'Stock நிலை' : 'Stock mode'} value={value.stock_mode} onChange={(event) => update('stock_mode', event.target.value as StockMode)}>
-        <option value="in_stock">{tamil ? 'Stock உள்ளது' : 'In stock'}</option>
-        <option value="out_of_stock">{tamil ? 'Stock இல்லை' : 'Out of stock'}</option>
-        <option value="made_to_order">{tamil ? 'Order வந்ததும் தயாரிப்பு' : 'Made to order'}</option>
+      <Input label={t('provider.products.name')} required maxLength={160} value={value.name} onChange={(event) => update('name', event.target.value)} />
+      <Input label="SKU" maxLength={64} value={value.sku} onChange={(event) => update('sku', event.target.value)} hint={t('provider.products.skuHint')} />
+      <Input label={t('provider.products.price')} required type="number" min="0" step="0.01" value={value.price} onChange={(event) => update('price', event.target.value)} />
+      <Input label={t('provider.products.currency')} required maxLength={3} value={value.currency} onChange={(event) => update('currency', event.target.value.toUpperCase())} />
+      <Input label={t('provider.products.unitLabel')} required maxLength={40} value={value.unit_label} onChange={(event) => update('unit_label', event.target.value)} placeholder="item" />
+      <Select label={t('provider.products.stockMode')} value={value.stock_mode} onChange={(event) => update('stock_mode', event.target.value as StockMode)}>
+        <option value="in_stock">{t('provider.products.inStock')}</option>
+        <option value="out_of_stock">{t('provider.products.outOfStock')}</option>
+        <option value="made_to_order">{t('provider.products.madeToOrder')}</option>
       </Select>
-      <Select label={tamil ? 'Catalog நிலை' : 'Catalog status'} value={value.status} onChange={(event) => update('status', event.target.value as ProductStatus)}>
-        <option value="draft">Draft</option>
-        <option value="active" disabled={readiness?.trust_status !== 'normal'}>Active</option>
-        <option value="paused">Paused</option>
+      <Select label={t('provider.products.catalogStatus')} value={value.status} onChange={(event) => update('status', event.target.value as ProductStatus)}>
+        <option value="draft">{t('provider.products.draft')}</option>
+        <option value="active" disabled={readiness?.trust_status !== 'normal'}>{t('provider.products.active')}</option>
+        <option value="paused">{t('provider.products.paused')}</option>
       </Select>
     </div>
-    <Textarea label={tamil ? 'விளக்கம்' : 'Description'} maxLength={5000} rows={4} value={value.description} onChange={(event) => update('description', event.target.value)} />
+    <Textarea label={t('provider.products.description')} maxLength={5000} rows={4} value={value.description} onChange={(event) => update('description', event.target.value)} />
   </>;
 
   return <LiveProviderShell active="/provider/products">
     <ProviderHeading
-      eyebrow="Business sales"
-      title={tamil ? 'Products & catalog' : 'Products & catalog'}
-      description={tamil
-        ? 'Product-ஐ தயார் செய்து Active ஆக்கி, current revision-ஐ platform review-க்கு அனுப்புங்கள். Approved current revision மட்டும் public storefront-ல் வரலாம்.'
-        : 'Prepare a product, set it Active, and submit the current revision for platform review. Only an approved current revision can appear on the public storefront.'}
+      eyebrow={t('provider.products.eyebrow')}
+      title={t('provider.products.title')}
+      description={t('provider.products.intro')}
     />
 
-    <Alert title={tamil ? 'Revision-bound public launch' : 'Revision-bound public launch'} tone="info">
-      {tamil
-        ? 'Product name, description, SKU, price, currency, unit அல்லது primary image மாற்றினால் புதிய review revision உருவாகும். பழைய approval புதிய content/media-ஐ publish செய்யாது. TakeItEsee payment/Cashfree இன்னும் enable செய்யப்படவில்லை.'
-        : 'Changing product name, description, SKU, price, currency, unit, or primary image creates a new review revision. An old approval cannot publish changed content or media. TakeItEsee payment and Cashfree are still disabled.'}
+    <Alert title={t('provider.products.revisionLaunchTitle')} tone="info">
+      {t('provider.products.revisionLaunchBody')}
     </Alert>
 
-    {readiness?.trust_status === 'suspended' ? <Alert title={tamil ? 'Product reactivation paused by suspension' : 'Product reactivation paused by suspension'} tone="danger">{tamil ? 'Suspension resolve ஆகும் வரை paused Products private-ஆக இருக்கும்; Active option disabled. ' : 'Paused Products stay private and the Active option remains disabled until the suspension is resolved. '}<Link href="/account/support">{tamil ? 'Platform Support திறக்க →' : 'Open Platform Support →'}</Link></Alert> : readiness?.trust_status === 'reverification_required' ? <Alert title={tamil ? 'Product reactivation needs fresh verification' : 'Product reactivation needs fresh verification'} tone="warning">{tamil ? 'Fresh verification approve ஆன பிறகே Product catalog-ஐ மீண்டும் Active செய்யலாம். ' : 'The Product catalog can be reactivated only after fresh verification is approved. '}<Link href="/provider/verification">{tamil ? 'Re-verification தொடர →' : 'Continue re-verification →'}</Link></Alert> : null}
+    {readiness?.trust_status === 'suspended' ? <Alert title={t('provider.products.suspensionTitle')} tone="danger">{t('provider.products.suspensionBody')} <Link href="/account/support">{t('provider.products.openPlatformSupport')} →</Link></Alert> : readiness?.trust_status === 'reverification_required' ? <Alert title={t('provider.products.reverificationTitle')} tone="warning">{t('provider.products.reverificationBody')} <Link href="/provider/verification">{t('provider.products.continueReverification')} →</Link></Alert> : null}
 
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '.75rem', margin: '1rem 0' }}>
-      <Card style={{ padding: '1rem' }}><span className="eyebrow">{tamil ? 'மொத்தம்' : 'Total'}</span><strong style={{ display: 'block', marginTop: '.35rem', fontSize: '1.6rem' }}>{counts.all}</strong></Card>
-      <Card style={{ padding: '1rem' }}><span className="eyebrow">Active</span><strong style={{ display: 'block', marginTop: '.35rem', fontSize: '1.6rem' }}>{counts.active}</strong></Card>
-      <Card style={{ padding: '1rem' }}><span className="eyebrow">{tamil ? 'Paused' : 'Paused'}</span><strong style={{ display: 'block', marginTop: '.35rem', fontSize: '1.6rem' }}>{counts.paused}</strong></Card>
-      <Card style={{ padding: '1rem' }}><span className="eyebrow">{tamil ? 'Approved' : 'Approved'}</span><strong style={{ display: 'block', marginTop: '.35rem', fontSize: '1.6rem' }}>{counts.approved}</strong></Card>
-      <Card style={{ padding: '1rem' }}><span className="eyebrow">{tamil ? 'Review pending' : 'Review pending'}</span><strong style={{ display: 'block', marginTop: '.35rem', fontSize: '1.6rem' }}>{counts.pending}</strong></Card>
+      <Card style={{ padding: '1rem' }}><span className="eyebrow">{t('provider.products.total')}</span><strong style={{ display: 'block', marginTop: '.35rem', fontSize: '1.6rem' }}>{counts.all}</strong></Card>
+      <Card style={{ padding: '1rem' }}><span className="eyebrow">{t('provider.products.active')}</span><strong style={{ display: 'block', marginTop: '.35rem', fontSize: '1.6rem' }}>{counts.active}</strong></Card>
+      <Card style={{ padding: '1rem' }}><span className="eyebrow">{t('provider.products.paused')}</span><strong style={{ display: 'block', marginTop: '.35rem', fontSize: '1.6rem' }}>{counts.paused}</strong></Card>
+      <Card style={{ padding: '1rem' }}><span className="eyebrow">{t('provider.products.approved')}</span><strong style={{ display: 'block', marginTop: '.35rem', fontSize: '1.6rem' }}>{counts.approved}</strong></Card>
+      <Card style={{ padding: '1rem' }}><span className="eyebrow">{t('provider.products.reviewPending')}</span><strong style={{ display: 'block', marginTop: '.35rem', fontSize: '1.6rem' }}>{counts.pending}</strong></Card>
     </div>
 
-    {error ? <Alert title={tamil ? 'Product catalog error' : 'Product catalog error'} tone="danger">{error}</Alert> : null}
+    {error ? <Alert title={t('provider.products.errorTitle')} tone="danger">{error}</Alert> : null}
     {notice ? <Alert tone="success">{notice}</Alert> : null}
 
     <Card style={{ marginTop: '1rem' }}>
       <form onSubmit={createProduct} style={{ display: 'grid', gap: '1rem' }}>
-        <div><span className="eyebrow">{tamil ? 'புதிய Product' : 'New product'}</span><h2 style={{ margin: '.35rem 0 0' }}>{tamil ? 'Catalog item சேர்க்கவும்' : 'Add a catalog item'}</h2></div>
+        <div><span className="eyebrow">{t('provider.products.newProduct')}</span><h2 style={{ margin: '.35rem 0 0' }}>{t('provider.products.addCatalogItem')}</h2></div>
         {formFields(draft, updateDraft)}
-        <div><Button type="submit" loading={saving}>{tamil ? 'Product சேமி' : 'Save product'}</Button></div>
+        <div><Button type="submit" loading={saving}>{t('provider.products.saveProduct')}</Button></div>
       </form>
     </Card>
 
-    <section style={{ display: 'grid', gap: '.8rem', marginTop: '1rem' }} aria-label={tamil ? 'Business products' : 'Business products'}>
-      {loading ? <Card><p>{tamil ? 'Products ஏற்றப்படுகின்றன…' : 'Loading products…'}</p></Card> : products.length ? products.map((product) => {
+    <section style={{ display: 'grid', gap: '.8rem', marginTop: '1rem' }} aria-label={t('provider.products.ariaLabel')}>
+      {loading ? <Card><p>{t('provider.products.loading')}</p></Card> : products.length ? products.map((product) => {
         const editing = editingId === product.id;
         const currentLaunch = product.launch?.product_revision === product.review_revision ? product.launch : null;
         const launchStatus = currentLaunch?.status ?? 'needs_review';
@@ -343,56 +338,56 @@ export default function ProviderProductsManager() {
         const currentPending = currentLaunch?.status === 'pending';
         const catalogBlocker = catalogActivationBlocker();
         const publicBlockers = [
-          !readiness?.verified ? (tamil ? 'Provider verification' : 'Provider verification') : null,
-          !readiness?.profile_complete ? (tamil ? 'Business profile basics' : 'Business profile basics') : null,
-          !readiness?.marketplace_disclosure_complete ? (tamil ? 'Marketplace disclosure' : 'Marketplace disclosure') : null,
-          !currentApproved ? (tamil ? 'Current revision approval' : 'Current revision approval') : null,
+          !readiness?.verified ? t('provider.products.blockerVerification') : null,
+          !readiness?.profile_complete ? t('provider.products.blockerProfileBasics') : null,
+          !readiness?.marketplace_disclosure_complete ? t('provider.products.blockerDisclosure') : null,
+          !currentApproved ? t('provider.products.blockerRevisionApproval') : null,
         ].filter((value): value is string => Boolean(value));
         const publicReturnReady = !catalogBlocker && publicBlockers.length === 0;
         return <Card key={product.id} style={{ display: 'grid', gap: '.9rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '.75rem' }}>
             <div>
-              <span className="eyebrow">{product.sku || (tamil ? 'SKU இல்லை' : 'No SKU')} · Rev {product.review_revision}</span>
+              <span className="eyebrow">{product.sku || t('provider.products.noSku')} · Rev {product.review_revision}</span>
               <h2 style={{ margin: '.3rem 0 .2rem' }}>{product.name}</h2>
               <p style={{ margin: 0, color: 'var(--color-ink-muted)' }}>{money(product)} / {product.unit_label}</p>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem' }}>
-              <Badge tone={statusTone(product.status)}>{product.status}</Badge>
-              <Badge tone={stockTone(product.stock_mode)}>{product.stock_mode.replaceAll('_', ' ')}</Badge>
-              <Badge tone={launchTone(launchStatus)}>{launchStatus === 'needs_review' ? (tamil ? 'review தேவை' : 'needs review') : launchStatus.replaceAll('_', ' ')}</Badge>
+              <Badge tone={statusTone(product.status)}>{product.status === 'active' ? t('provider.products.active') : product.status === 'paused' ? t('provider.products.paused') : t('provider.products.draft')}</Badge>
+              <Badge tone={stockTone(product.stock_mode)}>{product.stock_mode === 'in_stock' ? t('provider.products.inStock') : product.stock_mode === 'out_of_stock' ? t('provider.products.outOfStock') : t('provider.products.madeToOrder')}</Badge>
+              <Badge tone={launchTone(launchStatus)}>{launchStatus === 'needs_review' ? t('provider.products.needsReview') : launchStatus === 'pending' ? t('provider.products.reviewPending') : launchStatus === 'approved' ? t('provider.products.approved') : launchStatus === 'changes_requested' ? t('provider.products.changesRequested') : launchStatus === 'rejected' ? t('provider.products.rejected') : t('provider.products.withdrawn')}</Badge>
             </div>
           </div>
 
           <ProductPrimaryImageControl productId={product.id} productName={product.name} onChanged={load} />
           {currentLaunch?.review_note ? <Alert tone={currentLaunch.status === 'approved' ? 'success' : 'warning'}>{currentLaunch.review_note}</Alert> : null}
-          {product.launch && !currentLaunch ? <Alert tone="warning">{tamil ? `முந்தைய review Rev ${product.launch.product_revision}-க்கு. Current Rev ${product.review_revision} புதிய approval தேவை.` : `The latest review belongs to revision ${product.launch.product_revision}. Current revision ${product.review_revision} needs a new approval.`}</Alert> : null}
-          {product.status === 'paused' ? <Alert title={catalogBlocker ? (tamil ? 'Product இன்னும் reactivation blocked' : 'Product reactivation is still blocked') : publicReturnReady ? (tamil ? 'Manual reactivation ready' : 'Ready for manual reactivation') : (tamil ? 'Catalog reactivation ready; public blockers remain' : 'Catalog reactivation ready; public blockers remain')} tone={catalogBlocker ? (readiness?.trust_status === 'suspended' ? 'danger' : 'warning') : publicReturnReady ? 'success' : 'warning'}>
+          {product.launch && !currentLaunch ? <Alert tone="warning">`${t('provider.products.previousReviewPrefix')} ${product.launch.product_revision}. ${t('provider.products.currentRevisionPrefix')} ${product.review_revision} ${t('provider.products.needsNewApprovalSuffix')}`</Alert> : null}
+          {product.status === 'paused' ? <Alert title={catalogBlocker ? t('provider.products.reactivationBlockedTitle') : publicReturnReady ? t('provider.products.manualReactivationReadyTitle') : t('provider.products.publicBlockersRemainTitle')} tone={catalogBlocker ? (readiness?.trust_status === 'suspended' ? 'danger' : 'warning') : publicReturnReady ? 'success' : 'warning'}>
             {catalogBlocker
               ? catalogBlocker
               : publicReturnReady
-                ? (tamil ? 'Current revision approved; Business readiness gates அனைத்தும் pass. இந்த Product-ஐ Active செய்தால் public storefront visibility உடனே திரும்பலாம். TakeItEsee automatic-ஆ reactivate செய்யாது.' : 'The current revision is approved and all Business readiness gates pass. Reactivating this Product can return it to the public storefront immediately. TakeItEsee will not reactivate it automatically.')
-                : (tamil ? `Catalog status-ஐ manual-ஆ Active செய்யலாம்; ஆனால் public storefront visibility இன்னும் இந்த blocker(s)-ஐ காத்திருக்கிறது: ${publicBlockers.join(', ')}.` : `You can manually return the catalog status to Active, but public storefront visibility still waits for: ${publicBlockers.join(', ')}.`)}
-            {' '}<Link href={readiness?.trust_status === 'suspended' ? '/account/support' : readiness?.trust_status === 'reverification_required' ? '/provider/verification' : '/provider/public-readiness'}>{readiness?.trust_status === 'suspended' ? (tamil ? 'Platform Support திறக்க →' : 'Open Platform Support →') : readiness?.trust_status === 'reverification_required' ? (tamil ? 'Verification தொடர →' : 'Continue verification →') : (tamil ? 'Public readiness review செய்ய →' : 'Review public readiness →')}</Link>
+                ? t('provider.products.publicReadyBody')
+                : `${t('provider.products.publicBlockersPrefix')} ${publicBlockers.join(', ')}.`}
+            {' '}<Link href={readiness?.trust_status === 'suspended' ? '/account/support' : readiness?.trust_status === 'reverification_required' ? '/provider/verification' : '/provider/public-readiness'}>{readiness?.trust_status === 'suspended' ? `${t('provider.products.openPlatformSupport')} →` : readiness?.trust_status === 'reverification_required' ? `${t('provider.products.continueVerification')} →` : `${t('provider.products.reviewPublicReadiness')} →`}</Link>
           </Alert> : null}
 
           {editing ? <div style={{ display: 'grid', gap: '1rem' }}>
             {formFields(editDraft, updateEditDraft)}
             <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}>
-              <Button type="button" loading={saving} onClick={() => void saveProduct(product.id)}>{tamil ? 'மாற்றங்கள் சேமி' : 'Save changes'}</Button>
-              <Button type="button" variant="quiet" disabled={saving} onClick={() => setEditingId(null)}>{tamil ? 'ரத்து' : 'Cancel'}</Button>
+              <Button type="button" loading={saving} onClick={() => void saveProduct(product.id)}>{t('provider.products.saveChanges')}</Button>
+              <Button type="button" variant="quiet" disabled={saving} onClick={() => setEditingId(null)}>{t('provider.products.cancel')}</Button>
             </div>
           </div> : <>
             {product.description ? <p style={{ margin: 0, lineHeight: 1.6 }}>{product.description}</p> : null}
             <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}>
-              <Button type="button" variant="secondary" onClick={() => { setEditingId(product.id); setEditDraft(draftFromProduct(product)); setNotice(''); }}>{tamil ? 'Edit product' : 'Edit product'}</Button>
-              {product.status === 'paused' && !catalogBlocker ? <Button type="button" disabled={saving} onClick={() => void setProductStatus(product.id, 'active')}>{tamil ? 'Catalog மீண்டும் Active செய்' : 'Reactivate catalog'}</Button> : null}
-              {currentPending ? <Button type="button" variant="quiet" disabled={saving} onClick={() => void changeLaunch(product, 'DELETE')}>{tamil ? 'Review request திரும்பப் பெறு' : 'Withdraw review request'}</Button> : null}
-              {!currentPending && !currentApproved ? <Button type="button" disabled={saving || product.status !== 'active'} onClick={() => void changeLaunch(product, 'POST')}>{tamil ? 'Public launch review-க்கு அனுப்பு' : 'Submit for public launch'}</Button> : null}
+              <Button type="button" variant="secondary" onClick={() => { setEditingId(product.id); setEditDraft(draftFromProduct(product)); setNotice(''); }}>{t('provider.products.editProduct')}</Button>
+              {product.status === 'paused' && !catalogBlocker ? <Button type="button" disabled={saving} onClick={() => void setProductStatus(product.id, 'active')}>{t('provider.products.reactivateCatalog')}</Button> : null}
+              {currentPending ? <Button type="button" variant="quiet" disabled={saving} onClick={() => void changeLaunch(product, 'DELETE')}>{t('provider.products.withdrawReview')}</Button> : null}
+              {!currentPending && !currentApproved ? <Button type="button" disabled={saving || product.status !== 'active'} onClick={() => void changeLaunch(product, 'POST')}>{t('provider.products.submitPublicLaunch')}</Button> : null}
             </div>
-            {product.status !== 'active' && !currentApproved ? <p className="muted" style={{ margin: 0 }}>{tamil ? 'Public launch submit செய்ய Catalog status Active ஆக இருக்க வேண்டும்.' : 'Catalog status must be Active before submitting for public launch.'}</p> : null}
+            {product.status !== 'active' && !currentApproved ? <p className="muted" style={{ margin: 0 }}>{t('provider.products.activeRequiredForLaunch')}</p> : null}
           </>}
         </Card>;
-      }) : <Card><EmptyState title={tamil ? 'Products இன்னும் இல்லை' : 'No products yet'}>{tamil ? 'மேலே உள்ள form மூலம் உங்கள் முதல் Business product-ஐ catalog-ல் சேர்க்கலாம்.' : 'Use the form above to add your first Business product to the catalog.'}</EmptyState></Card>}
+      }) : <Card><EmptyState title={t('provider.products.emptyTitle')}>{t('provider.products.emptyBody')}</EmptyState></Card>}
     </section>
   </LiveProviderShell>;
 }
