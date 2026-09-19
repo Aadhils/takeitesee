@@ -309,8 +309,8 @@
 }
 
 .providerActivityStrip {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
+  min-width: 0;
   gap: 1px;
   overflow: hidden;
   border: 1px solid var(--color-border);
@@ -322,6 +322,7 @@
   display: flex;
   min-width: 0;
   min-height: 58px;
+  flex: 1 1 150px;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
@@ -331,7 +332,9 @@
 }
 
 .providerActivityItem:hover,
-.providerActivityItem:focus-visible {
+.providerActivityItem:focus-visible,
+.providerActivityEmpty:hover,
+.providerActivityEmpty:focus-visible {
   background: var(--color-brand-subtle);
 }
 
@@ -348,6 +351,37 @@
 .providerActivityItem strong {
   flex: 0 0 auto;
   font-size: 1rem;
+}
+
+.providerActivityEmpty {
+  display: grid;
+  min-width: 0;
+  min-height: 54px;
+  flex: 1 1 100%;
+  align-content: center;
+  gap: 2px;
+  padding: 8px 13px;
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+.providerActivityEmpty span,
+.providerActivityEmpty small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.providerActivityEmpty span {
+  font-size: .76rem;
+  font-weight: 800;
+}
+
+.providerActivityEmpty small {
+  color: var(--color-ink-muted);
+  font-size: .68rem;
+  line-height: 1.35;
 }
 
 .priorityPanel {
@@ -671,9 +705,10 @@
 
 @media (max-width: 780px) {
   .dashboardStack { gap: 16px; }
-  .providerActivityStrip { grid-template-columns: repeat(3, minmax(104px, 1fr)); overflow-x: auto; scrollbar-width: none; }
+  .providerActivityStrip { overflow-x: auto; scrollbar-width: none; }
   .providerActivityStrip::-webkit-scrollbar { display: none; }
-  .providerActivityItem { min-height: 54px; padding: 8px 10px; }
+  .providerActivityItem { min-width: 116px; min-height: 54px; flex: 0 0 auto; padding: 8px 10px; }
+  .providerActivityEmpty { min-width: min(100%, 280px); min-height: 52px; flex: 1 0 auto; padding: 8px 10px; }
   .workspaceToolbar { top: 70px; grid-template-columns: auto minmax(0, 1fr); gap: 6px; padding: 6px; }
   .workspaceIdentity { padding-left: 2px; }
   .workspaceEdit { display: none; }
