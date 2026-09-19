@@ -42,7 +42,7 @@ test('Customer Product Order attention deep-links latest update and refreshes li
   assert.ok(attentionSource.includes("fetch('/api/notifications?mode=product-order-unread-updates'"));
   assert.ok(attentionSource.includes("latest.target_path?.startsWith('/orders/')"));
   assert.ok(attentionSource.includes("safeTarget.match(/^\\/orders\\/([0-9a-f-]+)$/i)"));
-  assert.ok(attentionSource.includes('Review latest order'));
+  assert.ok(attentionSource.includes("t('account.productOrderAttention.reviewLatest')"));
   assert.ok(attentionSource.includes('window.setInterval(refresh, 60_000)'));
   assert.ok(attentionSource.includes("window.addEventListener('customer-product-order-attention-refresh', refresh)"));
   assert.ok(accountShellSource.includes('window.setInterval(refresh, 60_000)'));
