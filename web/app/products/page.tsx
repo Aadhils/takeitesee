@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Badge, Button, Card, EmptyState, Input, Skeleton } from '../../components/ui/primitives';
-import { useLanguage } from '../../components/i18n/LanguageProvider';
+import { usePublicProviderTranslations } from '../../components/i18n/PublicProviderTranslations';
 import ProductSmartFilters from '../../components/discovery/ProductSmartFilters';
 
 type StockMode = 'in_stock' | 'out_of_stock' | 'made_to_order';
@@ -66,8 +66,7 @@ function buildProductApiParams(query: string, stock: StockFilter, shop: ShopFilt
 }
 
 export default function ProductsPage() {
-  const { locale } = useLanguage();
-  const tamil = locale === 'ta-IN';
+  const { locale, t } = usePublicProviderTranslations();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -177,9 +176,9 @@ export default function ProductsPage() {
   };
 
   const stockPresentation = (mode: StockMode) => {
-    if (mode === 'in_stock') return { label: tamil ? 'Stock உள்ளது' : 'In stock', tone: 'success' as const };
-    if (mode === 'made_to_order') return { label: tamil ? 'Order அடிப்படையில்' : 'Made to order', tone: 'warning' as const };
-    return { label: tamil ? 'Stock இல்லை' : 'Out of stock', tone: 'neutral' as const };
+    if (mode === 'in_stock') return { label: t('publicProvider.businessProducts.inStock'), tone: 'success' as const };
+    if (mode === 'made_to_order') return { label: t('publicProvider.businessProducts.madeToOrder'), tone: 'warning' as const };
+    return { label: t('publicProvider.businessProducts.outOfStock'), tone: 'neutral' as const };
   };
 
   const currentContext = (() => {
@@ -251,23 +250,21 @@ export default function ProductsPage() {
 
   return <div className="discovery-page discovery-workspace">
     <section className="page-intro">
-      <span className="eyebrow">{tamil ? 'Business marketplace' : 'Business marketplace'}</span>
-      <h1>{tamil ? 'Products கண்டுபிடிக்கவும்' : 'Discover products'}</h1>
-      <p>{tamil
-        ? 'Platform review செய்யப்பட்ட current product revisions மட்டும் இங்கே தெரியும். Search மற்றும் filters server-side apply ஆகும்; approved catalog-ஐ page-by-page load செய்யலாம்.'
-        : 'Browse only current product revisions approved for public launch. Search and filters run server-side, and the approved catalog loads page by page.'}</p>
+      <span className="eyebrow">{t('publicProvider.productMarketplace.eyebrow')}</span>
+      <h1>{t('publicProvider.productMarketplace.title')}</h1>
+      <p>{t('publicProvider.productMarketplace.intro')}</p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.75rem', marginTop: '1rem' }}>
-        <Link href="/explore" className="button button-secondary">{tamil ? 'Services பார்க்க' : 'Browse services'}</Link>
-        <Link href="/businesses" className="button button-quiet">{tamil ? 'Businesses பார்க்க' : 'Browse Businesses'}</Link>
-        {saveAuthenticated ? <Link href="/saved-products" className="button button-quiet">{tamil ? 'Saved Products' : 'Saved Products'}</Link> : null}
+        <Link href="/explore" className="button button-secondary">{t('publicProvider.productMarketplace.browseServices')}</Link>
+        <Link href="/businesses" className="button button-quiet">{t('publicProvider.productMarketplace.browseBusinesses')}</Link>
+        {saveAuthenticated ? <Link href="/saved-products" className="button button-quiet">{t('publicProvider.productMarketplace.savedProducts')}</Link> : null}
       </div>
     </section>
 
     <section className="discovery-search-panel">
       <div className="discovery-search-row">
         <Input
-          label={tamil ? 'Product தேடல்' : 'Search products'}
-          placeholder={tamil ? 'Product, Business அல்லது location' : 'Product, Business, or location'}
+          label={t('publicProvider.productMarketplace.searchLabel')}
+          placeholder={t('publicProvider.productMarketplace.searchPlaceholder')}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
@@ -289,17 +286,19 @@ export default function ProductsPage() {
 
     <div className="results-heading">
       <div>
-        <span className="eyebrow">{tamil ? 'Approved products' : 'Approved products'}</span>
+        <span className="eyebrow">{t('publicProvider.productMarketplace.resultsEyebrow')}</span>
         <h2>{loading
-          ? (tamil ? 'Products ஏற்றப்படுகிறது…' : 'Loading products…')
+          ? t('publicProvider.productMarketplace.loading')
           : serverQuery
-            ? (tamil ? `“${serverQuery}” க்கு ${products.length} products loaded` : `${products.length} products loaded for “${serverQuery}”`)
-            : (tamil ? `${products.length} products loaded` : `${products.length} products loaded`)}</h2>
+            ? t('publicProvider.productMarketplace.resultsFor')
+              .replace('{count}', String(products.length))
+              .replace('{query}', serverQuery)
+            : t('publicProvider.productMarketplace.resultsCount').replace('{count}', String(products.length))}</h2>
       </div>
     </div>
 
     {loading ? <div className="service-grid"><div className="loading-card"><Skeleton className="loading-art" /><Skeleton className="loading-line" /><Skeleton className="loading-line short" /></div></div>
-      : error ? <Card><EmptyState title={tamil ? 'Product marketplace தற்போது கிடைக்கவில்லை' : 'Product marketplace unavailable'}>{error}</EmptyState></Card>
+      : error ? <Card><EmptyState title={t('publicProvider.productMarketplace.unavailableTitle')}>{error}</EmptyState></Card>
         : products.length ? <>
           <div className="service-grid">{products.map((product) => {
             const stockState = stockPresentation(product.stock_mode);
@@ -310,17 +309,17 @@ export default function ProductsPage() {
               {product.has_primary_image ? <div className="service-card-art" style={{ padding: 0, overflow: 'hidden' }}>
                 <img
                   src={productImageHref(product.id)}
-                  alt={`${product.name} product`}
+                  alt={t('publicProvider.businessProducts.imageAlt').replace('{productName}', product.name)}
                   style={{ width: '100%', height: '100%', minHeight: '160px', objectFit: 'cover', display: 'block' }}
                 />
-                <span className="art-label" style={{ position: 'absolute', left: '.75rem', bottom: '.75rem' }}>{tamil ? 'Product' : 'Product'}</span>
-              </div> : <div className="service-card-art" aria-hidden="true"><span>{product.name.slice(0, 1)}</span><span className="art-label">{tamil ? 'Product' : 'Product'}</span></div>}
+                <span className="art-label" style={{ position: 'absolute', left: '.75rem', bottom: '.75rem' }}>{t('publicProvider.productMarketplace.productLabel')}</span>
+              </div> : <div className="service-card-art" aria-hidden="true"><span>{product.name.slice(0, 1)}</span><span className="art-label">{t('publicProvider.productMarketplace.productLabel')}</span></div>}
               <div className="discovery-card-content">
                 <div className="card-meta">
                   <Badge tone={stockState.tone}>{stockState.label}</Badge>
-                  <Badge tone={shopOpen ? 'success' : 'neutral'}>{shopOpen ? (tamil ? 'Shop Open' : 'Shop Open') : (tamil ? 'Shop Closed' : 'Shop Closed')}</Badge>
-                  {product.verified_business ? <Badge tone="info">{tamil ? 'Verified Business' : 'Verified Business'}</Badge> : null}
-                  {saved ? <Badge tone="success">{tamil ? 'Saved' : 'Saved'}</Badge> : null}
+                  <Badge tone={shopOpen ? 'success' : 'neutral'}>{shopOpen ? t('publicProvider.productMarketplace.shopOpen') : t('publicProvider.productMarketplace.shopClosed')}</Badge>
+                  {product.verified_business ? <Badge tone="info">{t('publicProvider.productMarketplace.verifiedBusiness')}</Badge> : null}
+                  {saved ? <Badge tone="success">{t('publicProvider.productMarketplace.saved')}</Badge> : null}
                 </div>
                 <h3><Link href={productHref}>{product.name}</Link></h3>
                 {product.description ? <p className="card-description">{product.description}</p> : null}
@@ -328,13 +327,13 @@ export default function ProductsPage() {
                 <div className="card-footer">
                   <div>
                     <span className="price">{money(product)} / {product.unit_label}</span>
-                    <small style={{ display: 'block', marginTop: '.35rem' }}>{tamil ? 'Order request மட்டும்; online payment இல்லை.' : 'Order request only; no online payment.'}</small>
+                    <small style={{ display: 'block', marginTop: '.35rem' }}>{t('publicProvider.productMarketplace.orderOnly')}</small>
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.5rem', justifyContent: 'flex-end' }}>
-                    {saveAuthenticated === false ? <Link href={`/login?returnTo=${encodeURIComponent(currentContext)}`} className="button button-quiet">{tamil ? 'Save செய்ய Sign in' : 'Sign in to save'}</Link>
-                      : saveAuthenticated === true ? <Button type="button" variant={saved ? 'secondary' : 'quiet'} loading={saveBusyId === product.id} disabled={Boolean(saveBusyId && saveBusyId !== product.id)} aria-pressed={saved} onClick={() => void toggleSavedProduct(product.id)}>{saved ? (tamil ? 'Saved ✓' : 'Saved ✓') : (tamil ? 'Save Product' : 'Save Product')}</Button>
+                    {saveAuthenticated === false ? <Link href={`/login?returnTo=${encodeURIComponent(currentContext)}`} className="button button-quiet">{t('publicProvider.productMarketplace.signInToSave')}</Link>
+                      : saveAuthenticated === true ? <Button type="button" variant={saved ? 'secondary' : 'quiet'} loading={saveBusyId === product.id} disabled={Boolean(saveBusyId && saveBusyId !== product.id)} aria-pressed={saved} onClick={() => void toggleSavedProduct(product.id)}>{saved ? t('publicProvider.savedProduct.saved') : t('publicProvider.savedProduct.save')}</Button>
                         : null}
-                    <Link href={productHref} className="button button-secondary">{product.stock_mode === 'out_of_stock' ? (tamil ? 'Product பார்க்க' : 'View product') : (tamil ? 'இந்த product order கேள்' : 'Request this product')}</Link>
+                    <Link href={productHref} className="button button-secondary">{product.stock_mode === 'out_of_stock' ? t('publicProvider.productMarketplace.viewProduct') : t('publicProvider.productMarketplace.requestProduct')}</Link>
                   </div>
                 </div>
               </div>
@@ -343,14 +342,12 @@ export default function ProductsPage() {
           {loadMoreError ? <p className="field-error" role="alert" style={{ marginTop: '1rem' }}>{loadMoreError}</p> : null}
           {hasMore ? <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.25rem' }}>
             <Button type="button" variant="secondary" loading={loadingMore} onClick={() => void loadMore()}>
-              {tamil ? 'மேலும் Products ஏற்று' : 'Load more products'}
+              {t('publicProvider.productMarketplace.loadMore')}
             </Button>
-          </div> : <p className="muted" style={{ textAlign: 'center', marginTop: '1.25rem' }}>{tamil ? 'இந்த search/filter-க்கு approved catalog முடிந்தது.' : 'You have reached the end of this approved catalog view.'}</p>}
+          </div> : <p className="muted" style={{ textAlign: 'center', marginTop: '1.25rem' }}>{t('publicProvider.productMarketplace.endCatalog')}</p>}
         </>
-          : <Card><EmptyState title={tamil ? 'இந்த filters-க்கு products இல்லை' : 'No products match these filters'}>{tamil ? 'Filters clear செய்து மீண்டும் பார்க்கவும்.' : 'Clear the filters and browse the approved catalog again.'}</EmptyState></Card>}
+          : <Card><EmptyState title={t('publicProvider.productMarketplace.noMatchesTitle')}>{t('publicProvider.productMarketplace.noMatchesHelp')}</EmptyState></Card>}
 
-    <p className="explore-disclaimer">{tamil
-      ? 'Save என்பது shortlist மட்டும். Shop Open/Closed என்பது தகவல் signal மட்டும். Out of stock products order செய்ய முடியாது. TakeItEsee payment/Cashfree activation இன்னும் இல்லை.'
-      : 'Saving creates a shortlist only. Shop Open/Closed is informational only. Out-of-stock products cannot be ordered. TakeItEsee payment and Cashfree are not active.'}</p>
+    <p className="explore-disclaimer">{t('publicProvider.productMarketplace.disclaimer')}</p>
   </div>;
 }

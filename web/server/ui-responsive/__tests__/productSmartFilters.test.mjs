@@ -3,10 +3,11 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../../../', import.meta.url);
-const [pageSource, filtersSource, stylesSource] = await Promise.all([
+const [pageSource, filtersSource, stylesSource, translationsSource] = await Promise.all([
   readFile(new URL('app/products/page.tsx', root), 'utf8'),
   readFile(new URL('components/discovery/ProductSmartFilters.tsx', root), 'utf8'),
   readFile(new URL('components/discovery/ProductSmartFilters.module.css', root), 'utf8'),
+  readFile(new URL('components/i18n/PublicProviderTranslations.ts', root), 'utf8'),
 ]);
 
 test('Products uses compact smart filters while preserving URL and API search semantics', () => {
@@ -22,7 +23,8 @@ test('Products uses compact smart filters while preserving URL and API search se
   assert.ok(pageSource.includes("const stockFilters: StockFilter[] = ['any', 'orderable', 'in_stock', 'made_to_order']"));
   assert.ok(pageSource.includes("const shopFilters: ShopFilter[] = ['any', 'open']"));
   assert.ok(pageSource.includes("const sortModes: SortMode[] = ['relevance', 'price', 'price-desc', 'name']"));
-  assert.ok(pageSource.includes('TakeItEsee payment and Cashfree are not active.'));
+  assert.ok(pageSource.includes("t('publicProvider.productMarketplace.disclaimer')"));
+  assert.ok(translationsSource.includes("'publicProvider.productMarketplace.disclaimer': 'Saving creates a shortlist only. Shop Open/Closed is informational only. Out-of-stock products cannot be ordered. TakeItEsee payment and Cashfree are not active.'"));
 });
 
 test('Products smart filters provide mobile sheet and app-style sort chooser', () => {

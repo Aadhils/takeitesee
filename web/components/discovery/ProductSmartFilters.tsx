@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useLanguage } from '../i18n/LanguageProvider';
+import { usePublicProviderTranslations } from '../i18n/PublicProviderTranslations';
 import styles from './ProductSmartFilters.module.css';
 
 type Props = {
@@ -39,60 +39,36 @@ export default function ProductSmartFilters({
   onSortChange,
   onClearAll,
 }: Props) {
-  const { locale } = useLanguage();
-  const tamil = locale === 'ta-IN';
+  const { t } = usePublicProviderTranslations();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
 
-  const copy = tamil
-    ? {
-      filters: 'வடிகட்டிகள்',
-      filterProducts: 'Products-ஐ வடிகட்டுங்கள்',
-      filterHelp: 'Stock மற்றும் Shop நிலையை தேர்வு செய்யுங்கள். முடிவுகள் உடனே புதுப்பிக்கப்படும்.',
-      stock: 'Stock நிலை',
-      shop: 'Shop நிலை',
-      anyStock: 'எந்த stock நிலையும்',
-      orderable: 'Order செய்யக்கூடியவை',
-      inStock: 'Stock உள்ளவை',
-      madeToOrder: 'Order அடிப்படையில்',
-      anyShop: 'Open/Closed அனைத்தும்',
-      openOnly: 'Shop Open மட்டும்',
-      sortResults: 'Products வரிசை',
-      relevance: 'Useful முதலில்',
-      lowPrice: 'குறைந்த விலை',
-      highPrice: 'அதிக விலை',
-      name: 'பெயர்',
-      clear: 'Filters clear செய்',
-      showResults: (count: number) => count === 1 ? '1 product காட்டுங்கள்' : `${count} products காட்டுங்கள்`,
-      updating: 'Products புதுப்பிக்கப்படுகின்றன…',
-      activeFilters: 'செயலில் உள்ள வடிகட்டிகள்',
-      closeFilters: 'வடிகட்டி மெனுவை மூடுங்கள்',
-      closeSort: 'வரிசைப்படுத்தும் மெனுவை மூடுங்கள்',
-    }
-    : {
-      filters: 'Filters',
-      filterProducts: 'Filter products',
-      filterHelp: 'Choose stock and Shop status. Results update as you filter.',
-      stock: 'Stock',
-      shop: 'Shop status',
-      anyStock: 'Any stock status',
-      orderable: 'Orderable only',
-      inStock: 'In stock',
-      madeToOrder: 'Made to order',
-      anyShop: 'Open or Closed',
-      openOnly: 'Shop Open only',
-      sortResults: 'Sort products',
-      relevance: 'Useful first',
-      lowPrice: 'Lowest price',
-      highPrice: 'Highest price',
-      name: 'Name',
-      clear: 'Clear filters',
-      showResults: (count: number) => count === 1 ? 'Show 1 product' : `Show ${count} products`,
-      updating: 'Updating products…',
-      activeFilters: 'Active filters',
-      closeFilters: 'Close filter menu',
-      closeSort: 'Close sort menu',
-    };
+  const copy = {
+    filters: t('publicProvider.productMarketplace.filters'),
+    filterProducts: t('publicProvider.productMarketplace.filterProducts'),
+    filterHelp: t('publicProvider.productMarketplace.filterHelp'),
+    stock: t('publicProvider.productMarketplace.stock'),
+    shop: t('publicProvider.productMarketplace.shop'),
+    anyStock: t('publicProvider.productMarketplace.anyStock'),
+    orderable: t('publicProvider.productMarketplace.orderable'),
+    inStock: t('publicProvider.businessProducts.inStock'),
+    madeToOrder: t('publicProvider.businessProducts.madeToOrder'),
+    anyShop: t('publicProvider.productMarketplace.anyShop'),
+    openOnly: t('publicProvider.productMarketplace.openOnly'),
+    sortResults: t('publicProvider.productMarketplace.sortResults'),
+    relevance: t('publicProvider.productMarketplace.relevance'),
+    lowPrice: t('publicProvider.productMarketplace.lowPrice'),
+    highPrice: t('publicProvider.productMarketplace.highPrice'),
+    name: t('publicProvider.productMarketplace.name'),
+    clear: t('publicProvider.productMarketplace.clear'),
+    showResults: (count: number) => count === 1
+      ? t('publicProvider.productMarketplace.showOne')
+      : t('publicProvider.productMarketplace.showMany').replace('{count}', String(count)),
+    updating: t('publicProvider.productMarketplace.updating'),
+    activeFilters: t('publicProvider.productMarketplace.activeFilters'),
+    closeFilters: t('publicProvider.productMarketplace.closeFilters'),
+    closeSort: t('publicProvider.productMarketplace.closeSort'),
+  };
 
   useEffect(() => {
     if (!drawerOpen && !sortOpen) return;
