@@ -1,25 +1,32 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useLanguage } from '../i18n/LanguageProvider';
+import { usePublicProviderTranslations } from '../i18n/PublicProviderTranslations';
 import styles from './PublicProfileJumpNav.module.css';
 
 type ProfileKind = 'professional' | 'business';
-type JumpItem = { id: string; en: string; ta: string; selector: string };
+type JumpKey =
+  | 'publicProvider.jumpNav.about'
+  | 'publicProvider.jumpNav.talents'
+  | 'publicProvider.jumpNav.career'
+  | 'publicProvider.jumpNav.work'
+  | 'publicProvider.jumpNav.services'
+  | 'publicProvider.jumpNav.products';
+type JumpItem = { id: string; key: JumpKey; selector: string };
 type ResolvedJumpItem = { item: JumpItem; target: HTMLElement };
 
 const professionalItems: JumpItem[] = [
-  { id: 'about', en: 'About', ta: 'பற்றி', selector: '.profile-layout main .detail-section' },
-  { id: 'talents', en: 'Talents', ta: 'திறன்கள்', selector: '#professional-talents-heading' },
-  { id: 'career', en: 'Career', ta: 'Career', selector: '#professional-career-heading' },
-  { id: 'work', en: 'Work', ta: 'வேலைகள்', selector: '#professional-work-showcase-heading' },
-  { id: 'services', en: 'Services', ta: 'சேவைகள்', selector: '.profile-services' },
+  { id: 'about', key: 'publicProvider.jumpNav.about', selector: '.profile-layout main .detail-section' },
+  { id: 'talents', key: 'publicProvider.jumpNav.talents', selector: '#professional-talents-heading' },
+  { id: 'career', key: 'publicProvider.jumpNav.career', selector: '#professional-career-heading' },
+  { id: 'work', key: 'publicProvider.jumpNav.work', selector: '#professional-work-showcase-heading' },
+  { id: 'services', key: 'publicProvider.jumpNav.services', selector: '.profile-services' },
 ];
 
 const businessItems: JumpItem[] = [
-  { id: 'services', en: 'Services', ta: 'சேவைகள்', selector: '#business-storefront-heading' },
-  { id: 'products', en: 'Products', ta: 'Products', selector: 'section[aria-label="Business products"]' },
-  { id: 'about', en: 'About', ta: 'பற்றி', selector: '.profile-layout main .detail-section' },
+  { id: 'services', key: 'publicProvider.jumpNav.services', selector: '#business-storefront-heading' },
+  { id: 'products', key: 'publicProvider.jumpNav.products', selector: 'section[aria-label="Business products"]' },
+  { id: 'about', key: 'publicProvider.jumpNav.about', selector: '.profile-layout main .detail-section' },
 ];
 
 function targetFor(selector: string) {
@@ -33,8 +40,7 @@ function activeOffset() {
 }
 
 export default function PublicProfileJumpNav({ kind }: { kind: ProfileKind }) {
-  const { locale } = useLanguage();
-  const tamil = locale === 'ta-IN';
+  const { t } = usePublicProviderTranslations();
   const items = useMemo(() => kind === 'professional' ? professionalItems : businessItems, [kind]);
   const [available, setAvailable] = useState<Set<string>>(new Set());
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -108,7 +114,7 @@ export default function PublicProfileJumpNav({ kind }: { kind: ProfileKind }) {
   const visibleItems = items.filter((item) => available.has(item.id));
   if (!visibleItems.length) return null;
 
-  return <nav className={styles.shell} aria-label={tamil ? 'Public profile விரைவு வழிசெலுத்தல்' : 'Public profile quick navigation'}>
+  return <nav className={styles.shell} aria-label={t('publicProvider.jumpNav.quickNavigation')}>
     <div className={styles.rail} ref={railRef}>
       {visibleItems.map((item) => <button
         type="button"
@@ -121,7 +127,7 @@ export default function PublicProfileJumpNav({ kind }: { kind: ProfileKind }) {
           targetFor(item.selector)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }}
       >
-        {tamil ? item.ta : item.en}
+        {t(item.key)}
       </button>)}
     </div>
   </nav>;
