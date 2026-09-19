@@ -59,8 +59,7 @@ function orderMatchesView(status: OrderStatus, view: OrderView) {
 }
 
 export default function ProviderOrdersManager() {
-  const { locale } = useIdentityWorkspaceTranslations();
-  const tamil = locale.toLowerCase().startsWith('ta');
+  const { locale, t } = useIdentityWorkspaceTranslations();
   const [orders, setOrders] = useState<ProductOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -72,14 +71,14 @@ export default function ProviderOrdersManager() {
     try {
       const response = await fetch('/api/provider/orders', { cache: 'no-store' });
       const payload = await response.json() as { orders?: ProductOrder[]; error?: string };
-      if (!response.ok) throw new Error(payload.error || 'Unable to load Business product orders.');
+      if (!response.ok) throw new Error(payload.error || t('provider.orders.loadFallback'));
       setOrders(payload.orders ?? []);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Unable to load Business product orders.');
+      setError(loadError instanceof Error ? loadError.message : t('provider.orders.loadFallback'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
@@ -99,23 +98,13 @@ export default function ProviderOrdersManager() {
     }
   };
 
-  const statusLabel = (status: OrderStatus) => {
-    const english: Record<OrderStatus, string> = {
-      requested: 'Requested',
-      accepted: 'Accepted',
-      declined: 'Declined',
-      fulfilled: 'Fulfilled',
-      cancelled: 'Customer cancelled',
-    };
-    const tamilCopy: Record<OrderStatus, string> = {
-      requested: 'Order கோரிக்கை',
-      accepted: 'ஏற்றுக்கொள்ளப்பட்டது',
-      declined: 'நிராகரிக்கப்பட்டது',
-      fulfilled: 'நிறைவேற்றப்பட்டது',
-      cancelled: 'Customer ரத்து செய்தார்',
-    };
-    return tamil ? tamilCopy[status] : english[status];
-  };
+  const statusLabel = (status: OrderStatus) => ({
+    requested: t('provider.orders.statusRequested'),
+    accepted: t('provider.orders.statusAccepted'),
+    declined: t('provider.orders.statusDeclined'),
+    fulfilled: t('provider.orders.statusFulfilled'),
+    cancelled: t('provider.orders.statusCancelled'),
+  })[status];
 
   const counts: Record<OrderView, number> = {
     new: orders.filter((order) => order.status === 'requested').length,
@@ -124,33 +113,31 @@ export default function ProviderOrdersManager() {
     closed: orders.filter((order) => order.status === 'declined' || order.status === 'cancelled').length,
   };
   const lifecycleItems: Array<{ key: OrderView; label: string; count: number }> = [
-    { key: 'new', label: tamil ? 'புதியது' : 'New', count: counts.new },
-    { key: 'accepted', label: tamil ? 'ஏற்றது' : 'Accepted', count: counts.accepted },
-    { key: 'fulfilled', label: tamil ? 'முடிந்தது' : 'Fulfilled', count: counts.fulfilled },
-    { key: 'closed', label: tamil ? 'மூடப்பட்டது' : 'Closed', count: counts.closed },
+    { key: 'new', label: t('provider.orders.lifecycleNew'), count: counts.new },
+    { key: 'accepted', label: t('provider.orders.lifecycleAccepted'), count: counts.accepted },
+    { key: 'fulfilled', label: t('provider.orders.lifecycleFulfilled'), count: counts.fulfilled },
+    { key: 'closed', label: t('provider.orders.lifecycleClosed'), count: counts.closed },
   ];
   const visibleOrders = orders.filter((order) => orderMatchesView(order.status, view));
 
   return <LiveProviderShell active="/provider/orders">
     <div className={styles.page}>
       <ProviderHeading
-        eyebrow={tamil ? 'Business sales' : 'Business sales'}
-        title={tamil ? 'Product orders' : 'Product orders'}
-        description={tamil
-          ? 'Customer non-payment order requests-ஐ review செய்து manage செய்யுங்கள். Payment/Cashfree இங்கு செயல்படாது.'
-          : 'Review and manage Customer non-payment product order requests. Payment and Cashfree are not active here.'}
+        eyebrow={t('provider.orders.eyebrow')}
+        title={t('provider.orders.title')}
+        description={t('provider.orders.intro')}
       />
 
       {error ? <p role="alert" className={styles.error}>{error}</p> : null}
-      {loading ? <Card><p>{tamil ? 'Product orders ஏற்றப்படுகிறது…' : 'Loading product orders…'}</p></Card> : null}
+      {loading ? <Card><p>{t('provider.orders.loading')}</p></Card> : null}
 
       {!loading && !orders.length && !error ? <Card className={styles.emptyCard}>
-        <EmptyState title={tamil ? 'Product order requests இன்னும் இல்லை' : 'No product order requests yet'}>
-          {tamil ? 'Public-approved product-ஐ Customer request செய்த பிறகு orders இங்கே தெரியும்.' : 'Orders will appear here after a Customer requests a public-approved product.'}
+        <EmptyState title={t('provider.orders.emptyTitle')}>
+          {t('provider.orders.emptyBody')}
         </EmptyState>
       </Card> : null}
 
-      {!loading && orders.length ? <section className={styles.lifecycleSection} aria-label={tamil ? 'Business order filter' : 'Business order filter'}>
+      {!loading && orders.length ? <section className={styles.lifecycleSection} aria-label={t('provider.orders.filterAria')}>
         <div className={styles.lifecycleSummary}>
           {lifecycleItems.map((item) => <button
             key={item.key}
@@ -163,14 +150,12 @@ export default function ProviderOrdersManager() {
             <strong>{item.count}</strong>
           </button>)}
         </div>
-        <p className={styles.lifecycleMeta}>{tamil
-          ? `${visibleOrders.length} orders காட்டப்படுகிறது`
-          : `Showing ${visibleOrders.length} orders`}</p>
+        <p className={styles.lifecycleMeta}>{t('provider.orders.showingPrefix')} {visibleOrders.length} {t('provider.orders.showingSuffix')}</p>
       </section> : null}
 
       {!loading && orders.length && !visibleOrders.length ? <Card className={styles.filteredEmptyCard}>
-        <strong>{tamil ? 'இந்த நிலையில் orders இல்லை' : 'No orders in this status'}</strong>
-        <p>{tamil ? 'மேலே வேறு status தேர்வு செய்யவும்.' : 'Choose another status above to continue.'}</p>
+        <strong>{t('provider.orders.noOrdersStatus')}</strong>
+        <p>{t('provider.orders.chooseAnotherStatus')}</p>
       </Card> : null}
 
       <div className={styles.ordersList}>
@@ -189,21 +174,21 @@ export default function ProviderOrdersManager() {
               </div>
 
               <div className={styles.summaryGrid}>
-                <div><span>{tamil ? 'மொத்தம்' : 'Snapshot total'}</span><strong>{money(total, order.currency_snapshot)}</strong></div>
-                <div><span>{tamil ? 'கோரப்பட்டது' : 'Requested'}</span><strong>{new Date(order.created_at).toLocaleString(locale)}</strong></div>
-                <div><span>{tamil ? 'Revision' : 'Revision'}</span><strong>Rev {order.product_revision}</strong></div>
+                <div><span>{t('provider.orders.snapshotTotal')}</span><strong>{money(total, order.currency_snapshot)}</strong></div>
+                <div><span>{t('provider.orders.requestedLabel')}</span><strong>{new Date(order.created_at).toLocaleString(locale)}</strong></div>
+                <div><span>{t('provider.orders.revisionLabel')}</span><strong>Rev {order.product_revision}</strong></div>
               </div>
 
               {latestEvent ? <p className={styles.latestActivity}>
-                <strong>{tamil ? 'Latest' : 'Latest'}:</strong> {statusLabel(latestEvent.event_type)} · {new Date(latestEvent.created_at).toLocaleString(locale)}
+                <strong>{t('provider.orders.latestLabel')}:</strong> {statusLabel(latestEvent.event_type)} · {new Date(latestEvent.created_at).toLocaleString(locale)}
               </p> : null}
 
               <div className={styles.orderActions}>
                 <Link href={`/provider/orders/${encodeURIComponent(order.id)}`} className="button button-primary">
-                  {tamil ? 'Order details பார்க்க' : 'View order details'}
+                  {t('provider.orders.viewDetails')}
                 </Link>
                 {order.conversation_id ? <Link href={`/provider/messages?conversation=${encodeURIComponent(order.conversation_id)}`} className="button button-secondary">
-                  {tamil ? 'Customer-க்கு message' : 'Message Customer'}
+                  {t('provider.orders.messageCustomer')}
                 </Link> : null}
               </div>
             </Card>
