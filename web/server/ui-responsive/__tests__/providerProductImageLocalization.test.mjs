@@ -27,7 +27,7 @@ test('Product primary image uses shared localization instead of local Tamil bran
 test('Product primary image keeps media and revision contracts unchanged', () => {
   assert.ok(source.includes("new Set(['image/jpeg', 'image/png', 'image/webp'])"));
   assert.ok(source.includes('6 * 1024 * 1024'));
-  assert.ok(source.includes("accept="image/jpeg,image/png,image/webp""));
+  assert.ok(source.includes('accept="image/jpeg,image/png,image/webp"'));
   assert.ok(source.includes("method: 'PATCH'"));
   assert.ok(source.includes("method: 'DELETE'"));
   assert.ok(source.includes('review_revision'));
