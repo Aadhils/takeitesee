@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
+import { useProviderJobsTranslations } from '../i18n/ProviderJobsTranslations';
 import { HiringJourneyGuide } from './HiringJourneyGuide';
 import { JobOfferWorkspace } from './JobOfferWorkspace';
 import styles from './JobMarketplace.module.css';
@@ -13,8 +13,7 @@ import { SavedJobsWorkspace } from './SavedJobsWorkspace';
 type ProfessionalJobsTab = 'applications' | 'saved' | 'offers';
 
 export function ProfessionalJobsWorkspace() {
-  const { locale } = useIdentityWorkspaceTranslations();
-  const ta = locale.toLowerCase().startsWith('ta');
+  const { t } = useProviderJobsTranslations();
   const [activeTab, setActiveTab] = useState<ProfessionalJobsTab>('applications');
 
   return (
@@ -22,23 +21,23 @@ export function ProfessionalJobsWorkspace() {
       <section className={`${styles.card} ${styles.section} ${responsiveStyles.heroCard}`}>
         <div className={`${styles.sectionHeading} ${responsiveStyles.heroHeading}`}>
           <div>
-            <span className={styles.eyebrow}>{ta ? 'Professional · Job Seeker' : 'Professional · Job seeker'}</span>
-            <h2>{ta ? 'Jobs தேடி, apply செய்து, career journey-ஐ manage செய்யுங்கள்' : 'Find jobs, apply and manage your career journey'}</h2>
-            <p className={styles.muted}>{ta ? 'Verified Business employer-கள் jobs publish செய்கிறார்கள். உங்கள் TakeItEsee resume/profile மூலம் apply செய்து applications, interviews மற்றும் employment offers-ஐ இங்கே manage செய்யலாம்.' : 'Verified Business employers publish jobs. Apply with your TakeItEsee resume/profile, then manage applications, interviews and employment offers here.'}</p>
+            <span className={styles.eyebrow}>{t('providerJobs.professional.eyebrow')}</span>
+            <h2>{t('providerJobs.professional.title')}</h2>
+            <p className={styles.muted}>{t('providerJobs.professional.intro')}</p>
           </div>
           <div className={`${styles.actions} ${responsiveStyles.heroActions}`}>
-            <Link className={styles.button} href="/jobs">{ta ? 'Jobs தேடு' : 'Find jobs'}</Link>
-            <Link className={`${styles.button} ${styles.secondary}`} href="/provider/resume">{ta ? 'என் Resume' : 'My resume'}</Link>
+            <Link className={styles.button} href="/jobs">{t('providerJobs.professional.findJobs')}</Link>
+            <Link className={`${styles.button} ${styles.secondary}`} href="/provider/resume">{t('providerJobs.professional.myResume')}</Link>
           </div>
         </div>
       </section>
 
-      <HiringJourneyGuide role="professional" tamil={ta} />
+      <HiringJourneyGuide role="professional" />
 
       <div
         className={`${styles.workspaceTabs} ${responsiveStyles.tabList}`}
         role="tablist"
-        aria-label={ta ? 'Professional career workspace' : 'Professional career workspace'}
+        aria-label={t('providerJobs.professional.tabsAria')}
       >
         <button
           id="professional-jobs-applications-tab"
@@ -49,7 +48,7 @@ export function ProfessionalJobsWorkspace() {
           aria-controls="professional-jobs-applications-panel"
           onClick={() => setActiveTab('applications')}
         >
-          {ta ? 'Applications & Interviews' : 'Applications & interviews'}
+          {t('providerJobs.professional.tabs.applications')}
         </button>
         <button
           id="professional-jobs-saved-tab"
@@ -60,7 +59,7 @@ export function ProfessionalJobsWorkspace() {
           aria-controls="professional-jobs-saved-panel"
           onClick={() => setActiveTab('saved')}
         >
-          {ta ? 'Saved Jobs' : 'Saved jobs'}
+          {t('providerJobs.professional.tabs.saved')}
         </button>
         <button
           id="professional-jobs-offers-tab"
@@ -71,7 +70,7 @@ export function ProfessionalJobsWorkspace() {
           aria-controls="professional-jobs-offers-panel"
           onClick={() => setActiveTab('offers')}
         >
-          {ta ? 'Employment Offers' : 'Employment offers'}
+          {t('providerJobs.professional.tabs.offers')}
         </button>
       </div>
 
