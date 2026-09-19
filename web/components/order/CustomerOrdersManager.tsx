@@ -56,8 +56,7 @@ function orderMatchesView(status: OrderStatus, view: OrderView) {
 }
 
 export default function CustomerOrdersManager() {
-  const { locale } = useLanguage();
-  const tamil = locale === 'ta-IN';
+  const { locale, t } = useLanguage();
   const [orders, setOrders] = useState<ProductOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [authRequired, setAuthRequired] = useState(false);
@@ -76,15 +75,15 @@ export default function CustomerOrdersManager() {
         setOrders([]);
         return;
       }
-      if (!response.ok) throw new Error(payload.error || 'Unable to load orders.');
+      if (!response.ok) throw new Error(payload.error || t('orders.loadFallback'));
       setAuthRequired(false);
       setOrders(payload.orders ?? []);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Unable to load orders.');
+      setError(loadError instanceof Error ? loadError.message : t('orders.loadFallback'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
@@ -105,21 +104,11 @@ export default function CustomerOrdersManager() {
   };
 
   const statusLabel = (status: OrderStatus) => {
-    const english: Record<OrderStatus, string> = {
-      requested: 'Requested',
-      accepted: 'Accepted',
-      declined: 'Declined',
-      fulfilled: 'Fulfilled',
-      cancelled: 'Cancelled',
-    };
-    const tamilCopy: Record<OrderStatus, string> = {
-      requested: 'கோரப்பட்டது',
-      accepted: 'ஏற்றுக்கொள்ளப்பட்டது',
-      declined: 'நிராகரிக்கப்பட்டது',
-      fulfilled: 'நிறைவேற்றப்பட்டது',
-      cancelled: 'ரத்து செய்யப்பட்டது',
-    };
-    return tamil ? tamilCopy[status] : english[status];
+    if (status === 'requested') return t('orders.status.requested');
+    if (status === 'accepted') return t('orders.status.accepted');
+    if (status === 'declined') return t('orders.status.declined');
+    if (status === 'fulfilled') return t('orders.status.fulfilled');
+    return t('orders.status.cancelled');
   };
 
   const cancelOrder = async (orderId: string) => {
@@ -132,10 +121,10 @@ export default function CustomerOrdersManager() {
         body: JSON.stringify({ action: 'cancel' }),
       });
       const payload = await response.json() as { order?: ProductOrder; error?: string };
-      if (!response.ok || !payload.order) throw new Error(payload.error || 'Unable to cancel this order.');
+      if (!response.ok || !payload.order) throw new Error(payload.error || t('orders.cancelFallback'));
       await load();
     } catch (cancelError) {
-      setError(cancelError instanceof Error ? cancelError.message : 'Unable to cancel this order.');
+      setError(cancelError instanceof Error ? cancelError.message : t('orders.cancelFallback'));
     } finally {
       setBusyOrderId(null);
     }
@@ -144,17 +133,17 @@ export default function CustomerOrdersManager() {
   if (authRequired) {
     return <div className={`bookings-page section-stack ${styles.page}`}>
       <section className="page-intro">
-        <span className="eyebrow">{tamil ? 'வாடிக்கையாளர் Orders' : 'Customer orders'}</span>
-        <h1>{tamil ? 'என் product orders' : 'My product orders'}</h1>
-        <p>{tamil ? 'உங்கள் order request history பார்க்க sign in செய்யவும்.' : 'Sign in to view your product order request history.'}</p>
+        <span className="eyebrow">{t('orders.customerEyebrow')}</span>
+        <h1>{t('orders.title')}</h1>
+        <p>{t('orders.signInIntro')}</p>
       </section>
       <Card>
-        <EmptyState title={tamil ? 'Sign in தேவை' : 'Sign in required'}>
-          {tamil ? 'Product order requests உங்கள் Customer account-க்கு இணைக்கப்படும்.' : 'Product order requests are linked to your Customer account.'}
+        <EmptyState title={t('orders.signInRequired')}>
+          {t('orders.signInHelp')}
         </EmptyState>
         <div className="button-row">
-          <Link href="/login?returnTo=%2Forders" className="button button-primary">Sign in</Link>
-          <Link href="/signup" className="button button-secondary">{tamil ? 'Account உருவாக்கவும்' : 'Create account'}</Link>
+          <Link href="/login?returnTo=%2Forders" className="button button-primary">{t('orders.signIn')}</Link>
+          <Link href="/signup" className="button button-secondary">{t('orders.createAccount')}</Link>
         </div>
       </Card>
     </div>;
@@ -167,35 +156,33 @@ export default function CustomerOrdersManager() {
     closed: orders.filter((order) => order.status === 'declined' || order.status === 'cancelled').length,
   };
   const lifecycleItems: Array<{ key: OrderView; label: string; count: number }> = [
-    { key: 'all', label: tamil ? 'அனைத்தும்' : 'All', count: lifecycleCounts.all },
-    { key: 'active', label: tamil ? 'செயலில்' : 'Active', count: lifecycleCounts.active },
-    { key: 'fulfilled', label: tamil ? 'நிறைவேற்றப்பட்டது' : 'Fulfilled', count: lifecycleCounts.fulfilled },
-    { key: 'closed', label: tamil ? 'மூடப்பட்டது' : 'Closed', count: lifecycleCounts.closed },
+    { key: 'all', label: t('orders.viewAll'), count: lifecycleCounts.all },
+    { key: 'active', label: t('orders.viewActive'), count: lifecycleCounts.active },
+    { key: 'fulfilled', label: t('orders.viewFulfilled'), count: lifecycleCounts.fulfilled },
+    { key: 'closed', label: t('orders.viewClosed'), count: lifecycleCounts.closed },
   ];
   const visibleOrders = orders.filter((order) => orderMatchesView(order.status, view));
 
   return <div className={`bookings-page section-stack ${styles.page}`}>
     <section className="page-intro">
-      <span className="eyebrow">{tamil ? 'வாடிக்கையாளர் Orders' : 'Customer orders'}</span>
-      <h1>{tamil ? 'என் product orders' : 'My product orders'}</h1>
-      <p>{tamil
-        ? 'Business products-க்கு நீங்கள் அனுப்பிய non-payment order requests. TakeItEsee payment/Cashfree இந்த flow-ல் செயல்படாது.'
-        : 'Track your non-payment order requests for Business products and open any order for its full activity history.'}</p>
+      <span className="eyebrow">{t('orders.customerEyebrow')}</span>
+      <h1>{t('orders.title')}</h1>
+      <p>{t('orders.intro')}</p>
     </section>
 
     {error ? <p role="alert" className={styles.error}>{error}</p> : null}
-    {loading ? <Card><p>{tamil ? 'Orders ஏற்றப்படுகிறது…' : 'Loading orders…'}</p></Card> : null}
+    {loading ? <Card><p>{t('orders.loading')}</p></Card> : null}
 
     {!loading && !orders.length ? <Card className={styles.emptyOrdersCard}>
       <div className={styles.emptyOrdersState}>
-        <EmptyState title={tamil ? 'Order requests இன்னும் இல்லை' : 'No order requests yet'}>
-          {tamil ? 'Approved Business storefront-ல் இருந்து product order request அனுப்பலாம்.' : 'Request an order from an approved Business storefront product.'}
+        <EmptyState title={t('orders.emptyTitle')}>
+          {t('orders.emptyHelp')}
         </EmptyState>
       </div>
-      <div className={`button-row ${styles.emptyOrdersActions}`}><Link href="/products" className="button button-secondary">{tamil ? 'Products பார்க்க' : 'Browse products'}</Link></div>
+      <div className={`button-row ${styles.emptyOrdersActions}`}><Link href="/products" className="button button-secondary">{t('orders.browseProducts')}</Link></div>
     </Card> : null}
 
-    {!loading && orders.length ? <section className={styles.lifecycleSection} aria-label={tamil ? 'Order நிலை filter' : 'Order status filter'}>
+    {!loading && orders.length ? <section className={styles.lifecycleSection} aria-label={t('orders.filterAria')}>
       <div className={styles.lifecycleSummary}>
         {lifecycleItems.map((item) => <button
           key={item.key}
@@ -208,18 +195,16 @@ export default function CustomerOrdersManager() {
           <strong>{item.count}</strong>
         </button>)}
       </div>
-      <p className={styles.lifecycleMeta}>{tamil
-        ? `${visibleOrders.length} / ${orders.length} orders காண்பிக்கப்படுகிறது`
-        : `Showing ${visibleOrders.length} of ${orders.length} orders`}</p>
+      <p className={styles.lifecycleMeta}>{t('orders.lifecycleMeta').replace('{visible}', String(visibleOrders.length)).replace('{total}', String(orders.length))}</p>
     </section> : null}
 
     {!loading && orders.length && !visibleOrders.length ? <Card className={styles.filteredEmptyCard}>
       <div>
-        <strong>{tamil ? 'இந்த பிரிவில் orders இல்லை' : 'No orders in this group'}</strong>
-        <p>{tamil ? 'வேறு lifecycle filter தேர்வு செய்யவும்.' : 'Choose another lifecycle filter to continue.'}</p>
+        <strong>{t('orders.filteredEmptyTitle')}</strong>
+        <p>{t('orders.filteredEmptyHelp')}</p>
       </div>
       <Button type="button" variant="secondary" onClick={() => setView('all')}>
-        {tamil ? 'அனைத்து orders' : 'Show all orders'}
+        {t('orders.showAll')}
       </Button>
     </Card> : null}
 
@@ -240,24 +225,24 @@ export default function CustomerOrdersManager() {
             </div>
 
             <div className={styles.summaryGrid}>
-              <div><span>{tamil ? 'மொத்தம்' : 'Snapshot total'}</span><strong>{money(total, order.currency_snapshot)}</strong></div>
-              <div><span>{tamil ? 'கோரிய நேரம்' : 'Requested'}</span><strong>{new Date(order.created_at).toLocaleString(locale)}</strong></div>
-              <div><span>{tamil ? 'Revision' : 'Revision'}</span><strong>Rev {order.product_revision}</strong></div>
+              <div><span>{t('orders.snapshotTotal')}</span><strong>{money(total, order.currency_snapshot)}</strong></div>
+              <div><span>{t('orders.requestedAt')}</span><strong>{new Date(order.created_at).toLocaleString(locale)}</strong></div>
+              <div><span>{t('orders.revision')}</span><strong>Rev {order.product_revision}</strong></div>
             </div>
 
             {latestEvent ? <p className={styles.latestActivity}>
-              <strong>{tamil ? 'Latest' : 'Latest'}:</strong> {statusLabel(latestEvent.event_type)} · {new Date(latestEvent.created_at).toLocaleString(locale)}
+              <strong>{t('orders.latest')}:</strong> {statusLabel(latestEvent.event_type)} · {new Date(latestEvent.created_at).toLocaleString(locale)}
             </p> : null}
 
             <div className={styles.orderActions}>
               <Link href={`/orders/${encodeURIComponent(order.id)}`} className="button button-primary">
-                {tamil ? 'Order details பார்க்க' : 'View order details'}
+                {t('orders.viewDetails')}
               </Link>
               {order.conversation_id ? <Link href={`/messages?conversation=${encodeURIComponent(order.conversation_id)}`} className="button button-secondary">
-                {tamil ? 'Business-க்கு message' : 'Message Business'}
+                {t('orders.messageBusiness')}
               </Link> : null}
               {cancellable ? <Button type="button" variant="secondary" loading={busyOrderId === order.id} onClick={() => void cancelOrder(order.id)}>
-                {tamil ? 'Order request ரத்து செய்' : 'Cancel order request'}
+                {t('orders.cancelRequest')}
               </Button> : null}
             </div>
           </Card>

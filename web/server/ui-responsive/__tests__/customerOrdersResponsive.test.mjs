@@ -12,7 +12,7 @@ const [listSource, detailSource, cssSource, routeSource] = await Promise.all([
 
 test('Customer orders list links each summary to a dedicated order detail route', () => {
   assert.ok(listSource.includes("import styles from './CustomerOrders.module.css'"));
-  assert.ok(listSource.includes('View order details'));
+  assert.ok(listSource.includes("t('orders.viewDetails')"));
   assert.ok(listSource.includes('href={`/orders/${encodeURIComponent(order.id)}`}'));
   assert.ok(listSource.includes('styles.summaryGrid'));
   assert.ok(listSource.includes('styles.orderActions'));
@@ -40,7 +40,7 @@ test('Customer orders expose a compact lifecycle summary without changing backen
   assert.ok(listSource.includes('styles.lifecycleButtonActive'));
   assert.ok(listSource.includes('aria-pressed={view === item.key}'));
   assert.ok(listSource.includes('visibleOrders.map((order)'));
-  assert.ok(listSource.includes('Showing ${visibleOrders.length} of ${orders.length} orders'));
+  assert.ok(listSource.includes("t('orders.lifecycleMeta')"));
   assert.ok(cssSource.includes('grid-template-columns: repeat(4, minmax(0, 1fr))'));
   assert.ok(cssSource.includes('.lifecycleButtonActive'));
   assert.ok(cssSource.includes('grid-template-columns: 1fr 1fr'));
@@ -70,5 +70,5 @@ test('Customer order responsive layout stacks actions and values safely on mobil
 test('Customer order journey keeps non-payment boundaries explicit', () => {
   assert.ok(detailSource.includes('non-payment order-request flow'));
   assert.ok(detailSource.includes('TakeItEsee payment and Cashfree are not active for this order'));
-  assert.ok(listSource.includes('non-payment order requests'));
+  assert.ok(listSource.includes("t('orders.intro')"));
 });
