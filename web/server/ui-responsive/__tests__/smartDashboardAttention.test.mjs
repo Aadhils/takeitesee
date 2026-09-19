@@ -176,3 +176,33 @@ test('Provider dashboard uses one compact quick-action surface instead of two la
   assert.ok(!providerDashboard.includes('Grow your team'));
   assert.ok(!providerDashboard.includes('<ActionGrid '));
 });
+
+
+test('Provider dashboard avoids repeating the next confirmed service', () => {
+  assert.ok(providerDashboard.includes('const nextUpcoming = operations.upcoming[0] ?? null'));
+  assert.ok(providerDashboard.includes('const priorityShowsNextService = Boolean(nextUpcomingHref && priorityAction?.href === nextUpcomingHref)'));
+  assert.ok(providerDashboard.includes('nextUpcoming && !priorityShowsNextService'));
+  assert.ok(providerDashboard.includes('className={styles.nextServiceCompact}'));
+  assert.ok(providerDashboard.includes('className={styles.nextServiceAction}'));
+  assert.ok(providerDashboard.includes('aria-label="Next provider service"'));
+  assert.ok(!providerDashboard.includes('No upcoming bookings yet.'));
+  assert.ok(!providerDashboard.includes('<h2>Next bookings</h2>'));
+});
+
+test('Provider upcoming activity count is not capped to four bookings', () => {
+  const upcomingStart = providerDashboard.indexOf('const upcoming = bookings');
+  const upcomingEnd = providerDashboard.indexOf('const completed = bookings', upcomingStart);
+  assert.ok(upcomingStart >= 0 && upcomingEnd > upcomingStart);
+  const upcomingBlock = providerDashboard.slice(upcomingStart, upcomingEnd);
+  assert.ok(!upcomingBlock.includes('.slice(0, 4)'));
+  assert.ok(providerDashboard.includes("bookingsError ? '—' : operations.upcoming.length"));
+  assert.ok(providerDashboard.includes("operations.upcoming.length > 1 ?"));
+});
+
+test('Provider booking load failure stays compact instead of restoring a large bookings card', () => {
+  assert.ok(providerDashboard.includes('aria-label="Booking activity status"'));
+  assert.ok(providerDashboard.includes('Booking activity needs a refresh'));
+  assert.ok(providerDashboard.includes('Open bookings'));
+  assert.ok(!providerDashboard.includes('className={styles.supportGrid}'));
+  assert.ok(!providerDashboard.includes('className={styles.bookingList}'));
+});
