@@ -7,7 +7,7 @@ const source = await readFile(new URL('components/provider/LiveProviderShell.tsx
 
 test('Provider desktop sidebar groups workspace and account utilities', () => {
   assert.ok(source.includes('className="provider-sidebar-utilities"'));
-  assert.ok(source.includes("'Workspace & account'"));
+  assert.ok(source.includes("t('provider.shell.workspaceAccount')"));
   assert.ok(source.includes('className="provider-sidebar-utility-links"'));
 });
 
