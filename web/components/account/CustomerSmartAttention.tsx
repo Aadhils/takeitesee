@@ -289,10 +289,13 @@ export default function CustomerSmartAttention({ bookings }: { bookings: Custome
       .customer-smart-attention .detail-copy { margin: 0; max-width: 68ch; }
       .customer-smart-attention-actions { display: flex; gap: .6rem; flex-wrap: wrap; }
       @media (max-width: 720px) {
-        .customer-smart-attention { margin-top: 12px; }
-        .customer-smart-attention-head { align-items: flex-start; flex-direction: column; }
-        .customer-smart-attention-actions { display: grid; grid-template-columns: 1fr; }
-        .customer-smart-attention-actions :global(.button) { width: 100%; justify-content: center; min-height: 44px; }
+        .customer-smart-attention { gap: .6rem; margin-top: 8px; padding: 16px !important; }
+        .customer-smart-attention-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: .55rem; }
+        .customer-smart-attention-head h2 { font-size: clamp(1.2rem, 5.4vw, 1.45rem); line-height: 1.14; }
+        .customer-smart-attention .detail-copy { font-size: .9rem; line-height: 1.5; }
+        .customer-smart-attention-actions { display: grid; grid-template-columns: 1fr; gap: .45rem; }
+        .customer-smart-attention-actions .button { width: 100%; justify-content: center; min-height: 42px; }
+        .customer-smart-attention-clear .customer-smart-attention-actions .button { border-color: color-mix(in srgb, var(--color-primary) 42%, var(--color-border)); background: var(--color-selected); color: var(--color-primary-strong); font-weight: 800; }
       }
     `}</style>
   </Card>;
