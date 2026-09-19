@@ -124,7 +124,7 @@ export default function ProviderDashboardAvailabilityCenter() {
           return <article className={styles.serviceCard} key={service.id}>
             <div className={styles.serviceHead}>
               <div>
-                <small>{service.status}</small>
+                <small>{service.status === 'active' ? t('provider.identity.active') : service.status === 'paused' ? t('provider.identity.paused') : t('provider.availability.draft')}</small>
                 <h3>{service.name}</h3>
               </div>
               <span className={styles.modeBadge}>{availability ? (availability.mode === 'always_available' ? t('provider.availability.always') : availability.mode === 'scheduled' ? t('provider.availability.scheduled') : t('provider.availability.onRequest')) : '—'}</span>
@@ -160,8 +160,3 @@ export default function ProviderDashboardAvailabilityCenter() {
   </section>;
 }
 
-function modeLabel(mode: AvailabilityMode, copy: { always: string; onRequest: string; scheduled: string }) {
-  if (mode === 'always_available') return t('provider.availability.always');
-  if (mode === 'scheduled') return t('provider.availability.scheduled');
-  return t('provider.availability.onRequest');
-}
