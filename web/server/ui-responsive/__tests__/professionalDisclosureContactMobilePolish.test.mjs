@@ -9,11 +9,11 @@ const [wrapperCss, profile] = await Promise.all([
 ]);
 
 test('Professional public disclosure and grievance content remains intact', () => {
-  assert.ok(profile.includes("text('Provider disclosure', 'Provider disclosure')"));
-  assert.ok(profile.includes("text('Principal address', 'முதன்மை முகவரி')"));
+  assert.ok(profile.includes("t('publicProvider.profile.providerDisclosure')"));
+  assert.ok(profile.includes("t('publicProvider.profile.principalAddress')"));
   assert.ok(profile.includes('provider.public_contact_email'));
   assert.ok(profile.includes('provider.public_contact_phone'));
-  assert.ok(profile.includes("text('Consumer grievance', 'Consumer grievance')"));
+  assert.ok(profile.includes("t('publicProvider.profile.consumerGrievance')"));
   assert.ok(profile.includes('provider.grievance_email'));
   assert.ok(profile.includes('provider.grievance_phone'));
 });
