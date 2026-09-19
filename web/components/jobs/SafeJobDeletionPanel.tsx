@@ -1,20 +1,38 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
+import { useProviderJobsTranslations, type ProviderJobsKey } from '../i18n/ProviderJobsTranslations';
 import styles from './JobMarketplace.module.css';
 
 type Job = { id: string; title: string; status: string };
 type Application = { id: string; job_posting_id: string };
 type Workspace = { mode?: 'business' | 'professional'; jobs?: Job[]; applications?: Application[]; error?: string };
 
-function label(value: string) {
+const statusLabelKeys: Partial<Record<string, ProviderJobsKey>> = {
+  draft: 'providerJobs.safeDeletion.status.draft',
+  open: 'providerJobs.safeDeletion.status.open',
+  closed: 'providerJobs.safeDeletion.status.closed',
+  filled: 'providerJobs.safeDeletion.status.filled',
+};
+
+function fallbackLabel(value: string) {
   return value.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function localizedStatus(value: string, t: (key: ProviderJobsKey) => string) {
+  const key = statusLabelKeys[value];
+  return key ? t(key) : fallbackLabel(value);
+}
+
+function interpolate(template: string, values: Record<string, string | number>) {
+  return Object.entries(values).reduce(
+    (result, [key, value]) => result.replaceAll(`{${key}}`, String(value)),
+    template,
+  );
+}
+
 export function SafeJobDeletionPanel() {
-  const { locale } = useIdentityWorkspaceTranslations();
-  const ta = locale.toLowerCase().startsWith('ta');
+  const { t } = useProviderJobsTranslations();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,16 +45,16 @@ export function SafeJobDeletionPanel() {
     try {
       const response = await fetch('/api/provider/job-marketplace', { cache: 'no-store' });
       const payload = await response.json() as Workspace;
-      if (!response.ok) throw new Error(payload.error || 'Unable to load job deletion safety state.');
-      if (payload.mode !== 'business') throw new Error('Business hiring workspace is required.');
+      if (!response.ok) throw new Error(payload.error || t('providerJobs.safeDeletion.loadFallback'));
+      if (payload.mode !== 'business') throw new Error(t('providerJobs.safeDeletion.businessRequired'));
       setJobs(payload.jobs ?? []);
       setApplications(payload.applications ?? []);
     } catch (error) {
-      setMessage({ tone: 'error', text: error instanceof Error ? error.message : 'Unable to load job deletion safety state.' });
+      setMessage({ tone: 'error', text: error instanceof Error ? error.message : t('providerJobs.safeDeletion.loadFallback') });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -64,55 +82,53 @@ export function SafeJobDeletionPanel() {
         body: JSON.stringify({ job_id: job.id }),
       });
       const payload = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(payload.error || 'Unable to delete job.');
+      if (!response.ok) throw new Error(payload.error || t('providerJobs.safeDeletion.deleteFallback'));
       setConfirmId(null);
-      setMessage({ tone: 'success', text: ta ? 'Job நிரந்தரமாக delete செய்யப்பட்டது.' : 'Job permanently deleted.' });
+      setMessage({ tone: 'success', text: t('providerJobs.safeDeletion.deleteSuccess') });
       await load();
     } catch (error) {
-      setMessage({ tone: 'error', text: error instanceof Error ? error.message : 'Unable to delete job.' });
+      setMessage({ tone: 'error', text: error instanceof Error ? error.message : t('providerJobs.safeDeletion.deleteFallback') });
       await load();
     } finally {
       setBusyId(null);
     }
   }
 
-  return <section className={styles.section} aria-label="Job deletion safety">
+  return <section className={styles.section} aria-label={t('providerJobs.safeDeletion.aria')}>
     <div className={styles.sectionHeading}>
       <div>
-        <span className={styles.eyebrow}>{ta ? 'Destructive action safety' : 'Destructive action safety'}</span>
-        <h2>{ta ? 'Job deletion' : 'Job deletion'}</h2>
-        <p className={styles.muted}>{ta
-          ? 'Application வராத job மட்டும் நிரந்தரமாக delete செய்யலாம். முதல் application வந்ததும் hiring evidence பாதுகாப்புக்காக deletion lock ஆகும்.'
-          : 'Only jobs with zero applications can be permanently deleted. After the first application, deletion is locked to preserve hiring evidence.'}</p>
+        <span className={styles.eyebrow}>{t('providerJobs.safeDeletion.eyebrow')}</span>
+        <h2>{t('providerJobs.safeDeletion.title')}</h2>
+        <p className={styles.muted}>{t('providerJobs.safeDeletion.intro')}</p>
       </div>
     </div>
 
     {message ? <div className={`${styles.alert} ${message.tone === 'error' ? styles.error : styles.success}`} role="status">{message.text}</div> : null}
-    {loading ? <div className={styles.empty}>{ta ? 'Deletion safety state ஏற்றப்படுகிறது…' : 'Loading deletion safety state…'}</div> : null}
+    {loading ? <div className={styles.empty}>{t('providerJobs.safeDeletion.loading')}</div> : null}
 
     {!loading && jobs.length > 0 && removableJobs.length === 0 ? <div className={styles.empty}>
-      {ta ? 'Delete செய்யக்கூடிய zero-application jobs இல்லை. Applications உள்ள jobs பாதுகாக்கப்படுகின்றன.' : 'No zero-application jobs are available to delete. Jobs with applications are preserved.'}
+      {t('providerJobs.safeDeletion.noneAvailable')}
     </div> : null}
 
     {!loading && removableJobs.length > 0 ? <div className={styles.jobList}>
       {removableJobs.map((job) => <article className={styles.jobCard} key={job.id}>
         <div className={styles.row}>
           <div>
-            <div className={styles.meta}><span className={styles.pill}>{label(job.status)}</span><span className={styles.pill}>0 applicants</span></div>
+            <div className={styles.meta}><span className={styles.pill}>{localizedStatus(job.status, t)}</span><span className={styles.pill}>{t('providerJobs.safeDeletion.zeroApplicants')}</span></div>
             <h3>{job.title}</h3>
-            <p className={styles.muted}>{ta ? 'இந்த job-க்கு hiring evidence இல்லை; delete செய்தால் மீட்டெடுக்க முடியாது.' : 'This job has no hiring evidence yet. Permanent deletion cannot be undone.'}</p>
+            <p className={styles.muted}>{t('providerJobs.safeDeletion.noEvidence')}</p>
           </div>
         </div>
 
         {confirmId === job.id ? <div className={`${styles.alert} ${styles.error}`}>
-          <strong>{ta ? 'இந்த job-ஐ நிரந்தரமாக delete செய்யவா?' : 'Permanently delete this job?'}</strong>
-          <p>{ta ? `“${job.title}” உடனடியாக நீக்கப்படும்.` : `“${job.title}” will be removed immediately.`}</p>
+          <strong>{t('providerJobs.safeDeletion.confirmTitle')}</strong>
+          <p>{interpolate(t('providerJobs.safeDeletion.removeImmediately'), { title: job.title })}</p>
           <div className={styles.actions}>
-            <button className={`${styles.button} ${styles.secondary}`} disabled={busyId === job.id} type="button" onClick={() => setConfirmId(null)}>{ta ? 'Cancel' : 'Cancel'}</button>
-            <button className={`${styles.button} ${styles.danger}`} disabled={busyId === job.id} type="button" onClick={() => void deleteJob(job)}>{busyId === job.id ? (ta ? 'Deleting…' : 'Deleting…') : (ta ? 'Confirm Delete' : 'Confirm delete')}</button>
+            <button className={`${styles.button} ${styles.secondary}`} disabled={busyId === job.id} type="button" onClick={() => setConfirmId(null)}>{t('providerJobs.safeDeletion.cancel')}</button>
+            <button className={`${styles.button} ${styles.danger}`} disabled={busyId === job.id} type="button" onClick={() => void deleteJob(job)}>{busyId === job.id ? t('providerJobs.safeDeletion.deleting') : t('providerJobs.safeDeletion.confirmDelete')}</button>
           </div>
         </div> : <div className={styles.actions}>
-          <button className={`${styles.button} ${styles.danger}`} disabled={Boolean(busyId)} type="button" onClick={() => { setConfirmId(job.id); setMessage(null); }}>{ta ? 'Delete Job' : 'Delete job'}</button>
+          <button className={`${styles.button} ${styles.danger}`} disabled={Boolean(busyId)} type="button" onClick={() => { setConfirmId(job.id); setMessage(null); }}>{t('providerJobs.safeDeletion.deleteJob')}</button>
         </div>}
       </article>)}
     </div> : null}
