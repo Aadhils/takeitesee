@@ -129,6 +129,12 @@ const english = {
   'publicProvider.share.copied': 'Profile link copied ✓',
   'publicProvider.share.action': 'Share profile',
   'publicProvider.share.error': 'This browser could not share or copy the profile link.',
+  'publicProvider.businessShopStatus.storefront': 'Business storefront',
+  'publicProvider.businessShopStatus.openTitle': 'This shop is currently open',
+  'publicProvider.businessShopStatus.closedTitle': 'This shop is currently closed',
+  'publicProvider.businessShopStatus.note': 'Shop Open/Closed is a Business storefront signal. Provider Available/Busy and each service booking schedule remain separate.',
+  'publicProvider.businessShopStatus.openBadge': 'Shop Open',
+  'publicProvider.businessShopStatus.closedBadge': 'Shop Closed',
 } as const;
 
 type PublicProviderKey = keyof typeof english;
@@ -259,6 +265,12 @@ const tamil: Record<PublicProviderKey, string> = {
   'publicProvider.share.copied': 'Profile இணைப்பு நகலெடுக்கப்பட்டது ✓',
   'publicProvider.share.action': 'Profile-ஐ பகிர்',
   'publicProvider.share.error': 'இந்த browser-ல் share/copy செய்ய முடியவில்லை.',
+  'publicProvider.businessShopStatus.storefront': 'Business storefront',
+  'publicProvider.businessShopStatus.openTitle': 'இந்த Shop தற்போது Open',
+  'publicProvider.businessShopStatus.closedTitle': 'இந்த Shop தற்போது Closed',
+  'publicProvider.businessShopStatus.note': 'Shop Open/Closed என்பது Business storefront signal. Provider Available/Busy மற்றும் service booking schedule தனித்தனியாகவே செயல்படும்.',
+  'publicProvider.businessShopStatus.openBadge': 'Shop Open',
+  'publicProvider.businessShopStatus.closedBadge': 'Shop Closed',
 };
 
 const catalogs = { 'en-IN': english, 'ta-IN': tamil } as const;
