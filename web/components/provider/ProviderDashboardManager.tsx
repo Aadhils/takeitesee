@@ -382,7 +382,7 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
                 </Link>)}
               </div>
             </div> : null}
-          </> : <div className={styles.priorityMain}><span className={styles.priorityIcon}><DashboardIcon name="profile" /></span><div className={styles.priorityCopy}><span className="eyebrow">Priority now</span><h2>{t('provider.dashboard.allCaughtUp')}</h2><p>{t('provider.dashboard.allCaughtUpBody')}</p></div></div>}
+          </> : <div className={styles.priorityMain}><span className={styles.priorityIcon}><DashboardIcon name="profile" /></span><div className={styles.priorityCopy}><span className="eyebrow">{t('provider.dashboard.priorityNow')}</span><h2>{t('provider.dashboard.allCaughtUp')}</h2><p>{t('provider.dashboard.allCaughtUpBody')}</p></div></div>}
         </Card>
 
         <section className={styles.providerActivityStrip} aria-label={t('provider.dashboard.workspaceSummary')}>
