@@ -18,8 +18,8 @@ test('Provider Dashboard keeps the real media identity hero ahead of mobile navi
 });
 
 test('Profile details panel does not duplicate the banner hero avatar identity', () => {
-  assert.ok(identitySource.includes("eyebrow: 'Profile details'"));
-  assert.ok(identitySource.includes("title: 'Public profile details'"));
+  assert.ok(identitySource.includes("t('provider.identity.profileDetails')"));
+  assert.ok(identitySource.includes("t('provider.identity.publicProfileDetails')"));
   assert.ok(identitySource.includes('className={styles.managementDisclosure}'));
   assert.ok(identitySource.includes('className={styles.managementSummary}'));
   assert.ok(!identitySource.includes('className={styles.avatar}'));
