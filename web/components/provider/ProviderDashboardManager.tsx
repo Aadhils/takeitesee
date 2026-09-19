@@ -280,7 +280,21 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
               <Badge tone="warning">Next best action</Badge>
             </div>
             <div className={styles.priorityActions}><Link href={priorityAction.href} className="button button-primary">Continue now</Link></div>
-            {followUpActions.length ? <div className={styles.followUps} aria-label="Follow-up actions">{followUpActions.map((item) => <Link href={item.href} className={styles.followUpLink} key={item.href}><div><strong>{item.label}</strong><span>{item.detail}</span></div><span className={styles.followUpArrow} aria-hidden="true">→</span></Link>)}</div> : null}
+            {followUpActions.length ? <div className={styles.followUpQueue} aria-label="Follow-up actions">
+              <span className={styles.followUpQueueLabel}>Also</span>
+              <div className={styles.followUpRail}>
+                {followUpActions.map((item) => <Link
+                  href={item.href}
+                  className={styles.followUpChip}
+                  key={item.href}
+                  aria-label={`${item.label}. ${item.detail}`}
+                  title={item.detail}
+                >
+                  <span className={styles.followUpChipIcon}><DashboardIcon name={item.icon} /></span>
+                  <span>{item.label}</span>
+                </Link>)}
+              </div>
+            </div> : null}
           </> : <div className={styles.priorityMain}><span className={styles.priorityIcon}><DashboardIcon name="profile" /></span><div className={styles.priorityCopy}><span className="eyebrow">Priority now</span><h2>You are all caught up</h2><p>There is no urgent workspace action right now. New priorities will appear here automatically.</p></div></div>}
         </Card>
 
