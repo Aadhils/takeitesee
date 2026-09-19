@@ -19,14 +19,14 @@ test('provider service category choice is searchable and never silently preselec
 
 test('provider can explicitly persist the currently displayed availability mode', () => {
   assert.ok(availabilitySource.includes('draftModeByService'));
-  assert.ok(availabilitySource.includes("save: 'Save availability'"));
+  assert.ok(availabilitySource.includes("t('provider.availability.save')"));
   assert.ok(availabilitySource.includes('onClick={() => void saveMode(service)}'));
   assert.ok(availabilitySource.includes("method: 'PUT'"));
   assert.ok(availabilitySource.includes('setNoticeServiceId(service.id)'));
 });
 
 test('service reach save feedback stays beside the save action before location controls', () => {
-  const saveIndex = reachSource.indexOf('Save service reach');
+  const saveIndex = reachSource.indexOf("t('provider.reach.save')");
   const noticeIndex = reachSource.indexOf('role="status"');
   const locationIndex = reachSource.indexOf('styles.locationGrid');
   assert.ok(saveIndex >= 0);
