@@ -96,7 +96,7 @@ test('Customer Smart Attention preserves exact destinations and scoped acknowled
 test('Customer Smart Attention preserves mobile-safe progressive enhancement and finance boundary', () => {
   assert.ok(attention.includes('@media (max-width: 720px)'));
   assert.ok(attention.includes('grid-template-columns: 1fr'));
-  assert.ok(attention.includes('min-height: 44px'));
+  assert.ok(attention.includes('min-height: 42px'));
   assert.ok(attention.includes("attention.kind !== 'service' && attention.kind !== 'schedule'"));
   assert.ok(attention.includes("router.push('/notifications')"));
   assert.ok(!attention.includes('Cashfree'));

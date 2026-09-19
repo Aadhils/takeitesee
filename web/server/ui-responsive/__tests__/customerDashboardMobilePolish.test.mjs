@@ -22,7 +22,7 @@ test('Customer booking summary becomes readable cards on real mobile widths', ()
   assert.ok(polishCss.includes('grid-template-columns: repeat(4, minmax(0, 1fr)) !important;'));
   assert.ok(polishCss.includes('@media (max-width: 640px)'));
   assert.ok(polishCss.includes('grid-template-columns: repeat(2, minmax(0, 1fr)) !important;'));
-  assert.ok(polishCss.includes('min-height: 72px !important;'));
+  assert.ok(polishCss.includes('min-height: 64px !important;'));
   assert.ok(polishCss.includes('white-space: normal;'));
 });
 
@@ -35,6 +35,8 @@ test('Customer secondary shortcuts and sign out use contained mobile controls', 
   assert.ok(polishCss.includes('.account-content > .customer-social-dashboard > .account-actions .account-sign-out {'));
   assert.ok(polishCss.includes('width: auto !important;'));
   assert.ok(polishCss.includes('border-radius: 999px;'));
+  assert.ok(polishCss.includes('min-height: 44px;'));
+  assert.ok(polishCss.includes('margin-top: 6px;'));
 });
 
 test('Customer workspace mobile footer is compact without changing public or Provider footer contracts', () => {

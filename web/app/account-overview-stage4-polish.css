@@ -28,7 +28,7 @@
 /* Customer dashboard real-device polish: keep compact app hierarchy readable on phones. */
 @media (max-width: 900px) {
   .account-content > .customer-social-dashboard .customer-dashboard-more-links {
-    margin-top: 10px;
+    margin-top: 6px;
     overflow: hidden;
     border: 1px solid var(--color-border);
     border-radius: 14px;
@@ -37,26 +37,26 @@
   }
 
   .account-content > .customer-social-dashboard .customer-dashboard-more-links > summary {
-    min-height: 50px;
-    padding: 9px 12px;
+    min-height: 44px;
+    padding: 7px 10px;
   }
 
   .account-content > .customer-social-dashboard .customer-dashboard-more-link-row {
-    gap: 7px;
+    gap: 6px;
     border-top: 1px solid var(--color-border);
-    padding: 10px 12px 12px;
+    padding: 8px 10px 10px;
   }
 
   .account-content > .customer-social-dashboard .customer-dashboard-more-link-row a {
-    min-height: 40px;
-    padding: 7px 11px;
+    min-height: 38px;
+    padding: 6px 10px;
   }
 
   .account-content > .customer-social-dashboard .customer-activity-strip {
     display: grid !important;
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    gap: 8px !important;
-    margin-top: 12px;
+    gap: 6px !important;
+    margin-top: 8px;
     overflow: visible !important;
     border: 0 !important;
     border-radius: 0 !important;
@@ -66,11 +66,11 @@
   .account-content > .customer-social-dashboard .customer-activity-strip-item {
     display: grid !important;
     min-width: 0;
-    min-height: 68px !important;
+    min-height: 62px !important;
     align-content: center;
     justify-items: start;
     gap: 3px;
-    padding: 10px 11px !important;
+    padding: 8px 10px !important;
     border: 1px solid var(--color-border);
     border-radius: 13px;
     background: var(--color-surface);
@@ -99,15 +99,15 @@
     display: flex !important;
     width: 100%;
     justify-content: flex-end;
-    margin-top: 10px;
-    padding-top: 10px;
+    margin-top: 6px;
+    padding-top: 8px;
     border-top: 1px solid var(--color-border);
   }
 
   .account-content > .customer-social-dashboard > .account-actions .account-sign-out {
     width: auto !important;
     min-width: 0;
-    min-height: 42px;
+    min-height: 40px;
     justify-content: center;
     border: 1px solid var(--color-border);
     border-radius: 999px;
@@ -123,8 +123,8 @@
   }
 
   .account-content > .customer-social-dashboard .customer-activity-strip-item {
-    min-height: 72px !important;
-    padding: 11px 12px !important;
+    min-height: 64px !important;
+    padding: 9px 10px !important;
   }
 
   .account-content > .customer-social-dashboard .customer-activity-strip-item span {
