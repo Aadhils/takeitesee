@@ -51,8 +51,7 @@ function statusTone(status: OrderStatus) {
 }
 
 export default function ProviderOrderDetail({ orderId }: { orderId: string }) {
-  const { locale } = useIdentityWorkspaceTranslations();
-  const tamil = locale.toLowerCase().startsWith('ta');
+  const { locale, t } = useIdentityWorkspaceTranslations();
   const [order, setOrder] = useState<ProductOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -66,16 +65,16 @@ export default function ProviderOrderDetail({ orderId }: { orderId: string }) {
     try {
       const response = await fetch('/api/provider/orders', { cache: 'no-store' });
       const payload = await response.json() as { orders?: ProductOrder[]; error?: string };
-      if (!response.ok) throw new Error(payload.error || 'Unable to load this Business product order.');
+      if (!response.ok) throw new Error(payload.error || t('provider.orders.detailLoadFallback'));
       const match = (payload.orders ?? []).find((candidate) => candidate.id === orderId) ?? null;
       setNotFound(!match);
       setOrder(match);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Unable to load this Business product order.');
+      setError(loadError instanceof Error ? loadError.message : t('provider.orders.detailLoadFallback'));
     } finally {
       setLoading(false);
     }
-  }, [orderId]);
+  }, [orderId, t]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -87,46 +86,26 @@ export default function ProviderOrderDetail({ orderId }: { orderId: string }) {
     }
   };
 
-  const statusLabel = (status: OrderStatus) => {
-    const english: Record<OrderStatus, string> = {
-      requested: 'Requested',
-      accepted: 'Accepted',
-      declined: 'Declined',
-      fulfilled: 'Fulfilled',
-      cancelled: 'Customer cancelled',
-    };
-    const tamilCopy: Record<OrderStatus, string> = {
-      requested: 'Order கோரிக்கை',
-      accepted: 'ஏற்றுக்கொள்ளப்பட்டது',
-      declined: 'நிராகரிக்கப்பட்டது',
-      fulfilled: 'நிறைவேற்றப்பட்டது',
-      cancelled: 'Customer ரத்து செய்தார்',
-    };
-    return tamil ? tamilCopy[status] : english[status];
-  };
+  const statusLabel = (status: OrderStatus) => ({
+    requested: t('provider.orders.statusRequested'),
+    accepted: t('provider.orders.statusAccepted'),
+    declined: t('provider.orders.statusDeclined'),
+    fulfilled: t('provider.orders.statusFulfilled'),
+    cancelled: t('provider.orders.statusCancelled'),
+  })[status];
 
-  const eventLabel = (status: OrderStatus) => {
-    const english: Record<OrderStatus, string> = {
-      requested: 'Order requested',
-      accepted: 'Order accepted',
-      declined: 'Order declined',
-      fulfilled: 'Order fulfilled',
-      cancelled: 'Order cancelled',
-    };
-    const tamilCopy: Record<OrderStatus, string> = {
-      requested: 'Order கோரப்பட்டது',
-      accepted: 'Order ஏற்றுக்கொள்ளப்பட்டது',
-      declined: 'Order நிராகரிக்கப்பட்டது',
-      fulfilled: 'Order நிறைவேற்றப்பட்டது',
-      cancelled: 'Order ரத்து செய்யப்பட்டது',
-    };
-    return tamil ? tamilCopy[status] : english[status];
-  };
+  const eventLabel = (status: OrderStatus) => ({
+    requested: t('provider.orders.eventRequested'),
+    accepted: t('provider.orders.eventAccepted'),
+    declined: t('provider.orders.eventDeclined'),
+    fulfilled: t('provider.orders.eventFulfilled'),
+    cancelled: t('provider.orders.eventCancelled'),
+  })[status];
 
   const actorLabel = (actorType: OrderActorType) => {
-    if (actorType === 'customer') return tamil ? 'வாடிக்கையாளர்' : 'Customer';
-    if (actorType === 'business') return 'Business';
-    return 'System';
+    if (actorType === 'customer') return t('provider.orders.actorCustomer');
+    if (actorType === 'business') return t('provider.orders.actorBusiness');
+    return t('provider.orders.actorSystem');
   };
 
   const total = useMemo(() => order ? order.unit_price_snapshot * order.quantity : 0, [order]);
@@ -136,7 +115,7 @@ export default function ProviderOrderDetail({ orderId }: { orderId: string }) {
   const transition = async (action: OrderAction) => {
     if (!order) return;
     if (action === 'decline' && note.trim().length < 3) {
-      setError(tamil ? 'Decline reason குறைந்தது 3 characters வேண்டும்.' : 'A decline reason of at least 3 characters is required.');
+      setError(t('provider.orders.declineReasonRequired'));
       return;
     }
     setBusy(action);
@@ -148,29 +127,29 @@ export default function ProviderOrderDetail({ orderId }: { orderId: string }) {
         body: JSON.stringify({ action, note: note.trim() || null }),
       });
       const payload = await response.json() as { order?: ProductOrder; error?: string };
-      if (!response.ok || !payload.order) throw new Error(payload.error || 'Unable to update this order.');
+      if (!response.ok || !payload.order) throw new Error(payload.error || t('provider.orders.updateFallback'));
       setNote('');
       window.dispatchEvent(new Event('provider-product-orders-refresh'));
       await load();
     } catch (transitionError) {
-      setError(transitionError instanceof Error ? transitionError.message : 'Unable to update this order.');
+      setError(transitionError instanceof Error ? transitionError.message : t('provider.orders.updateFallback'));
     } finally {
       setBusy(null);
     }
   };
 
   if (loading) {
-    return <LiveProviderShell active="/provider/orders"><div className={styles.detailPage}><Card><p>{tamil ? 'Order ஏற்றப்படுகிறது…' : 'Loading order…'}</p></Card></div></LiveProviderShell>;
+    return <LiveProviderShell active="/provider/orders"><div className={styles.detailPage}><Card><p>{t('provider.orders.detailLoading')}</p></Card></div></LiveProviderShell>;
   }
 
   if (notFound || !order) {
     return <LiveProviderShell active="/provider/orders"><div className={styles.detailPage}>
       {error ? <p role="alert" className={styles.error}>{error}</p> : null}
       <Card>
-        <EmptyState title={tamil ? 'Order கிடைக்கவில்லை' : 'Order not found'}>
-          {tamil ? 'இந்த order இந்த Business workspace-ல் இல்லை அல்லது இனி கிடைக்கவில்லை.' : 'This order is not available in this Business workspace.'}
+        <EmptyState title={t('provider.orders.notFoundTitle')}>
+          {t('provider.orders.notFoundBody')}
         </EmptyState>
-        <div className="button-row"><Link href="/provider/orders" className="button button-secondary">{tamil ? 'Product orders' : 'Back to product orders'}</Link></div>
+        <div className="button-row"><Link href="/provider/orders" className="button button-secondary">{t('provider.orders.backOrders')}</Link></div>
       </Card>
     </div></LiveProviderShell>;
   }
@@ -181,7 +160,7 @@ export default function ProviderOrderDetail({ orderId }: { orderId: string }) {
         <div>
           <span className="eyebrow">{order.customer_name_snapshot}</span>
           <h1>{order.product_name_snapshot}</h1>
-          <p>{tamil ? 'Customer product order' : 'Customer product order'} · {new Date(order.created_at).toLocaleString(locale)}</p>
+          <p>{t('provider.orders.customerProductOrder')} · {new Date(order.created_at).toLocaleString(locale)}</p>
         </div>
         <Badge tone={statusTone(order.status)}>{statusLabel(order.status)}</Badge>
       </section>
@@ -191,31 +170,31 @@ export default function ProviderOrderDetail({ orderId }: { orderId: string }) {
       <div className={styles.detailLayout}>
         <main className={styles.detailMain}>
           <Card className={styles.detailCard}>
-            <span className="eyebrow">{tamil ? 'ORDER INFORMATION' : 'ORDER INFORMATION'}</span>
-            <h2>{tamil ? 'Order snapshot' : 'Order snapshot'}</h2>
+            <span className="eyebrow">{t('provider.orders.orderInformation')}</span>
+            <h2>{t('provider.orders.orderSnapshot')}</h2>
             <div className={styles.infoRows}>
-              <div className={styles.infoRow}><span>{tamil ? 'Customer' : 'Customer'}</span><strong>{order.customer_name_snapshot}</strong></div>
-              <div className={styles.infoRow}><span>{tamil ? 'Quantity' : 'Quantity'}</span><strong>{order.quantity} {order.unit_label_snapshot}</strong></div>
-              <div className={styles.infoRow}><span>{tamil ? 'Unit price' : 'Unit price'}</span><strong>{money(order.unit_price_snapshot, order.currency_snapshot)}</strong></div>
-              <div className={styles.infoRow}><span>{tamil ? 'Snapshot total' : 'Snapshot total'}</span><strong>{money(total, order.currency_snapshot)}</strong></div>
-              <div className={styles.infoRow}><span>{tamil ? 'Requested' : 'Requested'}</span><strong>{new Date(order.created_at).toLocaleString(locale)}</strong></div>
-              <div className={styles.infoRow}><span>{tamil ? 'Status updated' : 'Status updated'}</span><strong>{new Date(order.status_changed_at).toLocaleString(locale)}</strong></div>
-              <div className={styles.infoRow}><span>{tamil ? 'Product revision' : 'Product revision'}</span><strong>Rev {order.product_revision}</strong></div>
+              <div className={styles.infoRow}><span>{t('provider.orders.customerLabel')}</span><strong>{order.customer_name_snapshot}</strong></div>
+              <div className={styles.infoRow}><span>{t('provider.orders.quantityLabel')}</span><strong>{order.quantity} {order.unit_label_snapshot}</strong></div>
+              <div className={styles.infoRow}><span>{t('provider.orders.unitPriceLabel')}</span><strong>{money(order.unit_price_snapshot, order.currency_snapshot)}</strong></div>
+              <div className={styles.infoRow}><span>{t('provider.orders.snapshotTotal')}</span><strong>{money(total, order.currency_snapshot)}</strong></div>
+              <div className={styles.infoRow}><span>{t('provider.orders.requestedLabel')}</span><strong>{new Date(order.created_at).toLocaleString(locale)}</strong></div>
+              <div className={styles.infoRow}><span>{t('provider.orders.statusUpdatedLabel')}</span><strong>{new Date(order.status_changed_at).toLocaleString(locale)}</strong></div>
+              <div className={styles.infoRow}><span>{t('provider.orders.productRevisionLabel')}</span><strong>Rev {order.product_revision}</strong></div>
             </div>
           </Card>
 
           {(order.customer_note || order.business_note) ? <Card className={styles.detailCard}>
-            <span className="eyebrow">{tamil ? 'ORDER NOTES' : 'ORDER NOTES'}</span>
-            <h2>{tamil ? 'Request notes' : 'Request notes'}</h2>
+            <span className="eyebrow">{t('provider.orders.orderNotes')}</span>
+            <h2>{t('provider.orders.requestNotes')}</h2>
             <div className={styles.notes}>
-              {order.customer_note ? <div className={styles.noteBox}><strong>{tamil ? 'Customer note' : 'Customer note'}</strong><p>{order.customer_note}</p></div> : null}
-              {order.business_note ? <div className={styles.noteBox}><strong>{tamil ? 'Business note' : 'Business note'}</strong><p>{order.business_note}</p></div> : null}
+              {order.customer_note ? <div className={styles.noteBox}><strong>{t('provider.orders.customerNote')}</strong><p>{order.customer_note}</p></div> : null}
+              {order.business_note ? <div className={styles.noteBox}><strong>{t('provider.orders.businessNote')}</strong><p>{order.business_note}</p></div> : null}
             </div>
           </Card> : null}
 
           <Card className={styles.detailCard}>
-            <span className="eyebrow">{tamil ? 'ORDER ACTIVITY' : 'ORDER ACTIVITY'}</span>
-            <h2>{tamil ? 'Order timeline' : 'Order timeline'}</h2>
+            <span className="eyebrow">{t('provider.orders.orderActivity')}</span>
+            <h2>{t('provider.orders.timeline')}</h2>
             {order.events.length ? <ol className={styles.timeline}>
               {order.events.map((event) => <li key={event.id} className={styles.timelineItem}>
                 <div className={styles.timelineHeading}>
@@ -225,20 +204,20 @@ export default function ProviderOrderDetail({ orderId }: { orderId: string }) {
                 {event.note ? <p>{event.note}</p> : null}
                 <p className={styles.timelineMeta}>{new Date(event.created_at).toLocaleString(locale)}</p>
               </li>)}
-            </ol> : <EmptyState title={tamil ? 'Activity இன்னும் இல்லை' : 'No activity yet'}>{tamil ? 'Order status updates இங்கே தோன்றும்.' : 'Order status updates will appear here.'}</EmptyState>}
+            </ol> : <EmptyState title={t('provider.orders.noActivityTitle')}>{t('provider.orders.noActivityBody')}</EmptyState>}
           </Card>
         </main>
 
         <aside className={styles.detailAside}>
           <Card className={styles.detailCard}>
-            <span className="eyebrow">{tamil ? 'ACTIONS' : 'ACTIONS'}</span>
+            <span className="eyebrow">{t('provider.orders.actions')}</span>
             {(canDecide || canFulfill) ? <Textarea
               label={canDecide
-                ? (tamil ? 'Business note / decline reason' : 'Business note / decline reason')
-                : (tamil ? 'Fulfilment note (optional)' : 'Fulfilment note (optional)')}
+                ? t('provider.orders.businessNoteDecline')
+                : t('provider.orders.fulfilmentNote')}
               hint={canDecide
-                ? (tamil ? 'Decline செய்ய reason கட்டாயம்; Accept செய்ய optional.' : 'Required when declining; optional when accepting.')
-                : (tamil ? 'Payment confirmation இங்கு சேர்க்க வேண்டாம்.' : 'Do not use this field as payment confirmation.')}
+                ? t('provider.orders.decisionHint')
+                : t('provider.orders.fulfilmentHint')}
               value={note}
               maxLength={1200}
               onChange={(event) => setNote(event.target.value)}
@@ -246,17 +225,15 @@ export default function ProviderOrderDetail({ orderId }: { orderId: string }) {
 
             <div className={styles.detailActions}>
               {canDecide ? <>
-                <Button type="button" loading={busy === 'accept'} onClick={() => void transition('accept')}>{tamil ? 'Accept order' : 'Accept order'}</Button>
-                <Button type="button" variant="danger" loading={busy === 'decline'} onClick={() => void transition('decline')}>{tamil ? 'Decline' : 'Decline'}</Button>
+                <Button type="button" loading={busy === 'accept'} onClick={() => void transition('accept')}>{t('provider.orders.acceptOrder')}</Button>
+                <Button type="button" variant="danger" loading={busy === 'decline'} onClick={() => void transition('decline')}>{t('provider.orders.decline')}</Button>
               </> : null}
-              {canFulfill ? <Button type="button" loading={busy === 'fulfill'} onClick={() => void transition('fulfill')}>{tamil ? 'Mark fulfilled' : 'Mark fulfilled'}</Button> : null}
-              {order.conversation_id ? <Link href={`/provider/messages?conversation=${encodeURIComponent(order.conversation_id)}`} className="button button-secondary">{tamil ? 'Customer-க்கு message' : 'Message Customer'}</Link> : null}
-              <Link href="/provider/orders" className="button button-secondary">{tamil ? 'Product orders' : 'Back to product orders'}</Link>
+              {canFulfill ? <Button type="button" loading={busy === 'fulfill'} onClick={() => void transition('fulfill')}>{t('provider.orders.markFulfilled')}</Button> : null}
+              {order.conversation_id ? <Link href={`/provider/messages?conversation=${encodeURIComponent(order.conversation_id)}`} className="button button-secondary">{t('provider.orders.messageCustomer')}</Link> : null}
+              <Link href="/provider/orders" className="button button-secondary">{t('provider.orders.backOrders')}</Link>
             </div>
 
-            <p className={styles.flowNotice}>{tamil
-              ? 'இது non-payment order-request flow. TakeItEsee payment/Cashfree இந்த order-ல் செயல்படாது.'
-              : 'This is a non-payment order-request flow. TakeItEsee payment and Cashfree are not active for this order.'}</p>
+            <p className={styles.flowNotice}>{t('provider.orders.flowNotice')}</p>
           </Card>
         </aside>
       </div>
