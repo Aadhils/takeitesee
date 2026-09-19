@@ -131,8 +131,13 @@ export default function ProviderSetupManager() {
     draft: t('common.draft'),
     paused: t('common.paused'),
   } as Record<string, string>)[status] ?? status.replaceAll('_', ' ');
-  const serviceCount = (count: number, suffix: 'created' | 'scoped' | 'activeWithGates') =>
-    `${count} ${t(count === 1 ? 'setup.count.service' : 'setup.count.services')} ${t(`setup.count.${suffix}` as 'setup.count.created' | 'setup.count.scoped' | 'setup.count.activeWithGates')}`;
+  const countSuffixKeys = {
+    created: 'setup.count.created',
+    scoped: 'setup.count.scoped',
+    activeWithGates: 'setup.count.activeWithGates',
+  } as const;
+  const serviceCount = (count: number, suffix: keyof typeof countSuffixKeys) =>
+    `${count} ${t(count === 1 ? 'setup.count.service' : 'setup.count.services')} ${t(countSuffixKeys[suffix])}`;
 
   const steps = readiness ? [
     { label: t('setup.step.profile.label'), done: readiness.profile_complete, href: '/provider/profile', detail: t('setup.step.profile.detail') },
