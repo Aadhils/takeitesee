@@ -43,5 +43,5 @@ test('Provider Public Readiness keeps Business and Professional branches', () =>
   assert.ok(source.includes("profile.provider_type === 'business'"));
   assert.ok(source.includes('/provider/products'));
   assert.ok(source.includes('/provider/services'));
-  assert.ok(source.includes('/provider/professional-roles'));
+  assert.ok(source.includes('/provider/resume'));
 });
