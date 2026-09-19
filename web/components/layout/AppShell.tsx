@@ -144,7 +144,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         {menuOpen ? (
           <nav id="mobile-menu" className="mobile-menu" aria-label={t('nav.mobile')}>
             {primaryLinks.map((link) => <Link key={link.href} href={link.href} className={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'nav-active' : ''} aria-current={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'page' : undefined} onClick={() => setMenuOpen(false)}><span className="mobile-menu-icon" aria-hidden="true"><ShellIcon name={link.icon} /></span><span className="mobile-menu-label">{t(link.labelKey)}</span></Link>)}
-            <Link href="/products" className={productsActive ? 'nav-active' : ''} aria-current={productsActive ? 'page' : undefined} onClick={() => setMenuOpen(false)}><span className="mobile-menu-icon" aria-hidden="true"><ShellIcon name="products" /></span><span className="mobile-menu-label">{isTamil ? 'பொருட்கள்' : 'Products'}</span></Link>
+            <Link href="/products" className={productsActive ? 'nav-active' : ''} aria-current={productsActive ? 'page' : undefined} onClick={() => setMenuOpen(false)}><span className="mobile-menu-icon" aria-hidden="true"><ShellIcon name="products" /></span><span className="mobile-menu-label">{t('nav.products')}</span></Link>
             <Link href="/register" className="mobile-menu-join" onClick={() => setMenuOpen(false)}><span className="mobile-menu-icon" aria-hidden="true"><ShellIcon name="userPlus" /></span><span className="mobile-menu-label">{t('nav.createAccount')}</span></Link>
           </nav>
         ) : null}
