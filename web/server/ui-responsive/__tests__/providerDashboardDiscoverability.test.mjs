@@ -17,9 +17,9 @@ test('Provider Dashboard surfaces real customer discoverability verification', (
 
 test('discoverability verifies both public visibility and customer search reachability', () => {
   assert.ok(discoverabilitySource.includes('public_discoverable'));
-  assert.ok(discoverabilitySource.includes('Search reachable'));
-  assert.ok(discoverabilitySource.includes('View public page ↗'));
-  assert.ok(discoverabilitySource.includes('Find in customer search ↗'));
+  assert.ok(discoverabilitySource.includes("t('provider.discoverability.searchReachable')"));
+  assert.ok(discoverabilitySource.includes("t('provider.discoverability.viewPublic')"));
+  assert.ok(discoverabilitySource.includes("t('provider.discoverability.findServiceSearch')"));
 });
 
 test('discoverability check remains read-only and preserves catalog state', () => {
