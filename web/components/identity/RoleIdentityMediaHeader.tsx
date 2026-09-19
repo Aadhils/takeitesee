@@ -101,7 +101,7 @@ export default function RoleIdentityMediaHeader({ context, displayName, subtitle
   const hasBanner = Boolean(identity?.has_banner && identity.banner_url);
   const visibleMeta = context === 'customer' ? '' : meta;
 
-  return <section className={styles.shell} aria-label={t('identity.media.sectionLabel')}>
+  return <section className={`${styles.shell} ${context === 'customer' ? styles.customerShell : ''}`} aria-label={t('identity.media.sectionLabel')}>
     <div className={`${styles.banner} ${bannerClass}`}>
       {identity?.banner_url ? <img className={styles.bannerImage} src={identity.banner_url} alt="" /> : null}
       <div className={styles.bannerShade} />
