@@ -34,7 +34,7 @@ export function ProviderAvailabilityManager() {
       try {
         const response = await fetch('/api/provider/services', { cache: 'no-store' });
         const body = await response.json();
-        if (!response.ok) throw new Error(body.error || 'Unable to load provider services.');
+        if (!response.ok) throw new Error(body.error || t('availability.loadServicesFallback'));
         const mapped = (body.services ?? []).map((service: Record<string, unknown>) => ({ id: String(service.id), name: String(service.name), status: service.status as Service['status'] }));
         if (cancelled) return;
         setServices(mapped);
@@ -43,7 +43,7 @@ export function ProviderAvailabilityManager() {
       } catch (error) {
         if (cancelled) return;
         setServices([]); setSelectedServiceId(''); setSaveState('error');
-        setMessage(error instanceof Error ? error.message : 'Unable to load provider services.');
+        setMessage(error instanceof Error ? error.message : t('availability.loadServicesFallback'));
       } finally { if (!cancelled) setLoading(false); }
     })();
     return () => { cancelled = true; };
@@ -57,14 +57,14 @@ export function ProviderAvailabilityManager() {
       try {
         const response = await fetch(`/api/provider/services/${selectedServiceId}/availability`, { cache: 'no-store' });
         const body = await response.json();
-        if (!response.ok) throw new Error(body.error || 'Unable to load availability.');
+        if (!response.ok) throw new Error(body.error || t('availability.loadFallback'));
         if (!cancelled) setAvailability(body.availability as Availability);
       } catch (error) {
-        if (!cancelled) { setAvailability(null); setSaveState('error'); setMessage(error instanceof Error ? error.message : 'Unable to load availability.'); }
+        if (!cancelled) { setAvailability(null); setSaveState('error'); setMessage(error instanceof Error ? error.message : t('availability.loadFallback')); }
       }
     })();
     return () => { cancelled = true; };
-  }, [selectedServiceId]);
+  }, [selectedServiceId, t]);
 
   const selectedService = useMemo(() => services.find((service) => service.id === selectedServiceId), [services, selectedServiceId]);
   const windowsByDay = useMemo(() => {
@@ -96,9 +96,9 @@ export function ProviderAvailabilityManager() {
     try {
       const response = await fetch(`/api/provider/services/${availability.service_id}/availability`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(availability) });
       const body = await response.json();
-      if (!response.ok) throw new Error(body.error || 'Unable to save availability.');
+      if (!response.ok) throw new Error(body.error || t('availability.saveFallback'));
       setAvailability(body.availability as Availability); setSaveState('saved'); setMessage(t('availability.saved'));
-    } catch (error) { setSaveState('error'); setMessage(error instanceof Error ? error.message : 'Unable to save availability.'); }
+    } catch (error) { setSaveState('error'); setMessage(error instanceof Error ? error.message : t('availability.saveFallback')); }
     finally { setSaving(false); }
   };
 
