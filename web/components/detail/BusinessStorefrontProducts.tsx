@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { Button, Input, Textarea } from '../ui/primitives';
-import { useLanguage } from '../i18n/LanguageProvider';
+import { usePublicProviderTranslations } from '../i18n/PublicProviderTranslations';
 import styles from './BusinessStorefrontProducts.module.css';
 
 type PublicProduct = {
@@ -25,8 +25,7 @@ function productImageHref(productId: string) {
 }
 
 export default function BusinessStorefrontProducts({ products }: { products: PublicProduct[] }) {
-  const { locale } = useLanguage();
-  const tamil = locale === 'ta-IN';
+  const { locale, t } = usePublicProviderTranslations();
   const [drafts, setDrafts] = useState<Record<string, OrderDraft>>({});
   const [feedback, setFeedback] = useState<Record<string, OrderFeedback>>({});
   const [imageFailures, setImageFailures] = useState<Record<string, boolean>>({});
@@ -46,9 +45,9 @@ export default function BusinessStorefrontProducts({ products }: { products: Pub
   };
 
   const stockLabel = (mode: PublicProduct['stock_mode']) => {
-    if (mode === 'in_stock') return tamil ? 'Stock உள்ளது' : 'In stock';
-    if (mode === 'made_to_order') return tamil ? 'Order அடிப்படையில் தயாரிக்கப்படும்' : 'Made to order';
-    return tamil ? 'Stock இல்லை' : 'Out of stock';
+    if (mode === 'in_stock') return t('publicProvider.businessProducts.inStock');
+    if (mode === 'made_to_order') return t('publicProvider.businessProducts.madeToOrder');
+    return t('publicProvider.businessProducts.outOfStock');
   };
 
   const draftFor = (productId: string): OrderDraft => drafts[productId] ?? { quantity: 1, note: '' };
@@ -78,13 +77,13 @@ export default function BusinessStorefrontProducts({ products }: { products: Pub
         window.location.assign(`/login?returnTo=${encodeURIComponent(returnTo)}`);
         return;
       }
-      if (!response.ok || !payload.order) throw new Error(payload.error || 'Unable to request this order.');
+      if (!response.ok || !payload.order) throw new Error(payload.error || t('publicProvider.businessProducts.requestError'));
       setFeedback((current) => ({
         ...current,
         [product.id]: {
           busy: false,
           error: false,
-          message: tamil ? 'Order request அனுப்பப்பட்டது.' : 'Order request sent.',
+          message: t('publicProvider.businessProducts.orderSent'),
         },
       }));
       setDrafts((current) => ({ ...current, [product.id]: { quantity: 1, note: '' } }));
@@ -94,19 +93,17 @@ export default function BusinessStorefrontProducts({ products }: { products: Pub
         [product.id]: {
           busy: false,
           error: true,
-          message: requestError instanceof Error ? requestError.message : 'Unable to request this order.',
+          message: requestError instanceof Error ? requestError.message : t('publicProvider.businessProducts.requestError'),
         },
       }));
     }
   };
 
-  return <section className={`container section-stack ${styles.section}`} aria-label={tamil ? 'Business products' : 'Business products'}>
+  return <section className={`container section-stack ${styles.section}`} aria-label={t('publicProvider.businessProducts.aria')}>
     <div className={`page-intro ${styles.intro}`}>
-      <span className="eyebrow">Business sales</span>
-      <h2>Products</h2>
-      <p>{tamil
-        ? 'Platform review செய்யப்பட்ட current revision products மட்டும் இங்கே தெரியும். Customer order request அனுப்பலாம்; TakeItEsee payment/Cashfree இந்த stage-ல் செயல்படாது.'
-        : 'Only platform-reviewed current product revisions appear here. Customers can send an order request; TakeItEsee payment and Cashfree are not active at this stage.'}</p>
+      <span className="eyebrow">{t('publicProvider.businessProducts.salesEyebrow')}</span>
+      <h2>{t('publicProvider.businessProducts.title')}</h2>
+      <p>{t('publicProvider.businessProducts.intro')}</p>
     </div>
     <div className={styles.grid}>
       {products.map((product) => {
@@ -121,7 +118,7 @@ export default function BusinessStorefrontProducts({ products }: { products: Pub
         >
           {shouldTryImage ? <img
             src={productImageHref(product.id)}
-            alt={`${product.name} product`}
+            alt={t('publicProvider.businessProducts.imageAlt').replace('{productName}', product.name)}
             className={styles.image}
             onError={() => setImageFailures((current) => ({ ...current, [product.id]: true }))}
           /> : null}
@@ -134,7 +131,7 @@ export default function BusinessStorefrontProducts({ products }: { products: Pub
 
           {available ? <div className={styles.orderForm}>
             <Input
-              label={tamil ? 'Quantity' : 'Quantity'}
+              label={t('publicProvider.businessProducts.quantity')}
               type="number"
               min={1}
               max={999}
@@ -146,24 +143,22 @@ export default function BusinessStorefrontProducts({ products }: { products: Pub
               }}
             />
             <Textarea
-              label={tamil ? 'Order note (optional)' : 'Order note (optional)'}
-              hint={tamil ? 'Delivery/payment details இங்கு share செய்ய வேண்டாம்.' : 'Do not share payment details here.'}
+              label={t('publicProvider.businessProducts.orderNote')}
+              hint={t('publicProvider.businessProducts.noteHint')}
               maxLength={1200}
               value={draft.note}
               onChange={(event) => updateDraft(product.id, { note: event.target.value })}
             />
             <Button type="button" loading={Boolean(state?.busy)} onClick={() => void requestOrder(product)}>
-              {tamil ? 'Request order' : 'Request order'}
+              {t('publicProvider.businessProducts.requestOrder')}
             </Button>
             <p className={`muted ${styles.note}`}>
-              {tamil
-                ? 'இது order request மட்டும். Online payment அல்லது automatic stock deduction இல்லை.'
-                : 'This sends an order request only. There is no online payment or automatic stock deduction.'}
+              {t('publicProvider.businessProducts.orderOnlyNote')}
             </p>
             {state?.message ? <p className={styles.feedback} role={state.error ? 'alert' : 'status'} style={{ color: state.error ? 'var(--danger, #b42318)' : 'var(--color-primary-strong)' }}>
-              {state.message} {!state.error ? <Link href="/orders">{tamil ? 'என் orders பார்க்க' : 'View my orders'}</Link> : null}
+              {state.message} {!state.error ? <Link href="/orders">{t('publicProvider.businessProducts.viewOrders')}</Link> : null}
             </p> : null}
-          </div> : <p className={`muted ${styles.note}`}>{tamil ? 'இந்த product தற்போது order செய்ய முடியாது.' : 'This product is not currently available to order.'}</p>}
+          </div> : <p className={`muted ${styles.note}`}>{t('publicProvider.businessProducts.unavailable')}</p>}
         </article>;
       })}
     </div>
