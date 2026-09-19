@@ -64,7 +64,6 @@ function extensionFor(file: File) {
 
 export default function ProviderVerificationManager() {
   const { t, locale } = useRemainingWorkspaceTranslations();
-  const text = (en: string, ta: string) => locale === 'ta-IN' ? ta : en;
   const [payload, setPayload] = useState<Payload | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
   const [loading, setLoading] = useState(true);
@@ -79,7 +78,7 @@ export default function ProviderVerificationManager() {
     try {
       const response = await fetch('/api/provider/verification', { cache: 'no-store' });
       const body = await response.json() as Payload;
-      if (!response.ok || !body.provider) throw new Error(body.error ?? 'Unable to load verification status.');
+      if (!response.ok || !body.provider) throw new Error(body.error ?? t('verification.error.load'));
       setPayload(body);
       const hasPending = body.requests.some((item) => item.status === 'pending');
       if (body.provider.verified && !body.provider.marketplace_disclosure_complete && !hasPending) {
@@ -89,9 +88,9 @@ export default function ProviderVerificationManager() {
           grievance_officer_designation: body.provider.disclosure.grievance_officer_designation || 'Grievance Officer',
         }));
       }
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to load verification status.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : t('verification.error.load')); }
     finally { setLoading(false); }
-  }, []);
+  }, [t]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -100,14 +99,14 @@ export default function ProviderVerificationManager() {
   const remediation = Boolean(payload?.provider.verified && !payload.provider.marketplace_disclosure_complete);
   const pendingDocuments = useMemo(() => pending ? (payload?.documents ?? []).filter((doc) => doc.verification_request_id === pending.id && doc.status === 'active') : [], [payload, pending]);
   const missingDisclosureLabel = (value: string) => ({
-    legal_name: text('Legal name', 'Legal பெயர்'),
-    principal_address: text('Principal address', 'முதன்மை முகவரி'),
-    public_contact_email: text('Public contact email', 'பொது தொடர்பு மின்னஞ்சல்'),
-    public_contact_phone: text('Public contact phone', 'பொது தொடர்பு தொலைபேசி'),
-    grievance_officer_name: text('Grievance officer name', 'Grievance officer பெயர்'),
-    grievance_officer_designation: text('Grievance officer designation', 'Grievance officer பதவி'),
-    grievance_email: text('Grievance email', 'Grievance மின்னஞ்சல்'),
-    grievance_phone: text('Grievance phone', 'Grievance தொலைபேசி'),
+    legal_name: t('verification.missing.legalName'),
+    principal_address: t('verification.missing.principalAddress'),
+    public_contact_email: t('verification.missing.publicContactEmail'),
+    public_contact_phone: t('verification.missing.publicContactPhone'),
+    grievance_officer_name: t('verification.missing.grievanceOfficerName'),
+    grievance_officer_designation: t('verification.missing.grievanceOfficerDesignation'),
+    grievance_email: t('verification.missing.grievanceEmail'),
+    grievance_phone: t('verification.missing.grievancePhone'),
   } as Record<string, string>)[value] ?? value;
   const missingDisclosure = payload?.provider.missing_disclosure_fields.map(missingDisclosureLabel).join(' · ') ?? '';
 
@@ -117,23 +116,23 @@ export default function ProviderVerificationManager() {
     try {
       const response = await fetch('/api/provider/verification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
       const body = await response.json() as { request?: RequestRecord; error?: string };
-      if (!response.ok || !body.request) throw new Error(body.error ?? 'Verification request could not be submitted.');
+      if (!response.ok || !body.request) throw new Error(body.error ?? t('verification.error.submit'));
       setForm({ ...emptyForm });
       await load();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Verification request could not be submitted.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : t('verification.error.submit')); }
     finally { setBusy(false); }
   };
 
   const uploadDocument = async (file: File) => {
     if (!pending || uploading) return;
-    if (!allowedTypes.has(file.type)) { setError('Upload a PDF, JPEG, PNG, or WebP document.'); return; }
-    if (file.size <= 0 || file.size > maxBytes) { setError('Verification document must be 8 MB or smaller.'); return; }
+    if (!allowedTypes.has(file.type)) { setError(t('verification.error.fileType')); return; }
+    if (file.size <= 0 || file.size > maxBytes) { setError(t('verification.error.fileSize')); return; }
     setUploading(true); setError('');
     const supabase = createSupabaseBrowserClient();
     let objectPath = '';
     try {
       const { data: authData, error: authError } = await supabase.auth.getUser();
-      if (authError || !authData.user) throw new Error(authError?.message ?? 'Authentication required.');
+      if (authError || !authData.user) throw new Error(authError?.message ?? t('verification.error.authRequired'));
       objectPath = `${authData.user.id}/${pending.id}/${crypto.randomUUID()}.${extensionFor(file)}`;
       const { error: uploadError } = await supabase.storage.from(bucket).upload(objectPath, file, { contentType: file.type, cacheControl: '3600', upsert: false });
       if (uploadError) throw new Error(uploadError.message);
@@ -141,13 +140,13 @@ export default function ProviderVerificationManager() {
       const body = await response.json() as { error?: string };
       if (!response.ok) {
         await supabase.storage.from(bucket).remove([objectPath]);
-        throw new Error(body.error ?? 'Verification document could not be registered.');
+        throw new Error(body.error ?? t('verification.error.documentRegister'));
       }
       if (fileRef.current) fileRef.current.value = '';
       await load();
     } catch (cause) {
       if (objectPath) await supabase.storage.from(bucket).remove([objectPath]);
-      setError(cause instanceof Error ? cause.message : 'Verification document could not be uploaded.');
+      setError(cause instanceof Error ? cause.message : t('verification.error.documentUpload'));
     } finally { setUploading(false); }
   };
 
@@ -157,9 +156,9 @@ export default function ProviderVerificationManager() {
     try {
       const response = await fetch('/api/provider/verification/documents', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ document_id: documentId }) });
       const body = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(body.error ?? 'Verification document could not be removed.');
+      if (!response.ok) throw new Error(body.error ?? t('verification.error.documentRemove'));
       await load();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Verification document could not be removed.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : t('verification.error.documentRemove')); }
     finally { setRemovingId(null); }
   };
 
@@ -168,14 +167,26 @@ export default function ProviderVerificationManager() {
     try {
       const response = await fetch('/api/provider/verification', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ request_id: id, action: 'withdraw' }) });
       const body = await response.json() as { request?: RequestRecord; error?: string };
-      if (!response.ok || !body.request) throw new Error(body.error ?? 'Verification request could not be withdrawn.');
+      if (!response.ok || !body.request) throw new Error(body.error ?? t('verification.error.withdraw'));
       await load();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Verification request could not be withdrawn.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : t('verification.error.withdraw')); }
     finally { setBusy(false); }
   };
 
-  const statusLabel = (status: RequestRecord['status']) => locale === 'ta-IN' ? ({ pending: 'நிலுவையில்', approved: 'அங்கீகரிக்கப்பட்டது', changes_requested: 'மாற்றங்கள் கோரப்பட்டன', rejected: 'நிராகரிக்கப்பட்டது', withdrawn: 'திரும்பப் பெறப்பட்டது', revoked: 'ரத்து செய்யப்பட்டது' }[status]) : status.replaceAll('_', ' ');
-  const evidenceLabel = (value: string) => locale === 'ta-IN' ? ({ government_id: 'அரசு வழங்கிய அடையாள ஆதாரம்', business_registration: 'வணிக பதிவு', professional_license: 'தொழில்முறை உரிமம்', other: 'மற்ற சரிபார்க்கக்கூடிய ஆதாரம்' }[value] ?? value.replaceAll('_', ' ')) : value.replaceAll('_', ' ');
+  const statusLabel = (status: RequestRecord['status']) => ({
+    pending: t('verification.status.pending'),
+    approved: t('verification.status.approved'),
+    changes_requested: t('verification.status.changesRequested'),
+    rejected: t('verification.status.rejected'),
+    withdrawn: t('verification.status.withdrawn'),
+    revoked: t('verification.status.revoked'),
+  }[status]);
+  const evidenceLabel = (value: string) => ({
+    government_id: t('verification.evidence.governmentId'),
+    business_registration: t('verification.evidence.businessRegistration'),
+    professional_license: t('verification.evidence.professionalLicense'),
+    other: t('verification.evidence.other'),
+  } as Record<string, string>)[value] ?? value.replaceAll('_', ' ');
 
   return <LiveProviderShell active="/provider/verification">
     <ProviderHeading eyebrow={t('verification.eyebrow')} title={t('verification.title')} description={t('verification.intro')} />
@@ -188,20 +199,20 @@ export default function ProviderVerificationManager() {
       <p className="summary-note">{payload.provider.verified
         ? payload.provider.marketplace_disclosure_complete
           ? t('verification.approvedHelp')
-          : text('Identity verification is approved, but public marketplace disclosure is incomplete. Complete the correction workflow below before this profile can become public-ready.', 'Identity verification approved. ஆனால் public marketplace disclosure முழுமையில்லை. இந்த profile public-ready ஆக கீழே உள்ள correction workflow-ஐ முடிக்கவும்.')
+          : t('verification.disclosure.identityApprovedIncomplete')
         : t('verification.lockedHelp')}</p>
     </Card> : null}
 
     {!loading && payload?.provider ? pending ? <Card>
-      <div className="section-heading"><div><span className="eyebrow">{remediation ? text('Disclosure correction', 'Disclosure correction') : t('verification.currentRequest')}</span><h2>{pending.legal_name}</h2></div><Badge tone="warning">{t('verification.pendingReview')}</Badge></div>
+      <div className="section-heading"><div><span className="eyebrow">{remediation ? t('verification.disclosure.correctionEyebrow') : t('verification.currentRequest')}</span><h2>{pending.legal_name}</h2></div><Badge tone="warning">{t('verification.pendingReview')}</Badge></div>
       <dl className="review-details">
         <div><dt>{t('verification.contact')}</dt><dd>{pending.contact_phone}</dd></div><div><dt>{t('verification.address')}</dt><dd>{pending.address}</dd></div>
-        <div><dt>{text('Public email', 'பொது மின்னஞ்சல்')}</dt><dd>{pending.public_contact_email}</dd></div><div><dt>{text('Website', 'இணையதளம்')}</dt><dd>{pending.website_url || '—'}</dd></div>
-        <div><dt>{text('Grievance officer', 'Grievance officer')}</dt><dd>{pending.grievance_officer_name} · {pending.grievance_officer_designation}</dd></div>
-        <div><dt>{text('Grievance contact', 'Grievance தொடர்பு')}</dt><dd>{pending.grievance_email} · {pending.grievance_phone}</dd></div>
+        <div><dt>{t('verification.disclosure.publicEmail')}</dt><dd>{pending.public_contact_email}</dd></div><div><dt>{t('verification.disclosure.website')}</dt><dd>{pending.website_url || '—'}</dd></div>
+        <div><dt>{t('verification.disclosure.grievanceOfficer')}</dt><dd>{pending.grievance_officer_name} · {pending.grievance_officer_designation}</dd></div>
+        <div><dt>{t('verification.disclosure.grievanceContact')}</dt><dd>{pending.grievance_email} · {pending.grievance_phone}</dd></div>
         <div><dt>{t('verification.evidenceType')}</dt><dd>{evidenceLabel(pending.evidence_type)}</dd></div><div><dt>{t('verification.reference')}</dt><dd>{pending.evidence_reference}</dd></div>
       </dl>
-      <Alert title={text('Public marketplace disclosure', 'பொது marketplace disclosure')} tone="info">{text('Legal identity, public contact and grievance contact above will be copied to your public provider disclosure only after platform approval. Uploaded evidence documents remain private.', 'மேலுள்ள legal identity, public contact மற்றும் grievance contact platform approval பிறகே உங்கள் public provider disclosure-க்கு copy ஆகும். Upload செய்யும் evidence documents private ஆகவே இருக்கும்.')}</Alert>
+      <Alert title={t('verification.disclosure.title')} tone="info">{t('verification.disclosure.publicCopyHelp')}</Alert>
 
       <div className="section-stack" style={{ marginTop: '1rem' }}>
         <div><strong>{t('verification.privateDocs')}</strong><p className="summary-note">{t('verification.docsHelp')}</p></div>
@@ -212,36 +223,33 @@ export default function ProviderVerificationManager() {
 
       <p className="summary-note">{t('verification.auditHelp')}</p>
       <Button type="button" variant="quiet" disabled={busy} onClick={() => void withdraw(pending.id)}>{busy ? t('reason.updating') : t('verification.withdraw')}</Button>
-    </Card> : payload.provider.verified && payload.provider.marketplace_disclosure_complete ? <Alert title={t('verification.approved')} tone="success">{text('Your verified marketplace identity and grievance contact are used for the public provider disclosure required for live services.', 'Live சேவைகளுக்குத் தேவையான பொது வழங்குநர் தகவல் மற்றும் grievance contact உங்கள் சரிபார்க்கப்பட்ட marketplace identity-யிலிருந்து காட்டப்படும்.')}</Alert> : <>
-      {remediation ? <Alert title={text('Public marketplace disclosure is incomplete', 'Public marketplace disclosure முழுமையில்லை')} tone="warning">{text(
-        `Missing: ${missingDisclosure}. Submit the corrected legal, public-contact and grievance details below. Your verified badge remains unchanged, but public marketplace eligibility stays blocked until the correction is reviewed and approved.`,
-        `Missing: ${missingDisclosure}. கீழே corrected legal, public-contact மற்றும் grievance details submit செய்யவும். Verified badge மாறாது; correction review செய்து approve ஆகும் வரை public marketplace eligibility blocked ஆக இருக்கும்.`,
-      )}</Alert> : null}
+    </Card> : payload.provider.verified && payload.provider.marketplace_disclosure_complete ? <Alert title={t('verification.approved')} tone="success">{t('verification.disclosure.identityUseHelp')}</Alert> : <>
+      {remediation ? <Alert title={t('verification.disclosure.incompleteTitle')} tone="warning">{`${t('verification.disclosure.missingPrefix')}: ${missingDisclosure}. ${t('verification.disclosure.missingHelp')}`}</Alert> : null}
       {latest ? <Card>
         <div className="section-heading"><div><span className="eyebrow">{t('verification.previous')}</span><h2>{t('verification.title')} · {statusLabel(latest.status)}</h2></div><Badge tone={tone(latest.status)}>{statusLabel(latest.status)}</Badge></div>
         {latest.review_note ? <p><strong>{t('verification.platformNote')}</strong> {latest.review_note}</p> : null}
         <p className="summary-note">{latest.status === 'changes_requested' ? t('verification.changesHelp') : t('verification.newHelp')}</p>
       </Card> : null}
       <Card>
-        <h2>{remediation ? text('Complete public marketplace disclosure', 'Public marketplace disclosure-ஐ complete செய்யவும்') : t('verification.start')}</h2>
+        <h2>{remediation ? t('verification.disclosure.completeTitle') : t('verification.start')}</h2>
         <p className="summary-note">{remediation
-          ? text('Submit the missing or corrected disclosure details for platform review. Existing verified status is preserved while this correction is pending.', 'Missing அல்லது corrected disclosure details-ஐ platform review-க்கு submit செய்யவும். Correction pending இருக்கும் போது existing verified status preserve ஆகும்.')
+          ? t('verification.disclosure.completeHelp')
           : t('verification.startHelp')}</p>
-        <Alert title={remediation ? text('Correction requires platform review', 'Correction-க்கு platform review தேவை') : text('Marketplace public-contact requirement', 'Marketplace பொது தொடர்பு தேவை')} tone="info">{text('The legal identity, public contact and grievance officer details entered below will be public only after approval. Use business-facing contact details that consumers can use for service grievances.', 'கீழே உள்ள legal identity, public contact மற்றும் grievance officer விவரங்கள் approval பிறகே public ஆகும். Customers grievance அனுப்ப பயன்படுத்தக்கூடிய business-facing contact details-ஐ பயன்படுத்தவும்.')}</Alert>
+        <Alert title={remediation ? t('verification.disclosure.reviewRequired') : t('verification.disclosure.publicContactRequirement')} tone="info">{t('verification.disclosure.publicContactHelp')}</Alert>
         <form onSubmit={submit} style={{ display: 'grid', gap: '.9rem' }}>
           <Input label={t('verification.legalName')} required maxLength={160} value={form.legal_name} onChange={(event) => setForm({ ...form, legal_name: event.target.value })} />
-          <Input label={text('Public contact phone', 'பொது தொடர்பு தொலைபேசி')} required maxLength={40} value={form.contact_phone} onChange={(event) => setForm({ ...form, contact_phone: event.target.value })} />
+          <Input label={t('verification.missing.publicContactPhone')} required maxLength={40} value={form.contact_phone} onChange={(event) => setForm({ ...form, contact_phone: event.target.value })} />
           <Input label={t('verification.registeredAddress')} required maxLength={500} value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} />
-          <Input label={text('Public contact email', 'பொது தொடர்பு மின்னஞ்சல்')} type="email" required maxLength={254} value={form.public_contact_email} onChange={(event) => setForm({ ...form, public_contact_email: event.target.value })} />
-          <Input label={text('Website URL (optional)', 'Website URL (விருப்பம்)')} type="url" maxLength={300} value={form.website_url} onChange={(event) => setForm({ ...form, website_url: event.target.value })} />
-          <Input label={text('Grievance officer name', 'Grievance officer பெயர்')} required maxLength={160} value={form.grievance_officer_name} onChange={(event) => setForm({ ...form, grievance_officer_name: event.target.value })} />
-          <Input label={text('Grievance officer designation', 'Grievance officer பதவி')} required maxLength={120} value={form.grievance_officer_designation} onChange={(event) => setForm({ ...form, grievance_officer_designation: event.target.value })} />
-          <Input label={text('Grievance email', 'Grievance மின்னஞ்சல்')} type="email" required maxLength={254} value={form.grievance_email} onChange={(event) => setForm({ ...form, grievance_email: event.target.value })} />
-          <Input label={text('Grievance phone', 'Grievance தொலைபேசி')} required maxLength={40} value={form.grievance_phone} onChange={(event) => setForm({ ...form, grievance_phone: event.target.value })} />
+          <Input label={t('verification.missing.publicContactEmail')} type="email" required maxLength={254} value={form.public_contact_email} onChange={(event) => setForm({ ...form, public_contact_email: event.target.value })} />
+          <Input label={t('verification.disclosure.websiteOptional')} type="url" maxLength={300} value={form.website_url} onChange={(event) => setForm({ ...form, website_url: event.target.value })} />
+          <Input label={t('verification.missing.grievanceOfficerName')} required maxLength={160} value={form.grievance_officer_name} onChange={(event) => setForm({ ...form, grievance_officer_name: event.target.value })} />
+          <Input label={t('verification.missing.grievanceOfficerDesignation')} required maxLength={120} value={form.grievance_officer_designation} onChange={(event) => setForm({ ...form, grievance_officer_designation: event.target.value })} />
+          <Input label={t('verification.missing.grievanceEmail')} type="email" required maxLength={254} value={form.grievance_email} onChange={(event) => setForm({ ...form, grievance_email: event.target.value })} />
+          <Input label={t('verification.missing.grievancePhone')} required maxLength={40} value={form.grievance_phone} onChange={(event) => setForm({ ...form, grievance_phone: event.target.value })} />
           <Select label={t('verification.evidenceType')} value={form.evidence_type} onChange={(event) => setForm({ ...form, evidence_type: event.target.value })}><option value="government_id">{evidenceLabel('government_id')}</option><option value="business_registration">{evidenceLabel('business_registration')}</option><option value="professional_license">{evidenceLabel('professional_license')}</option><option value="other">{evidenceLabel('other')}</option></Select>
           <Input label={t('verification.evidenceReference')} required maxLength={120} hint={t('verification.referenceHint')} value={form.evidence_reference} onChange={(event) => setForm({ ...form, evidence_reference: event.target.value })} />
           <label className="field"><span className="field-label">{t('verification.evidenceNote')}</span><textarea className="field-control" rows={4} maxLength={1200} value={form.evidence_note} onChange={(event) => setForm({ ...form, evidence_note: event.target.value })} placeholder={t('verification.notePlaceholder')} /></label>
-          <Button type="submit" loading={busy}>{remediation ? text('Submit disclosure correction', 'Disclosure correction submit செய்யவும்') : t('verification.create')}</Button>
+          <Button type="submit" loading={busy}>{remediation ? t('verification.disclosure.submitCorrection') : t('verification.create')}</Button>
         </form>
       </Card>
     </> : null}
