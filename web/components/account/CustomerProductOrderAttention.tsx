@@ -31,8 +31,7 @@ function tone(eventType: ProductOrderNotification['event_type']) {
 
 export default function CustomerProductOrderAttention({ onUnreadChange }: CustomerProductOrderAttentionProps) {
   const router = useRouter();
-  const { locale } = useIdentityWorkspaceTranslations();
-  const tamil = locale.toLowerCase().startsWith('ta');
+  const { locale, t } = useIdentityWorkspaceTranslations();
   const [count, setCount] = useState(0);
   const [latest, setLatest] = useState<ProductOrderNotification | null>(null);
   const [opening, setOpening] = useState(false);
@@ -96,14 +95,14 @@ export default function CustomerProductOrderAttention({ onUnreadChange }: Custom
     }
   };
 
-  return <section className="customer-product-order-attention" aria-label={tamil ? 'Product order updates' : 'Product order updates'} aria-live="polite">
+  return <section className="customer-product-order-attention" aria-label={t('account.productOrderAttention.aria')} aria-live="polite">
     <Card className="customer-product-order-attention-card">
       <div className="customer-product-order-attention-heading">
         <div>
-          <span className="eyebrow">{tamil ? 'Order கவனம்' : 'Order attention'}</span>
-          <h2>{tamil ? 'உங்கள் Product Order update ஆனது' : 'Your Product Order has an update'}</h2>
+          <span className="eyebrow">{t('account.productOrderAttention.eyebrow')}</span>
+          <h2>{t('account.productOrderAttention.title')}</h2>
         </div>
-        <Badge tone="info">{countLabel} {tamil ? 'புதியது' : count === 1 ? 'new update' : 'new updates'}</Badge>
+        <Badge tone="info">{countLabel} {count === 1 ? t('account.productOrderAttention.newUpdate') : t('account.productOrderAttention.newUpdates')}</Badge>
       </div>
 
       <div className="customer-product-order-attention-latest">
@@ -113,8 +112,8 @@ export default function CustomerProductOrderAttention({ onUnreadChange }: Custom
           <span>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(latest.created_at))}</span>
         </div>
         <div className="customer-product-order-attention-actions">
-          <Button type="button" loading={opening} onClick={() => void reviewLatest()}>{tamil ? 'Latest order பார்க்க' : 'Review latest order'}</Button>
-          <Button type="button" variant="secondary" onClick={() => router.push('/orders')}>{tamil ? 'அனைத்து orders' : 'All orders'}</Button>
+          <Button type="button" loading={opening} onClick={() => void reviewLatest()}>{t('account.productOrderAttention.reviewLatest')}</Button>
+          <Button type="button" variant="secondary" onClick={() => router.push('/orders')}>{t('account.productOrderAttention.allOrders')}</Button>
         </div>
       </div>
 
