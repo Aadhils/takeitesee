@@ -53,8 +53,7 @@ function bookingMoment(booking: CustomerBooking) {
 
 export default function CustomerSmartAttention({ bookings }: { bookings: CustomerBooking[] }) {
   const router = useRouter();
-  const { locale } = useOperationalTranslations();
-  const tamil = locale.toLowerCase().startsWith('ta');
+  const { t } = useOperationalTranslations();
   const [requirements, setRequirements] = useState<RequirementAttentionRow[]>([]);
   const [unscheduledRequirement, setUnscheduledRequirement] = useState<RequirementAttentionRow | null>(null);
   const [orderCount, setOrderCount] = useState(0);
@@ -134,12 +133,10 @@ export default function CustomerSmartAttention({ bookings }: { bookings: Custome
     if (completion) {
       return {
         kind: 'completion',
-        title: tamil ? 'Service முடிந்ததா என்பதை உறுதி செய்யுங்கள்' : 'Confirm whether your service was completed',
-        body: tamil
-          ? `${completion.serviceName} service-க்கு உங்கள் acknowledgement தேவை. சரியாக முடிந்திருந்தால் confirm செய்யுங்கள்; issue இருந்தால் confirm செய்யாமல் support/chat பயன்படுத்தலாம்.`
-          : `Your ${completion.serviceName} service needs your acknowledgement. Confirm it if everything is complete; if there is an issue, use chat or support instead.`,
+        title: t('customer.attention.completionTitle'),
+        body: t('customer.attention.completionBody').replace('{serviceName}', completion.serviceName),
         href: `/bookings/${encodeURIComponent(completion.bookingId)}#requirement-completion`,
-        badge: tamil ? 'Action needed' : 'Action needed',
+        badge: t('customer.attention.actionNeeded'),
         bookingId: completion.bookingId,
       };
     }
@@ -151,14 +148,12 @@ export default function CustomerSmartAttention({ bookings }: { bookings: Custome
       const proposalRef = proposal.latest_unread_proposal_reference || proposal.latest_proposal_reference;
       return {
         kind: 'proposal',
-        title: tamil ? 'புதிய Provider proposal வந்துள்ளது' : 'A new provider proposal is ready',
-        body: tamil
-          ? `“${proposal.title}” requirement-க்கு புதிய reply வந்துள்ளது. Profile, quote மற்றும் service details-ஐ ஒரே இடத்தில் compare செய்யலாம்.`
-          : `A provider replied to “${proposal.title}”. Compare the profile, quote and service details in one place.`,
+        title: t('customer.attention.proposalTitle'),
+        body: t('customer.attention.proposalBody').replace('{title}', proposal.title),
         href: proposalRef
           ? `/requirements/${encodeURIComponent(proposal.id)}?proposal=${encodeURIComponent(proposalRef)}`
           : `/requirements/${encodeURIComponent(proposal.id)}`,
-        badge: `${Math.max(1, proposal.unread_proposal_count ?? 1)} ${tamil ? 'new' : 'new'}`,
+        badge: `${Math.max(1, proposal.unread_proposal_count ?? 1)} ${t('customer.attention.new')}`,
         requirementId: proposal.id,
       };
     }
@@ -166,26 +161,24 @@ export default function CustomerSmartAttention({ bookings }: { bookings: Custome
     if (unscheduledRequirement) {
       return {
         kind: 'schedule',
-        title: tamil ? 'Provider தேர்வு முடிந்தது — service time தேர்வு செய்யுங்கள்' : 'Provider chosen — choose your service time',
-        body: tamil
-          ? `“${unscheduledRequirement.title}” service-க்கு Provider already தேர்வு செய்யப்பட்டுள்ளார். Date/time தேர்வு செய்தால் journey அடுத்த stage-க்கு நகரும்.`
-          : `A provider is already chosen for “${unscheduledRequirement.title}”. Choose the date and time to move the service journey forward.`,
+        title: t('customer.attention.scheduleTitle'),
+        body: t('customer.attention.scheduleBody').replace('{title}', unscheduledRequirement.title),
         href: `/requirements/${encodeURIComponent(unscheduledRequirement.id)}#requirement-service-job`,
-        badge: tamil ? 'Action needed' : 'Action needed',
+        badge: t('customer.attention.actionNeeded'),
       };
     }
 
     const message = conversations.find((row) => Math.max(0, Number(row.unread_count ?? 0)) > 0);
     if (message) {
-      const context = message.requirement_title || message.product_name || message.job_title || (tamil ? 'conversation' : 'conversation');
+      const context = message.requirement_title || message.product_name || message.job_title || t('customer.attention.conversation');
       return {
         kind: 'message',
-        title: tamil ? `${message.counterpart_name}-இடமிருந்து புதிய message` : `New message from ${message.counterpart_name}`,
+        title: t('customer.attention.messageTitle').replace('{counterpartName}', message.counterpart_name),
         body: message.last_message_body
           ? `${context} · ${message.last_message_body}`
-          : (tamil ? `${context} conversation-ஐ தொடருங்கள்.` : `Continue your ${context} conversation.`),
+          : t('customer.attention.messageContinue').replace('{context}', context),
         href: `/messages?conversation=${encodeURIComponent(message.id)}`,
-        badge: `${Math.max(1, Number(message.unread_count ?? 1))} ${tamil ? 'unread' : 'unread'}`,
+        badge: `${Math.max(1, Number(message.unread_count ?? 1))} ${t('customer.attention.unread')}`,
       };
     }
 
@@ -194,10 +187,10 @@ export default function CustomerSmartAttention({ bookings }: { bookings: Custome
       const match = safeOrderTarget.match(/^\/orders\/([0-9a-f-]+)$/i);
       return {
         kind: 'order',
-        title: latestOrder.title || (tamil ? 'Product Order update' : 'Product Order update'),
-        body: latestOrder.body || (tamil ? 'உங்கள் order-ல் புதிய update உள்ளது.' : 'There is a new update on your order.'),
+        title: latestOrder.title || t('customer.attention.orderTitle'),
+        body: latestOrder.body || t('customer.attention.orderBody'),
         href: safeOrderTarget,
-        badge: `${orderCount > 99 ? '99+' : orderCount} ${tamil ? 'new' : 'new'}`,
+        badge: `${orderCount > 99 ? '99+' : orderCount} ${t('customer.attention.new')}`,
         orderId: match?.[1] ?? null,
       };
     }
@@ -210,26 +203,24 @@ export default function CustomerSmartAttention({ bookings }: { bookings: Custome
       return {
         kind: 'service',
         title: waiting
-          ? (tamil ? 'Provider confirmation காத்திருக்கிறது' : 'Waiting for provider confirmation')
-          : (tamil ? 'உங்கள் அடுத்த service ready' : 'Your next service is ready'),
+          ? t('customer.attention.waitingTitle')
+          : t('customer.attention.nextServiceTitle'),
         body: waiting
-          ? (tamil ? `${nextService.serviceName} request அனுப்பப்பட்டுள்ளது. இப்போது வேறு action தேவையில்லை; status மாறும்போது இங்கே காட்டப்படும்.` : `Your ${nextService.serviceName} request is with the provider. No action is needed now; this card will update when the status changes.`)
+          ? t('customer.attention.waitingBody').replace('{serviceName}', nextService.serviceName)
           : `${nextService.serviceName} · ${nextService.bookingDate} · ${String(nextService.startTime).slice(0, 5)}`,
         href: `/bookings/${encodeURIComponent(nextService.bookingId)}`,
-        badge: waiting ? (tamil ? 'Waiting' : 'Waiting') : (tamil ? 'Next up' : 'Next up'),
+        badge: waiting ? t('customer.attention.waiting') : t('customer.attention.nextUp'),
       };
     }
 
     return {
       kind: 'clear',
-      title: tamil ? 'இப்போது செய்ய வேண்டிய urgent action இல்லை' : 'You are all caught up',
-      body: tamil
-        ? 'புதிய proposal, message, order update அல்லது service action வந்தால் இந்த card தானாக மாறும்.'
-        : 'This card will update automatically when a proposal, message, order update or service action needs your attention.',
+      title: t('customer.attention.clearTitle'),
+      body: t('customer.attention.clearBody'),
       href: '/explore',
-      badge: tamil ? 'Clear' : 'Clear',
+      badge: t('customer.attention.clearBadge'),
     };
-  }, [bookings, conversations, latestOrder, orderCount, requirements, tamil, unscheduledRequirement]);
+  }, [bookings, conversations, latestOrder, orderCount, requirements, t, unscheduledRequirement]);
 
   const openAttention = async () => {
     if (opening) return;
@@ -262,23 +253,23 @@ export default function CustomerSmartAttention({ bookings }: { bookings: Custome
   const informational = attention.kind === 'service';
   const tone = clear ? 'success' : informational ? 'info' : 'warning';
   const actionLabel = attention.kind === 'completion'
-    ? (tamil ? 'Service-ஐ check செய்' : 'Review service')
+    ? t('customer.attention.reviewService')
     : attention.kind === 'proposal'
-      ? (tamil ? 'Proposal review செய்' : 'Review proposal')
+      ? t('customer.attention.reviewProposal')
       : attention.kind === 'schedule'
-        ? (tamil ? 'Service time தேர்வு செய்' : 'Choose service time')
+        ? t('customer.attention.chooseServiceTime')
       : attention.kind === 'message'
-        ? (tamil ? 'Message திற' : 'Open message')
+        ? t('customer.attention.openMessage')
         : attention.kind === 'order'
-          ? (tamil ? 'Order update பார்க்க' : 'Review order update')
+          ? t('customer.attention.reviewOrderUpdate')
           : attention.kind === 'service'
-            ? (tamil ? 'Service journey பார்க்க' : 'Open service journey')
-            : (tamil ? 'Services தேடு' : 'Explore services');
+            ? t('customer.attention.openServiceJourney')
+            : t('customer.attention.exploreServices');
 
   return <Card className={`customer-smart-attention customer-smart-attention-${attention.kind}`}>
     <div className="customer-smart-attention-head">
       <div>
-        <span className="eyebrow">{tamil ? 'இப்போது முக்கியம்' : 'What needs my attention now?'}</span>
+        <span className="eyebrow">{t('customer.attention.eyebrow')}</span>
         <h2>{attention.title}</h2>
       </div>
       <Badge tone={tone}>{attention.badge}</Badge>
@@ -286,7 +277,7 @@ export default function CustomerSmartAttention({ bookings }: { bookings: Custome
     <p className="detail-copy">{attention.body}</p>
     <div className="customer-smart-attention-actions">
       <Button type="button" variant={clear ? 'secondary' : 'primary'} loading={opening} onClick={() => void openAttention()}>{actionLabel}</Button>
-      {!clear && attention.kind !== 'service' && attention.kind !== 'schedule' ? <Button type="button" variant="quiet" onClick={() => router.push('/notifications')}>{tamil ? 'அனைத்து updates' : 'All updates'}</Button> : null}
+      {!clear && attention.kind !== 'service' && attention.kind !== 'schedule' ? <Button type="button" variant="quiet" onClick={() => router.push('/notifications')}>{t('customer.attention.allUpdates')}</Button> : null}
     </div>
 
     <style jsx global>{`
