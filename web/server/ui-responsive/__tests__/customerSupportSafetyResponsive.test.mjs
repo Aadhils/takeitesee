@@ -47,6 +47,6 @@ test('Customer Safety Reports privacy and status-history contracts remain presen
   assert.ok(reportsRouteSource.includes("'open' | 'reviewing' | 'actioned' | 'dismissed'"));
   assert.ok(reportsRouteSource.includes('/login?returnTo=%2Faccount%2Freports'));
   assert.ok(reportsRouteSource.includes('href="/account/support"'));
-  assert.ok(reportsRouteSource.includes('Internal moderator notes and staff identifiers are not exposed.'));
+  assert.ok(reportsRouteSource.includes("t('reports.visibility.body')"));
   assert.ok(reportsRouteSource.includes('report.events.map'));
 });
