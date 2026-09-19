@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
+import { useEmployerHiringTranslations, type EmployerHiringKey } from '../i18n/EmployerHiringTranslations';
 import { EmployerApplicantResumeReview } from './EmployerApplicantResumeReview';
 import { JobOfferWorkspace } from './JobOfferWorkspace';
 import styles from './JobMarketplace.module.css';
@@ -20,6 +20,44 @@ type JobForm = { title:string; description:string; employment_type:string; workp
 type Tab = 'jobs'|'applicants'|'interviews'|'offers';
 
 function label(value:string){ return value.replaceAll('_',' ').replace(/\b\w/g,(letter)=>letter.toUpperCase()); }
+const localizedLabelKeys:Partial<Record<string,EmployerHiringKey>>={
+  full_time:'employerHiring.employment.fullTime',
+  part_time:'employerHiring.employment.partTime',
+  contract:'employerHiring.employment.contract',
+  freelance:'employerHiring.employment.freelance',
+  internship:'employerHiring.employment.internship',
+  temporary:'employerHiring.employment.temporary',
+  onsite:'employerHiring.workplace.onsite',
+  remote:'employerHiring.workplace.remote',
+  hybrid:'employerHiring.workplace.hybrid',
+  hour:'employerHiring.period.hour',
+  day:'employerHiring.period.day',
+  month:'employerHiring.period.month',
+  year:'employerHiring.period.year',
+  project:'employerHiring.period.project',
+  draft:'employerHiring.jobStatus.draft',
+  open:'employerHiring.jobStatus.open',
+  closed:'employerHiring.jobStatus.closed',
+  filled:'employerHiring.jobStatus.filled',
+  submitted:'employerHiring.applicationStatus.submitted',
+  shortlisted:'employerHiring.applicationStatus.shortlisted',
+  interview:'employerHiring.applicationStatus.interview',
+  hired:'employerHiring.applicationStatus.hired',
+  rejected:'employerHiring.applicationStatus.rejected',
+  withdrawn:'employerHiring.applicationStatus.withdrawn',
+  scheduled:'employerHiring.interviewStatus.scheduled',
+  accepted:'employerHiring.interviewStatus.accepted',
+  declined:'employerHiring.interviewStatus.declined',
+  cancelled:'employerHiring.interviewStatus.cancelled',
+  in_person:'employerHiring.interviewMode.inPerson',
+  phone:'employerHiring.interviewMode.phone',
+  video:'employerHiring.interviewMode.video',
+  rescheduled:'employerHiring.interviewEvent.rescheduled',
+};
+function localizedLabel(value:string,t:(key:EmployerHiringKey)=>string){
+  const key=localizedLabelKeys[value];
+  return key?t(key):label(value);
+}
 function salary(job:Job){
   if(job.salary_min_minor==null&&job.salary_max_minor==null) return null;
   const formatter=new Intl.NumberFormat('en-IN',{style:'currency',currency:job.salary_currency||'INR',maximumFractionDigits:0});
@@ -77,33 +115,32 @@ function formFromInterview(interview?:Interview):InterviewForm{
   return {starts_at:localInputDate(interview?.starts_at),duration_minutes:String(interview?.duration_minutes??30),timezone:interview?.timezone||browserTimezone(),mode:interview?.mode||'video',location:interview?.location||'',meeting_url:interview?.meeting_url||'',note:interview?.note||''};
 }
 
-function JobTermsFields({value,onChange,ta}:{value:JobForm;onChange:(patch:Partial<JobForm>)=>void;ta:boolean}){
+function JobTermsFields({value,onChange,t}:{value:JobForm;onChange:(patch:Partial<JobForm>)=>void;t:(key:EmployerHiringKey)=>string}){
   const skillPreview=value.required_skills.split(',').map((item)=>item.trim()).filter(Boolean).slice(0,8);
   return <>
-    <div className={styles.formSection}><h3>{ta?'Job Basics':'Job basics'}</h3><div className={styles.formGrid}>
-      <label className={`${styles.label} ${styles.wide}`}>Job title<input className={styles.input} value={value.title} maxLength={180} placeholder="e.g. Front Office Executive" onChange={(e)=>onChange({title:e.target.value})}/></label>
-      <label className={`${styles.label} ${styles.wide}`}>Description<textarea className={styles.textarea} value={value.description} maxLength={5000} placeholder="Describe the role, responsibilities and ideal candidate." onChange={(e)=>onChange({description:e.target.value})}/></label>
-      <label className={styles.label}>Employment<select className={styles.select} value={value.employment_type} onChange={(e)=>onChange({employment_type:e.target.value})}>{['full_time','part_time','contract','freelance','internship','temporary'].map((item)=><option value={item} key={item}>{label(item)}</option>)}</select></label>
-      <label className={styles.label}>Workplace<select className={styles.select} value={value.workplace_type} onChange={(e)=>onChange({workplace_type:e.target.value})}>{['onsite','remote','hybrid'].map((item)=><option value={item} key={item}>{label(item)}</option>)}</select></label>
-      <label className={styles.label}>Location<input className={styles.input} value={value.location} maxLength={180} placeholder="Trichy, Tamil Nadu" onChange={(e)=>onChange({location:e.target.value})}/></label>
+    <div className={styles.formSection}><h3>{t('employerHiring.terms.basics')}</h3><div className={styles.formGrid}>
+      <label className={`${styles.label} ${styles.wide}`}>{t('employerHiring.terms.title')}<input className={styles.input} value={value.title} maxLength={180} placeholder={t('employerHiring.terms.titlePlaceholder')} onChange={(e)=>onChange({title:e.target.value})}/></label>
+      <label className={`${styles.label} ${styles.wide}`}>{t('employerHiring.terms.description')}<textarea className={styles.textarea} value={value.description} maxLength={5000} placeholder={t('employerHiring.terms.descriptionPlaceholder')} onChange={(e)=>onChange({description:e.target.value})}/></label>
+      <label className={styles.label}>{t('employerHiring.terms.employment')}<select className={styles.select} value={value.employment_type} onChange={(e)=>onChange({employment_type:e.target.value})}>{['full_time','part_time','contract','freelance','internship','temporary'].map((item)=><option value={item} key={item}>{localizedLabel(item,t)}</option>)}</select></label>
+      <label className={styles.label}>{t('employerHiring.terms.workplace')}<select className={styles.select} value={value.workplace_type} onChange={(e)=>onChange({workplace_type:e.target.value})}>{['onsite','remote','hybrid'].map((item)=><option value={item} key={item}>{localizedLabel(item,t)}</option>)}</select></label>
+      <label className={styles.label}>{t('employerHiring.terms.location')}<input className={styles.input} value={value.location} maxLength={180} placeholder={t('employerHiring.terms.locationPlaceholder')} onChange={(e)=>onChange({location:e.target.value})}/></label>
     </div></div>
-    <div className={styles.formSection}><h3>{ta?'Requirements':'Requirements'}</h3><div className={styles.formGrid}>
-      <label className={`${styles.label} ${styles.wide}`}>Required skills<input className={styles.input} value={value.required_skills} placeholder="Communication, Excel, Customer service" onChange={(e)=>onChange({required_skills:e.target.value})}/>{skillPreview.length?<span className={styles.skillPreview}>{skillPreview.map((skill)=><span className={styles.pill} key={skill}>{skill}</span>)}</span>:<span className={styles.fieldHint}>Separate skills with commas.</span>}</label>
-      <label className={styles.label}>Min. experience<input className={styles.input} type="number" min="0" max="50" value={value.minimum_experience_years} placeholder="0" onChange={(e)=>onChange({minimum_experience_years:e.target.value})}/></label>
-      <label className={styles.label}>Openings<input className={styles.input} type="number" min="1" max="500" value={value.openings} onChange={(e)=>onChange({openings:e.target.value})}/></label>
-      <label className={styles.label}>Application deadline<input className={styles.input} type="date" value={value.application_deadline} onChange={(e)=>onChange({application_deadline:e.target.value})}/></label>
+    <div className={styles.formSection}><h3>{t('employerHiring.terms.requirements')}</h3><div className={styles.formGrid}>
+      <label className={`${styles.label} ${styles.wide}`}>{t('employerHiring.terms.requiredSkills')}<input className={styles.input} value={value.required_skills} placeholder={t('employerHiring.terms.skillsPlaceholder')} onChange={(e)=>onChange({required_skills:e.target.value})}/>{skillPreview.length?<span className={styles.skillPreview}>{skillPreview.map((skill)=><span className={styles.pill} key={skill}>{skill}</span>)}</span>:<span className={styles.fieldHint}>{t('employerHiring.terms.skillsHint')}</span>}</label>
+      <label className={styles.label}>{t('employerHiring.terms.minExperience')}<input className={styles.input} type="number" min="0" max="50" value={value.minimum_experience_years} placeholder="0" onChange={(e)=>onChange({minimum_experience_years:e.target.value})}/></label>
+      <label className={styles.label}>{t('employerHiring.terms.openings')}<input className={styles.input} type="number" min="1" max="500" value={value.openings} onChange={(e)=>onChange({openings:e.target.value})}/></label>
+      <label className={styles.label}>{t('employerHiring.terms.deadline')}<input className={styles.input} type="date" value={value.application_deadline} onChange={(e)=>onChange({application_deadline:e.target.value})}/></label>
     </div></div>
-    <div className={styles.formSection}><h3>{ta?'Compensation':'Compensation'}</h3><p className={styles.fieldHint}>{ta?'Salary தகவல் informational employment term மட்டும்.':'Salary information is an employment term only.'}</p><div className={styles.formGrid}>
-      <label className={styles.label}>From ({value.salary_currency})<input className={styles.input} type="number" min="0" value={value.salary_min} placeholder="25000" onChange={(e)=>onChange({salary_min:e.target.value})}/></label>
-      <label className={styles.label}>To ({value.salary_currency})<input className={styles.input} type="number" min="0" value={value.salary_max} placeholder="35000" onChange={(e)=>onChange({salary_max:e.target.value})}/></label>
-      <label className={styles.label}>Period<select className={styles.select} value={value.salary_period} onChange={(e)=>onChange({salary_period:e.target.value})}>{['hour','day','month','year','project'].map((item)=><option value={item} key={item}>{label(item)}</option>)}</select></label>
+    <div className={styles.formSection}><h3>{t('employerHiring.terms.compensation')}</h3><p className={styles.fieldHint}>{t('employerHiring.terms.compensationHint')}</p><div className={styles.formGrid}>
+      <label className={styles.label}>{t('employerHiring.terms.from')} ({value.salary_currency})<input className={styles.input} type="number" min="0" value={value.salary_min} placeholder="25000" onChange={(e)=>onChange({salary_min:e.target.value})}/></label>
+      <label className={styles.label}>{t('employerHiring.terms.to')} ({value.salary_currency})<input className={styles.input} type="number" min="0" value={value.salary_max} placeholder="35000" onChange={(e)=>onChange({salary_max:e.target.value})}/></label>
+      <label className={styles.label}>{t('employerHiring.terms.period')}<select className={styles.select} value={value.salary_period} onChange={(e)=>onChange({salary_period:e.target.value})}>{['hour','day','month','year','project'].map((item)=><option value={item} key={item}>{localizedLabel(item,t)}</option>)}</select></label>
     </div></div>
   </>;
 }
 
 export function EmployerHiringWorkspace(){
-  const { locale }=useIdentityWorkspaceTranslations();
-  const ta=locale.toLowerCase().startsWith('ta');
+  const { locale,t }=useEmployerHiringTranslations();
   const [workspace,setWorkspace]=useState<Workspace|null>(null);
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
@@ -124,17 +161,17 @@ export function EmployerHiringWorkspace(){
         fetch('/api/provider/job-offers',{cache:'no-store'}),
       ]);
       const payload=await workspaceResponse.json() as Workspace & {error?:string};
-      if(!workspaceResponse.ok) throw new Error(payload.error||'Unable to load hiring workspace.');
-      if(payload.mode!=='business') throw new Error('Business hiring workspace is unavailable for this account.');
+      if(!workspaceResponse.ok) throw new Error(payload.error||t('employerHiring.loadFallback'));
+      if(payload.mode!=='business') throw new Error(t('employerHiring.unavailable'));
       setWorkspace(payload);
       if(offerResponse.ok){
         const offers=await offerResponse.json() as OfferWorkspace;
         setPendingOffers((offers.offers??[]).filter((offer)=>offer.status==='pending').length);
       }
     }catch(error){
-      setMessage({tone:'error',text:error instanceof Error?error.message:'Unable to load hiring workspace.'});
+      setMessage({tone:'error',text:error instanceof Error?error.message:t('employerHiring.loadFallback')});
     }finally{setLoading(false);}
-  },[]);
+  },[t]);
   useEffect(()=>{void load();},[load]);
 
   const jobsById=useMemo(()=>new Map((workspace?.jobs??[]).map((job)=>[job.id,job])),[workspace]);
@@ -160,12 +197,12 @@ export function EmployerHiringWorkspace(){
     try{
       const response=await fetch('/api/jobs',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({...jobPayload(form),status})});
       const payload=await response.json() as {error?:string};
-      if(!response.ok) throw new Error(payload.error||'Unable to create job.');
+      if(!response.ok) throw new Error(payload.error||t('employerHiring.createFallback'));
       setForm(emptyJobForm());
       setShowCreate(false);
-      setMessage({tone:'success',text:status==='open'?(ta?'Job publish செய்யப்பட்டது.':'Job published successfully.'):(ta?'Job draft save செய்யப்பட்டது.':'Job saved as draft.')});
+      setMessage({tone:'success',text:status==='open'?t('employerHiring.job.published'):t('employerHiring.job.draftSaved')});
       await load();
-    }catch(error){setMessage({tone:'error',text:error instanceof Error?error.message:'Unable to create job.'});}
+    }catch(error){setMessage({tone:'error',text:error instanceof Error?error.message:t('employerHiring.createFallback')});}
     finally{setSaving(false);}
   }
 
@@ -174,11 +211,11 @@ export function EmployerHiringWorkspace(){
     try{
       const response=await fetch('/api/jobs',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({job_id:jobId,...jobPayload(editForm)})});
       const payload=await response.json() as {error?:string};
-      if(!response.ok) throw new Error(payload.error||'Unable to update job.');
+      if(!response.ok) throw new Error(payload.error||t('employerHiring.updateJobFallback'));
       setEditingJobId(null);
-      setMessage({tone:'success',text:ta?'Job details update செய்யப்பட்டது.':'Job details updated.'});
+      setMessage({tone:'success',text:t('employerHiring.job.updated')});
       await load();
-    }catch(error){setMessage({tone:'error',text:error instanceof Error?error.message:'Unable to update job.'});}
+    }catch(error){setMessage({tone:'error',text:error instanceof Error?error.message:t('employerHiring.updateJobFallback')});}
     finally{setSaving(false);}
   }
 
@@ -187,10 +224,10 @@ export function EmployerHiringWorkspace(){
     try{
       const response=await fetch('/api/provider/job-marketplace',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
       const payload=await response.json() as {error?:string};
-      if(!response.ok) throw new Error(payload.error||'Unable to update.');
-      setMessage({tone:'success',text:ta?'Update வெற்றிகரமாக முடிந்தது.':'Update completed.'});
+      if(!response.ok) throw new Error(payload.error||t('employerHiring.updateFallback'));
+      setMessage({tone:'success',text:t('employerHiring.update.completed')});
       await load();
-    }catch(error){setMessage({tone:'error',text:error instanceof Error?error.message:'Unable to update.'});}
+    }catch(error){setMessage({tone:'error',text:error instanceof Error?error.message:t('employerHiring.updateFallback')});}
     finally{setSaving(false);}
   }
 
@@ -199,10 +236,10 @@ export function EmployerHiringWorkspace(){
     try{
       const response=await fetch('/api/provider/job-interviews',{method,headers:{'content-type':'application/json'},body:JSON.stringify(body)});
       const payload=await response.json() as {error?:string};
-      if(!response.ok) throw new Error(payload.error||'Unable to update interview.');
-      setMessage({tone:'success',text:ta?'Interview update வெற்றிகரமாக முடிந்தது.':'Interview updated.'});
+      if(!response.ok) throw new Error(payload.error||t('employerHiring.interviewFallback'));
+      setMessage({tone:'success',text:t('employerHiring.interview.updated')});
       await load();
-    }catch(error){setMessage({tone:'error',text:error instanceof Error?error.message:'Unable to update interview.'});}
+    }catch(error){setMessage({tone:'error',text:error instanceof Error?error.message:t('employerHiring.interviewFallback')});}
     finally{setSaving(false);}
   }
 
@@ -217,82 +254,82 @@ export function EmployerHiringWorkspace(){
     else await interviewMutation('POST',body);
   }
 
-  if(loading&&!workspace) return <div className={styles.empty}>{ta?'Hiring workspace ஏற்றப்படுகிறது…':'Loading hiring workspace…'}</div>;
+  if(loading&&!workspace) return <div className={styles.empty}>{t('employerHiring.loading')}</div>;
   if(!workspace) return <div className={styles.page}>{message?<div className={`${styles.alert} ${styles.error}`}>{message.text}</div>:null}</div>;
 
   const tabs:Array<{id:Tab;label:string;count:number}>=[
-    {id:'jobs',label:ta?'Jobs':'Jobs',count:workspace.jobs.length},
-    {id:'applicants',label:ta?'Applicants':'Applicants',count:applications},
-    {id:'interviews',label:ta?'Interviews':'Interviews',count:upcomingInterviews},
-    {id:'offers',label:ta?'Offers':'Offers',count:pendingOffers},
+    {id:'jobs',label:t('employerHiring.tabs.jobs'),count:workspace.jobs.length},
+    {id:'applicants',label:t('employerHiring.tabs.applicants'),count:applications},
+    {id:'interviews',label:t('employerHiring.tabs.interviews'),count:upcomingInterviews},
+    {id:'offers',label:t('employerHiring.tabs.offers'),count:pendingOffers},
   ];
 
   return <div className={styles.page}>
     <section className={`${styles.hero} ${styles.hiringHero}`}>
       <div className={styles.heroMain}>
-        <span className={styles.eyebrow}>{ta?'Employer workspace':'Employer workspace'}</span>
-        <h1>{ta?'Hiring Workspace':'Hiring workspace'}</h1>
-        <p className={styles.muted}>{ta?'Jobs publish செய்து applicants, interviews மற்றும் offers அனைத்தையும் ஒரே இடத்தில் manage செய்யுங்கள்.':'Manage jobs, applicants, interviews and employment offers from one focused workspace.'}</p>
+        <span className={styles.eyebrow}>{t('employerHiring.hero.eyebrow')}</span>
+        <h1>{t('employerHiring.hero.title')}</h1>
+        <p className={styles.muted}>{t('employerHiring.hero.intro')}</p>
       </div>
       <div className={styles.heroActions}>
-        <Link className={`${styles.button} ${styles.secondary}`} href="/jobs">{ta?'Public Jobs பார்க்க':'View public jobs'}</Link>
-        <button className={styles.button} type="button" onClick={()=>{setActiveTab('jobs');setEditingJobId(null);setShowCreate((value)=>!value);}}>{showCreate?(ta?'Form Close':'Close form'):(ta?'+ Job உருவாக்க':'+ Create job')}</button>
+        <Link className={`${styles.button} ${styles.secondary}`} href="/jobs">{t('employerHiring.hero.viewPublicJobs')}</Link>
+        <button className={styles.button} type="button" onClick={()=>{setActiveTab('jobs');setEditingJobId(null);setShowCreate((value)=>!value);}}>{showCreate?t('employerHiring.hero.closeForm'):t('employerHiring.hero.createJob')}</button>
       </div>
-      {!workspace.business.verified?<div className={`${styles.alert} ${styles.error}`}>{ta?'Open job publish செய்ய Business verification தேவை.':'Verify your business before publishing an open job.'}</div>:null}
+      {!workspace.business.verified?<div className={`${styles.alert} ${styles.error}`}>{t('employerHiring.hero.verifyBusiness')}</div>:null}
     </section>
 
-    <section className={styles.statsGrid} aria-label="Hiring overview">
-      <button className={styles.statCard} type="button" onClick={()=>setActiveTab('jobs')}><span>{ta?'Open Jobs':'Open jobs'}</span><strong>{openJobs}</strong><small>{ta?'Live opportunities':'Live opportunities'}</small></button>
-      <button className={styles.statCard} type="button" onClick={()=>setActiveTab('applicants')}><span>{ta?'Applicants':'Applicants'}</span><strong>{applications}</strong><small>{ta?'Across all jobs':'Across all jobs'}</small></button>
-      <button className={styles.statCard} type="button" onClick={()=>setActiveTab('interviews')}><span>{ta?'Upcoming Interviews':'Upcoming interviews'}</span><strong>{upcomingInterviews}</strong><small>{ta?'Scheduled / accepted':'Scheduled / accepted'}</small></button>
-      <button className={styles.statCard} type="button" onClick={()=>setActiveTab('offers')}><span>{ta?'Pending Offers':'Pending offers'}</span><strong>{pendingOffers}</strong><small>{ta?'Awaiting decision':'Awaiting decision'}</small></button>
+    <section className={styles.statsGrid} aria-label={t('employerHiring.overview.aria')}>
+      <button className={styles.statCard} type="button" onClick={()=>setActiveTab('jobs')}><span>{t('employerHiring.overview.openJobs')}</span><strong>{openJobs}</strong><small>{t('employerHiring.overview.liveOpportunities')}</small></button>
+      <button className={styles.statCard} type="button" onClick={()=>setActiveTab('applicants')}><span>{t('employerHiring.overview.applicants')}</span><strong>{applications}</strong><small>{t('employerHiring.overview.acrossAllJobs')}</small></button>
+      <button className={styles.statCard} type="button" onClick={()=>setActiveTab('interviews')}><span>{t('employerHiring.overview.upcomingInterviews')}</span><strong>{upcomingInterviews}</strong><small>{t('employerHiring.overview.scheduledAccepted')}</small></button>
+      <button className={styles.statCard} type="button" onClick={()=>setActiveTab('offers')}><span>{t('employerHiring.overview.pendingOffers')}</span><strong>{pendingOffers}</strong><small>{t('employerHiring.overview.awaitingDecision')}</small></button>
     </section>
 
     {message?<div className={`${styles.alert} ${message.tone==='error'?styles.error:styles.success}`}>{message.text}</div>:null}
 
-    <nav className={styles.workspaceTabs} aria-label="Hiring workspace sections">
+    <nav className={styles.workspaceTabs} aria-label={t('employerHiring.tabs.aria')}>
       {tabs.map((tab)=><button key={tab.id} className={`${styles.tabButton} ${activeTab===tab.id?styles.tabActive:''}`} type="button" onClick={()=>setActiveTab(tab.id)}><span>{tab.label}</span><span className={styles.tabCount}>{tab.count}</span></button>)}
     </nav>
 
     {activeTab==='jobs'?<section className={styles.section}>
       {showCreate?<div className={`${styles.card} ${styles.createCard}`}>
-        <div className={styles.sectionHeading}><div><span className={styles.eyebrow}>{ta?'New opportunity':'New opportunity'}</span><h2>{ta?'Create Job':'Create a job'}</h2><p className={styles.muted}>{ta?'தேவையான தகவலை மட்டும் கொடுத்து Draft save செய்யலாம் அல்லது உடனே Publish செய்யலாம்.':'Add the essentials, then save a draft or publish when you are ready.'}</p></div></div>
-        <JobTermsFields value={form} onChange={(value)=>setForm((current)=>({...current,...value}))} ta={ta}/>
-        <div className={`${styles.actions} ${styles.formActions}`}><button className={`${styles.button} ${styles.secondary}`} disabled={saving||!form.title.trim()||!form.description.trim()} type="button" onClick={()=>void createJob('draft')}>{ta?'Draft Save':'Save draft'}</button><button className={styles.button} disabled={saving||!workspace.business.verified||!form.title.trim()||!form.description.trim()} type="button" onClick={()=>void createJob('open')}>{saving?(ta?'Saving…':'Saving…'):(ta?'Publish Job':'Publish job')}</button></div>
+        <div className={styles.sectionHeading}><div><span className={styles.eyebrow}>{t('employerHiring.create.eyebrow')}</span><h2>{t('employerHiring.create.title')}</h2><p className={styles.muted}>{t('employerHiring.create.intro')}</p></div></div>
+        <JobTermsFields value={form} onChange={(value)=>setForm((current)=>({...current,...value}))} t={t}/>
+        <div className={`${styles.actions} ${styles.formActions}`}><button className={`${styles.button} ${styles.secondary}`} disabled={saving||!form.title.trim()||!form.description.trim()} type="button" onClick={()=>void createJob('draft')}>{t('employerHiring.create.saveDraft')}</button><button className={styles.button} disabled={saving||!workspace.business.verified||!form.title.trim()||!form.description.trim()} type="button" onClick={()=>void createJob('open')}>{saving?t('employerHiring.common.saving'):t('employerHiring.create.publish')}</button></div>
       </div>:null}
 
-      <div className={styles.sectionHeading}><div><h2>{ta?'Job Postings':'Job postings'}</h2><p className={styles.muted}>{ta?'உங்கள் active, draft மற்றும் closed jobs அனைத்தையும் இங்கே manage செய்யலாம்.':'Manage active, draft and closed opportunities here.'}</p></div>{!showCreate?<button className={styles.button} type="button" onClick={()=>{setEditingJobId(null);setShowCreate(true);}}>+ {ta?'Create Job':'Create job'}</button>:null}</div>
-      {!workspace.jobs.length?<div className={`${styles.empty} ${styles.emptyState}`}><span className={styles.emptyIcon}>＋</span><strong>{ta?'முதல் Job உருவாக்குங்கள்':'Create your first job'}</strong><span>{ta?'Job publish செய்த பிறகு applicants இந்த workspace-ல் வரத் தொடங்குவார்கள்.':'Publish an opportunity and applicants will start appearing in this workspace.'}</span><button className={styles.button} type="button" onClick={()=>{setEditingJobId(null);setShowCreate(true);}}>{ta?'Create Job':'Create job'}</button></div>:<div className={styles.jobList}>{workspace.jobs.map((job)=>{const applicantsForJob=workspace.applications.filter((application)=>application.job_posting_id===job.id);const editable=applicantsForJob.length===0;return <article className={styles.jobCard} key={job.id}>
-        <div className={styles.row}><div><div className={styles.meta}><span className={`${styles.statusPill} ${styles[`status_${job.status}`]??''}`}>{label(job.status)}</span><span className={styles.pill}>{label(job.employment_type)}</span><span className={styles.pill}>{label(job.workplace_type)}</span></div><h3>{job.title}</h3><p className={styles.muted}>{job.description}</p></div><div className={styles.jobMetric}><strong>{applicantsForJob.length}</strong><span>{ta?'Applicants':'Applicants'}</span></div></div>
-        <div className={styles.jobFacts}>{job.location?<span>⌖ {job.location}</span>:null}{salary(job)?<span>₹ {salary(job)?.replace('₹','').trim()}</span>:null}<span>◉ {job.openings} {job.openings===1?'opening':'openings'}</span>{job.application_deadline?<span>⌛ {new Date(`${job.application_deadline}T00:00:00`).toLocaleDateString(locale)}</span>:null}</div>
+      <div className={styles.sectionHeading}><div><h2>{t('employerHiring.jobs.title')}</h2><p className={styles.muted}>{t('employerHiring.jobs.intro')}</p></div>{!showCreate?<button className={styles.button} type="button" onClick={()=>{setEditingJobId(null);setShowCreate(true);}}>+ {t('employerHiring.jobs.create')}</button>:null}</div>
+      {!workspace.jobs.length?<div className={`${styles.empty} ${styles.emptyState}`}><span className={styles.emptyIcon}>＋</span><strong>{t('employerHiring.jobs.emptyTitle')}</strong><span>{t('employerHiring.jobs.emptyBody')}</span><button className={styles.button} type="button" onClick={()=>{setEditingJobId(null);setShowCreate(true);}}>{t('employerHiring.jobs.create')}</button></div>:<div className={styles.jobList}>{workspace.jobs.map((job)=>{const applicantsForJob=workspace.applications.filter((application)=>application.job_posting_id===job.id);const editable=applicantsForJob.length===0;return <article className={styles.jobCard} key={job.id}>
+        <div className={styles.row}><div><div className={styles.meta}><span className={`${styles.statusPill} ${styles[`status_${job.status}`]??''}`}>{localizedLabel(job.status,t)}</span><span className={styles.pill}>{localizedLabel(job.employment_type,t)}</span><span className={styles.pill}>{localizedLabel(job.workplace_type,t)}</span></div><h3>{job.title}</h3><p className={styles.muted}>{job.description}</p></div><div className={styles.jobMetric}><strong>{applicantsForJob.length}</strong><span>{t('employerHiring.jobs.applicants')}</span></div></div>
+        <div className={styles.jobFacts}>{job.location?<span>⌖ {job.location}</span>:null}{salary(job)?<span>₹ {salary(job)?.replace('₹','').trim()}</span>:null}<span>◉ {job.openings} {t(job.openings===1?'employerHiring.jobs.opening':'employerHiring.jobs.openings')}</span>{job.application_deadline?<span>⌛ {new Date(`${job.application_deadline}T00:00:00`).toLocaleDateString(locale)}</span>:null}</div>
         {job.required_skills?.length?<div className={styles.meta}>{job.required_skills.slice(0,8).map((skill)=><span className={styles.pill} key={skill}>{skill}</span>)}</div>:null}
-        {!editable?<div className={styles.fieldHint}>{ta?'முதல் application வந்ததால் job terms lock செய்யப்பட்டுள்ளன. Status controls மட்டும் மாற்றலாம்.':'Job terms are locked after the first application. Status controls remain available.'}</div>:null}
+        {!editable?<div className={styles.fieldHint}>{t('employerHiring.jobs.locked')}</div>:null}
         {editingJobId===job.id?<div className={styles.formSection}>
-          <div className={styles.sectionHeading}><div><span className={styles.eyebrow}>{ta?'No applicants yet':'No applicants yet'}</span><h3>{ta?'Job details edit செய்ய':'Edit job details'}</h3><p className={styles.muted}>{ta?'முதல் application வரும்வரை மட்டும் இந்த terms edit செய்யலாம்.':'These terms can be edited only until the first application arrives.'}</p></div></div>
-          <JobTermsFields value={editForm} onChange={(value)=>setEditForm((current)=>({...current,...value}))} ta={ta}/>
-          <div className={`${styles.actions} ${styles.formActions}`}><button className={`${styles.button} ${styles.secondary}`} disabled={saving} type="button" onClick={()=>setEditingJobId(null)}>{ta?'Cancel':'Cancel'}</button><button className={styles.button} disabled={saving||!editForm.title.trim()||!editForm.description.trim()} type="button" onClick={()=>void saveJobEdit(job.id)}>{saving?(ta?'Saving…':'Saving…'):(ta?'Changes Save':'Save changes')}</button></div>
+          <div className={styles.sectionHeading}><div><span className={styles.eyebrow}>{t('employerHiring.jobs.noApplicants')}</span><h3>{t('employerHiring.jobs.editTitle')}</h3><p className={styles.muted}>{t('employerHiring.jobs.editIntro')}</p></div></div>
+          <JobTermsFields value={editForm} onChange={(value)=>setEditForm((current)=>({...current,...value}))} t={t}/>
+          <div className={`${styles.actions} ${styles.formActions}`}><button className={`${styles.button} ${styles.secondary}`} disabled={saving} type="button" onClick={()=>setEditingJobId(null)}>{t('employerHiring.jobs.cancel')}</button><button className={styles.button} disabled={saving||!editForm.title.trim()||!editForm.description.trim()} type="button" onClick={()=>void saveJobEdit(job.id)}>{saving?t('employerHiring.common.saving'):t('employerHiring.jobs.saveChanges')}</button></div>
         </div>:null}
-        <div className={styles.actions}>{editable?<button className={`${styles.button} ${styles.secondary}`} disabled={saving} type="button" onClick={()=>{setShowCreate(false);setEditingJobId(job.id);setEditForm(jobFormFromJob(job));setMessage(null);}}>{ta?'Job Edit':'Edit job'}</button>:null}{job.status!=='open'?<button className={styles.button} disabled={saving} onClick={()=>void patch({action:'job_status',job_id:job.id,status:'open'})}>{ta?'Publish / Reopen':'Publish / reopen'}</button>:<button className={`${styles.button} ${styles.secondary}`} disabled={saving} onClick={()=>void patch({action:'job_status',job_id:job.id,status:'closed'})}>{ta?'Close':'Close'}</button>}<button className={`${styles.button} ${styles.secondary}`} type="button" onClick={()=>setActiveTab('applicants')}>{ta?'Applicants பார்க்க':'View applicants'}</button><button className={`${styles.button} ${styles.secondary}`} disabled={saving} onClick={()=>void patch({action:'job_status',job_id:job.id,status:'filled'})}>{ta?'Filled':'Mark filled'}</button></div>
+        <div className={styles.actions}>{editable?<button className={`${styles.button} ${styles.secondary}`} disabled={saving} type="button" onClick={()=>{setShowCreate(false);setEditingJobId(job.id);setEditForm(jobFormFromJob(job));setMessage(null);}}>{t('employerHiring.jobs.edit')}</button>:null}{job.status!=='open'?<button className={styles.button} disabled={saving} onClick={()=>void patch({action:'job_status',job_id:job.id,status:'open'})}>{t('employerHiring.jobs.publishReopen')}</button>:<button className={`${styles.button} ${styles.secondary}`} disabled={saving} onClick={()=>void patch({action:'job_status',job_id:job.id,status:'closed'})}>{t('employerHiring.jobs.close')}</button>}<button className={`${styles.button} ${styles.secondary}`} type="button" onClick={()=>setActiveTab('applicants')}>{t('employerHiring.jobs.viewApplicants')}</button><button className={`${styles.button} ${styles.secondary}`} disabled={saving} onClick={()=>void patch({action:'job_status',job_id:job.id,status:'filled'})}>{t('employerHiring.jobs.markFilled')}</button></div>
       </article>;})}</div>}
     </section>:null}
 
     {activeTab==='applicants'?<section className={styles.section}>
-      <div className={styles.sectionHeading}><div><h2>{ta?'Applicants':'Applicants'}</h2><p className={styles.muted}>{ta?'Profile, application stage மற்றும் conversation context பார்த்து candidates manage செய்யுங்கள்.':'Review candidate context and move applicants through a clear hiring pipeline.'}</p></div></div>
-      {!workspace.applications.length?<div className={`${styles.empty} ${styles.emptyState}`}><span className={styles.emptyIcon}>◎</span><strong>{ta?'Applicants இன்னும் இல்லை':'No applicants yet'}</strong><span>{ta?'Open jobs publish ஆன பிறகு applications இங்கே வரும்.':'Applications will appear here when professionals apply to your open jobs.'}</span></div>:<div className={styles.jobList}>{workspace.applications.map((application)=>{const job=jobsById.get(application.job_posting_id);const profile=professionalsById.get(application.professional_id);const conversation=conversationByApplication.get(application.id);const next=application.status==='submitted'?['shortlisted','interview','rejected']:application.status==='shortlisted'?['interview','rejected']:application.status==='interview'?['rejected']:[];return <article className={styles.jobCard} key={application.id}>
-        <div className={styles.row}><div><Link href={`/professionals/${application.professional_id}`} className={styles.profileLink}><strong>{profile?.headline||'Professional applicant'}</strong></Link><div className={styles.muted}>{profile?.service_area||''}</div><div className={styles.muted}>{job?.title??'Job opportunity'} · Applied {new Date(application.applied_at).toLocaleDateString(locale)}</div></div><span className={styles.statusPill}>{label(application.status)}</span></div>
+      <div className={styles.sectionHeading}><div><h2>{t('employerHiring.applicants.title')}</h2><p className={styles.muted}>{t('employerHiring.applicants.intro')}</p></div></div>
+      {!workspace.applications.length?<div className={`${styles.empty} ${styles.emptyState}`}><span className={styles.emptyIcon}>◎</span><strong>{t('employerHiring.applicants.emptyTitle')}</strong><span>{t('employerHiring.applicants.emptyBody')}</span></div>:<div className={styles.jobList}>{workspace.applications.map((application)=>{const job=jobsById.get(application.job_posting_id);const profile=professionalsById.get(application.professional_id);const conversation=conversationByApplication.get(application.id);const next=application.status==='submitted'?['shortlisted','interview','rejected']:application.status==='shortlisted'?['interview','rejected']:application.status==='interview'?['rejected']:[];return <article className={styles.jobCard} key={application.id}>
+        <div className={styles.row}><div><Link href={`/professionals/${application.professional_id}`} className={styles.profileLink}><strong>{profile?.headline||t('employerHiring.applicants.professionalFallback')}</strong></Link><div className={styles.muted}>{profile?.service_area||''}</div><div className={styles.muted}>{job?.title??t('employerHiring.applicants.jobFallback')} · {t('employerHiring.applicants.applied')} {new Date(application.applied_at).toLocaleDateString(locale)}</div></div><span className={styles.statusPill}>{localizedLabel(application.status,t)}</span></div>
         {application.cover_note?<p>{application.cover_note}</p>:null}
-        <div className={styles.actions}>{conversation?<Link className={`${styles.button} ${styles.secondary}`} href={`/provider/messages?conversation=${conversation.id}`}>{ta?'Private Message':'Private message'}</Link>:null}{next.map((status)=><button className={`${styles.button} ${status==='rejected'?styles.danger:styles.secondary}`} disabled={saving} type="button" key={status} onClick={()=>void patch({action:'application_status',application_id:application.id,status})}>{label(status)}</button>)}</div>
+        <div className={styles.actions}>{conversation?<Link className={`${styles.button} ${styles.secondary}`} href={`/provider/messages?conversation=${conversation.id}`}>{t('employerHiring.applicants.privateMessage')}</Link>:null}{next.map((status)=><button className={`${styles.button} ${status==='rejected'?styles.danger:styles.secondary}`} disabled={saving} type="button" key={status} onClick={()=>void patch({action:'application_status',application_id:application.id,status})}>{localizedLabel(status,t)}</button>)}</div>
       </article>;})}</div>}
       <EmployerApplicantResumeReview />
     </section>:null}
 
     {activeTab==='interviews'?<section className={styles.section}>
-      <div className={styles.sectionHeading}><div><h2>{ta?'Interviews':'Interviews'}</h2><p className={styles.muted}>{ta?'Interview-stage applicants-ன் schedules மற்றும் history manage செய்யுங்கள்.':'Schedule, reschedule and review interview activity for interview-stage applicants.'}</p></div></div>
-      {!workspace.applications.some((application)=>application.status==='interview')?<div className={`${styles.empty} ${styles.emptyState}`}><span className={styles.emptyIcon}>◷</span><strong>{ta?'Interview stage applicant இல்லை':'No interview-stage applicants'}</strong><span>{ta?'Applicant-ஐ Interview stage-க்கு move செய்த பிறகு scheduling tools இங்கே வரும்.':'Move an applicant to Interview and scheduling tools will appear here.'}</span></div>:<div className={styles.jobList}>{workspace.applications.filter((application)=>application.status==='interview').map((application)=>{const job=jobsById.get(application.job_posting_id);const profile=professionalsById.get(application.professional_id);const interviews=interviewsByApplication.get(application.id)??[];const latest=interviews[0];const events=eventsByApplication.get(application.id)??[];const value=interviewForm(application.id,latest);return <article className={styles.jobCard} key={application.id}>
-        <div className={styles.row}><div><h3>{profile?.headline||'Professional applicant'}</h3><div className={styles.muted}>{job?.title??'Job opportunity'}</div></div>{latest?<span className={styles.statusPill}>{label(latest.status)}</span>:<span className={styles.statusPill}>Not scheduled</span>}</div>
-        <div className={styles.formGrid}><label className={styles.label}>Date & time<input className={styles.input} type="datetime-local" value={value.starts_at} onChange={(e)=>updateInterviewForm(application.id,latest,{starts_at:e.target.value})}/></label><label className={styles.label}>Duration<input className={styles.input} type="number" min="15" max="240" value={value.duration_minutes} onChange={(e)=>updateInterviewForm(application.id,latest,{duration_minutes:e.target.value})}/></label><label className={styles.label}>Mode<select className={styles.select} value={value.mode} onChange={(e)=>updateInterviewForm(application.id,latest,{mode:e.target.value as InterviewForm['mode']})}>{['in_person','phone','video'].map((mode)=><option value={mode} key={mode}>{label(mode)}</option>)}</select></label><label className={styles.label}>Timezone<input className={styles.input} value={value.timezone} maxLength={64} onChange={(e)=>updateInterviewForm(application.id,latest,{timezone:e.target.value})}/></label><label className={styles.label}>Location<input className={styles.input} value={value.location} maxLength={300} onChange={(e)=>updateInterviewForm(application.id,latest,{location:e.target.value})}/></label><label className={styles.label}>HTTPS meeting link<input className={styles.input} type="url" value={value.meeting_url} maxLength={1000} onChange={(e)=>updateInterviewForm(application.id,latest,{meeting_url:e.target.value})}/></label><label className={`${styles.label} ${styles.wide}`}>Interview note<textarea className={styles.textarea} maxLength={2000} value={value.note} onChange={(e)=>updateInterviewForm(application.id,latest,{note:e.target.value})}/></label></div>
-        <div className={styles.actions}><button className={styles.button} disabled={saving||!value.starts_at} type="button" onClick={()=>void saveInterview(application.id,latest)}>{latest&&latest.status!=='cancelled'?(ta?'Reschedule':'Reschedule'):(ta?'Schedule Interview':'Schedule interview')}</button>{latest&&latest.status!=='cancelled'?<button className={`${styles.button} ${styles.danger}`} disabled={saving} type="button" onClick={()=>void interviewMutation('PATCH',{action:'cancel',interview_id:latest.id})}>{ta?'Cancel Interview':'Cancel interview'}</button>:null}</div>
-        {events.length?<details className={styles.history}><summary>{ta?'Interview history':'Interview history'} ({events.length})</summary><div className={styles.section}>{events.slice(0,8).map((event)=><div className={styles.muted} key={event.id}>{label(event.event_type)} · {new Intl.DateTimeFormat(locale,{dateStyle:'medium',timeStyle:'short'}).format(new Date(event.created_at))}</div>)}</div></details>:null}
+      <div className={styles.sectionHeading}><div><h2>{t('employerHiring.interviews.title')}</h2><p className={styles.muted}>{t('employerHiring.interviews.intro')}</p></div></div>
+      {!workspace.applications.some((application)=>application.status==='interview')?<div className={`${styles.empty} ${styles.emptyState}`}><span className={styles.emptyIcon}>◷</span><strong>{t('employerHiring.interviews.emptyTitle')}</strong><span>{t('employerHiring.interviews.emptyBody')}</span></div>:<div className={styles.jobList}>{workspace.applications.filter((application)=>application.status==='interview').map((application)=>{const job=jobsById.get(application.job_posting_id);const profile=professionalsById.get(application.professional_id);const interviews=interviewsByApplication.get(application.id)??[];const latest=interviews[0];const events=eventsByApplication.get(application.id)??[];const value=interviewForm(application.id,latest);return <article className={styles.jobCard} key={application.id}>
+        <div className={styles.row}><div><h3>{profile?.headline||t('employerHiring.applicants.professionalFallback')}</h3><div className={styles.muted}>{job?.title??t('employerHiring.applicants.jobFallback')}</div></div>{latest?<span className={styles.statusPill}>{localizedLabel(latest.status,t)}</span>:<span className={styles.statusPill}>{t('employerHiring.interviews.notScheduled')}</span>}</div>
+        <div className={styles.formGrid}><label className={styles.label}>{t('employerHiring.interviews.dateTime')}<input className={styles.input} type="datetime-local" value={value.starts_at} onChange={(e)=>updateInterviewForm(application.id,latest,{starts_at:e.target.value})}/></label><label className={styles.label}>{t('employerHiring.interviews.duration')}<input className={styles.input} type="number" min="15" max="240" value={value.duration_minutes} onChange={(e)=>updateInterviewForm(application.id,latest,{duration_minutes:e.target.value})}/></label><label className={styles.label}>{t('employerHiring.interviews.mode')}<select className={styles.select} value={value.mode} onChange={(e)=>updateInterviewForm(application.id,latest,{mode:e.target.value as InterviewForm['mode']})}>{['in_person','phone','video'].map((mode)=><option value={mode} key={mode}>{localizedLabel(mode,t)}</option>)}</select></label><label className={styles.label}>{t('employerHiring.interviews.timezone')}<input className={styles.input} value={value.timezone} maxLength={64} onChange={(e)=>updateInterviewForm(application.id,latest,{timezone:e.target.value})}/></label><label className={styles.label}>{t('employerHiring.interviews.location')}<input className={styles.input} value={value.location} maxLength={300} onChange={(e)=>updateInterviewForm(application.id,latest,{location:e.target.value})}/></label><label className={styles.label}>{t('employerHiring.interviews.meetingLink')}<input className={styles.input} type="url" value={value.meeting_url} maxLength={1000} onChange={(e)=>updateInterviewForm(application.id,latest,{meeting_url:e.target.value})}/></label><label className={`${styles.label} ${styles.wide}`}>{t('employerHiring.interviews.note')}<textarea className={styles.textarea} maxLength={2000} value={value.note} onChange={(e)=>updateInterviewForm(application.id,latest,{note:e.target.value})}/></label></div>
+        <div className={styles.actions}><button className={styles.button} disabled={saving||!value.starts_at} type="button" onClick={()=>void saveInterview(application.id,latest)}>{latest&&latest.status!=='cancelled'?t('employerHiring.interviews.reschedule'):t('employerHiring.interviews.schedule')}</button>{latest&&latest.status!=='cancelled'?<button className={`${styles.button} ${styles.danger}`} disabled={saving} type="button" onClick={()=>void interviewMutation('PATCH',{action:'cancel',interview_id:latest.id})}>{t('employerHiring.interviews.cancel')}</button>:null}</div>
+        {events.length?<details className={styles.history}><summary>{t('employerHiring.interviews.history')} ({events.length})</summary><div className={styles.section}>{events.slice(0,8).map((event)=><div className={styles.muted} key={event.id}>{localizedLabel(event.event_type,t)} · {new Intl.DateTimeFormat(locale,{dateStyle:'medium',timeStyle:'short'}).format(new Date(event.created_at))}</div>)}</div></details>:null}
       </article>;})}</div>}
     </section>:null}
 
