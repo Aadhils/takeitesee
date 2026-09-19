@@ -206,3 +206,25 @@ test('Provider booking load failure stays compact instead of restoring a large b
   assert.ok(!providerDashboard.includes('className={styles.supportGrid}'));
   assert.ok(!providerDashboard.includes('className={styles.bookingList}'));
 });
+
+
+test('Provider Priority keeps secondary work as compact follow-up chips', () => {
+  assert.ok(providerDashboard.includes('className={styles.followUpQueue}'));
+  assert.ok(providerDashboard.includes('className={styles.followUpRail}'));
+  assert.ok(providerDashboard.includes('className={styles.followUpChip}'));
+  assert.ok(providerDashboard.includes('className={styles.followUpChipIcon}'));
+  assert.ok(providerDashboard.includes('>Also</span>'));
+  assert.ok(providerDashboard.includes('aria-label={`${item.label}. ${item.detail}`}'));
+  assert.ok(providerDashboard.includes('title={item.detail}'));
+  assert.ok(providerDashboard.includes('href={item.href}'));
+  assert.ok(!providerDashboard.includes('className={styles.followUps}'));
+  assert.ok(!providerDashboard.includes('className={styles.followUpLink}'));
+  assert.ok(!providerDashboard.includes('className={styles.followUpArrow}'));
+});
+
+test('Provider Priority preserves one dominant primary CTA ahead of compact follow-ups', () => {
+  const primaryCta = providerDashboard.indexOf('className="button button-primary">Continue now</Link>');
+  const followUps = providerDashboard.indexOf('className={styles.followUpQueue}');
+  assert.ok(primaryCta >= 0);
+  assert.ok(followUps > primaryCta);
+});
