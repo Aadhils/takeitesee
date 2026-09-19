@@ -5,30 +5,30 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useRemainingWorkspaceTranslations } from '../i18n/RemainingWorkspaceTranslations';
 
 export default function LocalizedAccountShell({ children, active, customerName, unreadCount }: { children: ReactNode; active: string; customerName?: string; unreadCount?: number }) {
-  const { t, locale } = useRemainingWorkspaceTranslations();
+  const { t } = useRemainingWorkspaceTranslations();
   const [fetchedUnreadCount, setFetchedUnreadCount] = useState(0);
   const [messageUnreadCount, setMessageUnreadCount] = useState(0);
   const [productOrderUnreadCount, setProductOrderUnreadCount] = useState(0);
   const name = customerName || t('account.yourAccount');
   const initials = name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
-  const unreadLabel = locale === 'ta-IN' ? 'படிக்காத அறிவிப்புகள்' : 'unread notifications';
-  const messageUnreadLabel = locale === 'ta-IN' ? 'படிக்காத செய்திகள்' : 'unread messages';
-  const productOrderUnreadLabel = locale === 'ta-IN' ? 'புதிய Product Order updates' : 'new Product Order updates';
-  const moreLabel = locale === 'ta-IN' ? 'மேலும்' : 'More';
+  const unreadLabel = t('account.unreadNotifications');
+  const messageUnreadLabel = t('account.unreadMessages');
+  const productOrderUnreadLabel = t('account.newProductOrderUpdates');
+  const moreLabel = t('account.more');
   const resolvedUnreadCount = unreadCount ?? fetchedUnreadCount;
   const countLabel = (value: number) => value > 99 ? '99+' : String(value);
   const links = [
     { href: '/account', label: t('account.overview'), mobileLabel: t('account.overview') },
     { href: '/account/profile', label: t('account.profile'), mobileLabel: t('account.profile') },
     { href: '/account/settings', label: t('account.settings'), mobileLabel: t('account.settings') },
-    { href: '/saved-services', label: locale === 'ta-IN' ? 'சேமித்த சேவைகள்' : 'Saved services', mobileLabel: locale === 'ta-IN' ? 'சேவைகள்' : 'Services' },
-    { href: '/saved-products', label: locale === 'ta-IN' ? 'சேமித்த Products' : 'Saved Products', mobileLabel: 'Products' },
-    { href: '/requirements', label: locale === 'ta-IN' ? 'தேவைகள்' : 'Requirements', mobileLabel: locale === 'ta-IN' ? 'தேவைகள்' : 'Needs' },
-    { href: '/orders', label: locale === 'ta-IN' ? 'என் Product Orders' : 'My product orders', mobileLabel: 'Orders' },
-    { href: '/messages', label: locale === 'ta-IN' ? 'செய்திகள்' : 'Messages', mobileLabel: locale === 'ta-IN' ? 'செய்திகள்' : 'Messages' },
+    { href: '/saved-services', label: t('account.savedServices'), mobileLabel: t('account.savedServicesMobile') },
+    { href: '/saved-products', label: t('account.savedProducts'), mobileLabel: t('account.savedProductsMobile') },
+    { href: '/requirements', label: t('account.requirements'), mobileLabel: t('account.requirementsMobile') },
+    { href: '/orders', label: t('account.orders'), mobileLabel: t('account.ordersMobile') },
+    { href: '/messages', label: t('account.messages'), mobileLabel: t('account.messagesMobile') },
     { href: '/notifications', label: t('account.notifications'), mobileLabel: t('account.notifications') },
     { href: '/reviews', label: t('account.reviews'), mobileLabel: t('account.reviews') },
-    { href: '/account/support', label: locale === 'ta-IN' ? 'Platform உதவி' : 'Platform support', mobileLabel: locale === 'ta-IN' ? 'உதவி' : 'Support' },
+    { href: '/account/support', label: t('account.support'), mobileLabel: t('account.supportMobile') },
     { href: '/help', label: t('account.help'), mobileLabel: t('account.help') },
   ];
   const mobilePrimaryHrefs = new Set(['/account', '/saved-services', '/saved-products', '/requirements']);
@@ -143,7 +143,7 @@ export default function LocalizedAccountShell({ children, active, customerName, 
             </Link>
           ))}
         </nav>
-        <nav className="account-mobile-nav" aria-label={`${t('account.nav')} ${locale === 'ta-IN' ? 'மொபைல்' : 'mobile'}`}>
+        <nav className="account-mobile-nav" aria-label={`${t('account.nav')} ${t('account.mobileNavSuffix')}`}>
           {mobilePrimaryLinks.map((link) => (
             <Link
               href={link.href}
