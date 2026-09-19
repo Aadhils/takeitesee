@@ -89,16 +89,14 @@ function date(value: string | null | undefined, locale: string) {
   return new Intl.DateTimeFormat(locale, { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(parsed);
 }
 
-function range(start: string | null | undefined, end: string | null | undefined, current: boolean | null | undefined, locale: string) {
+function range(start: string | null | undefined, end: string | null | undefined, current: boolean | null | undefined, locale: string, presentLabel: string) {
   const from = date(start, locale);
-  const to = current ? 'Present' : date(end, locale);
+  const to = current ? presentLabel : date(end, locale);
   return [from, to].filter(Boolean).join(' – ');
 }
 
 export default function ProfessionalResumeExport() {
-  const { locale } = useIdentityWorkspaceTranslations();
-  const tamil = locale.toLowerCase().startsWith('ta');
-  const text = (en: string, ta: string) => tamil ? ta : en;
+  const { locale, t } = useIdentityWorkspaceTranslations();
   const [profile, setProfile] = useState<ProviderProfile | null>(null);
   const [resume, setResume] = useState<ResumePayload | null>(null);
   const [loading, setLoading] = useState(true);
@@ -113,30 +111,30 @@ export default function ProfessionalResumeExport() {
       .then(async ([profileResponse, resumeResponse]) => {
         const profileBody = await profileResponse.json() as { profile?: ProviderProfile; error?: string };
         const resumeBody = await resumeResponse.json() as ResumePayload;
-        if (!profileResponse.ok || !profileBody.profile) throw new Error(profileBody.error ?? 'Unable to load Professional profile.');
-        if (profileBody.profile.provider_type !== 'professional') throw new Error('Switch to your Professional profile before exporting a resume.');
-        if (!resumeResponse.ok) throw new Error(resumeBody.error ?? 'Unable to load resume data.');
+        if (!profileResponse.ok || !profileBody.profile) throw new Error(profileBody.error ?? t('provider.resumeExport.unableToLoadProfessionalProfile'));
+        if (profileBody.profile.provider_type !== 'professional') throw new Error(t('provider.resumeExport.switchToProfessionalProfileBeforeExportingAResume'));
+        if (!resumeResponse.ok) throw new Error(resumeBody.error ?? t('provider.resumeExport.unableToLoadResumeData'));
         if (!cancelled) {
           setProfile(profileBody.profile);
           setResume(resumeBody);
         }
       })
-      .catch((cause) => { if (!cancelled) setError(cause instanceof Error ? cause.message : 'Unable to load resume export.'); })
+      .catch((cause) => { if (!cancelled) setError(cause instanceof Error ? cause.message : t('provider.resumeExport.unableToLoadResumeExport')); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, []);
+  }, [t]);
 
   const availability = useMemo(() => {
     const career = resume?.career_profile;
     if (!career) return [] as string[];
     return [
-      career.preferred_location ? `${text('Preferred location', 'Preferred location')}: ${career.preferred_location}` : '',
-      career.open_to_remote ? text('Open to remote', 'Remote வேலைக்கு open') : '',
-      career.willing_to_relocate ? text('Open to relocation', 'Relocation-க்கு open') : '',
-      career.available_from ? `${text('Available from', 'Available from')}: ${date(career.available_from, locale)}` : '',
-      career.notice_period_days != null ? `${text('Notice period', 'Notice period')}: ${career.notice_period_days} ${text('days', 'days')}` : '',
+      career.preferred_location ? `${t('provider.resumeExport.preferredLocation')}: ${career.preferred_location}` : '',
+      career.open_to_remote ? t('provider.resumeExport.openToRemote') : '',
+      career.willing_to_relocate ? t('provider.resumeExport.openToRelocation') : '',
+      career.available_from ? `${t('provider.resumeExport.availableFrom')}: ${date(career.available_from, locale)}` : '',
+      career.notice_period_days != null ? `${t('provider.resumeExport.noticePeriod')}: ${career.notice_period_days} ${t('provider.resumeExport.days')}` : '',
     ].filter((value): value is string => Boolean(value));
-  }, [locale, resume?.career_profile, tamil]);
+  }, [locale, resume?.career_profile, t]);
 
   const activeRoles = (resume?.roles ?? []).filter((role) => role.active);
   const hasResumeContent = Boolean(
@@ -151,79 +149,76 @@ export default function ProfessionalResumeExport() {
 
   return <main className={styles.page}>
     <div className={styles.controls}>
-      <Link className={styles.back} href="/provider/resume">← {text('Back to Resume & Career', 'Resume & Career-க்கு திரும்பு')}</Link>
+      <Link className={styles.back} href="/provider/resume">← {t('provider.resumeExport.backToResumeCareer')}</Link>
       <button className={styles.printButton} type="button" disabled={!profile || !resume || !hasResumeContent} onClick={() => window.print()}>
-        {text('Save as PDF / Print', 'PDF ஆக Save / Print')}
+        {t('provider.resumeExport.saveAsPdfPrint')}
       </button>
     </div>
 
-    {loading ? <div className={styles.status}>{text('Preparing your resume…', 'உங்கள் resume தயாராகிறது…')}</div> : null}
+    {loading ? <div className={styles.status}>{t('provider.resumeExport.preparingYourResume')}</div> : null}
     {error ? <div className={styles.status}>{error}</div> : null}
-    {!loading && !error && !hasResumeContent ? <div className={styles.status}>{text('Add career details before exporting your resume.', 'Resume export செய்வதற்கு முன் career details சேர்க்கவும்.')}</div> : null}
+    {!loading && !error && !hasResumeContent ? <div className={styles.status}>{t('provider.resumeExport.addCareerDetailsBeforeExportingYourResume')}</div> : null}
 
-    {!loading && !error && profile && resume && hasResumeContent ? <article className={styles.sheet} aria-label="Professional resume export">
+    {!loading && !error && profile && resume && hasResumeContent ? <article className={styles.sheet} aria-label={t('provider.resumeExport.professionalResumeExport')}>
       <header className={styles.header}>
         <h1 className={styles.name}>{profile.display_name}</h1>
         {resume.career_profile?.career_headline ? <div className={styles.headline}>{resume.career_profile.career_headline}</div> : null}
         <div className={styles.meta}>
           {availability.map((item) => <span key={item}>{item}</span>)}
-          {profile.verified ? <span>{text('TakeItEsee Professional profile verified', 'TakeItEsee Professional profile verified')}</span> : null}
+          {profile.verified ? <span>{t('provider.resumeExport.takeItEseeProfessionalProfileVerified')}</span> : null}
         </div>
       </header>
 
       {resume.career_profile?.career_summary ? <section className={styles.section}>
-        <h2>{text('Professional summary', 'Professional summary')}</h2>
+        <h2>{t('provider.resumeExport.professionalSummary')}</h2>
         <p className={styles.summary}>{resume.career_profile.career_summary}</p>
       </section> : null}
 
       {activeRoles.length ? <section className={styles.section}>
-        <h2>{text('Professional talents', 'Professional talents')}</h2>
+        <h2>{t('provider.resumeExport.professionalTalents')}</h2>
         <div className={styles.chips}>{activeRoles.map((role) => <span className={styles.chip} key={role.id}>{role.title}</span>)}</div>
       </section> : null}
 
       {resume.skills?.length ? <section className={styles.section}>
-        <h2>{text('Skills', 'Skills')}</h2>
+        <h2>{t('provider.resumeExport.skills')}</h2>
         <div className={styles.chips}>{resume.skills.map((skill) => <span className={styles.chip} key={skill.id}>
-          {skill.name}{skill.proficiency ? ` · ${label(skill.proficiency)}` : ''}{skill.years_experience != null ? ` · ${skill.years_experience}y` : ''}
+          {skill.name}{skill.proficiency ? ` · ${label(skill.proficiency)}` : ''}{skill.years_experience != null ? ` · ${skill.years_experience}${t('provider.resumeExport.yearsShort')}` : ''}
         </span>)}</div>
       </section> : null}
 
       {resume.experiences?.length ? <section className={styles.section}>
-        <h2>{text('Experience', 'Experience')}</h2>
+        <h2>{t('provider.resumeExport.experience')}</h2>
         {resume.experiences.map((item) => <div className={styles.item} key={item.id}>
-          <div className={styles.itemTop}><span className={styles.itemTitle}>{item.role_title}</span><span className={styles.itemDate}>{range(item.start_date, item.end_date, item.is_current, locale)}</span></div>
+          <div className={styles.itemTop}><span className={styles.itemTitle}>{item.role_title}</span><span className={styles.itemDate}>{range(item.start_date, item.end_date, item.is_current, locale, t('provider.resumeExport.present'))}</span></div>
           <div className={styles.itemSub}>{item.organization}{item.location ? ` · ${item.location}` : ''}{item.employment_type ? ` · ${label(item.employment_type)}` : ''}</div>
           {item.description ? <p className={styles.itemDescription}>{item.description}</p> : null}
         </div>)}
       </section> : null}
 
       {resume.education?.length ? <section className={styles.section}>
-        <h2>{text('Education', 'Education')}</h2>
+        <h2>{t('provider.resumeExport.education')}</h2>
         {resume.education.map((item) => <div className={styles.item} key={item.id}>
-          <div className={styles.itemTop}><span className={styles.itemTitle}>{item.qualification}{item.field_of_study ? ` — ${item.field_of_study}` : ''}</span><span className={styles.itemDate}>{range(item.start_date, item.end_date, false, locale)}</span></div>
+          <div className={styles.itemTop}><span className={styles.itemTitle}>{item.qualification}{item.field_of_study ? ` — ${item.field_of_study}` : ''}</span><span className={styles.itemDate}>{range(item.start_date, item.end_date, false, locale, t('provider.resumeExport.present'))}</span></div>
           <div className={styles.itemSub}>{item.institution}</div>
           {item.description ? <p className={styles.itemDescription}>{item.description}</p> : null}
         </div>)}
       </section> : null}
 
       {resume.certifications?.length ? <section className={styles.section}>
-        <h2>{text('Certifications', 'Certifications')}</h2>
+        <h2>{t('provider.resumeExport.certifications')}</h2>
         {resume.certifications.map((item) => <div className={styles.item} key={item.id}>
           <div className={styles.itemTop}><span className={styles.itemTitle}>{item.name}</span><span className={styles.itemDate}>{date(item.issue_date, locale)}</span></div>
-          <div className={styles.itemSub}>{item.issuing_organization}{item.credential_id ? ` · ID ${item.credential_id}` : ''}</div>
+          <div className={styles.itemSub}>{item.issuing_organization}{item.credential_id ? ` · ${t('provider.resumeExport.credentialIdPrefix')} ${item.credential_id}` : ''}</div>
           {item.credential_url ? <div className={styles.itemDescription}>{item.credential_url}</div> : null}
         </div>)}
       </section> : null}
 
       {resume.career_profile?.availability_note ? <section className={styles.section}>
-        <h2>{text('Availability note', 'Availability note')}</h2>
+        <h2>{t('provider.resumeExport.availabilityNote')}</h2>
         <p className={styles.summary}>{resume.career_profile.availability_note}</p>
       </section> : null}
 
-      <footer className={styles.note}>{text(
-        'Career, education and certification details are self-reported by the Professional unless TakeItEsee explicitly states otherwise.',
-        'Career, education மற்றும் certification details Professional தானாக வழங்கிய தகவல்கள்; TakeItEsee தனியாக verified என்று explicit-ஆ குறிப்பிடப்பட்டால் மட்டும் அது verified claim ஆகும்.',
-      )}</footer>
+      <footer className={styles.note}>{t('provider.resumeExport.selfReportedDisclaimer')}</footer>
     </article> : null}
   </main>;
 }
