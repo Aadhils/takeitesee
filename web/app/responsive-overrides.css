@@ -334,3 +334,31 @@ nav[aria-label="Hiring workspace sections"] + section > div > button {
     font-size: clamp(2rem, 12vw, 2.8rem) !important;
   }
 }
+
+/* Customer workspace footer: keep authenticated mobile pages app-like instead of repeating the full public footer. */
+@media (max-width: 640px) {
+  body.customer-workspace-active .site-footer .footer-inner {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 26px 0 14px;
+  }
+
+  body.customer-workspace-active .footer-link-column {
+    display: none !important;
+  }
+
+  body.customer-workspace-active .footer-brand-column,
+  body.customer-workspace-active .footer-legal {
+    grid-column: 1 / -1;
+  }
+
+  body.customer-workspace-active .footer-brand-column p {
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+
+  body.customer-workspace-active .footer-legal {
+    gap: 10px 14px;
+    padding-top: 13px;
+  }
+}
