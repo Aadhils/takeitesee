@@ -183,6 +183,22 @@ const english = {
   'publicProvider.businessProducts.viewOrders': 'View my orders',
   'publicProvider.businessProducts.unavailable': 'This product is not currently available to order.',
   'publicProvider.businessProducts.requestError': 'Unable to request this order.',
+  'publicProvider.businessProducts.businessSales': 'Business sales',
+  'publicProvider.businessProducts.products': 'Products',
+  'publicProvider.businessProducts.intro': 'Only platform-reviewed current product revisions appear here. Customers can send an order request; TakeItEsee payment and Cashfree are not active at this stage.',
+  'publicProvider.businessProducts.inStock': 'In stock',
+  'publicProvider.businessProducts.madeToOrder': 'Made to order',
+  'publicProvider.businessProducts.outOfStock': 'Out of stock',
+  'publicProvider.businessProducts.quantity': 'Quantity',
+  'publicProvider.businessProducts.orderNote': 'Order note (optional)',
+  'publicProvider.businessProducts.orderNoteHint': 'Do not share payment details here.',
+  'publicProvider.businessProducts.requestOrder': 'Request order',
+  'publicProvider.businessProducts.requestOnlyNote': 'This sends an order request only. There is no online payment or automatic stock deduction.',
+  'publicProvider.businessProducts.orderSent': 'Order request sent.',
+  'publicProvider.businessProducts.viewOrders': 'View my orders',
+  'publicProvider.businessProducts.unavailable': 'This product is not currently available to order.',
+  'publicProvider.businessProducts.requestError': 'Unable to request this order.',
+  'publicProvider.businessProducts.imageAlt': '{productName} product',
 } as const;
 
 type PublicProviderKey = keyof typeof english;
