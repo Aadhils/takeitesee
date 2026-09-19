@@ -75,7 +75,7 @@ export default function ProviderDashboardHandleCenter() {
       setPublicReady(Boolean(body.public_profile_ready));
       setReadinessHref(body.readiness_href ?? null);
       setEditing(false);
-      setNotice(t('provider.handle.save')d);
+      setNotice(t('provider.handle.saved'));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t('provider.handle.saveFallback'));
     } finally {
@@ -111,7 +111,7 @@ export default function ProviderDashboardHandleCenter() {
       {loading ? <p>{t('provider.handle.loading')}</p> : <>
         {handle && !editing ? <div className={styles.summary}>
           <div className={styles.handleValue}><small>{t('provider.handle.current')}</small><strong>@{handle}</strong><span>{publicUrl}</span></div>
-          <p>{publicReady ? t('provider.handle.live')Help : t('provider.handle.reserved')Help}</p>
+          <p>{publicReady ? t('provider.handle.liveHelp') : t('provider.handle.reservedHelp')}</p>
           <div className={styles.actions}>
             <Button type="button" variant="secondary" onClick={() => setEditing(true)}>{t('provider.handle.change')}</Button>
             {publicReady ? <Button type="button" variant="secondary" onClick={() => void copyLink()}>{copied ? t('provider.handle.copied') : t('provider.handle.copyLink')}</Button> : null}
