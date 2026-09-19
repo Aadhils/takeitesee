@@ -31,8 +31,7 @@ type CustomerAccountProposalSummaryProps = {
 
 export default function CustomerAccountProposalSummary({ onUnreadChange }: CustomerAccountProposalSummaryProps) {
   const router = useRouter();
-  const { locale } = useOperationalTranslations();
-  const tamil = locale.toLowerCase().startsWith('ta');
+  const { locale, t } = useOperationalTranslations();
   const focusTargetRef = useRef<HTMLElement | null>(null);
   const [rows, setRows] = useState<RequirementAttentionRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -119,52 +118,50 @@ export default function CustomerAccountProposalSummary({ onUnreadChange }: Custo
   };
 
   const latestLabel = (value: string | null) => {
-    if (!value) return tamil ? 'Proposal activity இல்லை' : 'No proposal activity';
+    if (!value) return t('customer.proposals.noActivity');
     return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
   };
 
-  if (loading) return <section id="proposal-attention" ref={focusTargetRef} tabIndex={-1} className="customer-account-proposal-focus-target"><Card><span className="eyebrow">{tamil ? 'Proposal inbox' : 'Proposal inbox'}</span><p className="summary-note">{tamil ? 'Provider replies சரிபார்க்கப்படுகிறது…' : 'Checking for provider replies…'}</p></Card></section>;
+  if (loading) return <section id="proposal-attention" ref={focusTargetRef} tabIndex={-1} className="customer-account-proposal-focus-target"><Card><span className="eyebrow">{t('customer.proposals.inbox')}</span><p className="summary-note">{t('customer.proposals.checking')}</p></Card></section>;
   if (!available) return null;
 
   const stateTitle = totalUnread > 0
-    ? (tamil ? `${totalUnread} புதிய provider proposal${totalUnread === 1 ? '' : 's'}` : `${totalUnread} new provider proposal${totalUnread === 1 ? '' : 's'}`)
+    ? t('customer.proposals.newCount').replace('{count}', String(totalUnread)).replace('{suffix}', totalUnread === 1 ? '' : 's')
     : visibleRows.length > 0
-      ? (tamil ? 'Provider proposals அனைத்தும் பார்த்துவிட்டீர்கள்' : 'You are up to date on provider proposals')
+      ? t('customer.proposals.upToDate')
       : hasRequirements
-        ? (tamil ? 'Provider replies க்காக காத்திருக்கிறது' : 'Waiting for provider replies')
-        : (tamil ? 'ஒரு தேவை பதிவு செய்து provider proposals பெறுங்கள்' : 'Post a need to get provider proposals');
+        ? t('customer.proposals.waitingTitle')
+        : t('customer.proposals.postNeedTitle');
   const stateHelp = totalUnread > 0
-    ? (tamil ? 'நீங்கள் post செய்த requirements-க்கு providers reply செய்துள்ளனர். புதிய replies-ஐ இங்கே review செய்யலாம்.' : 'Providers replied to your posted requirements. Review the newest replies here.')
+    ? t('customer.proposals.newHelp')
     : visibleRows.length > 0
-      ? (tamil ? 'புதிய reply இல்லை. முன்பு வந்த provider proposals கீழே கிடைக்கும்.' : 'There are no unread replies. Previous provider proposals remain available below.')
+      ? t('customer.proposals.upToDateHelp')
       : hasRequirements
-        ? (tamil ? 'உங்கள் requirement live-ல் உள்ளது. Matching verified provider reply செய்தவுடன் அது இங்கே தோன்றும்.' : 'Your requirement is live. Matching verified providers can respond and their proposals will appear here.')
-        : (tamil ? 'தேவையை பதிவு செய்யுங்கள் → verified providers reply செய்வார்கள் → proposals compare செய்து சரியான provider-ஐ தேர்வு செய்யலாம்.' : 'Post what you need → verified providers can reply → compare proposals and choose the right provider.');
+        ? t('customer.proposals.waitingHelp')
+        : t('customer.proposals.postNeedHelp');
 
-  return <section id="proposal-attention" ref={focusTargetRef} tabIndex={-1} className="customer-account-proposal-focus-target" aria-label={tamil ? 'Provider proposals' : 'Provider proposals'}>
+  return <section id="proposal-attention" ref={focusTargetRef} tabIndex={-1} className="customer-account-proposal-focus-target" aria-label={t('customer.proposals.aria')}>
     <Card className="customer-account-proposal-summary">
       <div className="section-heading">
         <div>
-          <span className="eyebrow">{tamil ? 'Proposal inbox' : 'Proposal inbox'}</span>
+          <span className="eyebrow">{t('customer.proposals.inbox')}</span>
           <h2>{stateTitle}</h2>
           <p className="summary-note">{stateHelp}</p>
         </div>
         <div className="customer-account-proposal-summary-badges">
           {totalUnread > 0
-            ? <Badge tone="info">{totalUnread} {tamil ? 'புதிய reply' : totalUnread === 1 ? 'new reply' : 'new replies'}</Badge>
-            : <Badge tone="neutral">{visibleRows.length > 0 ? (tamil ? 'புதிய reply இல்லை' : 'All caught up') : hasRequirements ? (tamil ? 'Replies க்காக காத்திருக்கிறது' : 'Waiting for replies') : (tamil ? 'Post செய்ய தயார்' : 'Ready to post')}</Badge>}
-          {proposalRows.length > 0 ? <Badge tone="neutral">{proposalRows.length} {tamil ? 'requirements-ல் proposals' : proposalRows.length === 1 ? 'requirement with proposals' : 'requirements with proposals'}</Badge> : null}
+            ? <Badge tone="info">{totalUnread} {totalUnread === 1 ? t('customer.proposals.newReply') : t('customer.proposals.newReplies')}</Badge>
+            : <Badge tone="neutral">{visibleRows.length > 0 ? t('customer.proposals.allCaughtUp') : hasRequirements ? t('customer.proposals.waitingReplies') : t('customer.proposals.readyToPost')}</Badge>}
+          {proposalRows.length > 0 ? <Badge tone="neutral">{proposalRows.length} {proposalRows.length === 1 ? t('customer.proposals.requirementWithProposals') : t('customer.proposals.requirementsWithProposals')}</Badge> : null}
         </div>
       </div>
 
       {visibleRows.length === 0 ? <div className="customer-account-proposal-empty">
         <div>
-          <strong>{hasRequirements ? (tamil ? 'உங்கள் requirement live-ல் உள்ளது' : 'Your requirement is live') : (tamil ? 'ஒரு service தேவைப்படுகிறதா?' : 'Need a service?')}</strong>
-          <p className="summary-note">{hasRequirements
-            ? (tamil ? 'Provider reply வந்தவுடன் புதிய proposal இங்கே காட்டப்படும். Requirement-ஐ update அல்லது manage செய்யலாம்.' : 'New provider replies will appear here. You can update or manage your requirement anytime.')
-            : (tamil ? 'Requirement post செய்யுங்கள். Matching verified providers proposals அனுப்பலாம்; புதிய replies இங்கே தோன்றும்.' : 'Post a requirement and matching verified providers can send proposals. New replies will show up here.')}</p>
+          <strong>{hasRequirements ? t('customer.proposals.requirementLive') : t('customer.proposals.needService')}</strong>
+          <p className="summary-note">{hasRequirements ? t('customer.proposals.liveEmptyHelp') : t('customer.proposals.postEmptyHelp')}</p>
         </div>
-        <Button type="button" variant="secondary" onClick={() => router.push('/requirements')}>{hasRequirements ? (tamil ? 'Requirements நிர்வகிக்க' : 'Manage requirements') : (tamil ? 'Requirement post செய்' : 'Post a requirement')}</Button>
+        <Button type="button" variant="secondary" onClick={() => router.push('/requirements')}>{hasRequirements ? t('customer.proposals.manageRequirements') : t('customer.proposals.postRequirement')}</Button>
       </div> : <div className="customer-account-proposal-list">
         {visibleRows.map((row) => {
           const unread = Math.max(0, row.unread_proposal_count ?? 0);
@@ -172,15 +169,15 @@ export default function CustomerAccountProposalSummary({ onUnreadChange }: Custo
             <div>
               <div className="customer-account-proposal-titleline">
                 <span className="eyebrow">{row.reference}</span>
-                {unread > 0 ? <Badge tone="info">{unread} {tamil ? 'புதியது' : 'new'}</Badge> : null}
+                {unread > 0 ? <Badge tone="info">{unread} {t('customer.proposals.new')}</Badge> : null}
               </div>
               <strong>{row.title}</strong>
-              <span className="summary-note">{tamil ? 'சமீபத்திய proposal' : 'Latest proposal'} · {latestLabel(row.latest_proposal_at)}</span>
+              <span className="summary-note">{t('customer.proposals.latest')} · {latestLabel(row.latest_proposal_at)}</span>
             </div>
-            <Button type="button" variant={unread > 0 ? 'primary' : 'secondary'} loading={openingId === row.id} disabled={Boolean(openingId && openingId !== row.id)} onClick={() => void review(row)}>{unread > 0 ? (tamil ? 'புதிய proposal review செய்' : 'Review new proposal') : (tamil ? 'Proposals பார்க்க' : 'View proposals')}</Button>
+            <Button type="button" variant={unread > 0 ? 'primary' : 'secondary'} loading={openingId === row.id} disabled={Boolean(openingId && openingId !== row.id)} onClick={() => void review(row)}>{unread > 0 ? t('customer.proposals.reviewNew') : t('customer.proposals.view')}</Button>
           </div>;
         })}
-        <Button type="button" variant="quiet" onClick={() => router.push('/requirements')}>{tamil ? 'அனைத்து Requirements பார்க்க' : 'View all requirements'}</Button>
+        <Button type="button" variant="quiet" onClick={() => router.push('/requirements')}>{t('customer.proposals.viewAll')}</Button>
       </div>}
 
       <style jsx global>{`
