@@ -189,6 +189,13 @@ const english = {
   'publicProvider.serviceShare.copied': 'Link copied ✓',
   'publicProvider.serviceShare.action': 'Share service',
   'publicProvider.serviceShare.error': 'This browser could not share or copy the service link.',
+  'publicProvider.savedService.signIn': 'Sign in to save service',
+  'publicProvider.savedService.saved': 'Saved ✓',
+  'publicProvider.savedService.save': 'Save service',
+  'publicProvider.savedService.loadError': 'Unable to load saved service state.',
+  'publicProvider.savedService.removeError': 'Unable to remove saved service.',
+  'publicProvider.savedService.saveError': 'Unable to save service.',
+  'publicProvider.savedService.updateError': 'Unable to update saved service.',
 } as const;
 
 type PublicProviderKey = keyof typeof english;
@@ -379,6 +386,13 @@ const tamil: Record<PublicProviderKey, string> = {
   'publicProvider.serviceShare.copied': 'இணைப்பு நகலெடுக்கப்பட்டது ✓',
   'publicProvider.serviceShare.action': 'சேவையை பகிர்',
   'publicProvider.serviceShare.error': 'இந்த browser-ல் share/copy செய்ய முடியவில்லை.',
+  'publicProvider.savedService.signIn': 'சேவையை சேமிக்க Sign in',
+  'publicProvider.savedService.saved': 'சேமிக்கப்பட்டது ✓',
+  'publicProvider.savedService.save': 'சேவையை சேமி',
+  'publicProvider.savedService.loadError': 'சேமித்த சேவை நிலையை load செய்ய முடியவில்லை.',
+  'publicProvider.savedService.removeError': 'சேமித்த சேவையை remove செய்ய முடியவில்லை.',
+  'publicProvider.savedService.saveError': 'சேவையை save செய்ய முடியவில்லை.',
+  'publicProvider.savedService.updateError': 'சேமித்த சேவை நிலையை update செய்ய முடியவில்லை.',
 };
 
 const catalogs = { 'en-IN': english, 'ta-IN': tamil } as const;
