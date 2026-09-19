@@ -34,9 +34,7 @@ type ReadinessStep = {
 };
 
 export default function ProviderPublicReadinessManager() {
-  const { locale } = useIdentityWorkspaceTranslations();
-  const tamil = locale.toLowerCase().startsWith('ta');
-  const text = useCallback((en: string, ta: string) => tamil ? ta : en, [tamil]);
+  const { t } = useIdentityWorkspaceTranslations();
   const [profile, setProfile] = useState<ProviderProfile | null>(null);
   const [roles, setRoles] = useState<ProfessionalRole[]>([]);
   const [publicResumeEnabled, setPublicResumeEnabled] = useState(false);
@@ -50,7 +48,7 @@ export default function ProviderPublicReadinessManager() {
       const profileResponse = await fetch('/api/provider/profile', { cache: 'no-store' });
       const profilePayload = await profileResponse.json() as { profile?: ProviderProfile; error?: string };
       if (!profileResponse.ok || !profilePayload.profile) {
-        throw new Error(profilePayload.error ?? text('Unable to load provider profile.', 'Provider profile load செய்ய முடியவில்லை.'));
+        throw new Error(profilePayload.error ?? t('provider.publicReadiness.unableToLoadProviderProfile'));
       }
 
       setProfile(profilePayload.profile);
@@ -66,16 +64,16 @@ export default function ProviderPublicReadinessManager() {
       ]);
       const rolesPayload = await rolesResponse.json() as { roles?: ProfessionalRole[]; error?: string };
       const resumePayload = await resumeResponse.json() as ResumePayload;
-      if (!rolesResponse.ok) throw new Error(rolesPayload.error ?? text('Unable to load professional roles.', 'Professional roles load செய்ய முடியவில்லை.'));
-      if (!resumeResponse.ok) throw new Error(resumePayload.error ?? text('Unable to load career profile.', 'Career profile load செய்ய முடியவில்லை.'));
+      if (!rolesResponse.ok) throw new Error(rolesPayload.error ?? t('provider.publicReadiness.unableToLoadProfessionalRoles'));
+      if (!resumeResponse.ok) throw new Error(resumePayload.error ?? t('provider.publicReadiness.unableToLoadCareerProfile'));
       setRoles(rolesPayload.roles ?? []);
       setPublicResumeEnabled(Boolean(resumePayload.career_profile?.public_resume_enabled));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : text('Unable to load public profile readiness.', 'Public profile readiness load செய்ய முடியவில்லை.'));
+      setError(cause instanceof Error ? cause.message : t('provider.publicReadiness.unableToLoadPublicProfileReadiness'));
     } finally {
       setLoading(false);
     }
-  }, [text]);
+  }, [t]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -88,14 +86,14 @@ export default function ProviderPublicReadinessManager() {
       : profile.services_active > 0;
     const trustNormal = profile.trust_status === 'normal';
     const trustDetail = profile.trust_status === 'suspended'
-      ? text('Public marketplace visibility is paused while this Provider account is suspended. Open Platform Support if you need help with the suspension or restoration path.', 'இந்த Provider account suspended நிலையில் இருக்கும் வரை public marketplace visibility pause ஆகும். Suspension அல்லது restoration path குறித்து உதவி தேவைப்பட்டால் Platform Support-ஐ திறக்கவும்.')
+      ? t('provider.publicReadiness.publicMarketplaceVisibilityIsPausedWhileThisProviderAccountIs')
       : profile.trust_status === 'reverification_required'
-        ? text('Fresh verification is required before marketplace trust access and public visibility can resume.', 'Marketplace trust access மற்றும் public visibility மீண்டும் தொடங்க fresh verification தேவை.')
-        : text('Marketplace trust state allows this Provider identity to be shown publicly.', 'Marketplace trust state இந்த Provider identity-ஐ public-ஆக காட்ட அனுமதிக்கிறது.');
+        ? t('provider.publicReadiness.freshVerificationIsRequiredBeforeMarketplaceTrustAccessAndPublic')
+        : t('provider.publicReadiness.marketplaceTrustStateAllowsThisProviderIdentityToBeShown');
     const trustStep: ReadinessStep = {
       key: 'trust',
       done: trustNormal,
-      label: text('Marketplace trust access', 'Marketplace trust access'),
+      label: t('provider.publicReadiness.marketplaceTrustAccess'),
       detail: trustDetail,
       href: profile.trust_status === 'reverification_required'
         ? '/provider/verification'
@@ -108,22 +106,22 @@ export default function ProviderPublicReadinessManager() {
       {
         key: 'basics',
         done: profile.profile_complete,
-        label: text('Complete public profile basics', 'Public profile அடிப்படை விவரங்களை முடிக்கவும்'),
-        detail: text('Headline/name, description and service area must be complete before the Professional profile can open publicly.', 'Professional profile public ஆக திறக்க headline/name, description மற்றும் service area முழுமையாக இருக்க வேண்டும்.'),
+        label: t('provider.publicReadiness.completePublicProfileBasics'),
+        detail: t('provider.publicReadiness.headlineNameDescriptionAndServiceAreaMustBeCompleteBefore'),
         href: '/provider/profile',
       },
       {
         key: 'verification',
         done: profile.verified,
-        label: text('Complete provider verification', 'Provider verification-ஐ முடிக்கவும்'),
-        detail: text('The Professional identity must be verified before the public profile can open.', 'Public profile open ஆக Professional identity verified ஆக இருக்க வேண்டும்.'),
+        label: t('provider.publicReadiness.completeProviderVerification'),
+        detail: t('provider.publicReadiness.theProfessionalIdentityMustBeVerifiedBeforeThePublicProfile'),
         href: '/provider/verification',
       },
       {
         key: 'disclosure',
         done: profile.marketplace_disclosure_complete,
-        label: text('Complete marketplace disclosure', 'Marketplace disclosure-ஐ முடிக்கவும்'),
-        detail: text('Legal identity, public contact, principal address and grievance contact must be present.', 'Legal identity, public contact, principal address மற்றும் grievance contact இருக்க வேண்டும்.'),
+        label: t('provider.publicReadiness.completeMarketplaceDisclosure'),
+        detail: t('provider.publicReadiness.legalIdentityPublicContactPrincipalAddressAndGrievanceContactMust'),
         href: '/provider/verification',
       },
       trustStep,
@@ -131,15 +129,15 @@ export default function ProviderPublicReadinessManager() {
       {
         key: 'verification',
         done: profile.verified,
-        label: text('Complete provider verification', 'Provider verification-ஐ முடிக்கவும்'),
-        detail: text('The Business identity must be verified before the public storefront can open.', 'Public storefront open ஆக Business identity verified ஆக இருக்க வேண்டும்.'),
+        label: t('provider.publicReadiness.completeProviderVerification'),
+        detail: t('provider.publicReadiness.theBusinessIdentityMustBeVerifiedBeforeThePublicStorefront'),
         href: '/provider/verification',
       },
       {
         key: 'disclosure',
         done: profile.marketplace_disclosure_complete,
-        label: text('Complete marketplace disclosure', 'Marketplace disclosure-ஐ முடிக்கவும்'),
-        detail: text('Legal identity, public contact, principal address and grievance contact must be present on the Business profile.', 'Business profile-ல் legal identity, public contact, principal address மற்றும் grievance contact இருக்க வேண்டும்.'),
+        label: t('provider.publicReadiness.completeMarketplaceDisclosure'),
+        detail: t('provider.publicReadiness.legalIdentityPublicContactPrincipalAddressAndGrievanceContactMust2'),
         href: '/provider/verification',
       },
       trustStep,
@@ -154,7 +152,7 @@ export default function ProviderPublicReadinessManager() {
       completed: steps.filter((step) => step.done).length,
       pausedOfferingCount: profile.services_paused + (professional ? 0 : profile.products_paused),
     };
-  }, [profile, publicResumeEnabled, roles, text]);
+  }, [profile, publicResumeEnabled, roles, t]);
 
   const publicHref = profile
     ? profile.provider_type === 'business'
@@ -164,122 +162,122 @@ export default function ProviderPublicReadinessManager() {
 
   return <LiveProviderShell active="/provider/public-readiness">
     <ProviderHeading
-      eyebrow={text('Public marketplace', 'Public marketplace')}
+      eyebrow={t('provider.publicReadiness.publicMarketplace')}
       title={profile?.provider_type === 'business'
-        ? text('Business public storefront readiness', 'Business public storefront readiness')
-        : text('Professional public profile readiness', 'Professional public profile readiness')}
+        ? t('provider.publicReadiness.businessPublicStorefrontReadiness')
+        : t('provider.publicReadiness.professionalPublicProfileReadiness')}
       description={profile?.provider_type === 'business'
-        ? text('See exactly what is required before customers can open your public Business storefront, and keep service-launch readiness separate.', 'Customers உங்கள் public Business storefront-ஐ பார்க்க என்ன தேவை, service-launch readiness எது என்று தனித்தனியாக இங்கே பார்க்கலாம்.')
-        : text('See exactly what is required before customers can open your public Professional profile, and keep discovery content separate.', 'Customers உங்கள் public Professional profile-ஐ பார்க்க என்ன தேவை, discovery content எது என்று தனித்தனியாக இங்கே பார்க்கலாம்.')}
+        ? t('provider.publicReadiness.seeExactlyWhatIsRequiredBeforeCustomersCanOpenYour')
+        : t('provider.publicReadiness.seeExactlyWhatIsRequiredBeforeCustomersCanOpenYour2')}
     />
 
-    {loading ? <Card><p>{text('Checking public profile readiness…', 'Public profile readiness check ஆகிறது…')}</p></Card> : null}
-    {error ? <Card><p className="field-error" role="alert">{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>{text('Reload', 'மீண்டும் load செய்')}</Button></Card> : null}
+    {loading ? <Card><p>{t('provider.publicReadiness.checkingPublicProfileReadiness')}</p></Card> : null}
+    {error ? <Card><p className="field-error" role="alert">{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>{t('provider.publicReadiness.reload')}</Button></Card> : null}
 
     {readiness && profile ? <>
       <Card>
         <div className="section-heading">
           <div>
-            <span className="eyebrow">{text('Public visibility', 'Public visibility')}</span>
-            <h2>{readiness.completed}/{readiness.steps.length} {text('visibility gates complete', 'visibility gates complete')}</h2>
+            <span className="eyebrow">{t('provider.publicReadiness.publicVisibility')}</span>
+            <h2>{readiness.completed}/{readiness.steps.length} {t('provider.publicReadiness.visibilityGatesComplete')}</h2>
           </div>
           <Badge tone={readiness.publicProfileReady ? 'success' : 'warning'}>
             {readiness.publicProfileReady
-              ? profile.provider_type === 'business' ? text('Public storefront ready', 'Public storefront ready') : text('Public profile ready', 'Public profile ready')
-              : text('Action required', 'Action required')}
+              ? profile.provider_type === 'business' ? t('provider.publicReadiness.publicStorefrontReady') : t('provider.publicReadiness.publicProfileReady')
+              : t('provider.publicReadiness.actionRequired')}
           </Badge>
         </div>
         <p>{readiness.publicProfileReady
           ? profile.provider_type === 'business'
-            ? text('Your verified Business identity, marketplace disclosure and trust state are ready for the public storefront.', 'உங்கள் verified Business identity, marketplace disclosure மற்றும் trust state public storefront-க்கு ready.')
-            : text('Your Professional profile basics, verification, marketplace disclosure and trust state are ready for public visibility.', 'உங்கள் Professional profile basics, verification, marketplace disclosure மற்றும் trust state public visibility-க்கு ready.')
-          : text('Complete only the items marked Required below. Completed items do not need to be repeated.', 'கீழே Required என்று உள்ள items மட்டும் complete செய்யுங்கள். ஏற்கனவே Done ஆனவற்றை repeat செய்ய தேவையில்லை.')}</p>
-        {readiness.publicProfileReady ? <Link href={publicHref} className="button button-primary">{profile.provider_type === 'business' ? text('View public storefront', 'Public storefront பார்க்க') : text('View public profile', 'Public profile பார்க்க')}</Link> : null}
+            ? t('provider.publicReadiness.yourVerifiedBusinessIdentityMarketplaceDisclosureAndTrustStateAre')
+            : t('provider.publicReadiness.yourProfessionalProfileBasicsVerificationMarketplaceDisclosureAndTrustState')
+          : t('provider.publicReadiness.completeOnlyTheItemsMarkedRequiredBelowCompletedItemsDo')}</p>
+        {readiness.publicProfileReady ? <Link href={publicHref} className="button button-primary">{profile.provider_type === 'business' ? t('provider.publicReadiness.viewPublicStorefront') : t('provider.publicReadiness.viewPublicProfile')}</Link> : null}
       </Card>
 
       <div className="provider-profile-grid">
         {readiness.steps.map((step, index) => <Card className="provider-profile-card" key={step.key}>
           <div className="section-heading">
-            <div><span className="eyebrow">{text(`Gate ${index + 1}`, `Gate ${index + 1}`)}</span><h2>{step.label}</h2></div>
-            <Badge tone={step.done ? 'success' : 'warning'}>{step.done ? text('Done', 'Done') : text('Required', 'Required')}</Badge>
+            <div><span className="eyebrow">{`${t('provider.publicReadiness.gate')} ${index + 1}`}</span><h2>{step.label}</h2></div>
+            <Badge tone={step.done ? 'success' : 'warning'}>{step.done ? t('provider.publicReadiness.done') : t('provider.publicReadiness.required')}</Badge>
           </div>
           <p>{step.detail}</p>
-          <Link href={step.href} className="text-link">{step.done ? text('Review', 'Review') : text('Continue', 'Continue')} →</Link>
+          <Link href={step.href} className="text-link">{step.done ? t('provider.publicReadiness.review') : t('provider.publicReadiness.continue')} →</Link>
         </Card>)}
       </div>
 
       {profile.trust_status === 'normal' && readiness.pausedOfferingCount > 0 ? <Card>
         <div className="section-heading">
           <div>
-            <span className="eyebrow">{text('Marketplace re-entry', 'Marketplace re-entry')}</span>
-            <h2>{text('Review paused offerings before publishing again', 'மீண்டும் publish செய்வதற்கு முன் paused offerings-ஐ review செய்யவும்')}</h2>
+            <span className="eyebrow">{t('provider.publicReadiness.marketplaceReEntry')}</span>
+            <h2>{t('provider.publicReadiness.reviewPausedOfferingsBeforePublishingAgain')}</h2>
           </div>
-          <Badge tone="warning">{readiness.pausedOfferingCount} {text('paused', 'paused')}</Badge>
+          <Badge tone="warning">{readiness.pausedOfferingCount} {t('provider.publicReadiness.paused')}</Badge>
         </div>
-        <p>{text('Your trust state is normal, but paused Services or Products stay private until you explicitly review and reactivate what should return to the marketplace. Nothing is auto-published after recovery.', 'உங்கள் trust state normal. ஆனால் paused Services அல்லது Products நீங்கள் review செய்து re-activate செய்யும் வரை private-ஆகவே இருக்கும். Recovery பிறகு எதுவும் automatically publish ஆகாது.')}</p>
+        <p>{t('provider.publicReadiness.yourTrustStateIsNormalButPausedServicesOrProducts')}</p>
         <div className="provider-review-summary">
-          <div><strong>{profile.services_paused}</strong><span>{text('Paused services', 'Paused services')}</span></div>
-          {profile.provider_type === 'business' ? <div><strong>{profile.products_paused}</strong><span>{text('Paused products', 'Paused products')}</span></div> : null}
+          <div><strong>{profile.services_paused}</strong><span>{t('provider.publicReadiness.pausedServices')}</span></div>
+          {profile.provider_type === 'business' ? <div><strong>{profile.products_paused}</strong><span>{t('provider.publicReadiness.pausedProducts')}</span></div> : null}
         </div>
         <div className="button-row">
-          {profile.services_paused > 0 ? <Link href="/provider/services" className="button button-primary">{text('Review Services', 'Services review செய்ய')}</Link> : null}
-          {profile.provider_type === 'business' && profile.products_paused > 0 ? <Link href="/provider/products" className="button button-secondary">{text('Review Products', 'Products review செய்ய')}</Link> : null}
-          <Link href="/provider/handle" className="button button-secondary">{text('Review @handle', '@handle review செய்ய')}</Link>
+          {profile.services_paused > 0 ? <Link href="/provider/services" className="button button-primary">{t('provider.publicReadiness.reviewServices')}</Link> : null}
+          {profile.provider_type === 'business' && profile.products_paused > 0 ? <Link href="/provider/products" className="button button-secondary">{t('provider.publicReadiness.reviewProducts')}</Link> : null}
+          <Link href="/provider/handle" className="button button-secondary">{t('provider.publicReadiness.reviewHandleHandle')}</Link>
         </div>
       </Card> : null}
 
       {profile.provider_type === 'business' ? <Card>
         <div className="section-heading">
-          <div><span className="eyebrow">{text('Service launch quality', 'Service launch quality')}</span><h2>{text('Business profile basics', 'Business profile basics')}</h2></div>
-          <Badge tone={profile.profile_complete ? 'success' : 'warning'}>{profile.profile_complete ? text('Complete', 'Complete') : text('Required for services', 'Services-க்கு required')}</Badge>
+          <div><span className="eyebrow">{t('provider.publicReadiness.serviceLaunchQuality')}</span><h2>{t('provider.publicReadiness.businessProfileBasics')}</h2></div>
+          <Badge tone={profile.profile_complete ? 'success' : 'warning'}>{profile.profile_complete ? t('provider.publicReadiness.complete') : t('provider.publicReadiness.requiredForServices')}</Badge>
         </div>
         <p>{profile.profile_complete
-          ? text('Business name, description and service area are complete for service activation.', 'Business name, description மற்றும் service area service activation-க்கு complete.')
-          : text('Your storefront identity may have separate visibility rules, but active marketplace services still require Business name, description and service area to be complete.', 'Storefront visibility rules தனியாக இருந்தாலும் active marketplace services-க்கு Business name, description மற்றும் service area complete ஆக வேண்டும்.')}</p>
-        {!profile.profile_complete ? <Link href="/provider/profile" className="button button-secondary">{text('Complete Business profile', 'Business profile complete செய்ய')}</Link> : null}
+          ? t('provider.publicReadiness.businessNameDescriptionAndServiceAreaAreCompleteForService')
+          : t('provider.publicReadiness.yourStorefrontIdentityMayHaveSeparateVisibilityRulesButActive')}</p>
+        {!profile.profile_complete ? <Link href="/provider/profile" className="button button-secondary">{t('provider.publicReadiness.completeBusinessProfile')}</Link> : null}
       </Card> : null}
 
       <Card>
         <div className="section-heading">
-          <div><span className="eyebrow">{text('Discovery content', 'Discovery content')}</span><h2>{profile.provider_type === 'business' ? text('What customers can discover from services', 'Services மூலம் customers என்ன discover செய்யலாம்') : text('What customers can discover', 'Customers என்ன discover செய்யலாம்')}</h2></div>
-          <Badge tone={readiness.contentReady ? 'success' : 'warning'}>{readiness.contentReady ? text('Content available', 'Content available') : text('Add content', 'Content சேர்க்கவும்')}</Badge>
+          <div><span className="eyebrow">{t('provider.publicReadiness.discoveryContent')}</span><h2>{profile.provider_type === 'business' ? t('provider.publicReadiness.whatCustomersCanDiscoverFromServices') : t('provider.publicReadiness.whatCustomersCanDiscover')}</h2></div>
+          <Badge tone={readiness.contentReady ? 'success' : 'warning'}>{readiness.contentReady ? t('provider.publicReadiness.contentAvailable') : t('provider.publicReadiness.addContent')}</Badge>
         </div>
         {profile.provider_type === 'professional' ? <div className="provider-review-summary">
-          <div><strong>{profile.services_active}</strong><span>{text('Active services', 'Active services')}</span></div>
-          <div><strong>{readiness.activeRoles}</strong><span>{text('Active professional roles', 'Active professional roles')}</span></div>
-          <div><strong>{publicResumeEnabled ? 'Yes' : 'No'}</strong><span>{text('Published career profile', 'Published career profile')}</span></div>
+          <div><strong>{profile.services_active}</strong><span>{t('provider.publicReadiness.activeServices')}</span></div>
+          <div><strong>{readiness.activeRoles}</strong><span>{t('provider.publicReadiness.activeProfessionalRoles')}</span></div>
+          <div><strong>{publicResumeEnabled ? 'Yes' : 'No'}</strong><span>{t('provider.publicReadiness.publishedCareerProfile')}</span></div>
         </div> : <div className="provider-review-summary">
-          <div><strong>{profile.services_active}</strong><span>{text('Active services', 'Active services')}</span></div>
+          <div><strong>{profile.services_active}</strong><span>{t('provider.publicReadiness.activeServices')}</span></div>
         </div>}
         <p className="summary-note">{profile.provider_type === 'business'
-          ? text('Active services improve marketplace discovery. Approved public Products are managed separately in the Business Products workspace and can also appear on the storefront.', 'Active services marketplace discovery-ஐ மேம்படுத்தும். Approved public Products Business Products workspace-ல் தனியாக manage செய்யப்படும்; அவையும் storefront-ல் தோன்றலாம்.')
-          : text('An active service, active professional role or published career profile adds useful discovery content. These are discovery signals, not the base public-profile visibility gate.', 'Active service, active professional role அல்லது published career profile discovery content சேர்க்கும். இவை base public-profile visibility gate அல்ல.')}</p>
+          ? t('provider.publicReadiness.activeServicesImproveMarketplaceDiscoveryApprovedPublicProductsAreManaged')
+          : t('provider.publicReadiness.anActiveServiceActiveProfessionalRoleOrPublishedCareerProfile')}</p>
         {!readiness.contentReady ? <div className="button-row">
           {profile.provider_type === 'professional' ? <>
-            <Link href="/provider/profile" className="button button-secondary">{text('Add professional role', 'Professional role சேர்க்க')}</Link>
-            <Link href="/provider/services" className="button button-secondary">{text('Create service', 'Service உருவாக்க')}</Link>
-            <Link href="/provider/resume" className="button button-secondary">{text('Publish career profile', 'Career profile publish செய்ய')}</Link>
+            <Link href="/provider/profile" className="button button-secondary">{t('provider.publicReadiness.addProfessionalRole')}</Link>
+            <Link href="/provider/services" className="button button-secondary">{t('provider.publicReadiness.createService')}</Link>
+            <Link href="/provider/resume" className="button button-secondary">{t('provider.publicReadiness.publishCareerProfile')}</Link>
           </> : <>
-            <Link href="/provider/services" className="button button-secondary">{text('Create service', 'Service உருவாக்க')}</Link>
-            <Link href="/provider/products" className="button button-secondary">{text('Manage Products', 'Products manage செய்ய')}</Link>
+            <Link href="/provider/services" className="button button-secondary">{t('provider.publicReadiness.createService')}</Link>
+            <Link href="/provider/products" className="button button-secondary">{t('provider.publicReadiness.manageProducts')}</Link>
           </>}
         </div> : null}
       </Card>
 
-      {profile.trust_status !== 'normal' ? <Alert title={text('Public visibility paused by trust state', 'Trust state காரணமாக public visibility pause')} tone={profile.trust_status === 'suspended' ? 'danger' : 'warning'}>
+      {profile.trust_status !== 'normal' ? <Alert title={t('provider.publicReadiness.publicVisibilityPausedByTrustState')} tone={profile.trust_status === 'suspended' ? 'danger' : 'warning'}>
         {profile.trust_status === 'suspended' ? <>
-          <p>{text('Your Provider public profile/storefront, public talents and published career data stay unavailable while the account is suspended. Existing private account and booking operations remain separate.', 'Provider account suspended இருக்கும் வரை public profile/storefront, public talents மற்றும் published career data unavailable ஆக இருக்கும். Existing private account மற்றும் booking operations தனியாக தொடரும்.')}</p>
-          <div className="button-row"><Link href="/account/support" className="button button-secondary">{text('Open Platform Support', 'Platform Support திறக்க')}</Link></div>
+          <p>{t('provider.publicReadiness.yourProviderPublicProfileStorefrontPublicTalentsAndPublishedCareer')}</p>
+          <div className="button-row"><Link href="/account/support" className="button button-secondary">{t('provider.publicReadiness.openPlatformSupport')}</Link></div>
         </> : <>
-          <p>{text('Your public marketplace presence stays unavailable until fresh verification restores normal trust access.', 'Fresh verification normal trust access-ஐ restore செய்யும் வரை public marketplace presence unavailable ஆக இருக்கும்.')}</p>
-          <div className="button-row"><Link href="/provider/verification" className="button button-secondary">{text('Continue re-verification', 'Re-verification continue செய்ய')}</Link></div>
+          <p>{t('provider.publicReadiness.yourPublicMarketplacePresenceStaysUnavailableUntilFreshVerificationRestores')}</p>
+          <div className="button-row"><Link href="/provider/verification" className="button button-secondary">{t('provider.publicReadiness.continueReVerification')}</Link></div>
         </>}
       </Alert> : null}
 
-      {!profile.marketplace_disclosure_complete ? <Alert title={text('Why disclosure is required', 'Disclosure ஏன் தேவை')} tone="warning">
+      {!profile.marketplace_disclosure_complete ? <Alert title={t('provider.publicReadiness.whyDisclosureIsRequired')} tone="warning">
         {profile.provider_type === 'business'
-          ? text('The public Business storefront stays unavailable until the approved marketplace disclosure is complete. Open Verification to submit or refresh public legal and grievance details.', 'Approved marketplace disclosure complete ஆகும் வரை public Business storefront unavailable ஆக இருக்கும். Public legal மற்றும் grievance details-ஐ submit/refresh செய்ய Verification-ஐ திறக்கவும்.')
-          : text('The public Professional page stays unavailable until the approved marketplace disclosure is complete. Open Verification to submit or refresh public legal and grievance details.', 'Approved marketplace disclosure complete ஆகும் வரை public Professional page unavailable ஆக இருக்கும். Public legal மற்றும் grievance details-ஐ submit/refresh செய்ய Verification-ஐ திறக்கவும்.')}
+          ? t('provider.publicReadiness.thePublicBusinessStorefrontStaysUnavailableUntilTheApprovedMarketplace')
+          : t('provider.publicReadiness.thePublicProfessionalPageStaysUnavailableUntilTheApprovedMarketplace')}
       </Alert> : null}
     </> : null}
   </LiveProviderShell>;
