@@ -76,8 +76,8 @@ test('Customer Smart Attention catches awarded services that still need a schedu
 
 test('Customer dashboard keeps detailed proposal and order activity collapsed behind one secondary control', () => {
   assert.ok(customerDashboard.includes('<details className="customer-secondary-activity">'));
-  assert.ok(customerDashboard.includes("tamil ? 'மேலும் activity' : 'More activity'"));
-  assert.ok(customerDashboard.includes('Proposals, order updates & history'));
+  assert.ok(customerDashboard.includes("t('account.dashboard.moreActivity')"));
+  assert.ok(customerDashboard.includes("t('account.dashboard.activitySummary')"));
   assert.ok(customerDashboard.includes('<CustomerProductOrderAttention onUnreadChange={setProductOrderUnreadCount} />'));
   assert.ok(customerDashboard.includes('<CustomerAccountProposalSummary onUnreadChange={setProposalUnreadCount} />'));
   assert.ok(
@@ -113,7 +113,7 @@ test('Customer dashboard replaces large navigation cards with compact quick acti
 
 test('Customer dashboard folds low-frequency destinations into More shortcuts', () => {
   assert.ok(customerDashboard.includes('className="customer-dashboard-more-links"'));
-  assert.ok(customerDashboard.includes("tamil ? 'மேலும் shortcuts' : 'More shortcuts'"));
+  assert.ok(customerDashboard.includes("t('account.dashboard.moreShortcuts')"));
   assert.ok(customerDashboard.includes("href: '/notifications'"));
   assert.ok(customerDashboard.includes("href: '/saved-services'"));
   assert.ok(customerDashboard.includes("href: '/saved-products'"));
