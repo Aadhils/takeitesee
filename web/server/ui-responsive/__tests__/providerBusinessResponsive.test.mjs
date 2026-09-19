@@ -21,6 +21,11 @@ test('provider dashboard cards retain compact tablet and phone contracts', () =>
   assert.match(dashboardCss, /\.providerQuickGrid\s*\{[\s\S]*?grid-template-columns:\s*repeat\(8/);
   assert.match(dashboardCss, /@media \(max-width: 1100px\)[\s\S]*?\.providerQuickGrid\s*\{\s*grid-template-columns:\s*repeat\(4/);
   assert.match(dashboardCss, /@media \(max-width: 560px\)[\s\S]*?\.providerQuickLink\s*\{[\s\S]*?min-height:\s*68px/);
+  assert.match(dashboardCss, /\.followUpChip\s*\{[\s\S]*?min-height:\s*44px/);
+  assert.match(dashboardCss, /\.followUpRail\s*\{[\s\S]*?overflow-x:\s*auto/);
+  assert.match(dashboardCss, /@media \(max-width: 780px\)[\s\S]*?\.followUpQueue\s*\{[\s\S]*?flex-direction:\s*column/);
+  assert.doesNotMatch(dashboardCss, /\.followUps\s*\{/);
+  assert.doesNotMatch(dashboardCss, /\.followUpLink\s*\{/);
 });
 
 test('service reach controls are touch safe and stack on narrow phones', () => {
