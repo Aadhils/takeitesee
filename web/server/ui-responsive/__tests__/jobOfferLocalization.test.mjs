@@ -72,7 +72,7 @@ test('Job Offer workspace preserves offer eligibility, immutability and expiry U
   assert.ok(offersRoute.includes("if (application.status !== 'interview')"));
   assert.ok(offersRoute.includes(".eq('status', 'pending')"));
   assert.ok(translations.includes('Issued terms are immutable.'));
-  assert.ok(translations.includes('withdraw it and issue a revised offer'));
+  assert.ok(translations.includes('Withdraw the pending offer and issue a revised offer'));
 });
 
 test('Employment-offer compensation remains informational and does not activate finance flows', () => {
