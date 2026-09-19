@@ -569,7 +569,7 @@
 
 .providerQuickMore > summary {
   display: flex;
-  min-height: 42px;
+  min-height: 44px;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
@@ -742,6 +742,10 @@
   .providerQuickPrimaryGrid,
   .providerQuickMoreGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
+
+@media (max-width: 900px) {
+}
+
 
 @media (max-width: 780px) {
   .dashboardStack { gap: 16px; }
