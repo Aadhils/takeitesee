@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import LocalizedAccountShell from './LocalizedAccountShell';
 import styles from './CustomerSavedItemsResponsive.module.css';
 import { Badge, Button, Card, EmptyState } from '../ui/primitives';
-import { useLanguage } from '../i18n/LanguageProvider';
+import { useRemainingWorkspaceTranslations } from '../i18n/RemainingWorkspaceTranslations';
 
 type SavedProduct = {
   product_id: string;
@@ -31,15 +31,14 @@ function productImageHref(productId: string) {
 }
 
 export default function SavedProductsPage() {
-  const { locale } = useLanguage();
-  const tamil = locale === 'ta-IN';
+  const { locale, t } = useRemainingWorkspaceTranslations();
   const [items, setItems] = useState<SavedProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState('');
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -50,17 +49,17 @@ export default function SavedProductsPage() {
         return;
       }
       const payload = await response.json() as { saved_products?: SavedProduct[]; error?: string };
-      if (!response.ok) throw new Error(payload.error || 'Unable to load saved Products.');
+      if (!response.ok) throw new Error(payload.error || t('savedProducts.error.load'));
       setAuthenticated(true);
       setItems(payload.saved_products ?? []);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to load saved Products.');
+      setError(cause instanceof Error ? cause.message : t('savedProducts.error.load'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void load(); }, [load]);
 
   const remove = async (productId: string) => {
     if (busyId) return;
@@ -73,10 +72,10 @@ export default function SavedProductsPage() {
         body: JSON.stringify({ product_id: productId }),
       });
       const payload = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(payload.error || 'Unable to remove saved Product.');
+      if (!response.ok) throw new Error(payload.error || t('savedProducts.error.remove'));
       setItems((current) => current.filter((item) => item.product_id !== productId));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to remove saved Product.');
+      setError(cause instanceof Error ? cause.message : t('savedProducts.error.remove'));
     } finally {
       setBusyId('');
     }
@@ -88,45 +87,45 @@ export default function SavedProductsPage() {
   };
 
   const stockLabel = (mode: NonNullable<SavedProduct['product']>['stock_mode']) => {
-    if (mode === 'in_stock') return tamil ? 'Stock உள்ளது' : 'In stock';
-    if (mode === 'made_to_order') return tamil ? 'Order அடிப்படையில்' : 'Made to order';
-    return tamil ? 'Stock இல்லை' : 'Out of stock';
+    if (mode === 'in_stock') return t('savedProducts.stock.inStock');
+    if (mode === 'made_to_order') return t('savedProducts.stock.madeToOrder');
+    return t('savedProducts.stock.outOfStock');
   };
 
   return <div className={styles.savedItemsJourney}><LocalizedAccountShell active="/saved-products">
     <section className="account-page-heading">
-      <span className="eyebrow">{tamil ? 'Product shortlist' : 'Product shortlist'}</span>
-      <h1>{tamil ? 'சேமித்த Products' : 'Saved Products'}</h1>
-      <p>{tamil ? 'பின்னர் பார்க்க அல்லது order request அனுப்ப நீங்கள் சேமித்த approved Business Products.' : 'Approved Business Products you saved to revisit or request later.'}</p>
+      <span className="eyebrow">{t('savedProducts.eyebrow')}</span>
+      <h1>{t('savedProducts.title')}</h1>
+      <p>{t('savedProducts.intro')}</p>
     </section>
 
     {authenticated === false ? <Card className="saved-products-empty-card">
-      <EmptyState title={tamil ? 'Saved Products பார்க்க sign in செய்யவும்' : 'Sign in to view saved Products'}>
-        {tamil ? 'Products-ஐ shortlist செய்து பின்னர் மீண்டும் பார்க்க உங்கள் account-ல் sign in செய்யவும்.' : 'Sign in to shortlist Products and return to them from your account.'}
+      <EmptyState title={t('savedProducts.signInTitle')}>
+        {t('savedProducts.signInHelp')}
       </EmptyState>
-      <div className="button-row saved-products-empty-actions"><Link className="button button-primary" href="/login?returnTo=%2Fsaved-products">Sign in</Link><Link className="button button-secondary" href="/signup">{tamil ? 'Account உருவாக்கவும்' : 'Create account'}</Link></div>
-    </Card> : loading ? <Card><p>{tamil ? 'Saved Products ஏற்றுகிறது…' : 'Loading saved Products…'}</p></Card> : error ? <Card><p className="field-error" role="alert">{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>{tamil ? 'மீண்டும் முயற்சி' : 'Try again'}</Button></Card> : items.length === 0 ? <Card className="saved-products-empty-card">
-      <EmptyState title={tamil ? 'இன்னும் saved Products இல்லை' : 'No saved Products yet'}>
-        {tamil ? 'Product marketplace-ல் ஒரு approved Product-ஐ Save செய்து shortlist தொடங்குங்கள்.' : 'Save an approved Product from the Product marketplace to start your shortlist.'}
+      <div className="button-row saved-products-empty-actions"><Link className="button button-primary" href="/login?returnTo=%2Fsaved-products">{t('savedProducts.signIn')}</Link><Link className="button button-secondary" href="/signup">{t('savedProducts.createAccount')}</Link></div>
+    </Card> : loading ? <Card><p>{t('savedProducts.loading')}</p></Card> : error ? <Card><p className="field-error" role="alert">{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>{t('common.retry')}</Button></Card> : items.length === 0 ? <Card className="saved-products-empty-card">
+      <EmptyState title={t('savedProducts.emptyTitle')}>
+        {t('savedProducts.emptyHelp')}
       </EmptyState>
-      <div className="saved-products-empty-actions"><Link className="button button-primary" href="/products">{tamil ? 'Products பார்க்க' : 'Browse Products'}</Link></div>
+      <div className="saved-products-empty-actions"><Link className="button button-primary" href="/products">{t('savedProducts.browse')}</Link></div>
     </Card> : <div style={{ display: 'grid', gap: '1rem' }}>
       {items.map((item) => {
         if (!item.available || !item.product) {
           return <Card key={item.product_id} className="policy-card">
-            <div className="section-heading"><div><span className="eyebrow">{tamil ? 'Saved Product' : 'Saved Product'}</span><h2>{tamil ? 'இந்த Product தற்போது public-ஆ கிடைக்கவில்லை' : 'This saved Product is no longer publicly available'}</h2></div><Badge tone="neutral">Unavailable</Badge></div>
-            <p className="detail-copy">{tamil ? 'Product revision approval மாறியிருக்கலாம், pause/remove செய்யப்பட்டிருக்கலாம். Saved reference-ஐ வேண்டுமெனில் remove செய்யலாம்.' : 'Its public approval may have changed, or the Product may have been paused or removed. You can remove the saved reference.'}</p>
-            <Button type="button" variant="quiet" loading={busyId === item.product_id} onClick={() => void remove(item.product_id)}>{tamil ? 'Saved Product-ஐ நீக்கு' : 'Remove saved Product'}</Button>
+            <div className="section-heading"><div><span className="eyebrow">{t('savedProducts.unavailableEyebrow')}</span><h2>{t('savedProducts.unavailableTitle')}</h2></div><Badge tone="neutral">{t('savedProducts.unavailableBadge')}</Badge></div>
+            <p className="detail-copy">{t('savedProducts.unavailableHelp')}</p>
+            <Button type="button" variant="quiet" loading={busyId === item.product_id} onClick={() => void remove(item.product_id)}>{t('savedProducts.remove')}</Button>
           </Card>;
         }
 
         const product = item.product;
         return <Card key={item.product_id} className="policy-card" style={{ overflow: 'hidden' }}>
-          {product.has_primary_image ? <img src={productImageHref(product.id)} alt={`${product.name} product`} style={{ width: '100%', maxHeight: '280px', objectFit: 'cover', borderRadius: '12px', marginBottom: '.75rem' }} /> : null}
-          <div className="section-heading"><div><span className="eyebrow">{product.business_name}</span><h2>{product.name}</h2><p className="summary-note">{product.business_location || (tamil ? 'Business location குறிப்பிடப்படவில்லை' : 'Business location not specified')}</p></div><Badge tone="success">{tamil ? 'Saved' : 'Saved'}</Badge></div>
+          {product.has_primary_image ? <img src={productImageHref(product.id)} alt={t('savedProducts.imageAlt').replace('{productName}', product.name)} style={{ width: '100%', maxHeight: '280px', objectFit: 'cover', borderRadius: '12px', marginBottom: '.75rem' }} /> : null}
+          <div className="section-heading"><div><span className="eyebrow">{product.business_name}</span><h2>{product.name}</h2><p className="summary-note">{product.business_location || t('savedProducts.locationMissing')}</p></div><Badge tone="success">{t('savedProducts.savedBadge')}</Badge></div>
           {product.description ? <p className="detail-copy">{product.description}</p> : null}
-          <dl className="review-details"><div><dt>{tamil ? 'விலை' : 'Price'}</dt><dd>{money(product.price, product.currency)} / {product.unit_label}</dd></div><div><dt>{tamil ? 'Stock' : 'Stock'}</dt><dd>{stockLabel(product.stock_mode)}</dd></div><div><dt>{tamil ? 'சேமித்த தேதி' : 'Saved'}</dt><dd>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(item.saved_at))}</dd></div></dl>
-          <div className="button-row"><Link className="button button-primary" href={`/products/${encodeURIComponent(product.id)}`}>{tamil ? 'Product திற' : 'Open Product'}</Link><Button type="button" variant="quiet" loading={busyId === item.product_id} onClick={() => void remove(item.product_id)}>{tamil ? 'Unsave' : 'Unsave'}</Button></div>
+          <dl className="review-details"><div><dt>{t('savedProducts.price')}</dt><dd>{money(product.price, product.currency)} / {product.unit_label}</dd></div><div><dt>{t('savedProducts.stock')}</dt><dd>{stockLabel(product.stock_mode)}</dd></div><div><dt>{t('savedProducts.savedDate')}</dt><dd>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(item.saved_at))}</dd></div></dl>
+          <div className="button-row"><Link className="button button-primary" href={`/products/${encodeURIComponent(product.id)}`}>{t('savedProducts.open')}</Link><Button type="button" variant="quiet" loading={busyId === item.product_id} onClick={() => void remove(item.product_id)}>{t('savedProducts.unsave')}</Button></div>
         </Card>;
       })}
     </div>}
