@@ -159,10 +159,16 @@ test('Provider dashboard keeps Priority now ahead of profile editing and uses a 
 });
 
 
-test('Provider dashboard uses one compact quick-action surface instead of two large command panels', () => {
+test('Provider dashboard uses role-aware compact quick actions without mobile duplication', () => {
   assert.ok(providerDashboard.includes('const providerQuickActions: DashboardLink[]'));
-  assert.ok(providerDashboard.includes('className={styles.providerQuickActions}'));
-  assert.ok(providerDashboard.includes('className={styles.providerQuickGrid}'));
+  assert.ok(providerDashboard.includes('const providerPrimaryQuickActions = providerQuickActions.slice(0, 4)'));
+  assert.ok(providerDashboard.includes('const providerRoleQuickActions = providerQuickActions.slice(4)'));
+  assert.ok(providerDashboard.includes('className={styles.providerQuickPrimaryGrid}'));
+  assert.ok(providerDashboard.includes('className={styles.providerQuickMore}'));
+  assert.ok(providerDashboard.includes('className={styles.providerQuickMoreGrid}'));
+  assert.ok(providerDashboard.includes('className={styles.providerQuickMobileRoleGrid}'));
+  assert.ok(providerDashboard.includes('More business tools'));
+  assert.ok(providerDashboard.includes('More career tools'));
   assert.ok(providerDashboard.includes("href: '/provider/leads'"));
   assert.ok(providerDashboard.includes("href: '/provider/messages'"));
   assert.ok(providerDashboard.includes("href: '/provider/bookings'"));
@@ -171,6 +177,7 @@ test('Provider dashboard uses one compact quick-action surface instead of two la
   assert.ok(providerDashboard.includes("href: '/provider/products'"));
   assert.ok(providerDashboard.includes("href: '/jobs'"));
   assert.ok(providerDashboard.includes("href: '/provider/jobs/applications'"));
+  assert.ok(!providerDashboard.includes('className={styles.providerQuickGrid}'));
   assert.ok(!providerDashboard.includes('Run your day'));
   assert.ok(!providerDashboard.includes('Grow your opportunities'));
   assert.ok(!providerDashboard.includes('Grow your team'));
@@ -247,4 +254,12 @@ test('Provider booking load errors do not create fake activity counts', () => {
   assert.ok(providerDashboard.includes("...(!bookingsError && operations.needsAction.length > 0"));
   assert.ok(providerDashboard.includes("...(!bookingsError && operations.upcoming.length > 0"));
   assert.ok(providerDashboard.includes('Booking activity needs a refresh'));
+});
+
+
+test('Provider mobile quick actions only render role-specific tools in the dashboard body', () => {
+  assert.ok(providerDashboard.includes('providerPrimaryQuickActions.map((link)'));
+  assert.ok(providerDashboard.includes('providerRoleQuickActions.map((link)'));
+  const roleMapCount = providerDashboard.split('providerRoleQuickActions.map((link)').length - 1;
+  assert.equal(roleMapCount, 2);
 });

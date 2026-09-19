@@ -21,9 +21,12 @@ test('provider dashboard cards retain compact tablet and phone contracts', () =>
   assert.match(dashboardCss, /\.nextServiceCompact\s*\{[\s\S]*?grid-template-columns:\s*auto minmax\(0, 1fr\) auto/);
   assert.match(dashboardCss, /\.nextServiceAction\s*\{[\s\S]*?min-height:\s*44px/);
   assert.match(dashboardCss, /@media \(max-width: 560px\)[\s\S]*?\.nextServiceCompact\s*\{\s*grid-template-columns:\s*auto minmax\(0, 1fr\)/);
-  assert.match(dashboardCss, /\.providerQuickGrid\s*\{[\s\S]*?grid-template-columns:\s*repeat\(8/);
-  assert.match(dashboardCss, /@media \(max-width: 1100px\)[\s\S]*?\.providerQuickGrid\s*\{\s*grid-template-columns:\s*repeat\(4/);
+  assert.match(dashboardCss, /\.providerQuickPrimaryGrid,[\s\S]*?\.providerQuickMoreGrid\s*\{[\s\S]*?grid-template-columns:\s*repeat\(4/);
+  assert.match(dashboardCss, /\.providerQuickMore > summary\s*\{[\s\S]*?min-height:\s*44px/);
+  assert.match(dashboardCss, /@media \(max-width: 900px\)[\s\S]*?\.providerQuickPrimaryGrid,[\s\S]*?\.providerQuickMore\s*\{\s*display:\s*none/);
+  assert.match(dashboardCss, /@media \(max-width: 900px\)[\s\S]*?\.providerQuickMobileRoleGrid\s*\{[\s\S]*?grid-template-columns:\s*repeat\(4/);
   assert.match(dashboardCss, /@media \(max-width: 560px\)[\s\S]*?\.providerQuickLink\s*\{[\s\S]*?min-height:\s*68px/);
+  assert.doesNotMatch(dashboardCss, /\.providerQuickGrid\s*\{/);
   assert.match(dashboardCss, /\.followUpChip\s*\{[\s\S]*?min-height:\s*44px/);
   assert.match(dashboardCss, /\.followUpRail\s*\{[\s\S]*?overflow-x:\s*auto/);
   assert.match(dashboardCss, /@media \(max-width: 780px\)[\s\S]*?\.followUpQueue\s*\{[\s\S]*?flex-direction:\s*column/);
