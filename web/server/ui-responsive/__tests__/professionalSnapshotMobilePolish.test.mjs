@@ -10,8 +10,8 @@ const [styles, profile] = await Promise.all([
 
 test('Professional snapshot remains a public profile aside card', () => {
   assert.ok(profile.includes("kind === 'professional' ? <Card className={styles.snapshotCard}>"));
-  assert.ok(profile.includes("text('Professional snapshot', 'Professional snapshot')"));
-  assert.ok(profile.includes("text('One verified identity', 'ஒரே verified identity')"));
+  assert.ok(profile.includes("t('publicProvider.profile.professionalSnapshot')"));
+  assert.ok(profile.includes("t('publicProvider.profile.oneVerifiedIdentity')"));
   assert.ok(profile.includes('className="review-details"'));
 });
 
