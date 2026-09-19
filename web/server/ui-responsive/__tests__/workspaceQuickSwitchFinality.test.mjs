@@ -22,7 +22,7 @@ test('primary workspace switching lives beside the identity hero while deep page
   assert.ok(globalSwitcherSource.includes("const isIdentityHome = pathname === '/account' || pathname === '/provider';"));
   assert.ok(globalSwitcherSource.includes("if (triggerVariant === 'full' && pathname !== '/')"));
   assert.ok(globalSwitcherSource.includes('className={styles.compactAccountLink}'));
-  assert.ok(globalSwitcherSource.includes("tamil ? 'Profile மாற்று' : 'Switch profile'"));
+  assert.ok(globalSwitcherSource.includes("t('workspace.global.switchProfile')"));
   assert.ok(globalSwitcherSource.includes("fetch('/api/account/workspaces'"));
   assert.ok(globalSwitcherSource.includes("method: 'POST'"));
   assert.ok(accountSwitcherSource.includes('if (compact) return null;'));
