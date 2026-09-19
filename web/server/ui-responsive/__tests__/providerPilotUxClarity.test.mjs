@@ -12,8 +12,8 @@ const [launchSource, availabilitySource, reachSource] = await Promise.all([
 test('provider service category choice is searchable and never silently preselected', () => {
   assert.ok(launchSource.includes("const [categoryQuery, setCategoryQuery] = useState('')"));
   assert.ok(launchSource.includes('const categoryMatches = useMemo'));
-  assert.ok(launchSource.includes('<option value="">{copy.categoryChoose}</option>'));
-  assert.ok(launchSource.includes('categorySearchPlaceholder'));
+  assert.ok(launchSource.includes("<option value=\"\">{t('provider.launch.categoryChoose')}</option>"));
+  assert.ok(launchSource.includes("t('provider.launch.categorySearchPlaceholder')"));
   assert.ok(!launchSource.includes('selectableCategories[0]?.id'));
 });
 
