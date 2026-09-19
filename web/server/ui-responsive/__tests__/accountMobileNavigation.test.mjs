@@ -53,7 +53,7 @@ test('account mobile navigation is contained and locks primary labels to one lin
   assert.ok(cssSource.includes('.account-mobile-tab-label,\n  .account-mobile-more-label {'));
   assert.ok(cssSource.includes('text-overflow: ellipsis;'));
   assert.ok(cssSource.includes('white-space: nowrap;'));
-  assert.ok(shellSource.includes("mobileLabel: locale === 'ta-IN' ? 'தேவைகள்' : 'Needs'"));
+  assert.ok(shellSource.includes("mobileLabel: t('account.requirementsMobile')"));
 });
 
 test('notification attention stays inside More and narrow phones use a two-column compact menu', () => {
