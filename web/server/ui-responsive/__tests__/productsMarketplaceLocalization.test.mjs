@@ -67,8 +67,35 @@ test('Product marketplace and smart filters use shared localization', () => {
     'publicProvider.productMarketplace.activeFilters',
     'publicProvider.productMarketplace.closeFilters',
     'publicProvider.productMarketplace.closeSort',
+    'publicProvider.productMarketplace.loadError',
+    'publicProvider.productMarketplace.loadMoreError',
   ]) {
     assert.equal(occurrences(translations, "'" + key + "':"), 2);
+  }
+});
+
+
+test('Product marketplace localizes fallback errors while preserving API error precedence', () => {
+  assert.ok(page.includes("payload.error || t('publicProvider.productMarketplace.loadError')"));
+  assert.ok(page.includes("loadError instanceof Error ? loadError.message : t('publicProvider.productMarketplace.loadError')"));
+  assert.ok(page.includes("payload.error || t('publicProvider.savedProduct.loadError')"));
+  assert.ok(page.includes("cause instanceof Error ? cause.message : t('publicProvider.savedProduct.loadError')"));
+  assert.ok(page.includes("saved ? t('publicProvider.savedProduct.removeError') : t('publicProvider.savedProduct.saveError')"));
+  assert.ok(page.includes("cause instanceof Error ? cause.message : t('publicProvider.savedProduct.updateError')"));
+  assert.ok(page.includes("payload.error || t('publicProvider.productMarketplace.loadMoreError')"));
+  assert.ok(page.includes("cause instanceof Error ? cause.message : t('publicProvider.productMarketplace.loadMoreError')"));
+  assert.ok(page.includes("}, [serverQuery, shop, sort, stock, t, urlReady]);"));
+  assert.ok(page.includes("}, [t]);"));
+
+  for (const raw of [
+    'Product marketplace unavailable.',
+    'Unable to load saved Products.',
+    'Unable to remove saved Product.',
+    'Unable to save Product.',
+    'Unable to update saved Product.',
+    'Unable to load more Products.',
+  ]) {
+    assert.equal(page.includes(raw), false);
   }
 });
 

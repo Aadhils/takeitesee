@@ -263,6 +263,8 @@ const english = {
   'publicProvider.productMarketplace.activeFilters': 'Active filters',
   'publicProvider.productMarketplace.closeFilters': 'Close filter menu',
   'publicProvider.productMarketplace.closeSort': 'Close sort menu',
+  'publicProvider.productMarketplace.loadError': 'Product marketplace unavailable.',
+  'publicProvider.productMarketplace.loadMoreError': 'Unable to load more Products.',
 } as const;
 
 type PublicProviderKey = keyof typeof english;
@@ -527,6 +529,8 @@ const tamil: Record<PublicProviderKey, string> = {
   'publicProvider.productMarketplace.activeFilters': 'செயலில் உள்ள வடிகட்டிகள்',
   'publicProvider.productMarketplace.closeFilters': 'வடிகட்டி மெனுவை மூடுங்கள்',
   'publicProvider.productMarketplace.closeSort': 'வரிசைப்படுத்தும் மெனுவை மூடுங்கள்',
+  'publicProvider.productMarketplace.loadError': 'Product marketplace தற்போது கிடைக்கவில்லை.',
+  'publicProvider.productMarketplace.loadMoreError': 'மேலும் Products ஏற்ற முடியவில்லை.',
 };
 
 const catalogs = { 'en-IN': english, 'ta-IN': tamil } as const;
