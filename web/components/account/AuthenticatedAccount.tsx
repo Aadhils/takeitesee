@@ -130,9 +130,13 @@ export default function AuthenticatedAccount() {
         </nav>
       </section>
 
-      {isSupabaseConfigured() ? <RoleIdentityMediaHeader context="customer" displayName={user.name} subtitle={t('account.dashboard.personalAccount')} meta={[user.email, user.phone].filter(Boolean).join(' · ')} /> : <Card className="profile-summary"><div className="provider-avatar provider-avatar-large" aria-hidden="true">{user.name.split(' ').map((part) => part[0]).join('')}</div><div><span className="eyebrow">{t('account.signedInCustomer')}</span><h2>{user.name}</h2><p>{user.email}</p>{user.phone ? <span className="card-location">{user.phone}</span> : null}</div></Card>}
+      <div className="customer-dashboard-identity-hero">
+        {isSupabaseConfigured() ? <RoleIdentityMediaHeader context="customer" displayName={user.name} subtitle={t('account.dashboard.personalAccount')} meta={[user.email, user.phone].filter(Boolean).join(' · ')} /> : <Card className="profile-summary"><div className="provider-avatar provider-avatar-large" aria-hidden="true">{user.name.split(' ').map((part) => part[0]).join('')}</div><div><span className="eyebrow">{t('account.signedInCustomer')}</span><h2>{user.name}</h2><p>{user.email}</p>{user.phone ? <span className="card-location">{user.phone}</span> : null}</div></Card>}
+      </div>
 
-      <CustomerSmartAttention bookings={bookings} />
+      <div className="customer-dashboard-desktop-layout">
+        <main className="customer-dashboard-main-column">
+          <CustomerSmartAttention bookings={bookings} />
 
       <details className="customer-secondary-activity">
         <summary>
@@ -178,14 +182,18 @@ export default function AuthenticatedAccount() {
           {secondaryLinks.map((link) => <Link href={link.href} key={link.href}>{link.label}</Link>)}
         </nav>
       </details>
+        </main>
 
-      <section className="customer-activity-strip" aria-label={t('account.dashboard.bookingActivitySummary')}>
+        <aside className="customer-dashboard-side-rail">
+          <section className="customer-activity-strip" aria-label={t('account.dashboard.bookingActivitySummary')}>
         <Link href="/bookings" className="customer-activity-strip-item"><span>{t('account.upcoming')}</span><strong>{summary.upcoming}</strong></Link>
         <Link href="/bookings" className="customer-activity-strip-item"><span>{t('account.completed')}</span><strong>{summary.completed}</strong></Link>
         <Link href="/bookings" className="customer-activity-strip-item"><span>{t('account.cancelled')}</span><strong>{summary.cancelled}</strong></Link>
         <Link href="/bookings" className="customer-activity-strip-item"><span>{t('account.total')}</span><strong>{summary.total}</strong></Link>
       </section>
-      {bookingError ? <p role="alert" style={{ color: '#b42318' }}>{t('account.bookingUnavailable')}: {bookingError}</p> : null}
+          {bookingError ? <p role="alert" style={{ color: '#b42318' }}>{t('account.bookingUnavailable')}: {bookingError}</p> : null}
+        </aside>
+      </div>
 
       <div className="account-actions">
         <Button type="button" variant="quiet" className="account-sign-out" onClick={signOut}>{t('account.signOut')}</Button>
@@ -195,21 +203,38 @@ export default function AuthenticatedAccount() {
         .customer-mobile-quick-shell { display: none; }
         .customer-account-action-with-badge { display: inline-flex; align-items: center; gap: .42rem; }
         .customer-account-action-badge { display: inline-grid; min-width: 18px; height: 18px; place-items: center; padding: 0 4px; border-radius: 999px; background: var(--color-primary-strong); color: white; font-size: .58rem; font-weight: 850; line-height: 1; }
+        .customer-dashboard-identity-hero { margin-top: 12px; }
+        .customer-dashboard-desktop-layout {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(250px, 300px);
+          gap: 16px;
+          align-items: start;
+          margin-top: 14px;
+        }
+        .customer-dashboard-main-column { min-width: 0; }
+        .customer-dashboard-side-rail {
+          position: sticky;
+          top: 88px;
+          display: grid;
+          min-width: 0;
+          gap: 10px;
+        }
+        .customer-dashboard-main-column :global(.customer-smart-attention) { margin-top: 0; }
         .customer-dashboard-quick-actions { display: grid; gap: 9px; margin-top: 14px; }
         .customer-dashboard-section-heading h2 { margin: .15rem 0 0; font-size: 1rem; }
-        .customer-dashboard-quick-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+        .customer-dashboard-quick-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
         .customer-dashboard-quick-link {
           position: relative;
           display: grid;
           min-width: 0;
-          min-height: 74px;
+          min-height: 84px;
           place-items: center;
           align-content: center;
           gap: 6px;
           padding: 9px 6px;
           border: 1px solid var(--color-border);
-          border-radius: 14px;
-          background: var(--color-surface);
+          border-radius: 16px;
+          background: linear-gradient(180deg, var(--color-surface) 0%, color-mix(in srgb, var(--color-selected) 26%, var(--color-surface)) 100%);
           color: var(--color-ink);
           font-size: .76rem;
           font-weight: 780;
@@ -218,8 +243,8 @@ export default function AuthenticatedAccount() {
         }
         .customer-dashboard-quick-link:hover,
         .customer-dashboard-quick-link:focus-visible { border-color: var(--color-primary); background: var(--color-selected); color: var(--color-primary-strong); }
-        .customer-dashboard-quick-icon { display: grid; width: 24px; height: 24px; place-items: center; color: var(--color-primary-strong); }
-        .customer-dashboard-quick-icon .customer-mobile-quick-svg { width: 23px; height: 23px; }
+        .customer-dashboard-quick-icon { display: grid; width: 30px; height: 30px; place-items: center; color: var(--color-primary-strong); }
+        .customer-dashboard-quick-icon .customer-mobile-quick-svg { width: 27px; height: 27px; }
         .customer-dashboard-quick-link > span:nth-child(2) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .customer-dashboard-quick-badge {
           position: absolute;
@@ -269,27 +294,31 @@ export default function AuthenticatedAccount() {
         }
         .customer-activity-strip {
           display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 1px;
-          margin-top: 12px;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 8px;
+          margin-top: 0;
           overflow: hidden;
-          border: 1px solid var(--color-border);
-          border-radius: 14px;
-          background: var(--color-border);
+          border: 0;
+          border-radius: 0;
+          background: transparent;
         }
         .customer-activity-strip-item {
           display: flex;
           min-width: 0;
-          min-height: 58px;
-          align-items: center;
-          justify-content: space-between;
-          gap: 8px;
-          padding: 9px 12px;
+          min-height: 88px;
+          flex-direction: column;
+          align-items: flex-start;
+          justify-content: center;
+          gap: 4px;
+          padding: 12px 14px;
+          border: 1px solid var(--color-border);
+          border-radius: 16px;
           background: var(--color-surface);
           color: var(--color-ink);
+          box-shadow: var(--shadow-sm);
         }
-        .customer-activity-strip-item span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-ink-muted); font-size: .7rem; font-weight: 720; }
-        .customer-activity-strip-item strong { flex: 0 0 auto; font-size: 1rem; }
+        .customer-activity-strip-item span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-ink-muted); font-size: .7rem; font-weight: 750; }
+        .customer-activity-strip-item strong { order: -1; flex: 0 0 auto; font-size: 1.45rem; line-height: 1; }
         .customer-secondary-activity {
           margin-top: 12px;
           border: 1px solid var(--color-border);
@@ -346,6 +375,9 @@ export default function AuthenticatedAccount() {
         }
 
         @media (max-width: 900px) {
+          .customer-dashboard-desktop-layout { display: block; margin-top: 10px; }
+          .customer-dashboard-side-rail { position: static; display: block; }
+          .customer-dashboard-identity-hero { margin-top: 8px; }
           .customer-dashboard-quick-actions { display: none; }
           .customer-dashboard-more-links { margin-top: 8px; }
           .customer-dashboard-more-links > summary { min-height: 44px; }
