@@ -9,7 +9,7 @@ const [managerSource, cssSource] = await Promise.all([
 ]);
 
 test('Provider Dashboard exposes one compact workspace toolbar with in-page navigation', () => {
-  assert.ok(managerSource.includes('aria-label="Provider workspace toolbar"'));
+  assert.ok(managerSource.includes("aria-label={t('provider.dashboard.workspaceToolbar')}"));
   assert.ok(managerSource.includes('className={styles.workspaceToolbar}'));
   assert.ok(managerSource.includes('className={styles.workspaceIdentity}'));
   assert.ok(managerSource.includes('className={styles.workspaceRail}'));
@@ -25,8 +25,8 @@ test('Provider Dashboard exposes one compact workspace toolbar with in-page navi
 
 test('quick navigation keeps Professional and Business destinations role-aware', () => {
   assert.ok(managerSource.includes("profile.provider_type === 'business'"));
-  assert.ok(managerSource.includes("{ href: '/provider/products', label: 'Products', route: true }"));
-  assert.ok(managerSource.includes("{ href: '/provider/jobs/applications', label: 'Career', route: true }"));
+  assert.ok(managerSource.includes("{ href: '/provider/products', label: t('provider.dashboard.products'), route: true }"));
+  assert.ok(managerSource.includes("{ href: '/provider/jobs/applications', label: t('provider.dashboard.career'), route: true }"));
   assert.ok(managerSource.includes('item.route'));
 });
 
