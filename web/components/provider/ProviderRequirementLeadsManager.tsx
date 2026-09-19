@@ -75,7 +75,7 @@ export function ProviderRequirementLeadsManager() {
     ? t('lead.wholeRequirementQuote')
     : t('lead.perOccurrenceQuote');
   const starterMessage = (item: Lead) =>
-    `${t('lead.starterPrefix')} ${item.category_name} ${t('lead.starterMiddle')} ${item.location_name}. ${t('lead.starterSuffix')}`;
+    `${t('lead.starterPrefix')} ${item.category_name} ${t('lead.starterMiddle')} ${item.location_name}${t('lead.starterSuffix')}`;
 
   const markLeadNotificationsSeen = useCallback(() => {
     void fetch('/api/provider/requirement-leads', { method: 'PATCH', cache: 'no-store' })
@@ -190,7 +190,7 @@ export function ProviderRequirementLeadsManager() {
         <dl className="review-details"><div><dt>{t('common.category')}</dt><dd>{lead.category_name}</dd></div><div><dt>{t('common.location')}</dt><dd>{lead.location_name}</dd></div><div><dt>{t('common.mode')}</dt><dd>{modeLabel(lead.service_mode)}</dd></div><div><dt>{t('lead.customerBudget')}</dt><dd>{leadBudget(lead)}</dd></div><div><dt>{t('common.neededBy')}</dt><dd>{lead.needed_by || t('common.flexible')}</dd></div><div><dt>{t('lead.preferredStartTime')}</dt><dd>{startTimeLabel(lead.preferred_start_time)}</dd></div><div><dt>{t('lead.expectedDuration')}</dt><dd>{durationLabel(lead.expected_duration_minutes)}</dd></div><div><dt>{t('lead.serviceSchedule')}</dt><dd>{recurrenceLabel(lead)}</dd></div>{lead.recurrence_frequency === 'weekly' && lead.recurrence_weekdays?.length ? <div><dt>{t('lead.weekdays')}</dt><dd>{weekdayLabel(lead.recurrence_weekdays)}</dd></div> : null}<div><dt>{t('common.posted')}</dt><dd>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(lead.published_at))}</dd></div></dl>
         <div className="provider-lead-match-context">
           <strong>{t('lead.whyMatches')}</strong>
-          <p>{t('lead.matchPrefix')} {lead.category_name} {t('lead.matchMiddle')} {lead.location_name}, {t('lead.matchSuffix')} {modeLabel(lead.service_mode)} {t('lead.workSuffix')}</p>
+          <p>{t('lead.matchPrefix')} {lead.category_name} {t('lead.matchCategoryJoin')} {lead.location_name}{t('lead.matchLocationJoin')} {modeLabel(lead.service_mode)} {t('lead.matchModeSuffix')}</p>
           <div className="provider-lead-match-badges"><Badge tone="info">{t('lead.categoryMatch')}</Badge><Badge tone="info">{t('lead.locationMatch')}</Badge><Badge tone="success">{modeLabel(lead.service_mode)} {t('lead.compatible')}</Badge></div>
         </div>
         {alreadyProposed ? <p className="summary-note" style={{ marginTop: '1rem' }}>{t('lead.already')}</p> : proposalOpen ? <div id={`provider-proposal-${lead.id}`} className="provider-lead-proposal" style={{ display: 'grid', gap: '.75rem', marginTop: '1rem' }}>
