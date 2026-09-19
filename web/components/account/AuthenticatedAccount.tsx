@@ -199,7 +199,7 @@ export default function AuthenticatedAccount() {
         <Button type="button" variant="quiet" className="account-sign-out" onClick={signOut}>{t('account.signOut')}</Button>
       </div>
 
-      <style jsx>{`
+      <style jsx global>{`
         .customer-social-dashboard { width: 100%; max-width: none; }
                 .customer-mobile-quick-shell { display: none; }
         .customer-account-action-with-badge { display: inline-flex; align-items: center; gap: .42rem; }
