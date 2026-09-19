@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Badge, Card } from '../ui/primitives';
+import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 import { LiveProviderShell } from './LiveProviderShell';
 import ProviderDashboardIdentityCenter from './ProviderDashboardIdentityCenter';
 import styles from './ProviderDashboardManager.module.css';
@@ -103,6 +104,7 @@ function DashboardIcon({ name }: { name: DashboardIconKey }) {
 }
 
 export default function ProviderDashboardManager({ children, workspaceVersion = 0 }: { children?: ReactNode; workspaceVersion?: number }) {
+  const { t } = useIdentityWorkspaceTranslations();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,17 +125,17 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
     if (profileResult.status === 'fulfilled') {
       const { response, payload } = profileResult.value;
       if (response.ok && payload.profile) setProfile(payload.profile as Profile);
-      else { setProfile(null); setProfileError(payload.error ?? 'Unable to load provider profile.'); }
-    } else { setProfile(null); setProfileError(profileResult.reason instanceof Error ? profileResult.reason.message : 'Unable to load provider profile.'); }
+      else { setProfile(null); setProfileError(payload.error ?? t('provider.dashboard.profileLoadFallback')); }
+    } else { setProfile(null); setProfileError(profileResult.reason instanceof Error ? profileResult.reason.message : t('provider.dashboard.profileLoadFallback')); }
 
     if (bookingsResult.status === 'fulfilled') {
       const { response, payload } = bookingsResult.value;
       if (response.ok) setBookings(Array.isArray(payload.bookings) ? payload.bookings : Array.isArray(payload) ? payload : []);
-      else { setBookings([]); setBookingsError(payload.error ?? 'Unable to load booking activity.'); }
-    } else { setBookings([]); setBookingsError(bookingsResult.reason instanceof Error ? bookingsResult.reason.message : 'Unable to load booking activity.'); }
+      else { setBookings([]); setBookingsError(payload.error ?? t('provider.dashboard.bookingsLoadFallback')); }
+    } else { setBookings([]); setBookingsError(bookingsResult.reason instanceof Error ? bookingsResult.reason.message : t('provider.dashboard.bookingsLoadFallback')); }
 
     setLoading(false);
-  }, []);
+  }, [t]);
 
   useEffect(() => { void load(); }, [load, workspaceVersion]);
   useEffect(() => {
@@ -166,72 +168,134 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
     return { needsAction, upcoming, completed };
   }, [bookings, now]);
 
-  const providerRoleLabel = profile?.provider_type === 'business' ? 'Business' : 'Professional';
+  const providerRoleLabel = profile?.provider_type === 'business' ? t('profile.business') : t('profile.professional');
   const providerStatusLabel = profile
     ? profile.trust_status === 'suspended'
-      ? 'Suspended'
+      ? t('provider.suspended')
       : profile.trust_status === 'reverification_required'
-        ? 'Re-verification'
+        ? t('provider.reverify')
         : profile.verified
-          ? 'Verified'
-          : 'Verification pending'
-    : 'Provider workspace';
+          ? t('profile.verified')
+          : t('profile.verificationPending')
+    : t('provider.workspace');
 
   const nextSteps = useMemo<DashboardLink[]>(() => {
     if (!profile) return [];
     const items: DashboardLink[] = [];
-    if (profile.trust_status === 'suspended') items.push({ href: '/provider/setup', label: 'Marketplace access suspended', detail: 'Review the platform trust status while public visibility remains paused.', icon: 'alert' });
-    else if (profile.trust_status === 'reverification_required') items.push({ href: '/provider/verification', label: 'Complete re-verification', detail: 'Submit current verification evidence to restore public marketplace access.', icon: 'alert' });
-    else if (!profile.verified) items.push({ href: '/provider/verification', label: 'Complete verification', detail: 'Unlock trusted marketplace participation.', icon: 'alert' });
+    if (profile.trust_status === 'suspended') items.push({
+      href: '/provider/setup',
+      label: t('provider.dashboard.marketplaceSuspended'),
+      detail: t('provider.dashboard.marketplaceSuspendedBody'),
+      icon: 'alert',
+    });
+    else if (profile.trust_status === 'reverification_required') items.push({
+      href: '/provider/verification',
+      label: t('provider.dashboard.completeReverification'),
+      detail: t('provider.dashboard.completeReverificationBody'),
+      icon: 'alert',
+    });
+    else if (!profile.verified) items.push({
+      href: '/provider/verification',
+      label: t('provider.dashboard.completeVerification'),
+      detail: t('provider.dashboard.completeVerificationBody'),
+      icon: 'alert',
+    });
 
-    if (!profile.profile_complete) items.push({ href: '/provider#provider-profile', label: profile.provider_type === 'business' ? 'Finish business profile' : 'Finish professional profile', detail: 'Complete your public name, description and service area directly in this Dashboard.', icon: 'profile' });
-    else if (!profile.marketplace_disclosure_complete) items.push({ href: '/provider/public-readiness', label: profile.provider_type === 'business' ? 'Finish storefront readiness' : 'Finish public readiness', detail: 'Complete the public legal and contact details customers need before choosing you.', icon: 'profile' });
+    if (!profile.profile_complete) items.push({
+      href: '/provider#provider-profile',
+      label: profile.provider_type === 'business'
+        ? t('provider.dashboard.finishBusinessProfile')
+        : t('provider.dashboard.finishProfessionalProfile'),
+      detail: t('provider.dashboard.finishProfileBody'),
+      icon: 'profile',
+    });
+    else if (!profile.marketplace_disclosure_complete) items.push({
+      href: '/provider/public-readiness',
+      label: profile.provider_type === 'business'
+        ? t('provider.dashboard.finishStorefrontReadiness')
+        : t('provider.dashboard.finishPublicReadiness'),
+      detail: t('provider.dashboard.finishReadinessBody'),
+      icon: 'profile',
+    });
 
-    if (profile.services_total === 0) items.push({ href: '/provider/services', label: 'Add your first service', detail: 'Create the service customers can discover and book.', icon: 'service' });
-    else if (profile.services_active === 0) items.push({ href: '/provider/services', label: 'Publish an active service', detail: 'Your services exist but none are currently active.', icon: 'service' });
+    if (profile.services_total === 0) items.push({
+      href: '/provider/services',
+      label: t('provider.dashboard.addFirstService'),
+      detail: t('provider.dashboard.addFirstServiceBody'),
+      icon: 'service',
+    });
+    else if (profile.services_active === 0) items.push({
+      href: '/provider/services',
+      label: t('provider.dashboard.publishActiveService'),
+      detail: t('provider.dashboard.publishActiveServiceBody'),
+      icon: 'service',
+    });
 
     if (operations.needsAction.length > 0) {
       const booking = operations.needsAction[0];
       const serviceLabel = booking.service_name || booking.booking_reference;
       const remaining = operations.needsAction.length - 1;
       const bookingCopy = booking.status === 'pending'
-        ? { label: `Confirm ${serviceLabel}`, detail: 'A customer is waiting for your response.' }
+        ? { label: `${t('provider.dashboard.confirmPrefix')} ${serviceLabel}`, detail: t('provider.dashboard.customerWaiting') }
         : booking.status === 'rescheduled'
-          ? { label: `Review the new time for ${serviceLabel}`, detail: 'The customer requested a schedule change.' }
-          : { label: `Finish the ${serviceLabel} service record`, detail: 'The scheduled service window has ended. Mark complete only if the service was delivered.' };
+          ? { label: `${t('provider.dashboard.reviewNewTimePrefix')} ${serviceLabel}`, detail: t('provider.dashboard.scheduleChange') }
+          : {
+              label: `${t('provider.dashboard.finishServicePrefix')} ${serviceLabel} ${t('provider.dashboard.finishServiceSuffix')}`,
+              detail: t('provider.dashboard.serviceWindowEnded'),
+            };
+      const remainingCopy = remaining === 1
+        ? t('provider.dashboard.moreActionOne')
+        : remaining > 1
+          ? `${remaining} ${t('provider.dashboard.moreActionsSuffix')}`
+          : '';
       items.push({
         href: `/provider/bookings/${encodeURIComponent(booking.id)}`,
         label: bookingCopy.label,
-        detail: remaining > 0 ? `${bookingCopy.detail} ${remaining} more action${remaining === 1 ? '' : 's'} waiting.` : bookingCopy.detail,
+        detail: remainingCopy ? `${bookingCopy.detail} ${remainingCopy}` : bookingCopy.detail,
         icon: 'booking',
       });
-    } else if (operations.upcoming.length > 0) items.push({ href: `/provider/bookings/${encodeURIComponent(operations.upcoming[0].id)}`, label: 'Your next service is ready', detail: `${operations.upcoming[0].service_name || operations.upcoming[0].booking_reference} · ${operations.upcoming[0].booking_date || 'Date pending'}${operations.upcoming[0].start_time ? ` · ${operations.upcoming[0].start_time}` : ''}.`, icon: 'schedule' });
+    } else if (operations.upcoming.length > 0) items.push({
+      href: `/provider/bookings/${encodeURIComponent(operations.upcoming[0].id)}`,
+      label: t('provider.dashboard.nextServiceReady'),
+      detail: `${operations.upcoming[0].service_name || operations.upcoming[0].booking_reference} · ${operations.upcoming[0].booking_date || t('provider.dashboard.datePending')}${operations.upcoming[0].start_time ? ` · ${operations.upcoming[0].start_time}` : ''}.`,
+      icon: 'schedule',
+    });
 
-    if (profile.provider_type === 'professional') items.push({ href: '/provider/jobs/applications', label: 'Check your career journey', detail: 'Applications, interviews and job progress in one place.', icon: 'job' });
-    else items.push({ href: '/provider/jobs', label: 'Check your hiring pipeline', detail: 'Jobs, applicants, interviews and offers in one place.', icon: 'people' });
+    if (profile.provider_type === 'professional') items.push({
+      href: '/provider/jobs/applications',
+      label: t('provider.dashboard.checkCareerJourney'),
+      detail: t('provider.dashboard.checkCareerJourneyBody'),
+      icon: 'job',
+    });
+    else items.push({
+      href: '/provider/jobs',
+      label: t('provider.dashboard.checkHiringPipeline'),
+      detail: t('provider.dashboard.checkHiringPipelineBody'),
+      icon: 'people',
+    });
     return items.slice(0, 3);
-  }, [operations.needsAction, operations.upcoming, profile]);
+  }, [operations.needsAction, operations.upcoming, profile, t]);
 
   const providerQuickActions: DashboardLink[] = profile?.provider_type === 'business'
     ? [
-        { href: '/provider/leads', label: 'Leads', detail: 'Customer opportunities', icon: 'lead' },
-        { href: '/provider/messages', label: 'Messages', detail: 'Customer conversations', icon: 'message' },
-        { href: '/provider/bookings', label: 'Bookings', detail: 'Service delivery', icon: 'booking' },
-        { href: '/provider/schedule', label: 'Schedule', detail: 'Availability & work', icon: 'schedule' },
-        { href: '/provider/jobs', label: 'Employer jobs', detail: 'Hiring pipeline', icon: 'job' },
-        { href: '/provider/jobs/applicants', label: 'Applicants', detail: 'Candidate review', icon: 'people' },
-        { href: '/provider/services', label: 'Services', detail: 'Service catalog', icon: 'service' },
-        { href: '/provider/products', label: 'Products', detail: 'Storefront catalog', icon: 'portfolio' },
+        { href: '/provider/leads', label: t('provider.leads'), detail: t('provider.dashboard.customerOpportunities'), icon: 'lead' },
+        { href: '/provider/messages', label: t('provider.messages'), detail: t('provider.dashboard.customerConversations'), icon: 'message' },
+        { href: '/provider/bookings', label: t('provider.bookings'), detail: t('provider.dashboard.serviceDelivery'), icon: 'booking' },
+        { href: '/provider/schedule', label: t('provider.schedule'), detail: t('provider.dashboard.availabilityWork'), icon: 'schedule' },
+        { href: '/provider/jobs', label: t('provider.dashboard.employerJobs'), detail: t('provider.dashboard.hiringPipeline'), icon: 'job' },
+        { href: '/provider/jobs/applicants', label: t('provider.dashboard.applicants'), detail: t('provider.dashboard.candidateReview'), icon: 'people' },
+        { href: '/provider/services', label: t('provider.services'), detail: t('provider.dashboard.serviceCatalog'), icon: 'service' },
+        { href: '/provider/products', label: t('provider.dashboard.products'), detail: t('provider.dashboard.storefrontCatalog'), icon: 'portfolio' },
       ]
     : [
-        { href: '/provider/leads', label: 'Leads', detail: 'Customer opportunities', icon: 'lead' },
-        { href: '/provider/messages', label: 'Messages', detail: 'Customer conversations', icon: 'message' },
-        { href: '/provider/bookings', label: 'Bookings', detail: 'Service delivery', icon: 'booking' },
-        { href: '/provider/schedule', label: 'Schedule', detail: 'Availability & work', icon: 'schedule' },
-        { href: '/jobs', label: 'Find jobs', detail: 'Business opportunities', icon: 'job' },
-        { href: '/provider/jobs/applications', label: 'Applications', detail: 'Career journey', icon: 'booking' },
-        { href: '/provider/resume', label: 'Resume', detail: 'Career profile', icon: 'resume' },
-        { href: '/provider/portfolio', label: 'Portfolio', detail: 'Previous work', icon: 'portfolio' },
+        { href: '/provider/leads', label: t('provider.leads'), detail: t('provider.dashboard.customerOpportunities'), icon: 'lead' },
+        { href: '/provider/messages', label: t('provider.messages'), detail: t('provider.dashboard.customerConversations'), icon: 'message' },
+        { href: '/provider/bookings', label: t('provider.bookings'), detail: t('provider.dashboard.serviceDelivery'), icon: 'booking' },
+        { href: '/provider/schedule', label: t('provider.schedule'), detail: t('provider.dashboard.availabilityWork'), icon: 'schedule' },
+        { href: '/jobs', label: t('provider.dashboard.findJobs'), detail: t('provider.dashboard.businessOpportunities'), icon: 'job' },
+        { href: '/provider/jobs/applications', label: t('provider.dashboard.applications'), detail: t('provider.dashboard.careerJourney'), icon: 'booking' },
+        { href: '/provider/resume', label: t('provider.dashboard.resume'), detail: t('provider.dashboard.careerProfile'), icon: 'resume' },
+        { href: '/provider/portfolio', label: t('provider.dashboard.portfolio'), detail: t('provider.dashboard.previousWork'), icon: 'portfolio' },
       ];
 
   const providerPrimaryQuickActions = providerQuickActions.slice(0, 4);
@@ -239,15 +303,15 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
 
   const dashboardJumpLinks: DashboardJumpLink[] = profile
     ? [
-        { href: '#provider-dashboard-overview', label: 'Overview' },
-        { href: '#provider-profile', label: profile.provider_type === 'business' ? 'Business profile' : 'Professional profile' },
-        { href: '#provider-marketplace-launch', label: 'Marketplace' },
-        { href: '#provider-booking-availability', label: 'Availability' },
-        { href: '#provider-service-reach', label: 'Reach' },
-        { href: '#provider-booking-inbox', label: 'Bookings' },
+        { href: '#provider-dashboard-overview', label: t('provider.dashboard.overview') },
+        { href: '#provider-profile', label: profile.provider_type === 'business' ? t('provider.dashboard.businessProfile') : t('provider.dashboard.professionalProfile') },
+        { href: '#provider-marketplace-launch', label: t('provider.dashboard.marketplace') },
+        { href: '#provider-booking-availability', label: t('provider.dashboard.availability') },
+        { href: '#provider-service-reach', label: t('provider.dashboard.reach') },
+        { href: '#provider-booking-inbox', label: t('provider.bookings') },
         profile.provider_type === 'business'
-          ? { href: '/provider/products', label: 'Products', route: true }
-          : { href: '/provider/jobs/applications', label: 'Career', route: true },
+          ? { href: '/provider/products', label: t('provider.dashboard.products'), route: true }
+          : { href: '/provider/jobs/applications', label: t('provider.dashboard.career'), route: true },
       ]
     : [];
 
@@ -259,27 +323,27 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
   const providerActivitySignals = profile
     ? [
         ...(!bookingsError && operations.needsAction.length > 0
-          ? [{ href: '/provider/bookings', label: 'Needs action', value: String(operations.needsAction.length) }]
+          ? [{ href: '/provider/bookings', label: t('provider.dashboard.needsAction'), value: String(operations.needsAction.length) }]
           : []),
         ...(!bookingsError && operations.upcoming.length > 0
-          ? [{ href: '/provider/schedule', label: 'Upcoming', value: String(operations.upcoming.length) }]
+          ? [{ href: '/provider/schedule', label: t('provider.dashboard.upcoming'), value: String(operations.upcoming.length) }]
           : []),
         ...(profile.services_active > 0
-          ? [{ href: '/provider/services', label: 'Active services', value: `${profile.services_active}/${profile.services_total}` }]
+          ? [{ href: '/provider/services', label: t('provider.dashboard.activeServices'), value: `${profile.services_active}/${profile.services_total}` }]
           : []),
       ]
     : [];
   const providerActivityEmpty = profile && providerActivitySignals.length === 0
     ? {
         href: '/provider/services',
-        label: profile.services_total === 0 ? 'Activity starts when your first service is live' : 'No live marketplace activity right now',
-        detail: profile.services_total === 0 ? 'Your next action is already highlighted above.' : 'Publish an active service when you are ready for customer activity.',
+        label: profile.services_total === 0 ? t('provider.dashboard.activityStarts') : t('provider.dashboard.noLiveActivity'),
+        detail: profile.services_total === 0 ? t('provider.dashboard.activityStartsBody') : t('provider.dashboard.noLiveActivityBody'),
       }
     : null;
 
   return <LiveProviderShell active="/provider">
     <div id="provider-dashboard-overview" className={styles.dashboardStack}>
-      {profile ? <nav className={styles.workspaceToolbar} aria-label="Provider workspace toolbar">
+      {profile ? <nav className={styles.workspaceToolbar} aria-label={t('provider.dashboard.workspaceToolbar')}>
         <div className={styles.workspaceIdentity}>
           <span className={styles.workspaceRole}>{providerRoleLabel}</span>
           <Badge tone={profile.trust_status === 'normal' && profile.verified ? 'success' : profile.trust_status === 'suspended' ? 'danger' : 'warning'}>{providerStatusLabel}</Badge>
@@ -289,22 +353,22 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
             ? <Link href={item.href} className={`${styles.workspaceLink} ${styles.workspaceRoute}`} key={item.href}>{item.label}<span aria-hidden="true">↗</span></Link>
             : <a href={item.href} className={styles.workspaceLink} key={item.href}>{item.label}</a>)}
         </div>
-        <Link href="/provider#provider-profile" className={styles.workspaceEdit}>Edit profile</Link>
+        <Link href="/provider#provider-profile" className={styles.workspaceEdit}>{t('provider.dashboard.editProfile')}</Link>
       </nav> : null}
 
-      {loading ? <Card className={styles.supportCard}><p>Preparing your workspace overview…</p></Card> : null}
-      {profileError ? <Card className={styles.supportCard}><p role="alert" style={{ color: 'var(--color-danger)' }}>{profileError}</p><Link href="/provider/setup" className="text-link">Open provider setup</Link></Card> : null}
+      {loading ? <Card className={styles.supportCard}><p>{t('provider.dashboard.preparing')}</p></Card> : null}
+      {profileError ? <Card className={styles.supportCard}><p role="alert" style={{ color: 'var(--color-danger)' }}>{profileError}</p><Link href="/provider/setup" className="text-link">{t('provider.dashboard.openSetup')}</Link></Card> : null}
 
       {profile ? <>
         <Card className={`${styles.priorityPanel} ${priorityAction ? styles.priorityAttention : styles.priorityClear}`}>
           {priorityAction ? <>
             <div className={styles.priorityHeader}>
-              <div className={styles.priorityMain}><span className={styles.priorityIcon}><DashboardIcon name={priorityAction.icon} /></span><div className={styles.priorityCopy}><span className="eyebrow">Priority now</span><h2>{priorityAction.label}</h2><p>{priorityAction.detail}</p></div></div>
-              <Badge tone="warning">Next best action</Badge>
+              <div className={styles.priorityMain}><span className={styles.priorityIcon}><DashboardIcon name={priorityAction.icon} /></span><div className={styles.priorityCopy}><span className="eyebrow">{t('provider.dashboard.priorityNow')}</span><h2>{priorityAction.label}</h2><p>{priorityAction.detail}</p></div></div>
+              <Badge tone="warning">{t('provider.dashboard.nextBestAction')}</Badge>
             </div>
-            <div className={styles.priorityActions}><Link href={priorityAction.href} className="button button-primary">Continue now</Link></div>
-            {followUpActions.length ? <div className={styles.followUpQueue} aria-label="Follow-up actions">
-              <span className={styles.followUpQueueLabel}>Also</span>
+            <div className={styles.priorityActions}><Link href={priorityAction.href} className="button button-primary">{t('provider.dashboard.continueNow')}</Link></div>
+            {followUpActions.length ? <div className={styles.followUpQueue} aria-label={t('provider.dashboard.followUps')}>
+              <span className={styles.followUpQueueLabel}>{t('provider.dashboard.also')}</span>
               <div className={styles.followUpRail}>
                 {followUpActions.map((item) => <Link
                   href={item.href}
@@ -318,10 +382,10 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
                 </Link>)}
               </div>
             </div> : null}
-          </> : <div className={styles.priorityMain}><span className={styles.priorityIcon}><DashboardIcon name="profile" /></span><div className={styles.priorityCopy}><span className="eyebrow">Priority now</span><h2>You are all caught up</h2><p>There is no urgent workspace action right now. New priorities will appear here automatically.</p></div></div>}
+          </> : <div className={styles.priorityMain}><span className={styles.priorityIcon}><DashboardIcon name="profile" /></span><div className={styles.priorityCopy}><span className="eyebrow">Priority now</span><h2>{t('provider.dashboard.allCaughtUp')}</h2><p>{t('provider.dashboard.allCaughtUpBody')}</p></div></div>}
         </Card>
 
-        <section className={styles.providerActivityStrip} aria-label="Workspace summary">
+        <section className={styles.providerActivityStrip} aria-label={t('provider.dashboard.workspaceSummary')}>
           {providerActivitySignals.map((item) => <Link href={item.href} className={styles.providerActivityItem} key={item.href}>
             <span>{item.label}</span><strong>{item.value}</strong>
           </Link>)}
@@ -331,13 +395,13 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
           </Link> : null}
         </section>
 
-        <section className={styles.providerQuickActions} aria-label="Provider quick actions">
+        <section className={styles.providerQuickActions} aria-label={t('provider.dashboard.quickActions')}>
           <div className={styles.providerQuickHeading}>
-            <div><span className="eyebrow">Quick actions</span><h2>Go where you need</h2></div>
-            <Badge tone="info">{profile.provider_type === 'business' ? 'Business' : 'Professional'}</Badge>
+            <div><span className="eyebrow">{t('provider.dashboard.quickActions')}</span><h2>{t('provider.dashboard.goWhereNeeded')}</h2></div>
+            <Badge tone="info">{profile.provider_type === 'business' ? t('profile.business') : t('profile.professional')}</Badge>
           </div>
 
-          <nav className={styles.providerQuickPrimaryGrid} aria-label="Provider primary quick actions">
+          <nav className={styles.providerQuickPrimaryGrid} aria-label={t('provider.dashboard.primaryQuickActions')}>
             {providerPrimaryQuickActions.map((link) => <Link href={link.href} className={styles.providerQuickLink} key={link.href}>
               <span className={styles.providerQuickIcon}><DashboardIcon name={link.icon} /></span>
               <span className={styles.providerQuickLabel}>{link.label}</span>
@@ -347,10 +411,10 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
 
           <details className={styles.providerQuickMore}>
             <summary>
-              <span>{profile.provider_type === 'business' ? 'More business tools' : 'More career tools'}</span>
+              <span>{profile.provider_type === 'business' ? t('provider.dashboard.moreBusinessTools') : t('provider.dashboard.moreCareerTools')}</span>
               <span aria-hidden="true">⌄</span>
             </summary>
-            <nav className={styles.providerQuickMoreGrid} aria-label={profile.provider_type === 'business' ? 'More business tools' : 'More career tools'}>
+            <nav className={styles.providerQuickMoreGrid} aria-label={profile.provider_type === 'business' ? t('provider.dashboard.moreBusinessTools') : t('provider.dashboard.moreCareerTools')}>
               {providerRoleQuickActions.map((link) => <Link href={link.href} className={styles.providerQuickLink} key={link.href}>
                 <span className={styles.providerQuickIcon}><DashboardIcon name={link.icon} /></span>
                 <span className={styles.providerQuickLabel}>{link.label}</span>
@@ -359,7 +423,7 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
             </nav>
           </details>
 
-          <nav className={styles.providerQuickMobileRoleGrid} aria-label={profile.provider_type === 'business' ? 'Business tools' : 'Career tools'}>
+          <nav className={styles.providerQuickMobileRoleGrid} aria-label={profile.provider_type === 'business' ? t('provider.dashboard.businessTools') : t('provider.dashboard.careerTools')}>
             {providerRoleQuickActions.map((link) => <Link href={link.href} className={styles.providerQuickLink} key={link.href}>
               <span className={styles.providerQuickIcon}><DashboardIcon name={link.icon} /></span>
               <span className={styles.providerQuickLabel}>{link.label}</span>
@@ -370,21 +434,21 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
 
         <ProviderDashboardIdentityCenter onProfileUpdated={load} />
 
-        {bookingsError ? <section className={`${styles.nextServiceCompact} ${styles.nextServiceError}`} aria-label="Booking activity status">
+        {bookingsError ? <section className={`${styles.nextServiceCompact} ${styles.nextServiceError}`} aria-label={t('provider.dashboard.bookingStatus')}>
           <div className={styles.nextServiceCopy}>
-            <span className="eyebrow">Bookings</span>
-            <strong>Booking activity needs a refresh</strong>
-            <small>Open Bookings to retry loading your current service schedule.</small>
+            <span className="eyebrow">{t('provider.bookings')}</span>
+            <strong>{t('provider.dashboard.bookingRefresh')}</strong>
+            <small>{t('provider.dashboard.bookingRefreshBody')}</small>
           </div>
-          <Link href="/provider/bookings" className={styles.nextServiceAction}>Open bookings</Link>
-        </section> : nextUpcoming && !priorityShowsNextService ? <section className={styles.nextServiceCompact} aria-label="Next provider service">
+          <Link href="/provider/bookings" className={styles.nextServiceAction}>{t('provider.dashboard.openBookings')}</Link>
+        </section> : nextUpcoming && !priorityShowsNextService ? <section className={styles.nextServiceCompact} aria-label={t('provider.dashboard.nextService')}>
           <span className={styles.nextServiceIcon}><DashboardIcon name="schedule" /></span>
           <div className={styles.nextServiceCopy}>
-            <span className="eyebrow">Next service</span>
+            <span className="eyebrow">{t('provider.dashboard.nextService')}</span>
             <strong>{nextUpcoming.service_name || nextUpcoming.booking_reference}</strong>
-            <small>{nextUpcoming.booking_date || 'Date pending'}{nextUpcoming.start_time ? ` · ${nextUpcoming.start_time}` : ''}{operations.upcoming.length > 1 ? ` · ${operations.upcoming.length - 1} more upcoming` : ''}</small>
+            <small>{nextUpcoming.booking_date || t('provider.dashboard.datePending')}{nextUpcoming.start_time ? ` · ${nextUpcoming.start_time}` : ''}{operations.upcoming.length > 1 ? ` · ${operations.upcoming.length - 1} ${t('provider.dashboard.moreUpcomingSuffix')}` : ''}</small>
           </div>
-          <Link href={nextUpcomingHref || '/provider/bookings'} className={styles.nextServiceAction}>View service</Link>
+          <Link href={nextUpcomingHref || '/provider/bookings'} className={styles.nextServiceAction}>{t('provider.dashboard.viewService')}</Link>
         </section> : null}
       </> : null}
 
