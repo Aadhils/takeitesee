@@ -161,8 +161,7 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
       });
     const upcoming = bookings
       .filter((booking) => !terminalCloseout(booking) && booking.status === 'confirmed' && (booking.attendance_outcome ?? 'pending') === 'pending' && bookingEndEpoch(booking) > now)
-      .sort((left, right) => bookingEndEpoch(left) - bookingEndEpoch(right))
-      .slice(0, 4);
+      .sort((left, right) => bookingEndEpoch(left) - bookingEndEpoch(right));
     const completed = bookings.filter((booking) => booking.status === 'completed');
     return { needsAction, upcoming, completed };
   }, [bookings, now]);
@@ -251,6 +250,9 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
 
   const priorityAction = nextSteps[0] ?? null;
   const followUpActions = nextSteps.slice(1);
+  const nextUpcoming = operations.upcoming[0] ?? null;
+  const nextUpcomingHref = nextUpcoming ? `/provider/bookings/${encodeURIComponent(nextUpcoming.id)}` : null;
+  const priorityShowsNextService = Boolean(nextUpcomingHref && priorityAction?.href === nextUpcomingHref);
 
   return <LiveProviderShell active="/provider">
     <div id="provider-dashboard-overview" className={styles.dashboardStack}>
@@ -310,16 +312,22 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
 
         <ProviderDashboardIdentityCenter onProfileUpdated={load} />
 
-        <section className={styles.supportGrid} aria-label="Upcoming provider work">
-          <Card className={styles.supportCard}>
-            <div className="section-heading"><div><span className="eyebrow">Upcoming</span><h2>Next bookings</h2></div><Badge tone={bookingsError ? 'warning' : 'success'}>{bookingsError ? 'Retry needed' : 'Live'}</Badge></div>
-            {bookingsError
-              ? <div><p>Booking activity could not load.</p><Link href="/provider/bookings" className="text-link">Open Bookings to retry</Link></div>
-              : operations.upcoming.length
-                ? <div className={styles.bookingList}>{operations.upcoming.map((booking) => <div className={styles.bookingItem} key={booking.id}><div className={styles.bookingItemCopy}><strong>{booking.service_name || booking.booking_reference}</strong><span>{booking.booking_date || 'Date pending'}{booking.start_time ? ` · ${booking.start_time}` : ''} · confirmed</span></div><Link href={`/provider/bookings/${booking.id}`} className={styles.bookingOpen}>View</Link></div>)}</div>
-                : <div><p>No upcoming bookings yet.</p><span className={styles.metricDetail}>Future confirmed work will appear here.</span></div>}
-          </Card>
-        </section>
+        {bookingsError ? <section className={`${styles.nextServiceCompact} ${styles.nextServiceError}`} aria-label="Booking activity status">
+          <div className={styles.nextServiceCopy}>
+            <span className="eyebrow">Bookings</span>
+            <strong>Booking activity needs a refresh</strong>
+            <small>Open Bookings to retry loading your current service schedule.</small>
+          </div>
+          <Link href="/provider/bookings" className={styles.nextServiceAction}>Open bookings</Link>
+        </section> : nextUpcoming && !priorityShowsNextService ? <section className={styles.nextServiceCompact} aria-label="Next provider service">
+          <span className={styles.nextServiceIcon}><DashboardIcon name="schedule" /></span>
+          <div className={styles.nextServiceCopy}>
+            <span className="eyebrow">Next service</span>
+            <strong>{nextUpcoming.service_name || nextUpcoming.booking_reference}</strong>
+            <small>{nextUpcoming.booking_date || 'Date pending'}{nextUpcoming.start_time ? ` · ${nextUpcoming.start_time}` : ''}{operations.upcoming.length > 1 ? ` · ${operations.upcoming.length - 1} more upcoming` : ''}</small>
+          </div>
+          <Link href={nextUpcomingHref || '/provider/bookings'} className={styles.nextServiceAction}>View service</Link>
+        </section> : null}
       </> : null}
 
       {children}
