@@ -3,9 +3,10 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../../../', import.meta.url);
-const [source, translations] = await Promise.all([
+const [source, translations, jumpNav] = await Promise.all([
   readFile(new URL('components/detail/BusinessStorefrontProducts.tsx', root), 'utf8'),
   readFile(new URL('components/i18n/PublicProviderTranslations.ts', root), 'utf8'),
+  readFile(new URL('components/detail/PublicProfileJumpNav.tsx', root), 'utf8'),
 ]);
 
 function occurrences(haystack, needle) {
@@ -75,4 +76,11 @@ test('Business storefront products preserve money formatting and successful-orde
   assert.ok(source.includes("currency: product.currency || 'INR'"));
   assert.ok(source.includes("[product.id]: { quantity: 1, note: '' }"));
   assert.ok(source.includes('href="/orders"'));
+});
+
+
+test('Business storefront products keep the public jump-navigation selector contract', () => {
+  assert.ok(source.includes("aria-label={t('publicProvider.businessProducts.aria')}"));
+  assert.ok(translations.includes("'publicProvider.businessProducts.aria': 'Business products'"));
+  assert.ok(jumpNav.includes('section[aria-label="Business products"]'));
 });
