@@ -209,6 +209,12 @@ const english = {
   'publicProvider.savedProduct.removeError': 'Unable to remove saved Product.',
   'publicProvider.savedProduct.saveError': 'Unable to save Product.',
   'publicProvider.savedProduct.updateError': 'Unable to update saved Product.',
+  'publicProvider.productDetail.browseProducts': 'Browse products',
+  'publicProvider.productDetail.eyebrow': 'Business product',
+  'publicProvider.productDetail.descriptionFallback': 'Product from {businessName}.',
+  'publicProvider.productDetail.soldBy': 'Sold by',
+  'publicProvider.productDetail.viewStorefront': 'View in Business storefront',
+  'publicProvider.productDetail.backMarketplace': 'Back to product marketplace',
 } as const;
 
 type PublicProviderKey = keyof typeof english;
@@ -419,6 +425,12 @@ const tamil: Record<PublicProviderKey, string> = {
   'publicProvider.savedProduct.removeError': 'சேமித்த Product-ஐ remove செய்ய முடியவில்லை.',
   'publicProvider.savedProduct.saveError': 'Product-ஐ save செய்ய முடியவில்லை.',
   'publicProvider.savedProduct.updateError': 'சேமித்த Product நிலையை update செய்ய முடியவில்லை.',
+  'publicProvider.productDetail.browseProducts': 'Products பார்க்க',
+  'publicProvider.productDetail.eyebrow': 'Business product',
+  'publicProvider.productDetail.descriptionFallback': '{businessName} வழங்கும் Product.',
+  'publicProvider.productDetail.soldBy': 'விற்பனையாளர்',
+  'publicProvider.productDetail.viewStorefront': 'Business storefront-ல் பார்க்க',
+  'publicProvider.productDetail.backMarketplace': 'Product marketplace-க்கு திரும்பு',
 };
 
 const catalogs = { 'en-IN': english, 'ta-IN': tamil } as const;

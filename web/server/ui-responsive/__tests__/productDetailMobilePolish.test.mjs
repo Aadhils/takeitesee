@@ -3,14 +3,16 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../../../', import.meta.url);
-const [pageSource, styles] = await Promise.all([
+const [pageSource, shellSource, styles] = await Promise.all([
   readFile(new URL('app/products/[productId]/page.tsx', root), 'utf8'),
+  readFile(new URL('app/products/[productId]/ProductDetailShell.tsx', root), 'utf8'),
   readFile(new URL('app/products/[productId]/ProductDetailPage.module.css', root), 'utf8'),
 ]);
 
 test('Product detail keeps existing public actions and order-request composition', () => {
-  assert.ok(pageSource.includes('<SavedProductAction productId={product.id} />'));
-  assert.ok(pageSource.includes('<ProductShareAction'));
+  assert.ok(pageSource.includes('<ProductDetailShell'));
+  assert.ok(shellSource.includes('<SavedProductAction productId={productId} />'));
+  assert.ok(shellSource.includes('<ProductShareAction'));
   assert.ok(pageSource.includes('<BusinessShopPublicStatus businessId={product.business_id} />'));
   assert.ok(pageSource.includes('<BusinessStorefrontProducts products={['));
   assert.ok(pageSource.includes('stock_mode: product.stock_mode'));
@@ -35,7 +37,10 @@ test('Product detail actions remain touch-friendly and stack on mobile', () => {
 
 test('Product detail remains presentation-only around order flow', () => {
   assert.equal(pageSource.includes("fetch('/api/orders'"), false);
+  assert.equal(shellSource.includes("fetch('/api/orders'"), false);
   assert.equal(pageSource.includes('payment_status'), false);
+  assert.equal(shellSource.includes('payment_status'), false);
   assert.equal(pageSource.includes('Cashfree'), false);
+  assert.equal(shellSource.includes('Cashfree'), false);
   assert.ok(pageSource.includes('non-payment order request'));
 });

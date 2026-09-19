@@ -3,11 +3,12 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../../../', import.meta.url);
-const [share, saved, translations, page] = await Promise.all([
+const [share, saved, translations, page, shell] = await Promise.all([
   readFile(new URL('components/detail/ProductShareAction.tsx', root), 'utf8'),
   readFile(new URL('components/detail/SavedProductAction.tsx', root), 'utf8'),
   readFile(new URL('components/i18n/PublicProviderTranslations.ts', root), 'utf8'),
   readFile(new URL('app/products/[productId]/page.tsx', root), 'utf8'),
+  readFile(new URL('app/products/[productId]/ProductDetailShell.tsx', root), 'utf8'),
 ]);
 
 function occurrences(haystack, needle) {
@@ -68,8 +69,9 @@ test('Saved Product preserves read, auth return and save-toggle API semantics', 
 });
 
 test('Product detail still renders both public actions and keeps finance out of the action components', () => {
-  assert.ok(page.includes('<SavedProductAction productId={product.id} />'));
-  assert.ok(page.includes('<ProductShareAction'));
+  assert.ok(page.includes('<ProductDetailShell'));
+  assert.ok(shell.includes('<SavedProductAction productId={productId} />'));
+  assert.ok(shell.includes('<ProductShareAction'));
   assert.equal(share.includes('Cashfree'), false);
   assert.equal(saved.includes('Cashfree'), false);
   assert.equal(share.includes('/api/orders'), false);

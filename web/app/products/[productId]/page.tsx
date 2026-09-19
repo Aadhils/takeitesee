@@ -1,15 +1,12 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import BusinessShopPublicStatus from '../../../components/detail/BusinessShopPublicStatus';
 import BusinessStorefrontProducts from '../../../components/detail/BusinessStorefrontProducts';
-import ProductShareAction from '../../../components/detail/ProductShareAction';
-import SavedProductAction from '../../../components/detail/SavedProductAction';
 import { hasMarketplaceDisclosure } from '../../../server/marketplace/public-directory';
 import { loadProductImagePresence } from '../../../server/marketplace/public-product-media';
-import styles from './ProductDetailPage.module.css';
+import ProductDetailShell from './ProductDetailShell';
 
 const siteUrl = 'https://www.takeitesee.com';
 
@@ -178,30 +175,15 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, '\\u003c') }}
     />
-    <div className={`container ${styles.topBar}`}>
-      <Link href="/products" className="button button-quiet">← Browse products</Link>
-      <div className={styles.actionCluster}>
-        <SavedProductAction productId={product.id} />
-        <ProductShareAction productId={product.id} productName={productName} businessName={businessName} />
-      </div>
-    </div>
-    <section className={`container page-intro ${styles.intro}`}>
-      <span className="eyebrow">Business product</span>
-      <h1>{productName}</h1>
-      <p className={styles.description}>{product.description || `Product from ${businessName}.`}</p>
-      <p className={styles.sellerLine}>
-        <span>Sold by</span>
-        <Link href={`/businesses/${encodeURIComponent(product.business_id)}`}>{businessName}</Link>
-        {business.location ? <>
-          <span className={styles.separator} aria-hidden="true">·</span>
-          <span>{business.location}</span>
-        </> : null}
-      </p>
-      <div className={styles.ctaRow}>
-        <Link href={storefrontHref} className="button button-secondary">View in Business storefront</Link>
-        <Link href="/products" className="button button-quiet">Back to product marketplace</Link>
-      </div>
-    </section>
+    <ProductDetailShell
+      productId={product.id}
+      productName={productName}
+      businessId={product.business_id}
+      businessName={business.name}
+      businessLocation={business.location}
+      description={product.description}
+      storefrontHref={storefrontHref}
+    />
     <BusinessShopPublicStatus businessId={product.business_id} />
     <BusinessStorefrontProducts products={[{
       id: product.id,
