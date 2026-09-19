@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { Button } from '../ui/primitives';
-import { useLanguage } from '../i18n/LanguageProvider';
+import { usePublicProviderTranslations } from '../i18n/PublicProviderTranslations';
 
 type ShareStatus = 'idle' | 'shared' | 'copied' | 'error';
 type ProviderKind = 'business' | 'professional';
@@ -34,8 +34,7 @@ export default function ProviderProfileShareAction(props: {
   kind: ProviderKind;
 }) {
   const { providerName, kind } = props;
-  const { locale } = useLanguage();
-  const tamil = locale === 'ta-IN';
+  const { t } = usePublicProviderTranslations();
   const [status, setStatus] = useState<ShareStatus>('idle');
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -49,13 +48,16 @@ export default function ProviderProfileShareAction(props: {
     // Share the public URL the visitor is actually viewing. This keeps canonical
     // @handle routes intact instead of leaking the underlying UUID provider route.
     const url = new URL(window.location.href).toString();
-    const fallbackName = kind === 'business' ? 'Verified business' : 'Verified professional';
+    const fallbackName = kind === 'business'
+      ? t('publicProvider.profile.verifiedBusiness')
+      : t('publicProvider.profile.verifiedProfessional');
     const name = providerName || fallbackName;
+    const descriptor = kind === 'business'
+      ? t('publicProvider.share.businessDescriptor')
+      : t('publicProvider.share.professionalDescriptor');
     const shareData = {
       title: `${name} | TakeItEsee`,
-      text: kind === 'business'
-        ? `${name} — verified business on TakeItEsee`
-        : `${name} — verified professional on TakeItEsee`,
+      text: `${name} — ${descriptor}`,
       url,
     };
 
@@ -80,15 +82,15 @@ export default function ProviderProfileShareAction(props: {
   };
 
   const label = status === 'shared'
-    ? (tamil ? 'பகிரப்பட்டது ✓' : 'Shared ✓')
+    ? t('publicProvider.share.shared')
     : status === 'copied'
-      ? (tamil ? 'Profile இணைப்பு நகலெடுக்கப்பட்டது ✓' : 'Profile link copied ✓')
-      : (tamil ? 'Profile-ஐ பகிர்' : 'Share profile');
+      ? t('publicProvider.share.copied')
+      : t('publicProvider.share.action');
 
   return <div style={{ display: 'grid', gap: '.45rem', justifyItems: 'end' }}>
     <Button type="button" variant="quiet" onClick={() => void share()}>{label}</Button>
     <span className="summary-note" aria-live="polite">
-      {status === 'error' ? (tamil ? 'இந்த browser-ல் share/copy செய்ய முடியவில்லை.' : 'This browser could not share or copy the profile link.') : ''}
+      {status === 'error' ? t('publicProvider.share.error') : ''}
     </span>
   </div>;
 }

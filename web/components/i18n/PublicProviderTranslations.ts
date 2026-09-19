@@ -123,6 +123,12 @@ const english = {
   'publicProvider.jumpNav.work': 'Work',
   'publicProvider.jumpNav.services': 'Services',
   'publicProvider.jumpNav.products': 'Products',
+  'publicProvider.share.businessDescriptor': 'verified business on TakeItEsee',
+  'publicProvider.share.professionalDescriptor': 'verified professional on TakeItEsee',
+  'publicProvider.share.shared': 'Shared ✓',
+  'publicProvider.share.copied': 'Profile link copied ✓',
+  'publicProvider.share.action': 'Share profile',
+  'publicProvider.share.error': 'This browser could not share or copy the profile link.',
 } as const;
 
 type PublicProviderKey = keyof typeof english;
@@ -247,6 +253,12 @@ const tamil: Record<PublicProviderKey, string> = {
   'publicProvider.jumpNav.work': 'வேலைகள்',
   'publicProvider.jumpNav.services': 'சேவைகள்',
   'publicProvider.jumpNav.products': 'Products',
+  'publicProvider.share.businessDescriptor': 'TakeItEsee-ல் சரிபார்க்கப்பட்ட வணிகம்',
+  'publicProvider.share.professionalDescriptor': 'TakeItEsee-ல் சரிபார்க்கப்பட்ட நிபுணர்',
+  'publicProvider.share.shared': 'பகிரப்பட்டது ✓',
+  'publicProvider.share.copied': 'Profile இணைப்பு நகலெடுக்கப்பட்டது ✓',
+  'publicProvider.share.action': 'Profile-ஐ பகிர்',
+  'publicProvider.share.error': 'இந்த browser-ல் share/copy செய்ய முடியவில்லை.',
 };
 
 const catalogs = { 'en-IN': english, 'ta-IN': tamil } as const;
