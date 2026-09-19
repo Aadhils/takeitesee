@@ -234,6 +234,9 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
         { href: '/provider/portfolio', label: 'Portfolio', detail: 'Previous work', icon: 'portfolio' },
       ];
 
+  const providerPrimaryQuickActions = providerQuickActions.slice(0, 4);
+  const providerRoleQuickActions = providerQuickActions.slice(4);
+
   const dashboardJumpLinks: DashboardJumpLink[] = profile
     ? [
         { href: '#provider-dashboard-overview', label: 'Overview' },
@@ -333,8 +336,31 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
             <div><span className="eyebrow">Quick actions</span><h2>Go where you need</h2></div>
             <Badge tone="info">{profile.provider_type === 'business' ? 'Business' : 'Professional'}</Badge>
           </div>
-          <nav className={styles.providerQuickGrid} aria-label="Provider quick actions">
-            {providerQuickActions.map((link) => <Link href={link.href} className={styles.providerQuickLink} key={link.href}>
+
+          <nav className={styles.providerQuickPrimaryGrid} aria-label="Provider primary quick actions">
+            {providerPrimaryQuickActions.map((link) => <Link href={link.href} className={styles.providerQuickLink} key={link.href}>
+              <span className={styles.providerQuickIcon}><DashboardIcon name={link.icon} /></span>
+              <span className={styles.providerQuickLabel}>{link.label}</span>
+              <small>{link.detail}</small>
+            </Link>)}
+          </nav>
+
+          <details className={styles.providerQuickMore}>
+            <summary>
+              <span>{profile.provider_type === 'business' ? 'More business tools' : 'More career tools'}</span>
+              <span aria-hidden="true">⌄</span>
+            </summary>
+            <nav className={styles.providerQuickMoreGrid} aria-label={profile.provider_type === 'business' ? 'More business tools' : 'More career tools'}>
+              {providerRoleQuickActions.map((link) => <Link href={link.href} className={styles.providerQuickLink} key={link.href}>
+                <span className={styles.providerQuickIcon}><DashboardIcon name={link.icon} /></span>
+                <span className={styles.providerQuickLabel}>{link.label}</span>
+                <small>{link.detail}</small>
+              </Link>)}
+            </nav>
+          </details>
+
+          <nav className={styles.providerQuickMobileRoleGrid} aria-label={profile.provider_type === 'business' ? 'Business tools' : 'Career tools'}>
+            {providerRoleQuickActions.map((link) => <Link href={link.href} className={styles.providerQuickLink} key={link.href}>
               <span className={styles.providerQuickIcon}><DashboardIcon name={link.icon} /></span>
               <span className={styles.providerQuickLabel}>{link.label}</span>
               <small>{link.detail}</small>
