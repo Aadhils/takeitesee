@@ -13,8 +13,8 @@ test('Customer desktop dashboard uses a main workspace plus booking summary rail
   assert.ok(dashboard.includes('className="customer-dashboard-desktop-layout"'));
   assert.ok(dashboard.includes('className="customer-dashboard-main-column"'));
   assert.ok(dashboard.includes('className="customer-dashboard-side-rail"'));
-  assert.ok(dashboard.includes('grid-template-columns: minmax(0, 1fr) minmax(250px, 300px)'));
-  assert.ok(dashboard.includes('grid-template-columns: repeat(3, minmax(0, 1fr))'));
+  assert.ok(dashboard.includes('grid-template-columns: minmax(0, 1.55fr) minmax(260px, .72fr)'));
+  assert.ok(dashboard.includes('grid-template-columns: repeat(6, minmax(0, 1fr))'));
   assert.ok(dashboard.includes('grid-template-columns: repeat(2, minmax(0, 1fr))'));
 });
 

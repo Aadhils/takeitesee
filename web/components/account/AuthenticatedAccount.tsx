@@ -200,13 +200,14 @@ export default function AuthenticatedAccount() {
       </div>
 
       <style jsx>{`
-        .customer-mobile-quick-shell { display: none; }
+        .customer-social-dashboard { width: 100%; max-width: none; }
+                .customer-mobile-quick-shell { display: none; }
         .customer-account-action-with-badge { display: inline-flex; align-items: center; gap: .42rem; }
         .customer-account-action-badge { display: inline-grid; min-width: 18px; height: 18px; place-items: center; padding: 0 4px; border-radius: 999px; background: var(--color-primary-strong); color: white; font-size: .58rem; font-weight: 850; line-height: 1; }
         .customer-dashboard-identity-hero { margin-top: 12px; }
         .customer-dashboard-desktop-layout {
           display: grid;
-          grid-template-columns: minmax(0, 1fr) minmax(250px, 300px);
+          grid-template-columns: minmax(0, 1.55fr) minmax(260px, .72fr);
           gap: 16px;
           align-items: start;
           margin-top: 14px;
@@ -222,12 +223,12 @@ export default function AuthenticatedAccount() {
         .customer-dashboard-main-column :global(.customer-smart-attention) { margin-top: 0; }
         .customer-dashboard-quick-actions { display: grid; gap: 9px; margin-top: 14px; }
         .customer-dashboard-section-heading h2 { margin: .15rem 0 0; font-size: 1rem; }
-        .customer-dashboard-quick-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+        .customer-dashboard-quick-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 9px; }
         .customer-dashboard-quick-link {
           position: relative;
           display: grid;
           min-width: 0;
-          min-height: 84px;
+          min-height: 78px;
           place-items: center;
           align-content: center;
           gap: 6px;
