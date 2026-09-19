@@ -52,7 +52,7 @@ test('Customer identity hero compacts only on desktop without changing provider 
 
 test('Mobile customer dashboard keeps the existing compact navigation behavior', () => {
   assert.ok(dashboard.includes('@media (max-width: 900px)'));
-  assert.ok(dashboard.includes('.customer-dashboard-desktop-layout { display: block; margin-top: 10px; }'));
+  assert.ok(dashboard.includes('.customer-dashboard-desktop-layout { display: block; margin-top: 6px; }'));
   assert.ok(dashboard.includes('.customer-dashboard-side-rail { position: static; display: block; }'));
   assert.ok(dashboard.includes('.customer-dashboard-quick-actions { display: none; }'));
   assert.ok(dashboard.includes('.customer-activity-strip { grid-template-columns: repeat(4, minmax(92px, 1fr)); overflow-x: auto; scrollbar-width: none; }'));
