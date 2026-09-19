@@ -376,9 +376,9 @@ export default function AuthenticatedAccount() {
         }
 
         @media (max-width: 900px) {
-          .customer-dashboard-desktop-layout { display: block; margin-top: 10px; }
+          .customer-dashboard-desktop-layout { display: block; margin-top: 6px; }
           .customer-dashboard-side-rail { position: static; display: block; }
-          .customer-dashboard-identity-hero { margin-top: 8px; }
+          .customer-dashboard-identity-hero { margin-top: 0; }
           .customer-dashboard-quick-actions { display: none; }
           .customer-dashboard-more-links { margin-top: 8px; }
           .customer-dashboard-more-links > summary { min-height: 44px; }

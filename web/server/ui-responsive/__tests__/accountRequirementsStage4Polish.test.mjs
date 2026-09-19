@@ -27,7 +27,7 @@ test('mobile and tablet account overview removes redundant identity chrome and c
   assert.ok(layoutSource.includes("import './account-overview-stage4-polish.css';"));
   assert.match(accountPolishCss, /@media \(max-width: 900px\)[\s\S]*?\.account-layout > \.account-sidebar > \.account-sidebar-heading\s*\{\s*display:\s*none !important/);
   assert.match(accountPolishCss, /\.customer-social-dashboard > \.eyebrow,[\s\S]*?\.customer-social-dashboard > p\s*\{\s*display:\s*none !important/);
-  assert.match(accountPolishCss, /\.customer-social-dashboard > h1\s*\{[\s\S]*?font-size:\s*clamp\(1\.3rem, 3\.8vw, 1\.65rem\) !important/);
+  assert.match(accountPolishCss, /\.customer-social-dashboard > h1\s*\{\s*display:\s*none !important/);
 });
 
 test('customer proposal attention explains the requirement to proposal journey', () => {

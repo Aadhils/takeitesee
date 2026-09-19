@@ -29,7 +29,7 @@ test('Customer desktop quick actions use one balanced six-item row', () => {
 
 test('Customer mobile and tablet navigation behavior stays unchanged', () => {
   assert.ok(dashboard.includes('@media (max-width: 900px)'));
-  assert.ok(dashboard.includes('.customer-dashboard-desktop-layout { display: block; margin-top: 10px; }'));
+  assert.ok(dashboard.includes('.customer-dashboard-desktop-layout { display: block; margin-top: 6px; }'));
   assert.ok(dashboard.includes('.customer-dashboard-quick-actions { display: none; }'));
   assert.ok(dashboard.includes('.customer-activity-strip { grid-template-columns: repeat(4, minmax(92px, 1fr)); overflow-x: auto; scrollbar-width: none; }'));
 });
