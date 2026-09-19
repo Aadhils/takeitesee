@@ -66,19 +66,7 @@ function normalized(value: string | null | undefined) {
 }
 
 export default function ProviderDashboardLaunchCenter() {
-  const { locale } = useIdentityWorkspaceTranslations();
-  const tamil = locale.toLowerCase().startsWith('ta');
-  const copy = useMemo(() => tamil ? {
-    eyebrow: 'Marketplace launch', title: 'Service-ஐ இங்கிருந்தே launch செய்யுங்கள்', intro: 'First service create செய்வது முதல் category/location approval மற்றும் activation வரை Dashboard-லேயே முடிக்கலாம்.',
-    ready: 'Marketplace live', progress: 'Setup in progress', create: 'Add first service', addAnother: 'Add service', manage: 'Advanced service manager', name: 'Service name', description: 'Service description', category: 'Platform category', categorySearch: 'Category தேடுங்கள்', categorySearchPlaceholder: 'Website, driver, marketing…', categoryChoose: 'ஒரு category தேர்வு செய்யுங்கள்', categoryNoMatches: 'Matching category இல்லை. வேறு வார்த்தை type செய்யுங்கள்.', price: 'Starting price (INR)', duration: 'Duration (minutes)', save: 'Save draft service', cancel: 'Cancel',
-    created: 'Draft service created. இப்போது launch location தேர்வு செய்து approval request செய்யலாம்.', approval: 'Request approval', location: 'Launch location', pending: 'Approval pending', approved: 'Scope approved', live: 'Live', activate: 'Activate service', withdraw: 'Withdraw request', retry: 'Try again', noCategory: 'இந்த service-க்கு valid platform category தேவை.',
-    identity: 'Identity ready', service: 'Service created', scope: 'Scope approved', public: 'Public live', reload: 'Reload', loading: 'Marketplace setup load ஆகிறது…',
-  } : {
-    eyebrow: 'Marketplace launch', title: 'Launch a service from this Dashboard', intro: 'Create your first service, request category/location approval and activate it without leaving the Provider workspace.',
-    ready: 'Marketplace live', progress: 'Setup in progress', create: 'Add first service', addAnother: 'Add service', manage: 'Advanced service manager', name: 'Service name', description: 'Service description', category: 'Platform category', categorySearch: 'Find category', categorySearchPlaceholder: 'Type website, driver, marketing…', categoryChoose: 'Choose a category', categoryNoMatches: 'No matching categories. Try another search.', price: 'Starting price (INR)', duration: 'Duration (minutes)', save: 'Save draft service', cancel: 'Cancel',
-    created: 'Draft service created. Choose a launch location and request approval next.', approval: 'Request approval', location: 'Launch location', pending: 'Approval pending', approved: 'Scope approved', live: 'Live', activate: 'Activate service', withdraw: 'Withdraw request', retry: 'Try again', noCategory: 'This service needs a valid platform category.',
-    identity: 'Identity ready', service: 'Service created', scope: 'Scope approved', public: 'Public live', reload: 'Reload', loading: 'Loading marketplace setup…',
-  }, [tamil]);
+  const { t } = useIdentityWorkspaceTranslations();
 
   const [services, setServices] = useState<Service[]>([]);
   const [readiness, setReadiness] = useState<Readiness | null>(null);
@@ -121,7 +109,7 @@ export default function ProviderDashboardLaunchCenter() {
   }, [requests]);
 
   const categoryLabel = (category: Category) => category.parent_id
-    ? `${parentById.get(category.parent_id)?.name ?? 'Category'} → ${category.name}`
+    ? `${parentById.get(category.parent_id)?.name ?? t('provider.launch.categoryFallback')} → ${category.name}`
     : category.name;
 
   const load = useCallback(async () => {
@@ -134,18 +122,18 @@ export default function ProviderDashboardLaunchCenter() {
       ]);
       const serviceBody = await serviceResponse.json() as { services?: Service[]; error?: string };
       const setupBody = await setupResponse.json() as { readiness?: Readiness; options?: SetupOptions; requests?: LaunchRequest[]; error?: string };
-      if (!serviceResponse.ok) throw new Error(serviceBody.error ?? 'Unable to load services.');
-      if (!setupResponse.ok || !setupBody.readiness || !setupBody.options) throw new Error(setupBody.error ?? 'Unable to load marketplace setup.');
+      if (!serviceResponse.ok) throw new Error(serviceBody.error ?? t('provider.launch.loadServicesFallback'));
+      if (!setupResponse.ok || !setupBody.readiness || !setupBody.options) throw new Error(setupBody.error ?? t('provider.launch.loadFallback'));
       setServices(serviceBody.services ?? []);
       setReadiness(setupBody.readiness);
       setOptions(setupBody.options);
       setRequests(setupBody.requests ?? []);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to load marketplace setup.');
+      setError(cause instanceof Error ? cause.message : t('provider.launch.loadFallback'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
@@ -172,10 +160,10 @@ export default function ProviderDashboardLaunchCenter() {
         body: JSON.stringify({ name: draft.name, description: draft.description, category_id: draft.category_id, base_price: price, duration_minutes: duration, currency: 'INR', status: 'draft' }),
       });
       const body = await response.json() as { service?: Service; error?: string };
-      if (!response.ok || !body.service) throw new Error(body.error ?? 'Service could not be created.');
-      setDraft(emptyDraft); setCategoryQuery(''); setFormOpen(false); setNotice(copy.created);
+      if (!response.ok || !body.service) throw new Error(body.error ?? t('provider.launch.createFallback'));
+      setDraft(emptyDraft); setCategoryQuery(''); setFormOpen(false); setNotice(t('provider.launch.create')d);
       await load(); refreshWorkspace();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Service could not be created.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : t('provider.launch.createFallback')); }
     finally { setBusy(null); }
   };
 
@@ -191,9 +179,9 @@ export default function ProviderDashboardLaunchCenter() {
         body: JSON.stringify({ service_id: service.id, application_id: category.application_id, category_id: category.id, location_id: locationId }),
       });
       const body = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(body.error ?? 'Launch request could not be submitted.');
+      if (!response.ok) throw new Error(body.error ?? t('provider.launch.approvalFallback'));
       await load(); refreshWorkspace();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Launch request could not be submitted.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : t('provider.launch.approvalFallback')); }
     finally { setBusy(null); }
   };
 
@@ -203,9 +191,9 @@ export default function ProviderDashboardLaunchCenter() {
     try {
       const response = await fetch('/api/provider/setup', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ request_id: requestId }) });
       const body = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(body.error ?? 'Unable to withdraw request.');
+      if (!response.ok) throw new Error(body.error ?? t('provider.launch.withdrawFallback'));
       await load(); refreshWorkspace();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to withdraw request.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : t('provider.launch.withdrawFallback')); }
     finally { setBusy(null); }
   };
 
@@ -215,60 +203,60 @@ export default function ProviderDashboardLaunchCenter() {
     try {
       const response = await fetch(`/api/provider/services/${serviceId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'active' }) });
       const body = await response.json() as { service?: Service; error?: string };
-      if (!response.ok || !body.service) throw new Error(body.error ?? 'Service could not be activated.');
+      if (!response.ok || !body.service) throw new Error(body.error ?? t('provider.launch.activateFallback'));
       await load(); refreshWorkspace();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Service could not be activated.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : t('provider.launch.activateFallback')); }
     finally { setBusy(null); }
   };
 
   const identityReady = Boolean(readiness?.profile_complete && readiness.verified && readiness.marketplace_disclosure_complete && readiness.trust_status === 'normal');
 
-  return <section id="provider-marketplace-launch" className={styles.center} aria-label="Provider marketplace launch controls">
+  return <section id="provider-marketplace-launch" className={styles.center} aria-label={t('provider.launch.controlsLabel')}>
     <Card className={styles.card}>
       <div className={styles.header}>
-        <div><span className={styles.eyebrow}>{copy.eyebrow}</span><h2>{copy.title}</h2><p>{copy.intro}</p></div>
-        <Badge tone={readiness?.marketplace_live ? 'success' : 'warning'}>{readiness?.marketplace_live ? copy.ready : copy.progress}</Badge>
+        <div><span className={styles.eyebrow}>{t('provider.launch.eyebrow')}</span><h2>{t('provider.launch.title')}</h2><p>{t('provider.launch.intro')}</p></div>
+        <Badge tone={readiness?.marketplace_live ? 'success' : 'warning'}>{readiness?.marketplace_live ? t('provider.launch.ready') : t('provider.launch.progress')}</Badge>
       </div>
 
-      {loading ? <p>{copy.loading}</p> : null}
-      {error ? <p className="field-error" role="alert">{error} <button type="button" className={styles.textButton} onClick={() => void load()}>{copy.reload}</button></p> : null}
+      {loading ? <p>{t('provider.launch.loading')}</p> : null}
+      {error ? <p className="field-error" role="alert">{error} <button type="button" className={styles.textButton} onClick={() => void load()}>{t('provider.launch.reload')}</button></p> : null}
       {notice ? <p className={styles.notice} role="status">{notice}</p> : null}
 
-      {readiness ? <div className={styles.steps} aria-label="Marketplace launch progress">
-        <div className={identityReady ? styles.stepDone : styles.step}><span>1</span><strong>{copy.identity}</strong></div>
-        <div className={readiness.first_service_created ? styles.stepDone : styles.step}><span>2</span><strong>{copy.service}</strong></div>
-        <div className={readiness.first_service_scoped ? styles.stepDone : styles.step}><span>3</span><strong>{copy.scope}</strong></div>
-        <div className={readiness.marketplace_live ? styles.stepDone : styles.step}><span>4</span><strong>{copy.public}</strong></div>
+      {readiness ? <div className={styles.steps} aria-label={t('provider.launch.progressLabel')}>
+        <div className={identityReady ? styles.stepDone : styles.step}><span>1</span><strong>{t('provider.launch.identity')}</strong></div>
+        <div className={readiness.first_service_created ? styles.stepDone : styles.step}><span>2</span><strong>{t('provider.launch.service')}</strong></div>
+        <div className={readiness.first_service_scoped ? styles.stepDone : styles.step}><span>3</span><strong>{t('provider.launch.scope')}</strong></div>
+        <div className={readiness.marketplace_live ? styles.stepDone : styles.step}><span>4</span><strong>{t('provider.launch.public')}</strong></div>
       </div> : null}
 
       {!loading && readiness && services.length === 0 && !formOpen ? <div className={styles.emptyState}>
-        <div><strong>{tamil ? 'முதல் service-ஐ சேர்க்கவும்' : 'Create your first service'}</strong><p>{tamil ? 'Customer search மற்றும் booking-க்கு தெரியும் service இதிலிருந்து ஆரம்பிக்கிறது.' : 'Start with the service customers will discover and book.'}</p></div>
-        <Button type="button" onClick={() => setFormOpen(true)}>{copy.create}</Button>
+        <div><strong>{t('provider.launch.firstServiceTitle')}</strong><p>{t('provider.launch.firstServiceBody')}</p></div>
+        <Button type="button" onClick={() => setFormOpen(true)}>{t('provider.launch.create')}</Button>
       </div> : null}
 
       {!loading && services.length > 0 && !formOpen ? <div className={styles.topActions}>
-        <Button type="button" variant="secondary" onClick={() => setFormOpen(true)}>{copy.addAnother}</Button>
-        <Link href="/provider/services" className={styles.secondaryLink}>{copy.manage}</Link>
+        <Button type="button" variant="secondary" onClick={() => setFormOpen(true)}>{t('provider.launch.addAnother')}</Button>
+        <Link href="/provider/services" className={styles.secondaryLink}>{t('provider.launch.manage')}</Link>
       </div> : null}
 
       {formOpen ? <form className={styles.form} onSubmit={createService}>
         <div className={styles.twoColumns}>
-          <Input label={copy.name} value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} required maxLength={120} />
+          <Input label={t('provider.launch.name')} value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} required maxLength={120} />
           <div className={styles.categoryChooser}>
-            <Input label={copy.categorySearch} value={categoryQuery} onChange={(event) => setCategoryQuery(event.target.value)} placeholder={copy.categorySearchPlaceholder} />
-            <Select label={copy.category} value={draft.category_id} onChange={(event) => setDraft((current) => ({ ...current, category_id: event.target.value }))} required>
-              <option value="">{copy.categoryChoose}</option>
+            <Input label={t('provider.launch.category')Search} value={categoryQuery} onChange={(event) => setCategoryQuery(event.target.value)} placeholder={t('provider.launch.category')SearchPlaceholder} />
+            <Select label={t('provider.launch.category')} value={draft.category_id} onChange={(event) => setDraft((current) => ({ ...current, category_id: event.target.value }))} required>
+              <option value="">{t('provider.launch.category')Choose}</option>
               {categoryOptions.map((category) => <option value={category.id} key={category.id}>{categoryLabel(category)}</option>)}
             </Select>
-            {categoryQuery.trim() && categoryMatches.length === 0 ? <p className={styles.help}>{copy.categoryNoMatches}</p> : null}
+            {categoryQuery.trim() && categoryMatches.length === 0 ? <p className={styles.help}>{t('provider.launch.category')NoMatches}</p> : null}
           </div>
         </div>
-        <Textarea label={copy.description} value={draft.description} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))} required maxLength={1200} rows={3} />
+        <Textarea label={t('provider.launch.description')} value={draft.description} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))} required maxLength={1200} rows={3} />
         <div className={styles.twoColumns}>
-          <Input label={copy.price} type="number" min={0} step="0.01" value={draft.price} onChange={(event) => setDraft((current) => ({ ...current, price: event.target.value }))} required />
-          <Input label={copy.duration} type="number" min={1} step={1} value={draft.duration} onChange={(event) => setDraft((current) => ({ ...current, duration: event.target.value }))} required />
+          <Input label={t('provider.launch.price')} type="number" min={0} step="0.01" value={draft.price} onChange={(event) => setDraft((current) => ({ ...current, price: event.target.value }))} required />
+          <Input label={t('provider.launch.duration')} type="number" min={1} step={1} value={draft.duration} onChange={(event) => setDraft((current) => ({ ...current, duration: event.target.value }))} required />
         </div>
-        <div className={styles.actions}><Button type="submit" loading={busy === 'create'}>{copy.save}</Button><Button type="button" variant="secondary" onClick={() => { setFormOpen(false); setDraft(emptyDraft); setCategoryQuery(''); }}>{copy.cancel}</Button></div>
+        <div className={styles.actions}><Button type="submit" loading={busy === 'create'}>{t('provider.launch.save')}</Button><Button type="button" variant="secondary" onClick={() => { setFormOpen(false); setDraft(emptyDraft); setCategoryQuery(''); }}>{t('provider.launch.cancel')}</Button></div>
       </form> : null}
 
       {readiness?.services.length ? <div className={styles.serviceRail}>
@@ -278,24 +266,24 @@ export default function ProviderDashboardLaunchCenter() {
           const canonicalCategory = selectableCategories.find((item) => normalized(item.name) === normalized(service.catalog_category));
           const blockedByIdentity = !identityReady;
           return <article className={styles.serviceCard} key={service.id}>
-            <div className={styles.serviceHead}><div><small>{service.status}</small><h3>{service.name}</h3><p>{service.catalog_category || copy.noCategory}</p></div><Badge tone={service.status === 'active' ? 'success' : service.scope_enabled ? 'info' : pending ? 'warning' : 'neutral'}>{service.status === 'active' ? copy.live : service.scope_enabled ? copy.approved : pending ? copy.pending : 'Draft'}</Badge></div>
+            <div className={styles.serviceHead}><div><small>{service.status}</small><h3>{service.name}</h3><p>{service.catalog_category || t('provider.launch.noCategory')}</p></div><Badge tone={service.status === 'active' ? 'success' : service.scope_enabled ? 'info' : pending ? 'warning' : 'neutral'}>{service.status === 'active' ? t('provider.launch.live') : service.scope_enabled ? t('provider.launch.approved') : pending ? t('provider.launch.pending') : t('provider.launch.draft')}</Badge></div>
 
             {!service.scope_enabled && !pending && canonicalCategory ? <div className={styles.inlineAction}>
-              <Select label={copy.location} value={locationByService[service.id] ?? ''} onChange={(event) => setLocationByService((current) => ({ ...current, [service.id]: event.target.value }))} disabled={blockedByIdentity}>
+              <Select label={t('provider.launch.location')} value={locationByService[service.id] ?? ''} onChange={(event) => setLocationByService((current) => ({ ...current, [service.id]: event.target.value }))} disabled={blockedByIdentity}>
                 {preferredLocations.map((location) => <option key={location.id} value={location.id}>{location.name}{location.type ? ` · ${location.type}` : ''}</option>)}
               </Select>
-              <Button type="button" loading={busy === `approval:${service.id}`} disabled={blockedByIdentity || !locationByService[service.id]} onClick={() => void requestApproval(service)}>{copy.approval}</Button>
-              {blockedByIdentity ? <p className={styles.help}>{tamil ? 'Profile, verification, disclosure மற்றும் trust status complete ஆன பிறகு launch approval தொடரலாம்.' : 'Finish profile, verification, disclosure and trust readiness before requesting launch approval.'}</p> : null}
+              <Button type="button" loading={busy === `approval:${service.id}`} disabled={blockedByIdentity || !locationByService[service.id]} onClick={() => void requestApproval(service)}>{t('provider.launch.approval')}</Button>
+              {blockedByIdentity ? <p className={styles.help}>{t('provider.launch.blockedHelp')}</p> : null}
             </div> : null}
 
-            {!service.scope_enabled && !pending && !canonicalCategory ? <div className={styles.inlineAction}><p className={styles.help}>{copy.noCategory}</p><Link href="/provider/services" className={styles.secondaryLink}>{copy.manage}</Link></div> : null}
+            {!service.scope_enabled && !pending && !canonicalCategory ? <div className={styles.inlineAction}><p className={styles.help}>{t('provider.launch.noCategory')}</p><Link href="/provider/services" className={styles.secondaryLink}>{t('provider.launch.manage')}</Link></div> : null}
 
-            {pending && latest ? <div className={styles.inlineAction}><p className={styles.help}>{latest.review_note || (tamil ? 'Platform review pending.' : 'Platform review is pending.')}</p><Button type="button" variant="secondary" loading={busy === `withdraw:${latest.id}`} onClick={() => void withdraw(latest.id)}>{copy.withdraw}</Button></div> : null}
+            {pending && latest ? <div className={styles.inlineAction}><p className={styles.help}>{latest.review_note || t('provider.launch.reviewPending')}</p><Button type="button" variant="secondary" loading={busy === `withdraw:${latest.id}`} onClick={() => void withdraw(latest.id)}>{t('provider.launch.withdraw')}</Button></div> : null}
 
-            {service.scope_enabled ? <div className={styles.scopeSummary}><span><small>{copy.category}</small><strong>{service.category_name || service.catalog_category || '—'}</strong></span><span><small>{copy.location}</small><strong>{service.location_name || '—'}</strong></span></div> : null}
+            {service.scope_enabled ? <div className={styles.scopeSummary}><span><small>{t('provider.launch.category')}</small><strong>{service.category_name || service.catalog_category || '—'}</strong></span><span><small>{t('provider.launch.location')}</small><strong>{service.location_name || '—'}</strong></span></div> : null}
 
-            {service.scope_enabled && service.launch_ready && service.status !== 'active' ? <Button type="button" loading={busy === `activate:${service.id}`} onClick={() => void activate(service.id)}>{copy.activate}</Button> : null}
-            {service.scope_enabled && !service.launch_ready ? <p className={styles.help}>{tamil ? 'Scope approved. Remaining public readiness gate complete ஆனதும் Activate கிடைக்கும்.' : 'Scope approved. Activate becomes available after the remaining public readiness gate is complete.'}</p> : null}
+            {service.scope_enabled && service.launch_ready && service.status !== 'active' ? <Button type="button" loading={busy === `activate:${service.id}`} onClick={() => void activate(service.id)}>{t('provider.launch.activate')}</Button> : null}
+            {service.scope_enabled && !service.launch_ready ? <p className={styles.help}>{t('provider.launch.scopeApprovedHelp')}</p> : null}
           </article>;
         })}
       </div> : null}
