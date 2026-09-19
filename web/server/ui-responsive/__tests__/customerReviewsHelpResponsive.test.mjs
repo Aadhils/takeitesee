@@ -45,7 +45,7 @@ test('Help Center support, privacy and safety routing contracts remain present',
   assert.ok(helpSource.includes("href: '/bookings'"));
   assert.ok(helpSource.includes("href: '/account/support'"));
   assert.ok(helpSource.includes("href: '/messages'"));
-  assert.ok(helpSource.includes('A deletion request is reviewed and is not an immediate automatic deletion.'));
+  assert.ok(helpSource.includes("t('help.faq.privacy.answer')"));
   assert.ok(helpSource.includes('mailto:uandv.com@gmail.com'));
   assert.ok(helpSource.includes('href="/privacy"'));
 });
