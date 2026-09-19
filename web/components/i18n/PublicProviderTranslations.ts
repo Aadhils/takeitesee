@@ -116,6 +116,13 @@ const english = {
   'publicProvider.profile.businessLiveHelp': 'Only active, published services from this business are shown here.',
   'publicProvider.profile.professionalLiveHelp': 'Only active public talents, opt-in career details, selected work media, and published services from this provider are shown here.',
   'publicProvider.profile.exploreServices': 'Explore services',
+  'publicProvider.jumpNav.quickNavigation': 'Public profile quick navigation',
+  'publicProvider.jumpNav.about': 'About',
+  'publicProvider.jumpNav.talents': 'Talents',
+  'publicProvider.jumpNav.career': 'Career',
+  'publicProvider.jumpNav.work': 'Work',
+  'publicProvider.jumpNav.services': 'Services',
+  'publicProvider.jumpNav.products': 'Products',
 } as const;
 
 type PublicProviderKey = keyof typeof english;
@@ -233,6 +240,13 @@ const tamil: Record<PublicProviderKey, string> = {
   'publicProvider.profile.businessLiveHelp': 'இந்த வணிகத்தின் active, published சேவைகள் மட்டும் இங்கே காட்டப்படுகின்றன.',
   'publicProvider.profile.professionalLiveHelp': 'இந்த provider-ன் active public talents, opt-in career details, selected work media மற்றும் published services மட்டும் இங்கே காட்டப்படுகின்றன.',
   'publicProvider.profile.exploreServices': 'சேவைகளை பார்க்க',
+  'publicProvider.jumpNav.quickNavigation': 'Public profile விரைவு வழிசெலுத்தல்',
+  'publicProvider.jumpNav.about': 'பற்றி',
+  'publicProvider.jumpNav.talents': 'திறன்கள்',
+  'publicProvider.jumpNav.career': 'Career',
+  'publicProvider.jumpNav.work': 'வேலைகள்',
+  'publicProvider.jumpNav.services': 'சேவைகள்',
+  'publicProvider.jumpNav.products': 'Products',
 };
 
 const catalogs = { 'en-IN': english, 'ta-IN': tamil } as const;
