@@ -184,7 +184,7 @@ test('Provider dashboard avoids repeating the next confirmed service', () => {
   assert.ok(providerDashboard.includes('nextUpcoming && !priorityShowsNextService'));
   assert.ok(providerDashboard.includes('className={styles.nextServiceCompact}'));
   assert.ok(providerDashboard.includes('className={styles.nextServiceAction}'));
-  assert.ok(providerDashboard.includes("aria-label="Next provider service""));
+  assert.ok(providerDashboard.includes('aria-label="Next provider service"'));
   assert.ok(!providerDashboard.includes('No upcoming bookings yet.'));
   assert.ok(!providerDashboard.includes('<h2>Next bookings</h2>'));
 });
