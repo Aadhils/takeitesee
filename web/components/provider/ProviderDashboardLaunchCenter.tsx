@@ -161,7 +161,7 @@ export default function ProviderDashboardLaunchCenter() {
       });
       const body = await response.json() as { service?: Service; error?: string };
       if (!response.ok || !body.service) throw new Error(body.error ?? t('provider.launch.createFallback'));
-      setDraft(emptyDraft); setCategoryQuery(''); setFormOpen(false); setNotice(t('provider.launch.create')d);
+      setDraft(emptyDraft); setCategoryQuery(''); setFormOpen(false); setNotice(t('provider.launch.created'));
       await load(); refreshWorkspace();
     } catch (cause) { setError(cause instanceof Error ? cause.message : t('provider.launch.createFallback')); }
     finally { setBusy(null); }
@@ -243,12 +243,12 @@ export default function ProviderDashboardLaunchCenter() {
         <div className={styles.twoColumns}>
           <Input label={t('provider.launch.name')} value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} required maxLength={120} />
           <div className={styles.categoryChooser}>
-            <Input label={t('provider.launch.category')Search} value={categoryQuery} onChange={(event) => setCategoryQuery(event.target.value)} placeholder={t('provider.launch.category')SearchPlaceholder} />
+            <Input label={t('provider.launch.categorySearch')} value={categoryQuery} onChange={(event) => setCategoryQuery(event.target.value)} placeholder={t('provider.launch.categorySearchPlaceholder')} />
             <Select label={t('provider.launch.category')} value={draft.category_id} onChange={(event) => setDraft((current) => ({ ...current, category_id: event.target.value }))} required>
-              <option value="">{t('provider.launch.category')Choose}</option>
+              <option value="">{t('provider.launch.categoryChoose')}</option>
               {categoryOptions.map((category) => <option value={category.id} key={category.id}>{categoryLabel(category)}</option>)}
             </Select>
-            {categoryQuery.trim() && categoryMatches.length === 0 ? <p className={styles.help}>{t('provider.launch.category')NoMatches}</p> : null}
+            {categoryQuery.trim() && categoryMatches.length === 0 ? <p className={styles.help}>{t('provider.launch.categoryNoMatches')}</p> : null}
           </div>
         </div>
         <Textarea label={t('provider.launch.description')} value={draft.description} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))} required maxLength={1200} rows={3} />
