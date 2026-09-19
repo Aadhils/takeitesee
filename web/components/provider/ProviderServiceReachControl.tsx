@@ -60,7 +60,7 @@ export default function ProviderServiceReachControl({ serviceId, serviceName }: 
     } finally {
       setLoading(false);
     }
-  }, [applyReach, serviceId]);
+  }, [applyReach, serviceId, t]);
 
   const toggleOpen = () => {
     const next = !open;
