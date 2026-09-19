@@ -183,6 +183,12 @@ const english = {
   'publicProvider.businessProducts.viewOrders': 'View my orders',
   'publicProvider.businessProducts.unavailable': 'This product is not currently available to order.',
   'publicProvider.businessProducts.requestError': 'Unable to request this order.',
+  'publicProvider.serviceShare.byProvider': '{serviceName} by {providerName} on TakeItEsee',
+  'publicProvider.serviceShare.onPlatform': '{serviceName} on TakeItEsee',
+  'publicProvider.serviceShare.shared': 'Shared ✓',
+  'publicProvider.serviceShare.copied': 'Link copied ✓',
+  'publicProvider.serviceShare.action': 'Share service',
+  'publicProvider.serviceShare.error': 'This browser could not share or copy the service link.',
 } as const;
 
 type PublicProviderKey = keyof typeof english;
@@ -367,6 +373,12 @@ const tamil: Record<PublicProviderKey, string> = {
   'publicProvider.businessProducts.viewOrders': 'என் orders பார்க்க',
   'publicProvider.businessProducts.unavailable': 'இந்த product தற்போது order செய்ய முடியாது.',
   'publicProvider.businessProducts.requestError': 'இந்த order request-ஐ அனுப்ப முடியவில்லை.',
+  'publicProvider.serviceShare.byProvider': '{providerName} வழங்கும் {serviceName} — TakeItEsee',
+  'publicProvider.serviceShare.onPlatform': '{serviceName} — TakeItEsee',
+  'publicProvider.serviceShare.shared': 'பகிரப்பட்டது ✓',
+  'publicProvider.serviceShare.copied': 'இணைப்பு நகலெடுக்கப்பட்டது ✓',
+  'publicProvider.serviceShare.action': 'சேவையை பகிர்',
+  'publicProvider.serviceShare.error': 'இந்த browser-ல் share/copy செய்ய முடியவில்லை.',
 };
 
 const catalogs = { 'en-IN': english, 'ta-IN': tamil } as const;

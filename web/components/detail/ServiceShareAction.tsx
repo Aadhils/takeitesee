@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { Button } from '../ui/primitives';
-import { useLanguage } from '../i18n/LanguageProvider';
+import { usePublicProviderTranslations } from '../i18n/PublicProviderTranslations';
 
 type ShareStatus = 'idle' | 'shared' | 'copied' | 'error';
 
@@ -28,8 +28,7 @@ async function copyServiceUrl(value: string) {
 }
 
 export default function ServiceShareAction({ serviceId, serviceName, providerName }: { serviceId: string; serviceName: string; providerName: string }) {
-  const { locale } = useLanguage();
-  const tamil = locale === 'ta-IN';
+  const { t } = usePublicProviderTranslations();
   const [status, setStatus] = useState<ShareStatus>('idle');
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -41,9 +40,14 @@ export default function ServiceShareAction({ serviceId, serviceName, providerNam
   const share = async () => {
     setStatus('idle');
     const url = new URL(`/services/${serviceId}`, window.location.origin).toString();
+    const shareText = providerName
+      ? t('publicProvider.serviceShare.byProvider')
+        .replace('{serviceName}', serviceName)
+        .replace('{providerName}', providerName)
+      : t('publicProvider.serviceShare.onPlatform').replace('{serviceName}', serviceName);
     const shareData = {
       title: serviceName,
-      text: providerName ? `${serviceName} by ${providerName} on TakeItEsee` : `${serviceName} on TakeItEsee`,
+      text: shareText,
       url,
     };
 
@@ -68,15 +72,15 @@ export default function ServiceShareAction({ serviceId, serviceName, providerNam
   };
 
   const label = status === 'shared'
-    ? (tamil ? 'பகிரப்பட்டது ✓' : 'Shared ✓')
+    ? t('publicProvider.serviceShare.shared')
     : status === 'copied'
-      ? (tamil ? 'இணைப்பு நகலெடுக்கப்பட்டது ✓' : 'Link copied ✓')
-      : (tamil ? 'சேவையை பகிர்' : 'Share service');
+      ? t('publicProvider.serviceShare.copied')
+      : t('publicProvider.serviceShare.action');
 
   return <div style={{ display: 'grid', gap: '.45rem' }}>
     <Button type="button" variant="quiet" onClick={() => void share()}>{label}</Button>
     <span className="summary-note" aria-live="polite">
-      {status === 'error' ? (tamil ? 'இந்த browser-ல் share/copy செய்ய முடியவில்லை.' : 'This browser could not share or copy the service link.') : ''}
+      {status === 'error' ? t('publicProvider.serviceShare.error') : ''}
     </span>
   </div>;
 }
