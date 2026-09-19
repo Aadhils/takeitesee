@@ -48,7 +48,7 @@ test('account mobile navigation is contained and locks primary labels to one lin
   assert.ok(cssSource.includes('.account-sidebar .account-desktop-nav {\n    display: none !important;'));
   assert.ok(cssSource.includes('.account-sidebar .account-mobile-nav {\n    display: grid !important;'));
   assert.ok(cssSource.includes('overflow: visible;'));
-  assert.ok(cssSource.includes('min-height: 48px;'));
+  assert.ok(cssSource.includes('min-height: 44px;'));
   assert.ok(shellSource.includes('account-mobile-tab-label'));
   assert.ok(cssSource.includes('.account-mobile-tab-label,\n  .account-mobile-more-label {'));
   assert.ok(cssSource.includes('text-overflow: ellipsis;'));
