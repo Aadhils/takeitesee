@@ -61,9 +61,7 @@ export default function ProfessionalPortfolioMediaManager({
   roles: RoleOption[];
   verified: boolean;
 }) {
-  const { locale } = useIdentityWorkspaceTranslations();
-  const tamil = locale.toLowerCase().startsWith('ta');
-  const text = (en: string, ta: string) => tamil ? ta : en;
+  const { t } = useIdentityWorkspaceTranslations();
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [media, setMedia] = useState<PortfolioMedia[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,14 +86,14 @@ export default function ProfessionalPortfolioMediaManager({
     try {
       const response = await fetch('/api/provider/profile/media', { cache: 'no-store' });
       const body = await response.json() as { media?: PortfolioMedia[]; error?: string };
-      if (!response.ok) throw new Error(body.error ?? 'Unable to load portfolio media.');
+      if (!response.ok) throw new Error(body.error ?? t('provider.portfolioManager.unableToLoadPortfolioMedia'));
       setMedia(body.media ?? []);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to load portfolio media.');
+      setError(cause instanceof Error ? cause.message : t('provider.portfolioManager.unableToLoadPortfolioMedia'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -112,18 +110,18 @@ export default function ProfessionalPortfolioMediaManager({
     event.preventDefault();
     if (!file || uploading) return;
     if (!allowedTypes.has(file.type)) {
-      setError(text('Upload a JPEG, PNG, WebP, MP4, or WebM file.', 'JPEG, PNG, WebP, MP4 அல்லது WebM file upload செய்யவும்.'));
+      setError(t('provider.portfolioManager.uploadSupportedTypes'));
       return;
     }
     const maxBytes = file.type.startsWith('image/') ? imageMaxBytes : videoMaxBytes;
     if (file.size <= 0 || file.size > maxBytes) {
       setError(file.type.startsWith('image/')
-        ? text('Portfolio images must be 8 MB or smaller.', 'Portfolio image 8 MB அல்லது அதற்கு குறைவாக இருக்க வேண்டும்.')
-        : text('Portfolio videos must be 25 MB or smaller.', 'Portfolio video 25 MB அல்லது அதற்கு குறைவாக இருக்க வேண்டும்.'));
+        ? t('provider.portfolioManager.imageSizeLimit')
+        : t('provider.portfolioManager.videoSizeLimit'));
       return;
     }
     if (caption.trim().length > 600 || altText.trim().length > 240) {
-      setError(text('Caption or alt text is too long.', 'Caption அல்லது alt text நீளம் அதிகமாக உள்ளது.'));
+      setError(t('provider.portfolioManager.captionAltTooLong'));
       return;
     }
 
@@ -134,7 +132,7 @@ export default function ProfessionalPortfolioMediaManager({
     let objectPath = '';
     try {
       const { data: authData, error: authError } = await supabase.auth.getUser();
-      if (authError || !authData.user) throw new Error(authError?.message ?? 'Authentication required.');
+      if (authError || !authData.user) throw new Error(authError?.message ?? t('provider.portfolioManager.authenticationRequired'));
       objectPath = `${authData.user.id}/${professionalId}/${crypto.randomUUID()}.${extensionFor(file)}`;
       const { error: uploadError } = await supabase.storage.from(BUCKET).upload(objectPath, file, {
         contentType: file.type,
@@ -158,15 +156,15 @@ export default function ProfessionalPortfolioMediaManager({
       const body = await response.json() as { error?: string };
       if (!response.ok) {
         await supabase.storage.from(BUCKET).remove([objectPath]);
-        throw new Error(body.error ?? 'Portfolio media could not be registered.');
+        throw new Error(body.error ?? t('provider.portfolioManager.registrationFailed'));
       }
 
       resetUpload();
-      setNotice(text('Portfolio media uploaded.', 'Portfolio media upload செய்யப்பட்டது.'));
+      setNotice(t('provider.portfolioManager.uploaded'));
       await load();
     } catch (cause) {
       if (objectPath) await supabase.storage.from(BUCKET).remove([objectPath]);
-      setError(cause instanceof Error ? cause.message : text('Unable to upload portfolio media.', 'Portfolio media upload செய்ய முடியவில்லை.'));
+      setError(cause instanceof Error ? cause.message : t('provider.portfolioManager.unableToUpload'));
     } finally {
       setUploading(false);
     }
@@ -198,19 +196,19 @@ export default function ProfessionalPortfolioMediaManager({
         body: JSON.stringify({ id: editingId, ...editForm }),
       });
       const body = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(body.error ?? 'Portfolio media could not be updated.');
+      if (!response.ok) throw new Error(body.error ?? t('provider.portfolioManager.updateFailed'));
       setEditingId(null);
-      setNotice(text('Portfolio media updated.', 'Portfolio media update செய்யப்பட்டது.'));
+      setNotice(t('provider.portfolioManager.updated'));
       await load();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : text('Unable to update portfolio media.', 'Portfolio media update செய்ய முடியவில்லை.'));
+      setError(cause instanceof Error ? cause.message : t('provider.portfolioManager.unableToUpdate'));
     } finally {
       setSaving(false);
     }
   };
 
   const remove = async (item: PortfolioMedia) => {
-    if (removingId || !window.confirm(text('Delete this portfolio item?', 'இந்த portfolio item-ஐ delete செய்ய வேண்டுமா?'))) return;
+    if (removingId || !window.confirm(t('provider.portfolioManager.deleteConfirm'))) return;
     setRemovingId(item.id);
     setError('');
     setNotice('');
@@ -221,12 +219,12 @@ export default function ProfessionalPortfolioMediaManager({
         body: JSON.stringify({ id: item.id }),
       });
       const body = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(body.error ?? 'Portfolio media could not be deleted.');
+      if (!response.ok) throw new Error(body.error ?? t('provider.portfolioManager.deleteFailed'));
       if (editingId === item.id) setEditingId(null);
-      setNotice(text('Portfolio media deleted.', 'Portfolio media delete செய்யப்பட்டது.'));
+      setNotice(t('provider.portfolioManager.deleted'));
       await load();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : text('Unable to delete portfolio media.', 'Portfolio media delete செய்ய முடியவில்லை.'));
+      setError(cause instanceof Error ? cause.message : t('provider.portfolioManager.unableToDelete'));
     } finally {
       setRemovingId(null);
     }
@@ -235,30 +233,24 @@ export default function ProfessionalPortfolioMediaManager({
   return <Card className="provider-profile-card">
     <div className="section-heading">
       <div>
-        <span className="eyebrow">{text('Work showcase', 'Work showcase')}</span>
-        <h2>{text('Portfolio photos & videos', 'Portfolio photos & videos')}</h2>
+        <span className="eyebrow">{t('provider.portfolioManager.workShowcase')}</span>
+        <h2>{t('provider.portfolioManager.portfolioPhotosVideos')}</h2>
       </div>
       <div className="button-row">
-        <Badge tone={verified ? 'success' : 'warning'}>{verified ? text('Verified public profile', 'Verified public profile') : text('Private until verified', 'Verification வரை private')}</Badge>
-        <Badge tone="info">{media.length} {text('items', 'items')}</Badge>
+        <Badge tone={verified ? 'success' : 'warning'}>{verified ? t('provider.portfolioManager.verifiedPublicProfile') : t('provider.portfolioManager.privateUntilVerified')}</Badge>
+        <Badge tone="info">{media.length} {t('provider.portfolioManager.items')}</Badge>
       </div>
     </div>
-    <p>{text(
-      'Show real previous work, projects, service outcomes, demos, or professional experience. Media stays in a private bucket and only active items that are clear of moderation controls are signed for public viewing.',
-      'முன்பு செய்த வேலை, projects, service results, demos அல்லது professional experience-ஐ photos/videos மூலம் காட்டலாம். Media private bucket-ல் இருக்கும்; active மற்றும் moderation clear உள்ள items மட்டும் public viewing-க்கு signed URL பெறும்.',
-    )}</p>
-    <p className="summary-note">{text(
-      'This is portfolio presentation only. It does not change service-booking eligibility, job eligibility, verification, subscription priority, or search ranking.',
-      'இது portfolio presentation மட்டும். Service booking eligibility, job eligibility, verification, subscription priority அல்லது search ranking மாற்றப்படாது.',
-    )}</p>
+    <p>{t('provider.portfolioManager.intro')}</p>
+    <p className="summary-note">{t('provider.portfolioManager.presentationOnly')}</p>
 
-    {error ? <Alert title={text('Portfolio attention', 'Portfolio கவனம்')} tone="warning">{error}</Alert> : null}
-    {notice ? <Alert title={text('Portfolio updated', 'Portfolio update')} tone="success">{notice}</Alert> : null}
+    {error ? <Alert title={t('provider.portfolioManager.attention')} tone="warning">{error}</Alert> : null}
+    {notice ? <Alert title={t('provider.portfolioManager.updatedTitle')} tone="success">{notice}</Alert> : null}
 
     <form onSubmit={upload} className="section-stack">
       <div>
-        <strong>{text('Add a work sample', 'Work sample சேர்க்கவும்')}</strong>
-        <p className="summary-note">{text('Images: JPEG/PNG/WebP up to 8 MB. Videos: MP4/WebM up to 25 MB.', 'Images: JPEG/PNG/WebP அதிகபட்சம் 8 MB. Videos: MP4/WebM அதிகபட்சம் 25 MB.')}</p>
+        <strong>{t('provider.portfolioManager.addWorkSample')}</strong>
+        <p className="summary-note">{t('provider.portfolioManager.fileLimits')}</p>
       </div>
       <input
         ref={fileRef}
@@ -267,49 +259,46 @@ export default function ProfessionalPortfolioMediaManager({
         disabled={uploading}
         onChange={(event) => setFile(event.target.files?.[0] ?? null)}
       />
-      <Select label={text('Related talent / role (optional)', 'Related talent / role (optional)')} value={roleId} onChange={(event) => setRoleId(event.target.value)}>
-        <option value="">{text('General professional portfolio', 'General professional portfolio')}</option>
-        {roles.map((role) => <option value={role.id} key={role.id}>{role.title}{role.active ? '' : ` · ${text('paused', 'paused')}`}</option>)}
+      <Select label={t('provider.portfolioManager.relatedTalentOptional')} value={roleId} onChange={(event) => setRoleId(event.target.value)}>
+        <option value="">{t('provider.portfolioManager.generalPortfolio')}</option>
+        {roles.map((role) => <option value={role.id} key={role.id}>{role.title}{role.active ? '' : ` · ${t('provider.portfolioManager.pausedLower')}`}</option>)}
       </Select>
-      <Textarea label={text('Caption (optional)', 'Caption (optional)')} hint={text('Explain what the customer or employer is seeing.', 'இந்த photo/video-ல் என்ன work காட்டப்படுகிறது என்று சுருக்கமாக எழுதுங்கள்.')} value={caption} maxLength={600} rows={3} onChange={(event) => setCaption(event.target.value)} />
-      <Input label={text('Accessible image description (optional)', 'Accessible image description (optional)')} hint={text('Useful for image accessibility. Video items may leave this blank.', 'Image accessibility-க்கு உதவும். Video என்றால் blank ஆக விடலாம்.')} value={altText} maxLength={240} onChange={(event) => setAltText(event.target.value)} />
-      <Checkbox label={text('Show on my public professional profile', 'Public professional profile-ல் காட்டவும்')} description={text('Public presentation still requires the master professional profile to be verified.', 'Public presentation-க்கு master professional profile verified ஆக இருக்க வேண்டும்.')} checked={active} onChange={(event) => setActive(event.target.checked)} />
-      <div className="button-row"><Button type="submit" loading={uploading} disabled={!file}>{text('Upload portfolio media', 'Portfolio media upload')}</Button>{file ? <Badge tone="info">{file.name}</Badge> : null}</div>
+      <Textarea label={t('provider.portfolioManager.captionOptional')} hint={t('provider.portfolioManager.captionHint')} value={caption} maxLength={600} rows={3} onChange={(event) => setCaption(event.target.value)} />
+      <Input label={t('provider.portfolioManager.altOptional')} hint={t('provider.portfolioManager.altHint')} value={altText} maxLength={240} onChange={(event) => setAltText(event.target.value)} />
+      <Checkbox label={t('provider.portfolioManager.showOnMyPublicProfile')} description={t('provider.portfolioManager.publicRequiresVerified')} checked={active} onChange={(event) => setActive(event.target.checked)} />
+      <div className="button-row"><Button type="submit" loading={uploading} disabled={!file}>{t('provider.portfolioManager.uploadMedia')}</Button>{file ? <Badge tone="info">{file.name}</Badge> : null}</div>
     </form>
 
     <div className={styles.gallery}>
-      {loading ? <p>{text('Loading portfolio media…', 'Portfolio media load ஆகிறது…')}</p> : null}
-      {!loading && media.length === 0 ? <p className="empty-inline">{text('No portfolio media has been added yet.', 'Portfolio media இன்னும் add செய்யப்படவில்லை.')}</p> : null}
+      {loading ? <p>{t('provider.portfolioManager.loadingMedia')}</p> : null}
+      {!loading && media.length === 0 ? <p className="empty-inline">{t('provider.portfolioManager.noMedia')}</p> : null}
       {media.map((item) => <article className={styles.item} key={item.id}>
         <div className={styles.preview}>
           {item.signed_url ? item.media_type === 'image'
-            ? <img src={item.signed_url} alt={item.alt_text || item.caption || text('Professional work sample', 'Professional work sample')} />
-            : <video src={item.signed_url} controls preload="metadata" aria-label={item.caption || text('Professional portfolio video', 'Professional portfolio video')} />
-            : <div className={styles.unavailable}>{text('Preview unavailable', 'Preview கிடைக்கவில்லை')}</div>}
+            ? <img src={item.signed_url} alt={item.alt_text || item.caption || t('provider.portfolioManager.workSampleAlt')} />
+            : <video src={item.signed_url} controls preload="metadata" aria-label={item.caption || t('provider.portfolioManager.videoLabel')} />
+            : <div className={styles.unavailable}>{t('provider.portfolioManager.previewUnavailable')}</div>}
         </div>
         <div className={styles.body}>
           <div className="section-heading">
-            <div><strong>{item.caption || item.original_filename}</strong><p className="summary-note">{item.media_type.toUpperCase()} · {sizeLabel(Number(item.size_bytes))}{item.professional_role_id ? ` · ${roleName.get(item.professional_role_id) ?? text('Role-linked', 'Role-linked')}` : ''}</p></div>
-            <Badge tone={item.moderation_state === 'paused' ? 'warning' : item.active ? 'success' : 'neutral'}>{item.moderation_state === 'paused' ? text('Admin paused', 'Admin pause') : item.active ? text('Public-ready', 'Public-ready') : text('Paused', 'Paused')}</Badge>
+            <div><strong>{item.caption || item.original_filename}</strong><p className="summary-note">{item.media_type.toUpperCase()} · {sizeLabel(Number(item.size_bytes))}{item.professional_role_id ? ` · ${roleName.get(item.professional_role_id) ?? t('provider.portfolioManager.roleLinked')}` : ''}</p></div>
+            <Badge tone={item.moderation_state === 'paused' ? 'warning' : item.active ? 'success' : 'neutral'}>{item.moderation_state === 'paused' ? t('provider.portfolioManager.adminPaused') : item.active ? t('provider.portfolioManager.publicReady') : t('provider.portfolioManager.paused')}</Badge>
           </div>
-          {item.moderation_state === 'paused' ? <Alert title={text('Hidden by moderation', 'Moderation மூலம் மறைக்கப்பட்டுள்ளது')} tone="warning">{text(
-            'TakeItEsee moderation has paused this work sample. You may edit its details or delete it, but you cannot republish it until an Admin restores it. After restoration, it remains private until you explicitly enable public display again.',
-            'TakeItEsee moderation இந்த work sample-ஐ pause செய்துள்ளது. Details edit அல்லது delete செய்யலாம்; Admin restore செய்யும் வரை republish செய்ய முடியாது. Restore ஆன பிறகும் நீங்கள் public display-ஐ மீண்டும் explicitly enable செய்யும் வரை இது private-ஆவே இருக்கும்.',
-          )}</Alert> : null}
-          <div className="button-row"><Button type="button" variant="secondary" onClick={() => startEdit(item)} disabled={saving || removingId === item.id}>{text('Edit details', 'Details edit')}</Button><Button type="button" variant="danger" loading={removingId === item.id} onClick={() => void remove(item)}>{text('Delete', 'Delete')}</Button></div>
+          {item.moderation_state === 'paused' ? <Alert title={t('provider.portfolioManager.hiddenByModeration')} tone="warning">{t('provider.portfolioManager.moderationBody')}</Alert> : null}
+          <div className="button-row"><Button type="button" variant="secondary" onClick={() => startEdit(item)} disabled={saving || removingId === item.id}>{t('provider.portfolioManager.editDetails')}</Button><Button type="button" variant="danger" loading={removingId === item.id} onClick={() => void remove(item)}>{t('provider.portfolioManager.delete')}</Button></div>
 
           {editingId === item.id ? <form onSubmit={saveEdit} className={styles.editor}>
-            <Select label={text('Related talent / role', 'Related talent / role')} value={editForm.professional_role_id} onChange={(event) => setEditForm((current) => ({ ...current, professional_role_id: event.target.value }))}>
-              <option value="">{text('General professional portfolio', 'General professional portfolio')}</option>
+            <Select label={t('provider.portfolioManager.relatedTalent')} value={editForm.professional_role_id} onChange={(event) => setEditForm((current) => ({ ...current, professional_role_id: event.target.value }))}>
+              <option value="">{t('provider.portfolioManager.generalPortfolio')}</option>
               {roles.map((role) => <option value={role.id} key={role.id}>{role.title}</option>)}
             </Select>
-            <Textarea label={text('Caption', 'Caption')} value={editForm.caption} maxLength={600} rows={3} onChange={(event) => setEditForm((current) => ({ ...current, caption: event.target.value }))} />
-            {item.media_type === 'image' ? <Input label={text('Accessible image description', 'Accessible image description')} value={editForm.alt_text} maxLength={240} onChange={(event) => setEditForm((current) => ({ ...current, alt_text: event.target.value }))} /> : null}
-            <Input label={text('Display order', 'Display order')} type="number" min={0} max={9999} step={1} value={editForm.display_order} onChange={(event) => setEditForm((current) => ({ ...current, display_order: event.target.value }))} />
+            <Textarea label={t('provider.portfolioManager.caption')} value={editForm.caption} maxLength={600} rows={3} onChange={(event) => setEditForm((current) => ({ ...current, caption: event.target.value }))} />
+            {item.media_type === 'image' ? <Input label={t('provider.portfolioManager.alt')} value={editForm.alt_text} maxLength={240} onChange={(event) => setEditForm((current) => ({ ...current, alt_text: event.target.value }))} /> : null}
+            <Input label={t('provider.portfolioManager.displayOrder')} type="number" min={0} max={9999} step={1} value={editForm.display_order} onChange={(event) => setEditForm((current) => ({ ...current, display_order: event.target.value }))} />
             {item.moderation_state === 'paused'
-              ? <p className="summary-note">{text('Public display is locked off while this item is Admin-paused.', 'இந்த item Admin-pause நிலையில் இருக்கும் வரை public display off-ஆ lock செய்யப்பட்டிருக்கும்.')}</p>
-              : <Checkbox label={text('Show on public profile', 'Public profile-ல் காட்டவும்')} checked={editForm.active} onChange={(event) => setEditForm((current) => ({ ...current, active: event.target.checked }))} />}
-            <div className="button-row"><Button type="submit" loading={saving}>{text('Save media details', 'Media details save')}</Button><Button type="button" variant="secondary" onClick={() => setEditingId(null)} disabled={saving}>{text('Cancel', 'Cancel')}</Button></div>
+              ? <p className="summary-note">{t('provider.portfolioManager.publicLockedWhilePaused')}</p>
+              : <Checkbox label={t('provider.portfolioManager.showOnPublicProfile')} checked={editForm.active} onChange={(event) => setEditForm((current) => ({ ...current, active: event.target.checked }))} />}
+            <div className="button-row"><Button type="submit" loading={saving}>{t('provider.portfolioManager.saveDetails')}</Button><Button type="button" variant="secondary" onClick={() => setEditingId(null)} disabled={saving}>{t('provider.portfolioManager.cancel')}</Button></div>
           </form> : null}
         </div>
       </article>)}
