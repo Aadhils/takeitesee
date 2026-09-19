@@ -2,20 +2,17 @@
 
 import Link from 'next/link';
 import { Card } from '../ui/primitives';
-import { useLanguage } from '../i18n/LanguageProvider';
+import { usePublicProviderTranslations } from '../i18n/PublicProviderTranslations';
 
 export default function BusinessProductsDiscoveryEntry() {
-  const { locale } = useLanguage();
-  const tamil = locale === 'ta-IN';
+  const { t } = usePublicProviderTranslations();
 
   return <Card style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
     <div style={{ minWidth: 0 }}>
-      <span className="eyebrow">{tamil ? 'Business marketplace' : 'Business marketplace'}</span>
-      <h2 style={{ margin: '.35rem 0' }}>{tamil ? 'Approved products கண்டுபிடிக்கவும்' : 'Discover approved products'}</h2>
-      <p style={{ margin: 0, color: 'var(--color-ink-muted)', maxWidth: '70ch' }}>{tamil
-        ? 'Verified Businesses-ன் platform-reviewed products-ஐ stock மற்றும் Shop status உடன் browse செய்யலாம்.'
-        : 'Browse platform-reviewed products from verified Businesses with stock and Shop status before opening the storefront.'}</p>
+      <span className="eyebrow">{t('publicProvider.productMarketplace.eyebrow')}</span>
+      <h2 style={{ margin: '.35rem 0' }}>{t('publicProvider.productMarketplace.entryTitle')}</h2>
+      <p style={{ margin: 0, color: 'var(--color-ink-muted)', maxWidth: '70ch' }}>{t('publicProvider.productMarketplace.entryIntro')}</p>
     </div>
-    <Link href="/products" className="button button-secondary">{tamil ? 'Products பார்க்க' : 'Browse products'}</Link>
+    <Link href="/products" className="button button-secondary">{t('publicProvider.productMarketplace.entryBrowse')}</Link>
   </Card>;
 }
