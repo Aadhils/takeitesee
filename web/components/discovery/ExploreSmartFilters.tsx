@@ -75,34 +75,9 @@ export default function ExploreSmartFilters({
   onUseCurrentLocation,
   onClearCurrentLocation,
 }: Props) {
-  const { locale, t } = useLanguage();
+  const { t } = useLanguage();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
-  const tamil = locale === 'ta-IN';
-  const copy = tamil
-    ? {
-      filters: 'வடிகட்டிகள்',
-      filterServices: 'சேவைகளை வடிகட்டுங்கள்',
-      filterHelp: 'தேவையானவற்றை மட்டும் தேர்வு செய்யுங்கள். முடிவுகள் உடனே புதுப்பிக்கப்படும்.',
-      showResults: (count: number) => count === 1 ? '1 சேவையை காட்டுங்கள்' : `${count} சேவைகளை காட்டுங்கள்`,
-      updating: 'முடிவுகள் புதுப்பிக்கப்படுகின்றன…',
-      nearMe: 'என் அருகில்',
-      activeFilters: 'செயலில் உள்ள வடிகட்டிகள்',
-      close: 'வடிகட்டி மெனுவை மூடுங்கள்',
-      closeSort: 'வரிசைப்படுத்தும் மெனுவை மூடுங்கள்',
-    }
-    : {
-      filters: 'Filters',
-      filterServices: 'Filter services',
-      filterHelp: 'Choose only what matters. Results update as you filter.',
-      showResults: (count: number) => count === 1 ? 'Show 1 service' : `Show ${count} services`,
-      updating: 'Updating results…',
-      nearMe: 'Near me',
-      activeFilters: 'Active filters',
-      close: 'Close filter menu',
-      closeSort: 'Close sort menu',
-    };
-
   useEffect(() => {
     if (!drawerOpen && !sortOpen) return;
     const previousOverflow = document.body.style.overflow;
@@ -158,13 +133,13 @@ export default function ExploreSmartFilters({
     const chips: Array<{ key: string; label: string; clear: () => void }> = [];
     if (category !== 'all') chips.push({ key: 'category', label: categoryLabel, clear: () => onCategoryChange('all') });
     if (locationValue) chips.push({ key: 'location', label: locationValue, clear: () => onLocationChange('Anywhere') });
-    else if (geoActive) chips.push({ key: 'geo', label: copy.nearMe, clear: onClearCurrentLocation });
+    else if (geoActive) chips.push({ key: 'geo', label: t('explore.nearMe'), clear: onClearCurrentLocation });
     if (price !== 'any') chips.push({ key: 'price', label: priceLabel, clear: () => onPriceChange('any') });
     if (rating !== 'any') chips.push({ key: 'rating', label: ratingLabel, clear: () => onRatingChange('any') });
     if (provider !== 'any') chips.push({ key: 'provider', label: providerLabel, clear: () => onProviderChange('any') });
     if (availability !== 'any') chips.push({ key: 'availability', label: availabilityLabel, clear: () => onAvailabilityChange('any') });
     return chips;
-  }, [availability, availabilityLabel, category, categoryLabel, copy.nearMe, geoActive, locationValue, onAvailabilityChange, onCategoryChange, onClearCurrentLocation, onLocationChange, onPriceChange, onProviderChange, onRatingChange, price, priceLabel, provider, providerLabel, rating, ratingLabel]);
+  }, [availability, availabilityLabel, category, categoryLabel, t('explore.nearMe'), geoActive, locationValue, onAvailabilityChange, onCategoryChange, onClearCurrentLocation, onLocationChange, onPriceChange, onProviderChange, onRatingChange, price, priceLabel, provider, providerLabel, rating, ratingLabel]);
 
   const renderLocationAction = () => geoActive
     ? <button type="button" className={`${styles.locationButton} ${styles.active}`} onClick={onClearCurrentLocation}><PinIcon /><span>{preciseNearbyActive ? t('explore.nearbyRankingClear') : t('explore.clearCurrentLocation')}</span></button>
@@ -186,7 +161,7 @@ export default function ExploreSmartFilters({
   };
 
   return <div className={`${styles.root} explore-smart-filters`}>
-    <div className={styles.desktopToolbar} aria-label={copy.filterServices}>
+    <div className={styles.desktopToolbar} aria-label={t('explore.filterServices')}>
       <label className={styles.compactControl}><span className={styles.srOnly}>{t('explore.category')}</span><select value={category} onChange={(event) => onCategoryChange(event.target.value)}>{categoryOptions}</select></label>
       <label className={`${styles.compactControl} ${styles.locationControl}`}><span className={styles.srOnly}>{t('explore.location')}</span><input value={locationValue} onChange={(event) => onLocationChange(event.target.value.trim() ? event.target.value : 'Anywhere')} placeholder={t('explore.locationPlaceholder')} /></label>
       <label className={styles.compactControl}><span className={styles.srOnly}>{t('explore.price')}</span><select value={price} onChange={(event) => onPriceChange(event.target.value)}><option value="any">{t('explore.anyPrice')}</option><option value="under-1000">{t('explore.under1000')}</option><option value="1000-5000">{t('explore.range1000to5000')}</option><option value="over-5000">{t('explore.over5000')}</option></select></label>
@@ -199,16 +174,16 @@ export default function ExploreSmartFilters({
     </div>
 
     <div className={styles.mobileToolbar}>
-      <button type="button" className={`${styles.filterButton} ${activeFilterCount ? styles.active : ''}`} onClick={openFilters} aria-expanded={drawerOpen} aria-controls="explore-filter-sheet"><FilterIcon /><span>{copy.filters}</span>{activeFilterCount ? <b>{activeFilterCount}</b> : null}</button>
+      <button type="button" className={`${styles.filterButton} ${activeFilterCount ? styles.active : ''}`} onClick={openFilters} aria-expanded={drawerOpen} aria-controls="explore-filter-sheet"><FilterIcon /><span>{t('explore.filters')}</span>{activeFilterCount ? <b>{activeFilterCount}</b> : null}</button>
       {renderLocationAction()}
       <button type="button" className={`${styles.sortButton} ${styles.mobileSortButton} ${sortOpen ? styles.active : ''}`} onClick={openSort} aria-expanded={sortOpen} aria-controls="explore-sort-menu"><span>{currentSortLabel}</span><ChevronDownIcon /></button>
     </div>
 
-    {activeChips.length ? <div className={styles.activeChips} aria-label={copy.activeFilters}>{activeChips.map((chip) => <button type="button" key={chip.key} onClick={chip.clear}><span>{chip.label}</span><CloseIcon /></button>)}</div> : null}
+    {activeChips.length ? <div className={styles.activeChips} aria-label={t('explore.activeFilters')}>{activeChips.map((chip) => <button type="button" key={chip.key} onClick={chip.clear}><span>{chip.label}</span><CloseIcon /></button>)}</div> : null}
 
     {drawerOpen ? <div className={styles.drawerBackdrop} onMouseDown={(event) => { if (event.target === event.currentTarget) setDrawerOpen(false); }}>
       <section id="explore-filter-sheet" className={styles.drawer} role="dialog" aria-modal="true" aria-labelledby="explore-filter-title">
-        <div className={styles.drawerHeading}><div><span className="eyebrow">{copy.filters}</span><h2 id="explore-filter-title">{copy.filterServices}</h2><p>{copy.filterHelp}</p></div><button type="button" className={styles.closeButton} onClick={() => setDrawerOpen(false)} aria-label={copy.close}><CloseIcon /></button></div>
+        <div className={styles.drawerHeading}><div><span className="eyebrow">{t('explore.filters')}</span><h2 id="explore-filter-title">{t('explore.filterServices')}</h2><p>{t('explore.filterHelp')}</p></div><button type="button" className={styles.closeButton} onClick={() => setDrawerOpen(false)} aria-label={t('explore.closeFilterMenu')}><CloseIcon /></button></div>
         <div className={styles.drawerFields}>
           <label><span>{t('explore.category')}</span><select value={category} onChange={(event) => onCategoryChange(event.target.value)}>{categoryOptions}</select></label>
           <label><span>{t('explore.location')}</span><input value={locationValue} onChange={(event) => onLocationChange(event.target.value.trim() ? event.target.value : 'Anywhere')} placeholder={t('explore.locationPlaceholder')} /></label>
@@ -218,14 +193,14 @@ export default function ExploreSmartFilters({
           <label><span>{t('explore.providerType')}</span><select value={provider} onChange={(event) => onProviderChange(event.target.value)}><option value="any">{t('explore.anyProvider')}</option><option value="professional">{t('explore.professional')}</option><option value="business">{t('explore.business')}</option></select></label>
           <label><span>{t('explore.availabilityLabel')}</span><select value={availability} onChange={(event) => onAvailabilityChange(event.target.value)}><option value="any">{t('explore.availabilityAny')}</option><option value="available-now">{t('explore.availabilityNowOnly')}</option></select></label>
         </div>
-        <div className={styles.drawerFooter}><button type="button" className={styles.drawerClear} onClick={onClearAll}>{t('explore.clearFilters')}</button><button type="button" className={styles.drawerApply} onClick={() => setDrawerOpen(false)}>{loading ? copy.updating : copy.showResults(resultCount)}</button></div>
+        <div className={styles.drawerFooter}><button type="button" className={styles.drawerClear} onClick={onClearAll}>{t('explore.clearFilters')}</button><button type="button" className={styles.drawerApply} onClick={() => setDrawerOpen(false)}>{loading ? t('explore.updatingResults') : resultCount === 1 ? t('explore.showOneService') : t('explore.showManyServices').replace('{count}', String(resultCount))}</button></div>
       </section>
     </div> : null}
 
     {sortOpen ? <>
-      <button type="button" className={styles.sortBackdrop} aria-label={copy.closeSort} onClick={() => setSortOpen(false)} />
+      <button type="button" className={styles.sortBackdrop} aria-label={t('explore.closeFilterMenu')Sort} onClick={() => setSortOpen(false)} />
       <section id="explore-sort-menu" className={styles.sortPanel} role="dialog" aria-modal="true" aria-labelledby="explore-sort-title">
-        <div className={styles.sortHeading}><strong id="explore-sort-title">{t('explore.sort')}</strong><button type="button" className={styles.sortClose} onClick={() => setSortOpen(false)} aria-label={copy.closeSort}><CloseIcon /></button></div>
+        <div className={styles.sortHeading}><strong id="explore-sort-title">{t('explore.sort')}</strong><button type="button" className={styles.sortClose} onClick={() => setSortOpen(false)} aria-label={t('explore.closeFilterMenu')Sort}><CloseIcon /></button></div>
         <div className={styles.sortOptions} role="listbox" aria-label={t('explore.sort')}>
           {sortChoices.map((option) => <button type="button" key={option.value} role="option" aria-selected={sort === option.value} className={sort === option.value ? styles.selectedSort : ''} onClick={() => chooseSort(option.value)}><span>{option.label}</span><span className={styles.sortRadio} aria-hidden="true"><i /></span></button>)}
         </div>
