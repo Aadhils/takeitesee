@@ -43,7 +43,7 @@ test('Customer Smart Attention and detailed activity ordering remain intact', ()
 
 test('Customer identity hero compacts only on desktop without changing provider presentation', () => {
   assert.ok(identityHeader.includes("context === 'customer' ? styles.customerShell : ''"));
-  assert.ok(identityCss.includes('@media (min-width: 721px)'));
+  assert.ok(identityCss.includes('@media (min-width: 901px)'));
   assert.ok(identityCss.includes('.customerShell .banner'));
   assert.ok(identityCss.includes('min-height: 112px'));
   assert.ok(identityCss.includes('@media (max-width: 720px)'));
@@ -56,6 +56,7 @@ test('Mobile customer dashboard keeps the existing compact navigation behavior',
   assert.ok(dashboard.includes('.customer-dashboard-side-rail { position: static; display: block; }'));
   assert.ok(dashboard.includes('.customer-dashboard-quick-actions { display: none; }'));
   assert.ok(dashboard.includes('.customer-activity-strip { grid-template-columns: repeat(4, minmax(92px, 1fr)); overflow-x: auto; scrollbar-width: none; }'));
+  assert.ok(dashboard.includes('.customer-activity-strip-item strong { order: 0; font-size: 1rem; }'));
 });
 
 test('Customer desktop polish does not change booking data or finance boundaries', () => {
