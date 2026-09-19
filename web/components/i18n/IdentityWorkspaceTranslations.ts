@@ -128,6 +128,14 @@ const english = {
   'provider.readinessSummary.trustReverificationRequired': 'Re-verification required',
   'provider.readinessSummary.trustSuspended': 'Suspended',
 
+  'workspace.global.unableLoadProfiles': 'Unable to load profiles.',
+  'workspace.global.unableSwitchProfile': 'Unable to switch profile.',
+  'workspace.global.switchProfile': 'Switch profile',
+  'workspace.global.closeSwitcher': 'Close profile switcher',
+  'workspace.global.close': 'Close',
+  'workspace.global.manageAccountProfiles': 'Manage account & profiles',
+  'workspace.global.openAccount': 'Open account',
+
   'provider.workspace': 'Provider workspace',
   'provider.suspended': 'Provider account suspended',
   'provider.reverify': 'Re-verification required',
@@ -1423,6 +1431,14 @@ const tamil: Record<IdentityWorkspaceKey, string> = {
   'provider.readinessSummary.trustState': 'Trust state',
   'provider.readinessSummary.trustReverificationRequired': 'மறு சரிபார்ப்பு தேவை',
   'provider.readinessSummary.trustSuspended': 'Suspended',
+
+  'workspace.global.unableLoadProfiles': 'Profiles-ஐ load செய்ய முடியவில்லை.',
+  'workspace.global.unableSwitchProfile': 'Profile-ஐ மாற்ற முடியவில்லை.',
+  'workspace.global.switchProfile': 'Profile மாற்று',
+  'workspace.global.closeSwitcher': 'Profile switcher-ஐ மூடு',
+  'workspace.global.close': 'மூடு',
+  'workspace.global.manageAccountProfiles': 'Account & profiles நிர்வகிக்க',
+  'workspace.global.openAccount': 'Account திற',
 
   'provider.workspace': 'சேவை வழங்குநர் workspace',
   'provider.suspended': 'சேவை வழங்குநர் கணக்கு இடைநிறுத்தப்பட்டுள்ளது',
