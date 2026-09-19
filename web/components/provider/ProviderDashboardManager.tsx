@@ -253,6 +253,26 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
   const nextUpcoming = operations.upcoming[0] ?? null;
   const nextUpcomingHref = nextUpcoming ? `/provider/bookings/${encodeURIComponent(nextUpcoming.id)}` : null;
   const priorityShowsNextService = Boolean(nextUpcomingHref && priorityAction?.href === nextUpcomingHref);
+  const providerActivitySignals = profile
+    ? [
+        ...(!bookingsError && operations.needsAction.length > 0
+          ? [{ href: '/provider/bookings', label: 'Needs action', value: String(operations.needsAction.length) }]
+          : []),
+        ...(!bookingsError && operations.upcoming.length > 0
+          ? [{ href: '/provider/schedule', label: 'Upcoming', value: String(operations.upcoming.length) }]
+          : []),
+        ...(profile.services_active > 0
+          ? [{ href: '/provider/services', label: 'Active services', value: `${profile.services_active}/${profile.services_total}` }]
+          : []),
+      ]
+    : [];
+  const providerActivityEmpty = profile && providerActivitySignals.length === 0
+    ? {
+        href: '/provider/services',
+        label: profile.services_total === 0 ? 'Activity starts when your first service is live' : 'No live marketplace activity right now',
+        detail: profile.services_total === 0 ? 'Your next action is already highlighted above.' : 'Publish an active service when you are ready for customer activity.',
+      }
+    : null;
 
   return <LiveProviderShell active="/provider">
     <div id="provider-dashboard-overview" className={styles.dashboardStack}>
@@ -299,15 +319,13 @@ export default function ProviderDashboardManager({ children, workspaceVersion = 
         </Card>
 
         <section className={styles.providerActivityStrip} aria-label="Workspace summary">
-          <Link href="/provider/bookings" className={styles.providerActivityItem}>
-            <span>Needs action</span><strong>{bookingsError ? '—' : operations.needsAction.length}</strong>
-          </Link>
-          <Link href="/provider/schedule" className={styles.providerActivityItem}>
-            <span>Upcoming</span><strong>{bookingsError ? '—' : operations.upcoming.length}</strong>
-          </Link>
-          <Link href="/provider/services" className={styles.providerActivityItem}>
-            <span>Active services</span><strong>{profile.services_active}/{profile.services_total}</strong>
-          </Link>
+          {providerActivitySignals.map((item) => <Link href={item.href} className={styles.providerActivityItem} key={item.href}>
+            <span>{item.label}</span><strong>{item.value}</strong>
+          </Link>)}
+          {providerActivityEmpty ? <Link href={providerActivityEmpty.href} className={styles.providerActivityEmpty}>
+            <span>{providerActivityEmpty.label}</span>
+            <small>{providerActivityEmpty.detail}</small>
+          </Link> : null}
         </section>
 
         <section className={styles.providerQuickActions} aria-label="Provider quick actions">
