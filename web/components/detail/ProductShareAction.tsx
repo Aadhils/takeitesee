@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { Button } from '../ui/primitives';
-import { useLanguage } from '../i18n/LanguageProvider';
+import { usePublicProviderTranslations } from '../i18n/PublicProviderTranslations';
 
 type ShareStatus = 'idle' | 'shared' | 'copied' | 'error';
 
@@ -36,8 +36,7 @@ export default function ProductShareAction({
   productName: string;
   businessName: string;
 }) {
-  const { locale } = useLanguage();
-  const tamil = locale === 'ta-IN';
+  const { t } = usePublicProviderTranslations();
   const [status, setStatus] = useState<ShareStatus>('idle');
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -49,9 +48,14 @@ export default function ProductShareAction({
   const share = async () => {
     setStatus('idle');
     const url = new URL(`/products/${productId}`, window.location.origin).toString();
+    const shareText = businessName
+      ? t('publicProvider.productShare.byBusiness')
+        .replace('{productName}', productName)
+        .replace('{businessName}', businessName)
+      : t('publicProvider.productShare.onPlatform').replace('{productName}', productName);
     const shareData = {
       title: productName,
-      text: businessName ? `${productName} by ${businessName} on TakeItEsee` : `${productName} on TakeItEsee`,
+      text: shareText,
       url,
     };
 
@@ -76,15 +80,15 @@ export default function ProductShareAction({
   };
 
   const label = status === 'shared'
-    ? (tamil ? 'பகிரப்பட்டது ✓' : 'Shared ✓')
+    ? t('publicProvider.productShare.shared')
     : status === 'copied'
-      ? (tamil ? 'இணைப்பு நகலெடுக்கப்பட்டது ✓' : 'Link copied ✓')
-      : (tamil ? 'Product பகிர்' : 'Share product');
+      ? t('publicProvider.productShare.copied')
+      : t('publicProvider.productShare.action');
 
   return <div style={{ display: 'grid', gap: '.45rem' }}>
     <Button type="button" variant="quiet" onClick={() => void share()}>{label}</Button>
     <span className="summary-note" aria-live="polite">
-      {status === 'error' ? (tamil ? 'இந்த browser-ல் share/copy செய்ய முடியவில்லை.' : 'This browser could not share or copy the product link.') : ''}
+      {status === 'error' ? t('publicProvider.productShare.error') : ''}
     </span>
   </div>;
 }
