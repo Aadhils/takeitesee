@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 import styles from './GlobalWorkspaceSwitcher.module.css';
 
 type WorkspaceKind = 'customer' | 'professional' | 'business' | 'admin' | 'super_admin';
@@ -25,18 +26,17 @@ function activeFromRoute(pathname: string, workspaces: WorkspaceOption[], fallba
 
 export default function GlobalWorkspaceSwitcher({
   fallbackName,
-  tamil,
   attentionCount = 0,
   attentionLabel,
   triggerVariant = 'full',
 }: {
   fallbackName: string;
-  tamil: boolean;
   attentionCount?: number;
   attentionLabel?: string;
   triggerVariant?: TriggerVariant;
 }) {
   const pathname = usePathname();
+  const { t } = useIdentityWorkspaceTranslations();
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
@@ -50,16 +50,16 @@ export default function GlobalWorkspaceSwitcher({
     try {
       const response = await fetch('/api/account/workspaces', { cache: 'no-store' });
       const payload = await response.json() as WorkspacePayload;
-      if (!response.ok) throw new Error(payload.error || 'Unable to load profiles.');
+      if (!response.ok) throw new Error(payload.error || t('workspace.global.unableLoadProfiles'));
       const options = payload.workspaces ?? [];
       const fallbackActive = payload.active ?? 'customer';
       setWorkspaces(options);
       setActive(activeFromRoute(pathname, options, fallbackActive));
       setError('');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to load profiles.');
+      setError(cause instanceof Error ? cause.message : t('workspace.global.unableLoadProfiles'));
     }
-  }, [pathname]);
+  }, [pathname, t]);
 
   const updateAnchor = useCallback(() => {
     const rect = triggerRef.current?.getBoundingClientRect();
@@ -93,8 +93,8 @@ export default function GlobalWorkspaceSwitcher({
 
   const current = useMemo(() => workspaces.find((workspace) => workspace.id === active), [active, workspaces]);
   const triggerName = current?.display_name || fallbackName;
-  const triggerRole = current?.label || (tamil ? 'வாடிக்கையாளர்' : 'Customer');
-  const switchLabel = tamil ? 'Profile மாற்று' : 'Switch profile';
+  const triggerRole = current?.label || t('account.customer');
+  const switchLabel = t('workspace.global.switchProfile');
   const isIdentityHome = pathname === '/account' || pathname === '/provider';
 
   async function switchWorkspace(workspace: WorkspaceKind) {
@@ -108,10 +108,10 @@ export default function GlobalWorkspaceSwitcher({
         body: JSON.stringify({ workspace }),
       });
       const payload = await response.json() as { redirect?: string; error?: string };
-      if (!response.ok || !payload.redirect) throw new Error(payload.error || 'Unable to switch profile.');
+      if (!response.ok || !payload.redirect) throw new Error(payload.error || t('workspace.global.unableSwitchProfile'));
       window.location.assign(payload.redirect);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to switch profile.');
+      setError(cause instanceof Error ? cause.message : t('workspace.global.unableSwitchProfile'));
       setSwitching(null);
     }
   }
@@ -125,7 +125,7 @@ export default function GlobalWorkspaceSwitcher({
     <button
       type="button"
       className={styles.backdrop}
-      aria-label={tamil ? 'Profile switcher மூடு' : 'Close profile switcher'}
+      aria-label={t('workspace.global.closeSwitcher')}
       onClick={() => setOpen(false)}
     />
     <section
@@ -138,7 +138,7 @@ export default function GlobalWorkspaceSwitcher({
       <div className={styles.sheetHandle} aria-hidden="true" />
       <div className={styles.heading}>
         <div><span>TAKEITESEE ACCOUNT</span><h2>{switchLabel}</h2></div>
-        <button type="button" className={styles.close} onClick={() => setOpen(false)} aria-label={tamil ? 'மூடு' : 'Close'}>×</button>
+        <button type="button" className={styles.close} onClick={() => setOpen(false)} aria-label={t('workspace.global.close')}>×</button>
       </div>
 
       <div className={styles.list}>
@@ -153,22 +153,22 @@ export default function GlobalWorkspaceSwitcher({
             aria-current={selected ? 'page' : undefined}
           >
             <span className={styles.avatar} aria-hidden="true">{initials(workspace.display_name)}</span>
-            <span className={styles.workspaceText}><strong>{workspace.display_name}</strong><small>{workspace.label}{workspace.verified ? ` · ${tamil ? 'சரிபார்க்கப்பட்டது' : 'Verified'}` : ''}</small></span>
+            <span className={styles.workspaceText}><strong>{workspace.display_name}</strong><small>{workspace.label}{workspace.verified ? ` · ${t('workspace.switcher.verified')}` : ''}</small></span>
             <span className={styles.state}>{selected ? '✓' : switching === workspace.id ? '…' : '›'}</span>
           </button>;
         })}
       </div>
 
       {error ? <p className={styles.error} role="alert">{error}</p> : null}
-      <Link className={styles.manage} href="/account" onClick={() => setOpen(false)}>{tamil ? 'Account & profiles நிர்வகிக்க' : 'Manage account & profiles'}</Link>
+      <Link className={styles.manage} href="/account" onClick={() => setOpen(false)}>{t('workspace.global.manageAccountProfiles')}</Link>
     </section>
   </>, document.body) : null;
 
   if (triggerVariant === 'full' && pathname !== '/') {
     if (isIdentityHome) return null;
-    return <Link className={styles.compactAccountLink} href="/account" aria-label={tamil ? 'Account திற' : 'Open account'}>
+    return <Link className={styles.compactAccountLink} href="/account" aria-label={t('workspace.global.openAccount')}>
       <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3.25" /><path d="M5.5 20c.8-4.2 3-6.2 6.5-6.2s5.7 2 6.5 6.2" /></svg>
-      <span>{tamil ? 'Account' : 'Account'}</span>
+      <span>{t('account.dashboard.accountFallback')}</span>
       {attentionCount > 0 ? <span className={styles.attention} aria-label={attentionLabel}>{attentionCount > 99 ? '99+' : attentionCount}</span> : null}
     </Link>;
   }

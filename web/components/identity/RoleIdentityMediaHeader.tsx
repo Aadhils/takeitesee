@@ -119,7 +119,7 @@ export default function RoleIdentityMediaHeader({ context, displayName, subtitle
         {visibleMeta ? <p className={styles.meta}>{visibleMeta}</p> : null}
       </div>
       <div className={styles.workspaceSwitch}>
-        <GlobalWorkspaceSwitcher fallbackName={displayName} tamil={tamil} triggerVariant="identity" />
+        <GlobalWorkspaceSwitcher fallbackName={displayName} triggerVariant="identity" />
       </div>
       {hasAvatar ? <div className={styles.avatarControls}>
         <button type="button" className={styles.removeButton} disabled={Boolean(working)} onClick={() => void remove('avatar')}>{tamil ? 'Photo remove' : 'Remove photo'}</button>
