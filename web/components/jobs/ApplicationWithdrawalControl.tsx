@@ -1,16 +1,17 @@
 'use client';
 
 import { useState } from 'react';
+import { useProviderJobMarketplaceTranslations } from '../i18n/ProviderJobMarketplaceTranslations';
 import styles from './JobMarketplace.module.css';
 
 type ApplicationWithdrawalControlProps = {
   applicationId: string;
   saving: boolean;
-  tamil: boolean;
   onConfirm: (applicationId: string) => void;
 };
 
-export function ApplicationWithdrawalControl({ applicationId, saving, tamil, onConfirm }: ApplicationWithdrawalControlProps) {
+export function ApplicationWithdrawalControl({ applicationId, saving, onConfirm }: ApplicationWithdrawalControlProps) {
+  const { t } = useProviderJobMarketplaceTranslations();
   const [confirming, setConfirming] = useState(false);
 
   if (!confirming) {
@@ -21,7 +22,7 @@ export function ApplicationWithdrawalControl({ applicationId, saving, tamil, onC
         type="button"
         onClick={() => setConfirming(true)}
       >
-        {tamil ? 'விண்ணப்பத்தை திரும்பப் பெற' : 'Withdraw'}
+        {t('providerJobMarketplace.withdraw.open')}
       </button>
     );
   }
@@ -29,9 +30,7 @@ export function ApplicationWithdrawalControl({ applicationId, saving, tamil, onC
   return (
     <>
       <span className={styles.muted}>
-        {tamil
-          ? 'இந்த விண்ணப்பத்தை திரும்பப் பெற்றால் அது முடிவுற்றதாகும்; செயலில் உள்ள interview-களும் ரத்து செய்யப்படும்.'
-          : 'Withdrawing ends this application. Any active interview will also be cancelled.'}
+        {t('providerJobMarketplace.withdraw.warning')}
       </span>
       <button
         className={`${styles.button} ${styles.secondary}`}
@@ -39,7 +38,7 @@ export function ApplicationWithdrawalControl({ applicationId, saving, tamil, onC
         type="button"
         onClick={() => setConfirming(false)}
       >
-        {tamil ? 'விண்ணப்பத்தை வைத்திரு' : 'Keep application'}
+        {t('providerJobMarketplace.withdraw.keep')}
       </button>
       <button
         className={`${styles.button} ${styles.danger}`}
@@ -47,7 +46,7 @@ export function ApplicationWithdrawalControl({ applicationId, saving, tamil, onC
         type="button"
         onClick={() => onConfirm(applicationId)}
       >
-        {saving ? (tamil ? 'திரும்பப் பெறுகிறது…' : 'Withdrawing…') : (tamil ? 'திரும்பப் பெற உறுதி செய்' : 'Confirm withdrawal')}
+        {saving ? t('providerJobMarketplace.withdraw.progress') : t('providerJobMarketplace.withdraw.confirm')}
       </button>
     </>
   );
