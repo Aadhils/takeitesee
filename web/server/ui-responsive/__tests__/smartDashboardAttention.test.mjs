@@ -51,15 +51,15 @@ test('Customer Smart Attention remains mobile-safe and progressive enhancement o
 test('Provider Priority now opens the exact booking needing action', () => {
   assert.ok(providerDashboard.includes("booking.status === 'pending' ? 0 : booking.status === 'rescheduled' ? 1 : 2"));
   assert.ok(providerDashboard.includes('href: `/provider/bookings/${encodeURIComponent(booking.id)}`'));
-  assert.ok(providerDashboard.includes('Confirm ${serviceLabel}'));
-  assert.ok(providerDashboard.includes('Review the new time for ${serviceLabel}'));
-  assert.ok(providerDashboard.includes('Finish the ${serviceLabel} service record'));
-  assert.ok(providerDashboard.includes('[operations.needsAction, operations.upcoming, profile]'));
+  assert.ok(providerDashboard.includes("t('provider.dashboard.confirmPrefix')"));
+  assert.ok(providerDashboard.includes("t('provider.dashboard.reviewNewTimePrefix')"));
+  assert.ok(providerDashboard.includes("t('provider.dashboard.finishServicePrefix')"));
+  assert.ok(providerDashboard.includes('[operations.needsAction, operations.upcoming, profile, t]'));
 });
 
 test('Provider no-action state deep-links to the exact next confirmed service', () => {
   assert.ok(providerDashboard.includes('href: `/provider/bookings/${encodeURIComponent(operations.upcoming[0].id)}`'));
-  assert.ok(providerDashboard.includes("label: 'Your next service is ready'"));
+  assert.ok(providerDashboard.includes("label: t('provider.dashboard.nextServiceReady')"));
 });
 
 
@@ -253,7 +253,7 @@ test('Provider Activity strip only surfaces meaningful signals', () => {
 test('Provider booking load errors do not create fake activity counts', () => {
   assert.ok(providerDashboard.includes("...(!bookingsError && operations.needsAction.length > 0"));
   assert.ok(providerDashboard.includes("...(!bookingsError && operations.upcoming.length > 0"));
-  assert.ok(providerDashboard.includes('Booking activity needs a refresh'));
+  assert.ok(providerDashboard.includes("t('provider.dashboard.bookingRefresh')"));
 });
 
 
