@@ -74,45 +74,7 @@ function priority(kind: AttentionKind) {
 }
 
 export default function ProviderDashboardBookingInbox() {
-  const { locale } = useIdentityWorkspaceTranslations();
-  const tamil = locale.toLowerCase().startsWith('ta');
-  const copy = useMemo(() => tamil ? {
-    eyebrow: 'Booking inbox',
-    title: 'Customer booking next actions',
-    intro: 'புதிய booking request, reschedule, completion due மற்றும் முக்கிய follow-up மட்டும் இங்கே சுருக்கமாக காட்டப்படும். Complex booking actions dedicated Booking workspace-ல் தொடரும்.',
-    all: 'All bookings',
-    refresh: 'Refresh inbox',
-    refreshing: 'Refreshing…',
-    emptyTitle: 'இப்போது booking action இல்லை',
-    emptyBody: 'Real customer booking வந்ததும் Provider next action இங்கே தோன்றும்.',
-    loading: 'Booking inbox load ஆகிறது…',
-    retry: 'Retry',
-    request: 'Response needed',
-    completion: 'Completion due',
-    upcoming: 'Upcoming',
-    followup: 'Follow-up',
-    open: 'Open booking',
-    pendingCount: 'needs action',
-    upcomingCount: 'upcoming',
-  } : {
-    eyebrow: 'Booking inbox',
-    title: 'Customer booking next actions',
-    intro: 'See new booking requests, reschedules, completion-due work and important follow-up here. Complex booking actions stay in the dedicated Booking workspace.',
-    all: 'All bookings',
-    refresh: 'Refresh inbox',
-    refreshing: 'Refreshing…',
-    emptyTitle: 'No booking action right now',
-    emptyBody: 'When a real customer booking arrives, the Provider next action will appear here.',
-    loading: 'Loading booking inbox…',
-    retry: 'Retry',
-    request: 'Response needed',
-    completion: 'Completion due',
-    upcoming: 'Upcoming',
-    followup: 'Follow-up',
-    open: 'Open booking',
-    pendingCount: 'needs action',
-    upcomingCount: 'upcoming',
-  }, [tamil]);
+  const { locale, t } = useIdentityWorkspaceTranslations();
 
   const [bookings, setBookings] = useState<ProviderBooking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,16 +91,16 @@ export default function ProviderDashboardBookingInbox() {
     try {
       const response = await fetch('/api/provider/bookings', { cache: 'no-store' });
       const body = await response.json() as { bookings?: ProviderBooking[]; error?: string };
-      if (!response.ok || !Array.isArray(body.bookings)) throw new Error(body.error ?? 'Unable to load provider bookings.');
+      if (!response.ok || !Array.isArray(body.bookings)) throw new Error(body.error ?? t('provider.bookingInbox.loadFallback'));
       setBookings(body.bookings);
     } catch (cause) {
       setBookings([]);
-      setError(cause instanceof Error ? cause.message : 'Unable to load provider bookings.');
+      setError(cause instanceof Error ? cause.message : t('provider.bookingInbox.loadFallback'));
     } finally {
       loadingRef.current = false;
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
@@ -168,10 +130,10 @@ export default function ProviderDashboardBookingInbox() {
   const visible = attention.slice(0, MAX_ATTENTION_ITEMS);
 
   const kindLabel = (kind: AttentionKind) => {
-    if (kind === 'request') return copy.request;
-    if (kind === 'completion') return copy.completion;
-    if (kind === 'followup') return copy.followup;
-    return copy.upcoming;
+    if (kind === 'request') return t('provider.bookingInbox.request');
+    if (kind === 'completion') return t('provider.bookingInbox.completion');
+    if (kind === 'followup') return t('provider.bookingInbox.followup');
+    return t('provider.bookingInbox.upcoming');
   };
 
   const kindTone = (kind: AttentionKind): 'warning' | 'info' | 'success' => {
@@ -190,31 +152,31 @@ export default function ProviderDashboardBookingInbox() {
     }
   };
 
-  return <section id="provider-booking-inbox" className={styles.center} aria-label="Provider booking inbox">
+  return <section id="provider-booking-inbox" className={styles.center} aria-label={t('provider.bookingInbox.controlsLabel')}>
     <Card className={styles.card}>
       <div className={styles.header}>
         <div>
-          <span className={styles.eyebrow}>{copy.eyebrow}</span>
-          <h2>{copy.title}</h2>
-          <p>{copy.intro}</p>
+          <span className={styles.eyebrow}>{t('provider.bookingInbox.eyebrow')}</span>
+          <h2>{t('provider.bookingInbox.title')}</h2>
+          <p>{t('provider.bookingInbox.intro')}</p>
         </div>
         <div className={styles.headerActions}>
-          <Button type="button" variant="secondary" disabled={loading} onClick={() => void load()}>{loading ? copy.refreshing : copy.refresh}</Button>
-          <Link href="/provider/bookings" className={styles.secondaryLink}>{copy.all}</Link>
+          <Button type="button" variant="secondary" disabled={loading} onClick={() => void load()}>{loading ? t('provider.bookingInbox.refreshing') : t('provider.bookingInbox.refresh')}</Button>
+          <Link href="/provider/bookings" className={styles.secondaryLink}>{t('provider.bookingInbox.all')}</Link>
         </div>
       </div>
 
-      {loading ? <p className={styles.status}>{copy.loading}</p> : null}
-      {error ? <p className="field-error" role="alert">{error} <button type="button" className={styles.textButton} onClick={() => void load()}>{copy.retry}</button></p> : null}
+      {loading ? <p className={styles.status}>{t('provider.bookingInbox.loading')}</p> : null}
+      {error ? <p className="field-error" role="alert">{error} <button type="button" className={styles.textButton} onClick={() => void load()}>{t('provider.bookingInbox.retry')}</button></p> : null}
 
       {!loading && !error ? <div className={styles.counts}>
-        <span><strong>{needsActionCount}</strong> {copy.pendingCount}</span>
-        <span><strong>{upcomingCount}</strong> {copy.upcomingCount}</span>
+        <span><strong>{needsActionCount}</strong> {t('provider.bookingInbox.needsAction')}</span>
+        <span><strong>{upcomingCount}</strong> {t('provider.bookingInbox.upcomingCount')}</span>
       </div> : null}
 
       {!loading && !error && visible.length === 0 ? <div className={styles.empty}>
-        <strong>{copy.emptyTitle}</strong>
-        <p>{copy.emptyBody}</p>
+        <strong>{t('provider.bookingInbox.emptyTitle')}</strong>
+        <p>{t('provider.bookingInbox.emptyBody')}</p>
       </div> : null}
 
       {visible.length ? <div className={styles.list}>
@@ -227,11 +189,11 @@ export default function ProviderDashboardBookingInbox() {
             <p>{booking.booking_reference} · {formatSchedule(booking)}</p>
             {booking.location ? <small>{booking.location}</small> : null}
           </div>
-          <Link href={`/provider/bookings/${booking.id}`} className={styles.openLink}>{copy.open} →</Link>
+          <Link href={`/provider/bookings/${booking.id}`} className={styles.openLink}>{t('provider.bookingInbox.open')} →</Link>
         </article>)}
       </div> : null}
 
-      {attention.length > MAX_ATTENTION_ITEMS ? <Link href="/provider/bookings" className={styles.moreLink}>{copy.all} →</Link> : null}
+      {attention.length > MAX_ATTENTION_ITEMS ? <Link href="/provider/bookings" className={styles.moreLink}>{t('provider.bookingInbox.all')} →</Link> : null}
     </Card>
   </section>;
 }

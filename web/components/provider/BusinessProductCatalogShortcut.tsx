@@ -8,8 +8,7 @@ import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTrans
 type ProviderContext = { provider_type?: 'business' | 'professional' };
 
 export default function BusinessProductCatalogShortcut() {
-  const { locale } = useIdentityWorkspaceTranslations();
-  const tamil = locale.toLowerCase().startsWith('ta');
+  const { t } = useIdentityWorkspaceTranslations();
   const [business, setBusiness] = useState(false);
 
   useEffect(() => {
@@ -27,12 +26,10 @@ export default function BusinessProductCatalogShortcut() {
 
   return <Card style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
     <div style={{ minWidth: 0 }}>
-      <span className="eyebrow">{tamil ? 'Business sales' : 'Business sales'}</span>
-      <h2 style={{ margin: '.35rem 0' }}>{tamil ? 'Products & catalog' : 'Products & catalog'}</h2>
-      <p style={{ margin: 0, color: 'var(--color-ink-muted)' }}>{tamil
-        ? 'விற்பனை செய்யும் products-ஐ private catalog-ல் தயார் செய்யுங்கள். Public launch இன்னும் தனி approval stage.'
-        : 'Prepare products you plan to sell in your private catalog. Public launch remains a separate approval stage.'}</p>
+      <span className="eyebrow">{t('provider.business.sales')}</span>
+      <h2 style={{ margin: '.35rem 0' }}>{t('provider.business.productsCatalog')}</h2>
+      <p style={{ margin: 0, color: 'var(--color-ink-muted)' }}>{t('provider.business.catalogHelp')}</p>
     </div>
-    <Link href="/provider/products" className="button button-secondary">{tamil ? 'Products திற' : 'Open products'}</Link>
+    <Link href="/provider/products" className="button button-secondary">{t('provider.business.openProducts')}</Link>
   </Card>;
 }

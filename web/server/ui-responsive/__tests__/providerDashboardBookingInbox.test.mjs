@@ -29,7 +29,7 @@ test('booking inbox prioritizes real operational next actions without mutating b
 });
 
 test('booking inbox refreshes data and time when the Provider returns', () => {
-  assert.ok(inboxSource.includes('Refresh inbox'));
+  assert.ok(inboxSource.includes("t('provider.bookingInbox.refresh')"));
   assert.ok(inboxSource.includes('setNow(Date.now())'));
   assert.ok(inboxSource.includes("window.addEventListener('focus', refreshVisibleInbox)"));
   assert.ok(inboxSource.includes("document.addEventListener('visibilitychange', refreshVisibleInbox)"));
