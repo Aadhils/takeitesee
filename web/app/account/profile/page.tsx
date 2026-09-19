@@ -49,6 +49,6 @@ export default function AccountProfilePage() {
 
   return <div className={styles.accountProfileSettingsJourney}>
     <LocalizedProfilePage />
-    <IdentityHandleManager context="customer" locale={locale} />
+    <IdentityHandleManager context="customer" />
   </div>;
 }

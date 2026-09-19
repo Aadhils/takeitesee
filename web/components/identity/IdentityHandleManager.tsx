@@ -1,12 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { Badge, Button, Card, Input } from '../ui/primitives';
+import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 
 type Props = {
   context: 'customer' | 'provider';
-  locale?: string;
 };
 
 type HandlePayload = {
@@ -30,61 +30,33 @@ type SavePayload = {
   error?: string;
 };
 
-export default function IdentityHandleManager({ context, locale = 'en-IN' }: Props) {
-  const tamil = locale.toLowerCase().startsWith('ta');
-  const copy = useMemo(() => tamil ? {
-    eyebrow: context === 'provider' ? 'Public provider identity' : 'Customer username',
-    title: context === 'provider' ? 'உங்கள் public @handle' : 'உங்கள் @handle',
-    intro: context === 'provider'
-      ? 'உங்கள் Professional அல்லது Business profile-க்கு நினைவில் நிற்கும் TakeItEsee URL-ஐ reserve செய்யவும். Public profile readiness complete ஆன பிறகு மட்டுமே அந்த URL live மற்றும் shareable ஆகும். பழைய handle rename செய்தால் அது புதிய canonical handle-க்கு redirect ஆகும்.'
-      : 'உங்கள் Customer identity-க்கு unique username reserve செய்யலாம். Customer public profile தற்போது publish செய்யப்படாது; உங்கள் private profile/media private-ஆகவே இருக்கும்.',
-    label: 'Handle',
-    hint: '3–30 characters. English letters, numbers, single hyphens. Spaces/underscores auto-normalize ஆகும்.',
-    save: 'Handle save செய்யவும்',
-    saving: 'Saving…',
-    current: 'Current handle',
-    notSet: 'இன்னும் handle அமைக்கப்படவில்லை',
-    publicLink: 'Public profile link',
-    reservedLink: 'Reserved profile URL',
-    copyLink: 'Link copy',
-    copied: 'Copied',
-    loading: 'Handle load ஆகிறது…',
-    saved: 'Handle saved.',
-    savedLive: 'Handle saved. Public profile link live மற்றும் shareable ஆக உள்ளது.',
-    savedReserved: 'Handle reserved. Public profile readiness complete ஆன பிறகு link shareable ஆகும்.',
-    reserved: 'Customer public page தற்போது disabled; இந்த username மட்டும் reserve செய்யப்பட்டுள்ளது.',
-    providerReservedTitle: 'Handle reserved — public profile இன்னும் live இல்லை',
-    providerReservedBody: 'இந்த @handle உங்களுக்காக reserve செய்யப்பட்டுள்ளது. Verification, required public details மற்றும் profile readiness complete ஆனதும் இதே URL தானாக public profile link ஆகும்.',
-    completeReadiness: 'Public profile readiness முடிக்கவும்',
-    live: 'Live',
-    reservedBadge: 'Reserved',
-  } : {
-    eyebrow: context === 'provider' ? 'Public provider identity' : 'Customer username',
-    title: context === 'provider' ? 'Your public @handle' : 'Your @handle',
-    intro: context === 'provider'
-      ? 'Reserve a memorable TakeItEsee URL for your Professional or Business profile. The URL becomes live and shareable only after public profile readiness is complete. If you rename it later, the old handle redirects to the new canonical handle.'
-      : 'Reserve a unique username for your Customer identity. Customer public profiles are not published yet, so your private profile and media remain private.',
-    label: 'Handle',
-    hint: '3–30 characters. English letters, numbers and single hyphens. Spaces and underscores are normalized automatically.',
-    save: 'Save handle',
-    saving: 'Saving…',
-    current: 'Current handle',
-    notSet: 'No handle set yet',
-    publicLink: 'Public profile link',
-    reservedLink: 'Reserved profile URL',
-    copyLink: 'Copy link',
-    copied: 'Copied',
-    loading: 'Loading handle…',
-    saved: 'Handle saved.',
-    savedLive: 'Handle saved. Your public profile link is live and shareable.',
-    savedReserved: 'Handle reserved. The link becomes shareable after public profile readiness is complete.',
-    reserved: 'Customer public pages are currently disabled; this username is reserved only.',
-    providerReservedTitle: 'Handle reserved — public profile is not live yet',
-    providerReservedBody: 'This @handle is reserved for you. Once verification, required public details and profile readiness are complete, the same URL automatically becomes your public profile link.',
-    completeReadiness: 'Complete public profile readiness',
-    live: 'Live',
-    reservedBadge: 'Reserved',
-  }, [context, tamil]);
+export default function IdentityHandleManager({ context }: Props) {
+  const { t } = useIdentityWorkspaceTranslations();
+  const copy = {
+    eyebrow: t(context === 'provider' ? 'identity.handle.providerEyebrow' : 'identity.handle.customerEyebrow'),
+    title: t(context === 'provider' ? 'identity.handle.providerTitle' : 'identity.handle.customerTitle'),
+    intro: t(context === 'provider' ? 'identity.handle.providerIntro' : 'identity.handle.customerIntro'),
+    label: t('identity.handle.label'),
+    hint: t('identity.handle.hint'),
+    save: t('identity.handle.save'),
+    saving: t('identity.handle.saving'),
+    current: t('identity.handle.current'),
+    notSet: t('identity.handle.notSet'),
+    publicLink: t('identity.handle.publicLink'),
+    reservedLink: t('identity.handle.reservedLink'),
+    copyLink: t('identity.handle.copyLink'),
+    copied: t('identity.handle.copied'),
+    loading: t('identity.handle.loading'),
+    saved: t('identity.handle.saved'),
+    savedLive: t('identity.handle.savedLive'),
+    savedReserved: t('identity.handle.savedReserved'),
+    reserved: t('identity.handle.customerReserved'),
+    providerReservedTitle: t('identity.handle.providerReservedTitle'),
+    providerReservedBody: t('identity.handle.providerReservedBody'),
+    completeReadiness: t('identity.handle.completeReadiness'),
+    live: t('identity.handle.live'),
+    reservedBadge: t('identity.handle.reservedBadge'),
+  };
 
   const [handle, setHandle] = useState<string | null>(null);
   const [input, setInput] = useState('');
@@ -102,13 +74,13 @@ export default function IdentityHandleManager({ context, locale = 'en-IN' }: Pro
       setError('');
       const response = await fetch(`/api/identity-handle?context=${context}`, { cache: 'no-store' });
       const payload = await response.json() as HandlePayload;
-      if (!response.ok) throw new Error(payload.error ?? 'Unable to load handle.');
+      if (!response.ok) throw new Error(payload.error ?? t('identity.handle.loadFallback'));
       setHandle(payload.handle);
       setInput(payload.handle ?? '');
       setPublicProfileReady(Boolean(payload.public_profile_ready));
       setReadinessHref(payload.readiness_href ?? null);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to load handle.');
+      setError(cause instanceof Error ? cause.message : t('identity.handle.loadFallback'));
     } finally {
       setLoading(false);
     }
@@ -129,7 +101,7 @@ export default function IdentityHandleManager({ context, locale = 'en-IN' }: Pro
         body: JSON.stringify({ handle: input }),
       });
       const payload = await response.json() as SavePayload;
-      if (!response.ok) throw new Error(payload.error ?? 'Unable to save handle.');
+      if (!response.ok) throw new Error(payload.error ?? t('identity.handle.saveFallback'));
       const nextHandle = String(payload.result?.handle ?? '').trim();
       const nextReady = Boolean(payload.public_profile_ready);
       setHandle(nextHandle || null);
@@ -140,7 +112,7 @@ export default function IdentityHandleManager({ context, locale = 'en-IN' }: Pro
         ? nextReady ? copy.savedLive : copy.savedReserved
         : copy.saved);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to save handle.');
+      setError(cause instanceof Error ? cause.message : t('identity.handle.saveFallback'));
     } finally {
       setSaving(false);
     }
