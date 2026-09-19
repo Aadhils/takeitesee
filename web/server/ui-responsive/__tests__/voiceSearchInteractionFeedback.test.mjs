@@ -15,7 +15,7 @@ test('voice search exposes immediate starting feedback before microphone permiss
   const permissionIndex = voiceSource.indexOf('navigator.mediaDevices?.getUserMedia');
   assert.ok(activatingIndex >= 0, 'voice activating state missing');
   assert.ok(permissionIndex > activatingIndex, 'starting feedback must happen before microphone permission wait');
-  assert.ok(voiceSource.includes("setVoiceStatus(locale === 'ta-IN' ? 'Microphone தொடங்குகிறது…' : 'Starting microphone…')"));
+  assert.ok(voiceSource.includes("setVoiceStatus(t('home.voice.startingStatus'))"));
 });
 
 test('voice button publishes idle, starting and listening states accessibly', () => {
@@ -23,7 +23,7 @@ test('voice button publishes idle, starting and listening states accessibly', ()
   assert.ok(voiceSource.includes('data-voice-state={voiceState}'));
   assert.ok(voiceSource.includes('aria-pressed={listening}'));
   assert.ok(voiceSource.includes('aria-busy={voiceActivating || undefined}'));
-  assert.ok(voiceSource.includes("setVoiceStatus(locale === 'ta-IN' ? 'கேட்கிறோம்…' : 'Listening…')"));
+  assert.ok(voiceSource.includes("setVoiceStatus(t('home.voice.listeningStatus'))"));
 });
 
 test('voice button gives distinct pointer press, keyboard focus and microphone-state feedback', () => {
