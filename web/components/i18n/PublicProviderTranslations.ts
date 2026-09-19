@@ -183,6 +183,12 @@ const english = {
   'publicProvider.businessProducts.viewOrders': 'View my orders',
   'publicProvider.businessProducts.unavailable': 'This product is not currently available to order.',
   'publicProvider.businessProducts.requestError': 'Unable to request this order.',
+  'publicProvider.serviceShare.byProvider': '{serviceName} by {providerName} on TakeItEsee',
+  'publicProvider.serviceShare.onPlatform': '{serviceName} on TakeItEsee',
+  'publicProvider.serviceShare.shared': 'Shared ✓',
+  'publicProvider.serviceShare.copied': 'Link copied ✓',
+  'publicProvider.serviceShare.action': 'Share service',
+  'publicProvider.serviceShare.error': 'This browser could not share or copy the service link.',
 } as const;
 
 type PublicProviderKey = keyof typeof english;
