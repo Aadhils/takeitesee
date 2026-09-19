@@ -384,8 +384,10 @@ export default function AuthenticatedAccount() {
           .customer-dashboard-more-link-row { gap: 6px; }
           .customer-dashboard-more-link-row a { min-height: 38px; }
           .customer-activity-strip { grid-template-columns: repeat(4, minmax(92px, 1fr)); overflow-x: auto; scrollbar-width: none; }
+          .customer-activity-strip { gap: 1px; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-border); }
           .customer-activity-strip::-webkit-scrollbar { display: none; }
-          .customer-activity-strip-item { min-height: 54px; padding: 8px 10px; }
+          .customer-activity-strip-item { min-height: 54px; flex-direction: row; align-items: center; justify-content: space-between; padding: 8px 10px; border: 0; border-radius: 0; box-shadow: none; }
+          .customer-activity-strip-item strong { order: 0; font-size: 1rem; }
           .customer-secondary-activity { margin-top: 10px; border-radius: 14px; }
           .customer-secondary-activity > summary { min-height: 54px; padding: 9px 11px; }
           .customer-secondary-activity > summary small { max-width: 62vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
