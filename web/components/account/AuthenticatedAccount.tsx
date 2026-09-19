@@ -34,8 +34,7 @@ function CustomerSettingsIcon() {
 }
 
 export default function AuthenticatedAccount() {
-  const { t, locale } = useIdentityWorkspaceTranslations();
-  const tamil = locale === 'ta-IN';
+  const { t } = useIdentityWorkspaceTranslations();
   const [user, setUser] = useState<User>();
   const [bookings, setBookings] = useState<CustomerBooking[]>([]);
   const [bookingError, setBookingError] = useState('');
@@ -48,7 +47,7 @@ export default function AuthenticatedAccount() {
       let currentUser: User | undefined;
       if (isSupabaseConfigured()) {
         const current = await getSupabaseBrowserUser();
-        if (current) currentUser = { id: current.id, name: current.user_metadata?.name ?? current.email ?? 'Account', email: current.email ?? '', phone: current.user_metadata?.phone, role: 'customer', createdAt: current.created_at, updatedAt: current.updated_at ?? current.created_at };
+        if (current) currentUser = { id: current.id, name: current.user_metadata?.name ?? current.email ?? t('account.dashboard.accountFallback'), email: current.email ?? '', phone: current.user_metadata?.phone, role: 'customer', createdAt: current.created_at, updatedAt: current.updated_at ?? current.created_at };
       } else currentUser = localDevelopmentAuthAdapter.getCurrentUser();
       if (cancelled) return;
       setUser(currentUser);
@@ -79,31 +78,31 @@ export default function AuthenticatedAccount() {
   };
 
   const mobileQuickLinks: MobileQuickLink[] = [
-    { href: '/bookings', label: tamil ? 'Bookings' : 'Bookings', icon: 'bookings' },
-    { href: '/orders', label: tamil ? 'Orders' : 'Orders', icon: 'orders', badge: productOrderUnreadCount, badgeLabel: tamil ? 'புதிய order updates' : 'new order updates' },
-    { href: '/requirements', label: tamil ? 'தேவைகள்' : 'Needs', icon: 'needs', badge: proposalUnreadCount, badgeLabel: tamil ? 'புதிய proposals' : 'new proposals' },
-    { href: '/messages', label: tamil ? 'செய்திகள்' : 'Messages', icon: 'messages' },
-    { href: '/account/profile', label: tamil ? 'Profile' : 'Profile', icon: 'profile' },
+    { href: '/bookings', label: t('account.dashboard.bookings'), icon: 'bookings' },
+    { href: '/orders', label: t('account.dashboard.orders'), icon: 'orders', badge: productOrderUnreadCount, badgeLabel: t('account.dashboard.newOrderUpdates') },
+    { href: '/requirements', label: t('account.dashboard.needs'), icon: 'needs', badge: proposalUnreadCount, badgeLabel: t('account.dashboard.newProposals') },
+    { href: '/messages', label: t('account.dashboard.messages'), icon: 'messages' },
+    { href: '/account/profile', label: t('account.dashboard.profile'), icon: 'profile' },
   ];
 
   const dashboardQuickLinks: DashboardQuickLink[] = [
-    { href: '/bookings', label: tamil ? 'Bookings' : 'Bookings', icon: 'bookings' },
-    { href: '/orders', label: tamil ? 'Orders' : 'Orders', icon: 'orders', badge: productOrderUnreadCount },
-    { href: '/requirements', label: tamil ? 'தேவைகள்' : 'Needs', icon: 'needs', badge: proposalUnreadCount },
-    { href: '/messages', label: tamil ? 'செய்திகள்' : 'Messages', icon: 'messages' },
-    { href: '/explore', label: tamil ? 'Explore' : 'Explore', icon: 'explore' },
-    { href: '/account/profile', label: tamil ? 'Profile' : 'Profile', icon: 'profile' },
+    { href: '/bookings', label: t('account.dashboard.bookings'), icon: 'bookings' },
+    { href: '/orders', label: t('account.dashboard.orders'), icon: 'orders', badge: productOrderUnreadCount },
+    { href: '/requirements', label: t('account.dashboard.needs'), icon: 'needs', badge: proposalUnreadCount },
+    { href: '/messages', label: t('account.dashboard.messages'), icon: 'messages' },
+    { href: '/explore', label: t('account.dashboard.explore'), icon: 'explore' },
+    { href: '/account/profile', label: t('account.dashboard.profile'), icon: 'profile' },
   ];
 
   const secondaryLinks = [
     { href: '/notifications', label: t('account.notifications') },
-    { href: '/reviews', label: tamil ? 'Reviews' : 'Reviews' },
-    { href: '/saved-services', label: tamil ? 'Saved services' : 'Saved services' },
-    { href: '/saved-products', label: tamil ? 'Saved Products' : 'Saved Products' },
-    { href: '/products', label: tamil ? 'Products' : 'Products' },
+    { href: '/reviews', label: t('account.dashboard.reviews') },
+    { href: '/saved-services', label: t('account.dashboard.savedServices') },
+    { href: '/saved-products', label: t('account.dashboard.savedProducts') },
+    { href: '/products', label: t('account.dashboard.products') },
     { href: '/account/settings', label: t('account.settings') },
-    { href: '/account/support', label: tamil ? 'Platform உதவி' : 'Support' },
-    { href: '/account/reports', label: tamil ? 'Safety reports' : 'Safety reports' },
+    { href: '/account/support', label: t('account.dashboard.support') },
+    { href: '/account/reports', label: t('account.dashboard.safetyReports') },
   ];
 
   return (
@@ -112,16 +111,16 @@ export default function AuthenticatedAccount() {
       <h1>{t('account.welcome')}, {user.name.split(' ')[0]}.</h1>
       <p>{isSupabaseConfigured() ? t('account.productionSession') : t('account.localSession')}</p>
 
-      <section className="customer-mobile-quick-shell" aria-label={tamil ? 'Customer விரைவு வழிசெலுத்தல்' : 'Customer quick navigation'}>
+      <section className="customer-mobile-quick-shell" aria-label={t('account.dashboard.quickNavigation')}>
         <div className="customer-mobile-quick-identity">
           <div>
             <strong>{user.name}</strong>
-            <span>{tamil ? 'Customer workspace' : 'Customer workspace'}</span>
+            <span>{t('account.dashboard.workspace')}</span>
           </div>
-          <Link href="/account/settings" className="customer-mobile-quick-settings" aria-label={tamil ? 'Account அமைப்புகள்' : 'Account settings'}><CustomerSettingsIcon /></Link>
+          <Link href="/account/settings" className="customer-mobile-quick-settings" aria-label={t('account.dashboard.settingsAria')}><CustomerSettingsIcon /></Link>
         </div>
-        <nav className="customer-mobile-quick-nav" aria-label={tamil ? 'Customer முக்கிய வழிசெலுத்தல்' : 'Customer primary navigation'}>
-          {mobileQuickLinks.map((link) => <Link href={link.href} key={link.href} aria-label={link.badge ? `${link.label}, ${link.badge} ${link.badgeLabel ?? 'new updates'}` : link.label}>
+        <nav className="customer-mobile-quick-nav" aria-label={t('account.dashboard.primaryNavigation')}>
+          {mobileQuickLinks.map((link) => <Link href={link.href} key={link.href} aria-label={link.badge ? `${link.label}, ${link.badge} ${link.badgeLabel ?? t('account.dashboard.newUpdates')}` : link.label}>
             <span className="customer-mobile-quick-icon" aria-hidden="true">
               <CustomerMobileNavIcon icon={link.icon} />
               {link.badge ? <span className="customer-mobile-quick-badge">{link.badge > 99 ? '99+' : link.badge}</span> : null}
@@ -131,20 +130,20 @@ export default function AuthenticatedAccount() {
         </nav>
       </section>
 
-      {isSupabaseConfigured() ? <RoleIdentityMediaHeader context="customer" displayName={user.name} subtitle="Personal customer account" meta={[user.email, user.phone].filter(Boolean).join(' · ')} /> : <Card className="profile-summary"><div className="provider-avatar provider-avatar-large" aria-hidden="true">{user.name.split(' ').map((part) => part[0]).join('')}</div><div><span className="eyebrow">{t('account.signedInCustomer')}</span><h2>{user.name}</h2><p>{user.email}</p>{user.phone ? <span className="card-location">{user.phone}</span> : null}</div></Card>}
+      {isSupabaseConfigured() ? <RoleIdentityMediaHeader context="customer" displayName={user.name} subtitle={t('account.dashboard.personalAccount')} meta={[user.email, user.phone].filter(Boolean).join(' · ')} /> : <Card className="profile-summary"><div className="provider-avatar provider-avatar-large" aria-hidden="true">{user.name.split(' ').map((part) => part[0]).join('')}</div><div><span className="eyebrow">{t('account.signedInCustomer')}</span><h2>{user.name}</h2><p>{user.email}</p>{user.phone ? <span className="card-location">{user.phone}</span> : null}</div></Card>}
 
       <CustomerSmartAttention bookings={bookings} />
 
       <details className="customer-secondary-activity">
         <summary>
           <span>
-            <strong>{tamil ? 'மேலும் activity' : 'More activity'}</strong>
-            <small>{tamil ? 'Proposals, order updates & history' : 'Proposals, order updates & history'}</small>
+            <strong>{t('account.dashboard.moreActivity')}</strong>
+            <small>{t('account.dashboard.activitySummary')}</small>
           </span>
           <span className="customer-secondary-activity-meta">
             {proposalUnreadCount + productOrderUnreadCount > 0
               ? <span className="customer-secondary-activity-count">{proposalUnreadCount + productOrderUnreadCount > 99 ? '99+' : proposalUnreadCount + productOrderUnreadCount}</span>
-              : <span>{tamil ? 'Details' : 'Details'}</span>}
+              : <span>{t('account.dashboard.details')}</span>}
             <span aria-hidden="true" className="customer-secondary-activity-caret">⌄</span>
           </span>
         </summary>
@@ -154,33 +153,33 @@ export default function AuthenticatedAccount() {
         </div>
       </details>
 
-      <section className="customer-dashboard-quick-actions" aria-label={tamil ? 'Customer quick actions' : 'Customer quick actions'}>
+      <section className="customer-dashboard-quick-actions" aria-label={t('account.dashboard.quickActions')}>
         <div className="customer-dashboard-section-heading">
           <div>
-            <span className="eyebrow">{tamil ? 'Quick actions' : 'Quick actions'}</span>
-            <h2>{tamil ? 'அடிக்கடி பயன்படுத்துவது' : 'Go where you need'}</h2>
+            <span className="eyebrow">{t('account.dashboard.quickActionsEyebrow')}</span>
+            <h2>{t('account.dashboard.goWhereNeeded')}</h2>
           </div>
         </div>
-        <nav className="customer-dashboard-quick-grid" aria-label={tamil ? 'Customer quick actions' : 'Customer quick actions'}>
+        <nav className="customer-dashboard-quick-grid" aria-label={t('account.dashboard.quickActions')}>
           {dashboardQuickLinks.map((link) => <Link href={link.href} className="customer-dashboard-quick-link" key={link.href}>
             <span className="customer-dashboard-quick-icon" aria-hidden="true"><CustomerMobileNavIcon icon={link.icon} /></span>
             <span>{link.label}</span>
-            {link.badge ? <span className="customer-dashboard-quick-badge" aria-label={`${link.badge} new updates`}>{link.badge > 99 ? '99+' : link.badge}</span> : null}
+            {link.badge ? <span className="customer-dashboard-quick-badge" aria-label={`${link.badge} ${t('account.dashboard.newUpdates')}`}>{link.badge > 99 ? '99+' : link.badge}</span> : null}
           </Link>)}
         </nav>
       </section>
 
       <details className="customer-dashboard-more-links">
         <summary>
-          <span>{tamil ? 'மேலும் shortcuts' : 'More shortcuts'}</span>
+          <span>{t('account.dashboard.moreShortcuts')}</span>
           <span aria-hidden="true">⌄</span>
         </summary>
-        <nav className="customer-dashboard-more-link-row" aria-label={tamil ? 'மேலும் customer shortcuts' : 'More customer shortcuts'}>
+        <nav className="customer-dashboard-more-link-row" aria-label={t('account.dashboard.moreCustomerShortcuts')}>
           {secondaryLinks.map((link) => <Link href={link.href} key={link.href}>{link.label}</Link>)}
         </nav>
       </details>
 
-      <section className="customer-activity-strip" aria-label={tamil ? 'Booking activity summary' : 'Booking activity summary'}>
+      <section className="customer-activity-strip" aria-label={t('account.dashboard.bookingActivitySummary')}>
         <Link href="/bookings" className="customer-activity-strip-item"><span>{t('account.upcoming')}</span><strong>{summary.upcoming}</strong></Link>
         <Link href="/bookings" className="customer-activity-strip-item"><span>{t('account.completed')}</span><strong>{summary.completed}</strong></Link>
         <Link href="/bookings" className="customer-activity-strip-item"><span>{t('account.cancelled')}</span><strong>{summary.cancelled}</strong></Link>
