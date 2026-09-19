@@ -195,7 +195,7 @@ test('Provider upcoming activity count is not capped to four bookings', () => {
   assert.ok(upcomingStart >= 0 && upcomingEnd > upcomingStart);
   const upcomingBlock = providerDashboard.slice(upcomingStart, upcomingEnd);
   assert.ok(!upcomingBlock.includes('.slice(0, 4)'));
-  assert.ok(providerDashboard.includes("bookingsError ? '—' : operations.upcoming.length"));
+  assert.ok(providerDashboard.includes("value: String(operations.upcoming.length)"));
   assert.ok(providerDashboard.includes("operations.upcoming.length > 1 ?"));
 });
 
