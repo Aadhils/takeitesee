@@ -41,6 +41,7 @@ test('Atomic RPC accepts the proposal before creating the booking in one transac
 test('Customer and Provider copy reflects the single service journey instead of a ping-pong workflow', () => {
   assert.ok(translationsSource.includes("'job.eyebrow': 'My service'"));
   assert.ok(translationsSource.includes("'job.create': 'Schedule service'"));
-  assert.ok(providerLeadsSource.includes('If the customer scheduled a time while choosing you, the booking is already in your Bookings workspace.'));
-  assert.ok(providerLeadsSource.includes('If they chose to schedule later'));
+  assert.ok(providerLeadsSource.includes("t('lead.awardNextHelp')"));
+  assert.ok(translationsSource.includes('If the customer scheduled a time while choosing you, the booking is already in your Bookings workspace.'));
+  assert.ok(translationsSource.includes('If they chose to schedule later'));
 });
