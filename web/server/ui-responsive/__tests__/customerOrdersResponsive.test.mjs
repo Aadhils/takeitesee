@@ -68,7 +68,6 @@ test('Customer order responsive layout stacks actions and values safely on mobil
 });
 
 test('Customer order journey keeps non-payment boundaries explicit', () => {
-  assert.ok(detailSource.includes('non-payment order-request flow'));
-  assert.ok(detailSource.includes('TakeItEsee payment and Cashfree are not active for this order'));
+  assert.ok(detailSource.includes("t('orders.detail.flowNotice')"));
   assert.ok(listSource.includes("t('orders.intro')"));
 });

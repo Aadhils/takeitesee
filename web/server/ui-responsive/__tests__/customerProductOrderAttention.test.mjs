@@ -52,6 +52,5 @@ test('Customer Product Order attention remains compact on mobile and keeps payme
   assert.ok(attentionSource.includes('@media (max-width: 720px)'));
   assert.ok(attentionSource.includes('grid-template-columns: 1fr'));
   assert.ok(attentionSource.includes('width: 100%'));
-  assert.ok(detailSource.includes('non-payment order-request flow'));
-  assert.ok(detailSource.includes('TakeItEsee payment and Cashfree are not active for this order'));
+  assert.ok(detailSource.includes("t('orders.detail.flowNotice')"));
 });
