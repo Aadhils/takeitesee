@@ -10,7 +10,7 @@ import { ProviderHeading } from './ProviderPresentation';
 import { LiveProviderShell } from './LiveProviderShell';
 import ProviderCashCollectionPanel from './ProviderCashCollectionPanel';
 import ProviderRequirementOccurrenceContext from './ProviderRequirementOccurrenceContext';
-import { useRemainingWorkspaceTranslations } from '../i18n/RemainingWorkspaceTranslations';
+import { useRemainingWorkspaceTranslations, type RemainingWorkspaceKey } from '../i18n/RemainingWorkspaceTranslations';
 
 type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'rescheduled';
 type AttendanceOutcome = 'pending' | 'service_completed' | 'customer_no_show' | 'provider_no_show';
@@ -21,8 +21,20 @@ type Booking = {
   created_at: string; updated_at: string; attendance_outcome: AttendanceOutcome; closeout_state?: string; closed_at?: string;
 };
 
-const declineReasons = ['Schedule conflict', 'Service unavailable', 'Outside service area', 'Unable to fulfil request', 'Other'];
-const rescheduleDeclineReasons = ['New time unavailable', 'Schedule conflict', 'Unable to fulfil at requested time', 'Service unavailable', 'Other'];
+const declineReasonKeys: RemainingWorkspaceKey[] = [
+  'providerBooking.reason.scheduleConflict',
+  'providerBooking.reason.serviceUnavailable',
+  'providerBooking.reason.outsideServiceArea',
+  'providerBooking.reason.unableFulfil',
+  'providerBooking.reason.other',
+];
+const rescheduleDeclineReasonKeys: RemainingWorkspaceKey[] = [
+  'providerBooking.reason.newTimeUnavailable',
+  'providerBooking.reason.scheduleConflict',
+  'providerBooking.reason.unableRequestedTime',
+  'providerBooking.reason.serviceUnavailable',
+  'providerBooking.reason.other',
+];
 
 function tone(status: Booking['status']) {
   if (status === 'confirmed' || status === 'completed') return 'success' as const;
@@ -58,10 +70,10 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
     try {
       const response = await fetch(`/api/provider/bookings/${encodeURIComponent(bookingId)}`, { cache: 'no-store' });
       const payload = await response.json() as { booking?: Booking; error?: string };
-      if (!response.ok || !payload.booking) throw new Error(payload.error ?? 'Unable to load booking.');
+      if (!response.ok || !payload.booking) throw new Error(payload.error ?? t('providerBooking.loadFallback'));
       setBooking(payload.booking);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to load booking.'); }
-  }, [bookingId]);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : t('providerBooking.loadFallback')); }
+  }, [bookingId, t]);
 
   useEffect(() => { void loadBooking(); }, [loadBooking]);
   useEffect(() => {
@@ -98,22 +110,36 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
     try {
       const response = await fetch(`/api/provider/bookings/${encodeURIComponent(bookingId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, reason }) });
       const payload = await response.json() as { booking?: Booking; error?: string };
-      if (!response.ok || !payload.booking) throw new Error(payload.error ?? 'Unable to update booking.');
+      if (!response.ok || !payload.booking) throw new Error(payload.error ?? t('providerBooking.updateFallback'));
       setBooking(payload.booking);
       refreshLifecycle();
       return true;
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to update booking.');
+      setError(cause instanceof Error ? cause.message : t('providerBooking.updateFallback'));
       return false;
     } finally { setBusy(false); }
   };
 
-  const statusLabel = (status: BookingStatus) => locale === 'ta-IN'
-    ? ({ pending: 'நிலுவையில்', confirmed: 'உறுதிப்படுத்தப்பட்டது', completed: 'முடிந்தது', cancelled: 'ரத்து செய்யப்பட்டது', rescheduled: 'நேர மாற்ற கோரிக்கை' }[status])
-    : status;
-  const attendanceLabel = (status: AttendanceOutcome) => locale === 'ta-IN'
-    ? ({ pending: 'வருகை நிலுவையில்', service_completed: 'சேவை முடிந்தது', customer_no_show: 'வாடிக்கையாளர் வரவில்லை', provider_no_show: 'வழங்குநர் வரவில்லை' }[status])
-    : status.replaceAll('_', ' ');
+  const statusLabel = (status: BookingStatus) => ({
+    pending: t('providerBooking.status.pending'),
+    confirmed: t('providerBooking.status.confirmed'),
+    completed: t('providerBooking.status.completed'),
+    cancelled: t('providerBooking.status.cancelled'),
+    rescheduled: t('providerBooking.status.rescheduled'),
+  }[status]);
+  const attendanceLabel = (status: AttendanceOutcome) => ({
+    pending: t('providerBooking.attendance.pending'),
+    service_completed: t('providerBooking.attendance.serviceCompleted'),
+    customer_no_show: t('providerBooking.attendance.customerNoShow'),
+    provider_no_show: t('providerBooking.attendance.providerNoShow'),
+  }[status]);
+  const paymentLabel = (status: Booking['payment_status']) => ({
+    unpaid: t('providerBooking.payment.unpaid'),
+    pending: t('providerBooking.payment.pending'),
+    paid: t('providerBooking.payment.paid'),
+    failed: t('providerBooking.payment.failed'),
+    refunded: t('providerBooking.payment.refunded'),
+  }[status]);
 
   const rescheduleRequest = booking?.status === 'rescheduled';
   const attendanceTerminal = booking?.attendance_outcome === 'customer_no_show' || booking?.attendance_outcome === 'provider_no_show';
@@ -130,7 +156,7 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
           <div><dt>{t('providerBooking.duration')}</dt><dd>{booking.duration_minutes} {t('providerBooking.minutes')}</dd></div><div><dt>{t('providerBooking.location')}</dt><dd>{booking.location}</dd></div>
           <div><dt>{t('providerBooking.price')}</dt><dd>{new Intl.NumberFormat(locale, { style: 'currency', currency: booking.currency }).format(booking.quoted_price)}</dd></div>
           <div><dt>{t('providerBooking.customerNote')}</dt><dd>{booking.customer_notes || t('providerBooking.noNote')}</dd></div>
-        </dl><Badge tone="neutral">{t('providerBooking.payment')} {booking.payment_status}</Badge>
+        </dl><Badge tone="neutral">{t('providerBooking.payment')} {paymentLabel(booking.payment_status)}</Badge>
       </Card>
       <ProviderRequirementOccurrenceContext bookingId={booking.id} locale={locale} onResolved={setRequirementLinked} />
       {requirementLinked === false ? <Card className="provider-detail-card"><span className="eyebrow">{t('providerBooking.nextAction')}</span><h2>{t('providerBooking.controls')}</h2>
@@ -152,7 +178,7 @@ export default function ProviderBookingDetail({ bookingId }: { bookingId: string
       eyebrow={rescheduleRequest ? t('providerBooking.declineNew') : t('providerBooking.decline')}
       title={rescheduleRequest ? t('providerBooking.declineWhyNew') : t('providerBooking.declineWhy')}
       description={rescheduleRequest ? t('providerBooking.declineNewHelp') : t('providerBooking.declineHelp')}
-      options={rescheduleRequest ? rescheduleDeclineReasons : declineReasons}
+      options={(rescheduleRequest ? rescheduleDeclineReasonKeys : declineReasonKeys).map((key) => t(key))}
       confirmLabel={rescheduleRequest ? t('providerBooking.declineNew') : t('providerBooking.decline')}
       busy={busy}
       onClose={() => setDeclineOpen(false)}
