@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 import ProviderLiveLocationControl from './ProviderLiveLocationControl';
 import styles from './ProviderLiveAvailabilityControl.module.css';
 
@@ -24,16 +25,6 @@ type ModeOption = {
   symbol: string;
 };
 
-const MODES: ModeOption[] = [
-  { value: 'available', label: 'Available', detail: 'Ready to take new work now.', symbol: '●' },
-  { value: 'busy', label: 'Busy', detail: 'Working now, but still active.', symbol: '◐' },
-  { value: 'offline', label: 'Offline', detail: 'Not taking live requests now.', symbol: '○' },
-  { value: 'paused', label: 'Paused', detail: 'Temporarily pause new live work.', symbol: 'Ⅱ' },
-];
-
-function modeLabel(mode: ProviderWorkMode) {
-  return MODES.find((item) => item.value === mode)?.label ?? 'Offline';
-}
 
 function effectiveMode(availability: ProviderLiveAvailability | null): ProviderWorkMode {
   if (!availability) return 'offline';
@@ -53,6 +44,13 @@ function expiryLabel(value: string | null) {
 }
 
 export default function ProviderLiveAvailabilityControl() {
+  const { t } = useIdentityWorkspaceTranslations();
+  const modes = useMemo<ModeOption[]>(() => [
+    { value: 'available', label: t('provider.live.available'), detail: t('provider.live.availableHelp'), symbol: '●' },
+    { value: 'busy', label: t('provider.live.busy'), detail: t('provider.live.busyHelp'), symbol: '◐' },
+    { value: 'offline', label: t('provider.live.offline'), detail: t('provider.live.offlineHelp'), symbol: '○' },
+    { value: 'paused', label: t('provider.live.paused'), detail: t('provider.live.pausedHelp'), symbol: 'Ⅱ' },
+  ], [t]);
   const [availability, setAvailability] = useState<ProviderLiveAvailability | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -67,15 +65,15 @@ export default function ProviderLiveAvailabilityControl() {
     try {
       const response = await fetch('/api/provider/live-availability', { cache: 'no-store' });
       const payload = await response.json() as { availability?: ProviderLiveAvailability; error?: string };
-      if (!response.ok || !payload.availability) throw new Error(payload.error || 'Unable to load live work status.');
+      if (!response.ok || !payload.availability) throw new Error(payload.error || t('provider.live.loadFallback'));
       setAvailability(payload.availability);
     } catch (loadError) {
       setAvailability(null);
-      setError(loadError instanceof Error ? loadError.message : 'Unable to load live work status.');
+      setError(loadError instanceof Error ? loadError.message : t('provider.live.loadFallback'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -90,11 +88,12 @@ export default function ProviderLiveAvailabilityControl() {
 
   const currentMode = useMemo(() => effectiveMode(availability), [availability, expiryTick]);
   const currentOption = useMemo(
-    () => MODES.find((item) => item.value === currentMode) ?? MODES[2],
-    [currentMode],
+    () => modes.find((item) => item.value === currentMode) ?? modes[2],
+    [currentMode, modes],
   );
   const statusUnavailable = !loading && Boolean(error) && !availability;
-  const visibleStatus = loading ? 'Checking…' : statusUnavailable ? 'Unavailable' : modeLabel(currentMode);
+  const liveModeLabel = (mode: ProviderWorkMode) => modes.find((item) => item.value === mode)?.label ?? t('provider.live.offline');
+  const visibleStatus = loading ? t('provider.live.checking') : statusUnavailable ? t('provider.live.unavailable') : liveModeLabel(currentMode);
   const activeExpiryLabel = currentMode === 'available' || currentMode === 'busy'
     ? expiryLabel(availability?.mode_expires_at ?? null)
     : '';
@@ -114,44 +113,44 @@ export default function ProviderLiveAvailabilityControl() {
         body: JSON.stringify({ work_mode: nextMode, mode_expires_at: modeExpiresAt }),
       });
       const payload = await response.json() as { availability?: ProviderLiveAvailability; error?: string };
-      if (!response.ok || !payload.availability) throw new Error(payload.error || 'Unable to update live work status.');
+      if (!response.ok || !payload.availability) throw new Error(payload.error || t('provider.live.updateFallback'));
       setAvailability(payload.availability);
       setExpanded(false);
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'Unable to update live work status.');
+      setError(saveError instanceof Error ? saveError.message : t('provider.live.updateFallback'));
     } finally {
       setSavingMode(null);
     }
   };
 
-  return <aside className={styles.anchor} aria-label="Live work status">
+  return <aside className={styles.anchor} aria-label={t('provider.live.statusLabel')}>
     {expanded ? <div className={styles.panel}>
       <div className={styles.panelHeader}>
         <div>
-          <span className={styles.eyebrow}>Live work status</span>
-          <strong>Can you help customers now?</strong>
+          <span className={styles.eyebrow}>{t('provider.live.statusLabel')}</span>
+          <strong>{t('provider.live.question')}</strong>
         </div>
-        <button type="button" className={styles.closeButton} aria-label="Close live work status" onClick={() => setExpanded(false)}>×</button>
+        <button type="button" className={styles.closeButton} aria-label={t('provider.live.closeLabel')} onClick={() => setExpanded(false)}>×</button>
       </div>
 
-      <p className={styles.boundaryCopy}>This status is separate from service schedules. For Businesses, it does not mean Shop Open/Closed.</p>
+      <p className={styles.boundaryCopy}>{t('provider.live.boundary')}</p>
 
       <label style={{ display: 'grid', gap: '5px', marginTop: '12px', color: 'var(--color-ink-muted)', fontSize: '.72rem', fontWeight: 700 }}>
-        Available / Busy duration
+        {t('provider.live.duration')}
         <select
           value={durationMinutes}
           disabled={Boolean(savingMode) || loading || statusUnavailable}
           onChange={(event) => setDurationMinutes(Number(event.target.value) as LiveDurationMinutes)}
           style={{ minHeight: '38px', border: '1px solid var(--color-border)', borderRadius: '10px', background: 'var(--color-surface)', color: 'var(--color-ink)', padding: '0 10px' }}
         >
-          <option value={15}>15 minutes</option>
-          <option value={30}>30 minutes</option>
-          <option value={60}>60 minutes</option>
+          <option value={15}>15 {t('provider.live.minutes')}</option>
+          <option value={30}>30 {t('provider.live.minutes')}</option>
+          <option value={60}>60 {t('provider.live.minutes')}</option>
         </select>
       </label>
 
-      <div className={styles.modeGrid} role="group" aria-label="Choose live work status">
-        {MODES.map((mode) => {
+      <div className={styles.modeGrid} role="group" aria-label={t('provider.live.chooseLabel')}>
+        {modes.map((mode) => {
           const selected = !statusUnavailable && currentMode === mode.value;
           const saving = savingMode === mode.value;
           return <button
@@ -164,15 +163,15 @@ export default function ProviderLiveAvailabilityControl() {
           >
             <span className={`${styles.modeSymbol} ${styles[`mode_${mode.value}`]}`}>{mode.symbol}</span>
             <span className={styles.modeCopy}>
-              <strong>{saving ? 'Updating…' : mode.label}</strong>
+              <strong>{saving ? t('provider.live.updating') : mode.label}</strong>
               <small>{mode.detail}</small>
             </span>
           </button>;
         })}
       </div>
 
-      {error ? <div className={styles.error} role="alert">{error} <button type="button" onClick={() => void load()}>Retry</button></div> : null}
-      <p className={styles.freshness}>{activeExpiryLabel ? `${modeLabel(currentMode)} until ${activeExpiryLabel}. ` : ''}Available and Busy automatically expire to Offline. Choose the live status again to extend it. Service schedules and Business Shop Open/Closed remain separate.</p>
+      {error ? <div className={styles.error} role="alert">{error} <button type="button" onClick={() => void load()}>{t('provider.live.retry')}</button></div> : null}
+      <p className={styles.freshness}>{activeExpiryLabel ? `${liveModeLabel(currentMode)} ${t('provider.live.until')} ${activeExpiryLabel}. ` : ''}{t('provider.live.expiryHelp')}</p>
       <ProviderLiveLocationControl />
     </div> : null}
 
@@ -180,12 +179,12 @@ export default function ProviderLiveAvailabilityControl() {
       type="button"
       className={styles.trigger}
       aria-expanded={expanded}
-      aria-label={`Live work status: ${visibleStatus}. Change status.`}
+      aria-label={`${t('provider.live.statusLabel')}: ${visibleStatus}. ${t('provider.live.changeStatus')}`}
       onClick={() => setExpanded((value) => !value)}
     >
       <span className={`${styles.triggerDot} ${styles[`mode_${currentMode}`]}`} aria-hidden="true">{statusUnavailable ? '!' : currentOption.symbol}</span>
       <span className={styles.triggerCopy}>
-        <small>Live status</small>
+        <small>{t('provider.live.triggerLabel')}</small>
         <strong>{visibleStatus}</strong>
       </span>
       <span className={styles.chevron} aria-hidden="true">{expanded ? '×' : '⌃'}</span>
