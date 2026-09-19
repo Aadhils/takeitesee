@@ -126,7 +126,7 @@ export default function ProductsPage() {
     void fetch(`/api/marketplace/products?${params.toString()}`, { cache: 'no-store', signal: controller.signal })
       .then(async (response) => {
         const payload = await response.json() as ProductPagePayload;
-        if (!response.ok) throw new Error(payload.error || 'Product marketplace unavailable.');
+        if (!response.ok) throw new Error(payload.error || t('publicProvider.productMarketplace.loadError'));
         setProducts(Array.isArray(payload.products) ? payload.products : []);
         const cursor = payload.page?.next_cursor ?? null;
         setNextCursor(cursor);
@@ -134,12 +134,12 @@ export default function ProductsPage() {
       })
       .catch((loadError) => {
         if (controller.signal.aborted) return;
-        setError(loadError instanceof Error ? loadError.message : 'Product marketplace unavailable.');
+        setError(loadError instanceof Error ? loadError.message : t('publicProvider.productMarketplace.loadError'));
       })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
 
     return () => controller.abort();
-  }, [serverQuery, shop, sort, stock, urlReady]);
+  }, [serverQuery, shop, sort, stock, t, urlReady]);
 
   useEffect(() => {
     let cancelled = false;
@@ -154,14 +154,14 @@ export default function ProductsPage() {
         }
         const payload = await response.json() as { saved_products?: SavedProductSummary[]; error?: string };
         if (!cancelled) setSaveAuthenticated(true);
-        if (!response.ok) throw new Error(payload.error || 'Unable to load saved Products.');
+        if (!response.ok) throw new Error(payload.error || t('publicProvider.savedProduct.loadError'));
         if (!cancelled) setSavedProductIds(new Set((payload.saved_products ?? []).map((item) => item.product_id)));
       })
       .catch((cause) => {
-        if (!cancelled) setSaveError(cause instanceof Error ? cause.message : 'Unable to load saved Products.');
+        if (!cancelled) setSaveError(cause instanceof Error ? cause.message : t('publicProvider.savedProduct.loadError'));
       });
     return () => { cancelled = true; };
-  }, []);
+  }, [t]);
 
   const money = (product: Product) => {
     try {
@@ -202,7 +202,7 @@ export default function ProductsPage() {
         return;
       }
       const payload = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(payload.error || (saved ? 'Unable to remove saved Product.' : 'Unable to save Product.'));
+      if (!response.ok) throw new Error(payload.error || (saved ? t('publicProvider.savedProduct.removeError') : t('publicProvider.savedProduct.saveError')));
       setSaveAuthenticated(true);
       setSavedProductIds((current) => {
         const next = new Set(current);
@@ -210,7 +210,7 @@ export default function ProductsPage() {
         return next;
       });
     } catch (cause) {
-      setSaveError(cause instanceof Error ? cause.message : 'Unable to update saved Product.');
+      setSaveError(cause instanceof Error ? cause.message : t('publicProvider.savedProduct.updateError'));
     } finally {
       setSaveBusyId('');
     }
@@ -225,7 +225,7 @@ export default function ProductsPage() {
       const params = buildProductApiParams(serverQuery, stock, shop, sort, cursor);
       const response = await fetch(`/api/marketplace/products?${params.toString()}`, { cache: 'no-store' });
       const payload = await response.json() as ProductPagePayload;
-      if (!response.ok) throw new Error(payload.error || 'Unable to load more Products.');
+      if (!response.ok) throw new Error(payload.error || t('publicProvider.productMarketplace.loadMoreError'));
       const nextProducts = Array.isArray(payload.products) ? payload.products : [];
       setProducts((current) => {
         const ids = new Set(current.map((product) => product.id));
@@ -235,7 +235,7 @@ export default function ProductsPage() {
       setNextCursor(next);
       setHasMore(Boolean(payload.page?.has_more && next));
     } catch (cause) {
-      setLoadMoreError(cause instanceof Error ? cause.message : 'Unable to load more Products.');
+      setLoadMoreError(cause instanceof Error ? cause.message : t('publicProvider.productMarketplace.loadMoreError'));
     } finally {
       setLoadingMore(false);
     }
