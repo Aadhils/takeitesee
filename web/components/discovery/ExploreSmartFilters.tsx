@@ -139,7 +139,7 @@ export default function ExploreSmartFilters({
     if (provider !== 'any') chips.push({ key: 'provider', label: providerLabel, clear: () => onProviderChange('any') });
     if (availability !== 'any') chips.push({ key: 'availability', label: availabilityLabel, clear: () => onAvailabilityChange('any') });
     return chips;
-  }, [availability, availabilityLabel, category, categoryLabel, t('explore.nearMe'), geoActive, locationValue, onAvailabilityChange, onCategoryChange, onClearCurrentLocation, onLocationChange, onPriceChange, onProviderChange, onRatingChange, price, priceLabel, provider, providerLabel, rating, ratingLabel]);
+  }, [availability, availabilityLabel, category, categoryLabel, t, geoActive, locationValue, onAvailabilityChange, onCategoryChange, onClearCurrentLocation, onLocationChange, onPriceChange, onProviderChange, onRatingChange, price, priceLabel, provider, providerLabel, rating, ratingLabel]);
 
   const renderLocationAction = () => geoActive
     ? <button type="button" className={`${styles.locationButton} ${styles.active}`} onClick={onClearCurrentLocation}><PinIcon /><span>{preciseNearbyActive ? t('explore.nearbyRankingClear') : t('explore.clearCurrentLocation')}</span></button>
@@ -198,9 +198,9 @@ export default function ExploreSmartFilters({
     </div> : null}
 
     {sortOpen ? <>
-      <button type="button" className={styles.sortBackdrop} aria-label={t('explore.closeFilterMenu')Sort} onClick={() => setSortOpen(false)} />
+      <button type="button" className={styles.sortBackdrop} aria-label={t('explore.closeSortMenu')} onClick={() => setSortOpen(false)} />
       <section id="explore-sort-menu" className={styles.sortPanel} role="dialog" aria-modal="true" aria-labelledby="explore-sort-title">
-        <div className={styles.sortHeading}><strong id="explore-sort-title">{t('explore.sort')}</strong><button type="button" className={styles.sortClose} onClick={() => setSortOpen(false)} aria-label={t('explore.closeFilterMenu')Sort}><CloseIcon /></button></div>
+        <div className={styles.sortHeading}><strong id="explore-sort-title">{t('explore.sort')}</strong><button type="button" className={styles.sortClose} onClick={() => setSortOpen(false)} aria-label={t('explore.closeSortMenu')}><CloseIcon /></button></div>
         <div className={styles.sortOptions} role="listbox" aria-label={t('explore.sort')}>
           {sortChoices.map((option) => <button type="button" key={option.value} role="option" aria-selected={sort === option.value} className={sort === option.value ? styles.selectedSort : ''} onClick={() => chooseSort(option.value)}><span>{option.label}</span><span className={styles.sortRadio} aria-hidden="true"><i /></span></button>)}
         </div>
