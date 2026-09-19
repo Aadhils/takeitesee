@@ -51,15 +51,15 @@ test('Customer Smart Attention remains mobile-safe and progressive enhancement o
 test('Provider Priority now opens the exact booking needing action', () => {
   assert.ok(providerDashboard.includes("booking.status === 'pending' ? 0 : booking.status === 'rescheduled' ? 1 : 2"));
   assert.ok(providerDashboard.includes('href: `/provider/bookings/${encodeURIComponent(booking.id)}`'));
-  assert.ok(providerDashboard.includes('Confirm ${serviceLabel}'));
-  assert.ok(providerDashboard.includes('Review the new time for ${serviceLabel}'));
-  assert.ok(providerDashboard.includes('Finish the ${serviceLabel} service record'));
-  assert.ok(providerDashboard.includes('[operations.needsAction, operations.upcoming, profile]'));
+  assert.ok(providerDashboard.includes("t('provider.dashboard.confirmPrefix')"));
+  assert.ok(providerDashboard.includes("t('provider.dashboard.reviewNewTimePrefix')"));
+  assert.ok(providerDashboard.includes("t('provider.dashboard.finishServicePrefix')"));
+  assert.ok(providerDashboard.includes('[operations.needsAction, operations.upcoming, profile, t]'));
 });
 
 test('Provider no-action state deep-links to the exact next confirmed service', () => {
   assert.ok(providerDashboard.includes('href: `/provider/bookings/${encodeURIComponent(operations.upcoming[0].id)}`'));
-  assert.ok(providerDashboard.includes("label: 'Your next service is ready'"));
+  assert.ok(providerDashboard.includes("label: t('provider.dashboard.nextServiceReady')"));
 });
 
 
@@ -167,8 +167,8 @@ test('Provider dashboard uses role-aware compact quick actions without mobile du
   assert.ok(providerDashboard.includes('className={styles.providerQuickMore}'));
   assert.ok(providerDashboard.includes('className={styles.providerQuickMoreGrid}'));
   assert.ok(providerDashboard.includes('className={styles.providerQuickMobileRoleGrid}'));
-  assert.ok(providerDashboard.includes('More business tools'));
-  assert.ok(providerDashboard.includes('More career tools'));
+  assert.ok(providerDashboard.includes("t('provider.dashboard.moreBusinessTools')"));
+  assert.ok(providerDashboard.includes("t('provider.dashboard.moreCareerTools')"));
   assert.ok(providerDashboard.includes("href: '/provider/leads'"));
   assert.ok(providerDashboard.includes("href: '/provider/messages'"));
   assert.ok(providerDashboard.includes("href: '/provider/bookings'"));
@@ -191,7 +191,7 @@ test('Provider dashboard avoids repeating the next confirmed service', () => {
   assert.ok(providerDashboard.includes('nextUpcoming && !priorityShowsNextService'));
   assert.ok(providerDashboard.includes('className={styles.nextServiceCompact}'));
   assert.ok(providerDashboard.includes('className={styles.nextServiceAction}'));
-  assert.ok(providerDashboard.includes('aria-label="Next provider service"'));
+  assert.ok(providerDashboard.includes("aria-label={t('provider.dashboard.nextService')}"));
   assert.ok(!providerDashboard.includes('No upcoming bookings yet.'));
   assert.ok(!providerDashboard.includes('<h2>Next bookings</h2>'));
 });
@@ -207,9 +207,9 @@ test('Provider upcoming activity count is not capped to four bookings', () => {
 });
 
 test('Provider booking load failure stays compact instead of restoring a large bookings card', () => {
-  assert.ok(providerDashboard.includes('aria-label="Booking activity status"'));
-  assert.ok(providerDashboard.includes('Booking activity needs a refresh'));
-  assert.ok(providerDashboard.includes('Open bookings'));
+  assert.ok(providerDashboard.includes("aria-label={t('provider.dashboard.bookingStatus')}"));
+  assert.ok(providerDashboard.includes("t('provider.dashboard.bookingRefresh')"));
+  assert.ok(providerDashboard.includes("t('provider.dashboard.openBookings')"));
   assert.ok(!providerDashboard.includes('className={styles.supportGrid}'));
   assert.ok(!providerDashboard.includes('className={styles.bookingList}'));
 });
@@ -220,7 +220,7 @@ test('Provider Priority keeps secondary work as compact follow-up chips', () => 
   assert.ok(providerDashboard.includes('className={styles.followUpRail}'));
   assert.ok(providerDashboard.includes('className={styles.followUpChip}'));
   assert.ok(providerDashboard.includes('className={styles.followUpChipIcon}'));
-  assert.ok(providerDashboard.includes('>Also</span>'));
+  assert.ok(providerDashboard.includes("{t('provider.dashboard.also')}</span>"));
   assert.ok(providerDashboard.includes('aria-label={`${item.label}. ${item.detail}`}'));
   assert.ok(providerDashboard.includes('title={item.detail}'));
   assert.ok(providerDashboard.includes('href={item.href}'));
@@ -230,7 +230,7 @@ test('Provider Priority keeps secondary work as compact follow-up chips', () => 
 });
 
 test('Provider Priority preserves one dominant primary CTA ahead of compact follow-ups', () => {
-  const primaryCta = providerDashboard.indexOf('className="button button-primary">Continue now</Link>');
+  const primaryCta = providerDashboard.indexOf("className=\"button button-primary\">{t('provider.dashboard.continueNow')}</Link>");
   const followUps = providerDashboard.indexOf('className={styles.followUpQueue}');
   assert.ok(primaryCta >= 0);
   assert.ok(followUps > primaryCta);
@@ -244,16 +244,16 @@ test('Provider Activity strip only surfaces meaningful signals', () => {
   assert.ok(providerDashboard.includes("profile.services_active > 0"));
   assert.ok(providerDashboard.includes("providerActivitySignals.map((item)"));
   assert.ok(providerDashboard.includes('className={styles.providerActivityEmpty}'));
-  assert.ok(providerDashboard.includes('Activity starts when your first service is live'));
-  assert.ok(providerDashboard.includes('No live marketplace activity right now'));
-  assert.ok(!providerDashboard.includes('<span>Needs action</span><strong>{bookingsError'));
-  assert.ok(!providerDashboard.includes('<span>Upcoming</span><strong>{bookingsError'));
+  assert.ok(providerDashboard.includes("t('provider.dashboard.activityStarts')"));
+  assert.ok(providerDashboard.includes("t('provider.dashboard.noLiveActivity')"));
+  assert.ok(providerDashboard.includes("t('provider.dashboard.needsAction')"));
+  assert.ok(providerDashboard.includes("t('provider.dashboard.upcoming')"));
 });
 
 test('Provider booking load errors do not create fake activity counts', () => {
   assert.ok(providerDashboard.includes("...(!bookingsError && operations.needsAction.length > 0"));
   assert.ok(providerDashboard.includes("...(!bookingsError && operations.upcoming.length > 0"));
-  assert.ok(providerDashboard.includes('Booking activity needs a refresh'));
+  assert.ok(providerDashboard.includes("t('provider.dashboard.bookingRefresh')"));
 });
 
 
