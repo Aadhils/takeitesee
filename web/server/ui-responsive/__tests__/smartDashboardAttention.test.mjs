@@ -228,3 +228,23 @@ test('Provider Priority preserves one dominant primary CTA ahead of compact foll
   assert.ok(primaryCta >= 0);
   assert.ok(followUps > primaryCta);
 });
+
+
+test('Provider Activity strip only surfaces meaningful signals', () => {
+  assert.ok(providerDashboard.includes('const providerActivitySignals = profile'));
+  assert.ok(providerDashboard.includes("operations.needsAction.length > 0"));
+  assert.ok(providerDashboard.includes("operations.upcoming.length > 0"));
+  assert.ok(providerDashboard.includes("profile.services_active > 0"));
+  assert.ok(providerDashboard.includes("providerActivitySignals.map((item)"));
+  assert.ok(providerDashboard.includes('className={styles.providerActivityEmpty}'));
+  assert.ok(providerDashboard.includes('Activity starts when your first service is live'));
+  assert.ok(providerDashboard.includes('No live marketplace activity right now'));
+  assert.ok(!providerDashboard.includes('<span>Needs action</span><strong>{bookingsError'));
+  assert.ok(!providerDashboard.includes('<span>Upcoming</span><strong>{bookingsError'));
+});
+
+test('Provider booking load errors do not create fake activity counts', () => {
+  assert.ok(providerDashboard.includes("...(!bookingsError && operations.needsAction.length > 0"));
+  assert.ok(providerDashboard.includes("...(!bookingsError && operations.upcoming.length > 0"));
+  assert.ok(providerDashboard.includes('Booking activity needs a refresh'));
+});
