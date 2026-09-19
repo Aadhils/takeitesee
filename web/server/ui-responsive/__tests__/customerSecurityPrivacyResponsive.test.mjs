@@ -43,5 +43,5 @@ test('Customer Privacy workflow contracts remain present', () => {
   assert.ok(privacyRouteSource.includes("request_type: requestType"));
   assert.ok(privacyRouteSource.includes("'access' | 'correction' | 'deletion'"));
   assert.ok(privacyRouteSource.includes('/login?returnTo=%2Faccount%2Fprivacy'));
-  assert.ok(privacyRouteSource.includes('A deletion request does not immediately delete your account'));
+  assert.ok(privacyRouteSource.includes("t('privacy.new.deletionNotice')"));
 });

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
 import styles from '../../../components/account/CustomerSecurityPrivacyResponsive.module.css';
 import { Badge, Button, Card, Select, Textarea } from '../../../components/ui/primitives';
-import { useOperationalTranslations } from '../../../components/i18n/OperationalTranslations';
+import { useAccountPrivacyTranslations } from '../../../components/i18n/AccountPrivacyTranslations';
 import { getCurrentCustomerAsync } from '../../../services/auth-adapter';
 
 type PrivacyRequest = {
@@ -18,10 +18,10 @@ type PrivacyRequest = {
   resolved_at: string | null;
 };
 
-async function readRequests(): Promise<PrivacyRequest[]> {
+async function readRequests(loadFallback: string): Promise<PrivacyRequest[]> {
   const response = await fetch('/api/account/privacy-requests', { cache: 'no-store', headers: { Accept: 'application/json' } });
   const payload = await response.json() as { requests?: PrivacyRequest[]; error?: string };
-  if (!response.ok) throw new Error(payload.error ?? 'Unable to load privacy requests.');
+  if (!response.ok) throw new Error(payload.error ?? loadFallback);
   return payload.requests ?? [];
 }
 
@@ -32,13 +32,8 @@ function statusTone(status: PrivacyRequest['status']): 'neutral' | 'success' | '
   return 'info';
 }
 
-function humanStatus(status: PrivacyRequest['status']) {
-  return status.replaceAll('_', ' ');
-}
-
 export default function AccountPrivacyPage() {
-  const { locale } = useOperationalTranslations();
-  const tamil = locale === 'ta-IN';
+  const { locale, t } = useAccountPrivacyTranslations();
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [requests, setRequests] = useState<PrivacyRequest[]>([]);
   const [requestType, setRequestType] = useState<PrivacyRequest['request_type']>('access');
@@ -47,6 +42,7 @@ export default function AccountPrivacyPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const loadFallback = t('privacy.loadFallback');
 
   useEffect(() => {
     let active = true;
@@ -56,23 +52,23 @@ export default function AccountPrivacyPage() {
         if (!active) return;
         setAuthenticated(auth.authenticated);
         if (!auth.authenticated) return;
-        const current = await readRequests();
+        const current = await readRequests(loadFallback);
         if (active) setRequests(current);
       } catch (cause) {
-        if (active) setError(cause instanceof Error ? cause.message : 'Unable to load privacy requests.');
+        if (active) setError(cause instanceof Error ? cause.message : loadFallback);
       } finally {
         if (active) setLoading(false);
       }
     })();
     return () => { active = false; };
-  }, []);
+  }, [loadFallback]);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (submitting) return;
     const normalizedDetails = details.trim();
     if (normalizedDetails.length < 10) {
-      setError(tamil ? 'குறைந்தது 10 characters கொண்ட விவரத்தை எழுதவும்.' : 'Enter at least 10 characters describing your request.');
+      setError(t('privacy.validation.minDetails'));
       return;
     }
 
@@ -86,33 +82,43 @@ export default function AccountPrivacyPage() {
         body: JSON.stringify({ request_type: requestType, details: normalizedDetails }),
       });
       const payload = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(payload.error ?? 'Unable to submit privacy request.');
+      if (!response.ok) throw new Error(payload.error ?? t('privacy.submitFallback'));
       setDetails('');
-      setRequests(await readRequests());
-      setSuccess(tamil ? 'உங்கள் privacy request பாதுகாப்பாக பதிவு செய்யப்பட்டது.' : 'Your privacy request has been recorded securely.');
+      setRequests(await readRequests(loadFallback));
+      setSuccess(t('privacy.success.recorded'));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to submit privacy request.');
+      setError(cause instanceof Error ? cause.message : t('privacy.submitFallback'));
     } finally {
       setSubmitting(false);
     }
   };
 
   const typeLabel = (type: PrivacyRequest['request_type']) => {
-    if (type === 'access') return tamil ? 'தகவல் அணுகல்' : 'Access to my information';
-    if (type === 'correction') return tamil ? 'தகவல் திருத்தம்' : 'Correction of my information';
-    return tamil ? 'Account / தகவல் நீக்க கோரிக்கை' : 'Account / information deletion request';
+    if (type === 'access') return t('privacy.type.access');
+    if (type === 'correction') return t('privacy.type.correction');
+    return t('privacy.type.deletion');
   };
 
-  if (authenticated === null && loading) return <div className={styles.securityPrivacyJourney}><Card><p>{tamil ? 'உங்கள் account-ஐ சரிபார்க்கிறது…' : 'Checking your account…'}</p></Card></div>;
+  const statusLabel = (status: PrivacyRequest['status']) => {
+    if (status === 'submitted') return t('privacy.status.submitted');
+    if (status === 'in_review') return t('privacy.status.inReview');
+    if (status === 'awaiting_information') return t('privacy.status.awaitingInformation');
+    if (status === 'completed') return t('privacy.status.completed');
+    return t('privacy.status.declined');
+  };
+
+  if (authenticated === null && loading) {
+    return <div className={styles.securityPrivacyJourney}><Card><p>{t('privacy.checking')}</p></Card></div>;
+  }
 
   if (authenticated === false) {
     return <div className={styles.securityPrivacyJourney}><main className="container section-stack">
       <Card>
-        <h1>{tamil ? 'Privacy requests-க்கு sign in செய்யவும்' : 'Sign in to manage privacy requests'}</h1>
-        <p>{tamil ? 'உங்கள் தனிப்பட்ட தகவலுக்கான access, correction அல்லது deletion request submit செய்ய sign in செய்யவும்.' : 'Sign in to submit access, correction, or deletion requests for your personal information.'}</p>
+        <h1>{t('privacy.auth.title')}</h1>
+        <p>{t('privacy.auth.body')}</p>
         <div className="button-row">
-          <Link className="button button-primary" href="/login?returnTo=%2Faccount%2Fprivacy">{tamil ? 'Sign in' : 'Sign in'}</Link>
-          <Link className="button button-secondary" href="/privacy">{tamil ? 'Privacy Policy பார்க்க' : 'View Privacy Policy'}</Link>
+          <Link className="button button-primary" href="/login?returnTo=%2Faccount%2Fprivacy">{t('privacy.auth.signIn')}</Link>
+          <Link className="button button-secondary" href="/privacy">{t('privacy.auth.viewPolicy')}</Link>
         </div>
       </Card>
     </main></div>;
@@ -120,52 +126,52 @@ export default function AccountPrivacyPage() {
 
   return <div className={styles.securityPrivacyJourney}><main className="container section-stack">
     <section className="page-intro">
-      <span className="eyebrow">{tamil ? 'Account privacy' : 'Account privacy'}</span>
-      <h1>{tamil ? 'உங்கள் privacy requests-ஐ நிர்வகிக்கவும்' : 'Manage your privacy requests'}</h1>
-      <p>{tamil ? 'உங்கள் தகவலை access செய்ய, திருத்த அல்லது eligible தகவலை நீக்க review request submit செய்யலாம்.' : 'Submit a request to access, correct, or review deletion of eligible personal information.'}</p>
+      <span className="eyebrow">{t('privacy.eyebrow')}</span>
+      <h1>{t('privacy.title')}</h1>
+      <p>{t('privacy.intro')}</p>
     </section>
 
     <Card>
-      <h2>{tamil ? 'புதிய request' : 'New request'}</h2>
-      <p>{tamil ? 'Deletion request account-ஐ உடனடியாக delete செய்யாது. சட்டபூர்வ retention, security, audit மற்றும் unresolved obligations review செய்யப்பட்ட பிறகே eligible deletion process செய்யப்படும்.' : 'A deletion request does not immediately delete your account. Eligible deletion is reviewed against legal retention, security, audit, and unresolved-obligation requirements before processing.'}</p>
+      <h2>{t('privacy.new.title')}</h2>
+      <p>{t('privacy.new.deletionNotice')}</p>
       <form onSubmit={submit} className="section-stack">
-        <Select label={tamil ? 'Request வகை' : 'Request type'} value={requestType} onChange={(event) => setRequestType(event.target.value as PrivacyRequest['request_type'])}>
+        <Select label={t('privacy.form.type')} value={requestType} onChange={(event) => setRequestType(event.target.value as PrivacyRequest['request_type'])}>
           <option value="access">{typeLabel('access')}</option>
           <option value="correction">{typeLabel('correction')}</option>
           <option value="deletion">{typeLabel('deletion')}</option>
         </Select>
-        <Textarea label={tamil ? 'Request விவரம்' : 'Request details'} required maxLength={2000} value={details} onChange={(event) => setDetails(event.target.value)} hint={tamil ? 'எதை access / correct / delete செய்ய வேண்டும் என்பதை தெளிவாக எழுதவும். 10–2000 characters.' : 'Describe what you want us to access, correct, or review for deletion. 10–2000 characters.'} />
+        <Textarea label={t('privacy.form.details')} required maxLength={2000} value={details} onChange={(event) => setDetails(event.target.value)} hint={t('privacy.form.hint')} />
         {error ? <p className="field-error" role="alert">{error}</p> : null}
         {success ? <div className="alert alert-success" role="status"><strong>{success}</strong></div> : null}
         <div className="button-row">
-          <Button type="submit" loading={submitting}>{tamil ? 'Privacy request submit செய்' : 'Submit privacy request'}</Button>
-          <Link className="button button-secondary" href="/privacy">{tamil ? 'Privacy Policy' : 'Privacy Policy'}</Link>
+          <Button type="submit" loading={submitting}>{t('privacy.form.submit')}</Button>
+          <Link className="button button-secondary" href="/privacy">{t('privacy.form.policy')}</Link>
         </div>
       </form>
     </Card>
 
     <section className="section-stack">
       <div>
-        <span className="eyebrow">{tamil ? 'Request history' : 'Request history'}</span>
-        <h2>{tamil ? 'உங்கள் requests' : 'Your requests'}</h2>
+        <span className="eyebrow">{t('privacy.history.eyebrow')}</span>
+        <h2>{t('privacy.history.title')}</h2>
       </div>
-      {loading ? <Card><p>{tamil ? 'Requests load ஆகிறது…' : 'Loading requests…'}</p></Card> : null}
-      {!loading && requests.length === 0 ? <Card><p>{tamil ? 'Privacy requests இன்னும் இல்லை.' : 'You have not submitted any privacy requests yet.'}</p></Card> : null}
+      {loading ? <Card><p>{t('privacy.history.loading')}</p></Card> : null}
+      {!loading && requests.length === 0 ? <Card><p>{t('privacy.history.empty')}</p></Card> : null}
       {requests.map((item) => <Card key={item.id}>
         <div className="admin-record-top">
           <div>
             <span className="eyebrow">PR-{item.id.slice(0, 8).toUpperCase()}</span>
             <h3>{typeLabel(item.request_type)}</h3>
           </div>
-          <Badge tone={statusTone(item.status)}>{humanStatus(item.status)}</Badge>
+          <Badge tone={statusTone(item.status)}>{statusLabel(item.status)}</Badge>
         </div>
         <p>{item.details}</p>
         <dl className="account-details">
-          <div><dt>{tamil ? 'Submitted' : 'Submitted'}</dt><dd>{new Date(item.created_at).toLocaleString(locale)}</dd></div>
-          <div><dt>{tamil ? 'Last update' : 'Last update'}</dt><dd>{new Date(item.updated_at).toLocaleString(locale)}</dd></div>
-          {item.resolved_at ? <div><dt>{tamil ? 'Resolved' : 'Resolved'}</dt><dd>{new Date(item.resolved_at).toLocaleString(locale)}</dd></div> : null}
+          <div><dt>{t('privacy.meta.submitted')}</dt><dd>{new Date(item.created_at).toLocaleString(locale)}</dd></div>
+          <div><dt>{t('privacy.meta.lastUpdate')}</dt><dd>{new Date(item.updated_at).toLocaleString(locale)}</dd></div>
+          {item.resolved_at ? <div><dt>{t('privacy.meta.resolved')}</dt><dd>{new Date(item.resolved_at).toLocaleString(locale)}</dd></div> : null}
         </dl>
-        {item.review_note ? <div className="settings-note"><strong>{tamil ? 'Review note' : 'Review note'}</strong><p>{item.review_note}</p></div> : null}
+        {item.review_note ? <div className="settings-note"><strong>{t('privacy.meta.reviewNote')}</strong><p>{item.review_note}</p></div> : null}
       </Card>)}
     </section>
   </main></div>;
