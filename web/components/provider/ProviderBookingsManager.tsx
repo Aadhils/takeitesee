@@ -21,8 +21,20 @@ type ProviderBooking = {
   attendance_outcome: AttendanceOutcome; closeout_state?: 'open' | 'awaiting_customer' | 'support_open' | 'eligible_to_close' | 'closed'; closed_at?: string;
 };
 
-const declineReasons = ['Schedule conflict', 'Service unavailable', 'Outside service area', 'Unable to fulfil request', 'Other'];
-const rescheduleDeclineReasons = ['New time unavailable', 'Schedule conflict', 'Unable to fulfil at requested time', 'Service unavailable', 'Other'];
+const declineReasonKeys: OperationalKey[] = [
+  'provider.reason.scheduleConflict',
+  'provider.reason.serviceUnavailable',
+  'provider.reason.outsideServiceArea',
+  'provider.reason.unableFulfil',
+  'provider.reason.other',
+];
+const rescheduleDeclineReasonKeys: OperationalKey[] = [
+  'provider.reason.newTimeUnavailable',
+  'provider.reason.scheduleConflict',
+  'provider.reason.unableRequestedTime',
+  'provider.reason.serviceUnavailable',
+  'provider.reason.other',
+];
 
 function zonedDateTimeToEpoch(date: string, time: string, timeZone: string) {
   try {
@@ -101,48 +113,33 @@ export default function ProviderBookingsManager() {
 
   const money = (booking: ProviderBooking) => new Intl.NumberFormat(locale, { style: 'currency', currency: booking.currency, maximumFractionDigits: 2 }).format(booking.quoted_price);
   const queueLabel = (booking: ProviderBooking) => {
-    if (booking.closeout_state === 'closed') return locale === 'ta-IN' ? 'இறுதி history' : 'final history';
-    if (booking.closeout_state === 'eligible_to_close') return locale === 'ta-IN' ? 'final closeout நிலுவையில்' : 'final closeout pending';
+    if (booking.closeout_state === 'closed') return t('provider.queue.finalHistory');
+    if (booking.closeout_state === 'eligible_to_close') return t('provider.queue.finalCloseoutPending');
     if (booking.attendance_outcome === 'customer_no_show') return status('customer_no_show');
     if (booking.attendance_outcome === 'provider_no_show') return status('provider_no_show');
-    if (booking.closeout_state === 'support_open') return locale === 'ta-IN' ? 'support நடைபெறுகிறது' : 'support in progress';
-    if (booking.status === 'completed' && booking.closeout_state === 'awaiting_customer') return locale === 'ta-IN' ? 'customer உறுதி நிலுவையில்' : 'awaiting customer';
-    if (booking.status === 'completed' && booking.closeout_state === 'open') return locale === 'ta-IN' ? 'customer உறுதிசெய்தார்' : 'customer acknowledged';
-    if (booking.status === 'completed') return locale === 'ta-IN' ? 'சேவை முடிந்தது' : 'service completed';
-    if (booking.status === 'pending') return locale === 'ta-IN' ? 'புதிய கோரிக்கை' : 'new request';
+    if (booking.closeout_state === 'support_open') return t('provider.queue.supportInProgress');
+    if (booking.status === 'completed' && booking.closeout_state === 'awaiting_customer') return t('provider.queue.awaitingCustomer');
+    if (booking.status === 'completed' && booking.closeout_state === 'open') return t('provider.queue.customerAcknowledged');
+    if (booking.status === 'completed') return t('provider.queue.serviceCompleted');
+    if (booking.status === 'pending') return t('provider.queue.newRequest');
     if (booking.status === 'rescheduled') return t('provider.rescheduleRequest');
-    if (booking.status === 'confirmed' && bookingEndEpoch(booking) <= now) return locale === 'ta-IN' ? 'completion செய்ய வேண்டும்' : 'completion due';
+    if (booking.status === 'confirmed' && bookingEndEpoch(booking) <= now) return t('provider.queue.completionDue');
     return status(booking.status);
   };
   const operationalNote = (booking: ProviderBooking) => {
-    if (locale === 'ta-IN') {
-      if (booking.closeout_state === 'closed') return 'Service lifecycle final history-ஆக மூடப்பட்டுள்ளது.';
-      if (booking.closeout_state === 'eligible_to_close') return 'Service-side work முடிந்துள்ளது; final lifecycle closeout இன்னும் நிலுவையில் உள்ளது.';
-      if (booking.attendance_outcome === 'customer_no_show') return 'வாடிக்கையாளர் no-show பதிவு செய்யப்பட்டது. Completion lock செய்யப்பட்டுள்ளது; dispute-ஐ support கையாளும்.';
-      if (booking.attendance_outcome === 'provider_no_show') return 'Provider no-show report செய்யப்பட்டுள்ளது; support follow-up தேவை.';
-      if (booking.closeout_state === 'support_open') return 'Customer support issue active-ஆ உள்ளது. Booking details-ல் coordination மற்றும் support status-ஐ தொடருங்கள்.';
-      if (booking.status === 'completed' && booking.closeout_state === 'awaiting_customer') return 'Service complete என்று பதிவு செய்துள்ளீர்கள்; customer completion confirmation அல்லது issue response காத்திருக்கிறது.';
-      if (booking.status === 'completed' && booking.closeout_state === 'open') return 'Customer completion-ஐ உறுதி செய்துள்ளார்; review/support follow-up window இன்னும் இருக்கலாம்.';
-      if (booking.status === 'pending') return 'புதிய வாடிக்கையாளர் கோரிக்கைக்கு உங்கள் பதில் தேவை.';
-      if (booking.status === 'rescheduled') return 'வாடிக்கையாளர் புதிய நேரம் கேட்டுள்ளார். புதுப்பிக்கப்பட்ட schedule-ஐ உறுதி செய்யவும் அல்லது நிராகரிக்கவும்.';
-      if (booking.status === 'confirmed' && bookingEndEpoch(booking) <= now) return 'திட்டமிட்ட சேவை நேரம் முடிந்தது. சேவை வழங்கப்பட்டிருந்தால் completed என குறிக்கவும்; இல்லையெனில் booking details-ல் customer no-show பதிவு செய்யவும்.';
-      if (booking.status === 'confirmed') return 'உறுதி செய்யப்பட்ட வரவிருக்கும் வேலை.';
-      if (booking.status === 'completed') return 'Service முடிந்துள்ளது; final lifecycle closeout தனியாக தொடர்ந்து நடைபெறும்.';
-      return 'புக்கிங் ரத்து செய்யப்பட்டது.';
-    }
-    if (booking.closeout_state === 'closed') return 'The service lifecycle is closed and retained as final history.';
-    if (booking.closeout_state === 'eligible_to_close') return 'Service-side work is complete; final lifecycle closeout is still pending.';
-    if (booking.attendance_outcome === 'customer_no_show') return 'Customer no-show recorded. Completion is locked; support handles any dispute.';
-    if (booking.attendance_outcome === 'provider_no_show') return 'Provider no-show was reported and support follow-up is required.';
-    if (booking.closeout_state === 'support_open') return 'A customer support issue is active. Continue coordination and follow the support status from booking details.';
-    if (booking.status === 'completed' && booking.closeout_state === 'awaiting_customer') return 'You marked the service complete; customer completion confirmation or an issue response is still pending.';
-    if (booking.status === 'completed' && booking.closeout_state === 'open') return 'The customer acknowledged completion; the review/support follow-up window may still be active.';
-    if (booking.status === 'pending') return 'New customer request needs your response.';
-    if (booking.status === 'rescheduled') return 'Customer requested this new time. Confirm or decline the updated schedule.';
-    if (booking.status === 'confirmed' && bookingEndEpoch(booking) <= now) return 'The scheduled service ended. Mark completed if delivered, or record a customer no-show from booking details.';
-    if (booking.status === 'confirmed') return 'Confirmed upcoming work.';
-    if (booking.status === 'completed') return 'Service is completed; final lifecycle closeout continues separately.';
-    return 'Booking cancelled.';
+    if (booking.closeout_state === 'closed') return t('provider.note.closed');
+    if (booking.closeout_state === 'eligible_to_close') return t('provider.note.eligibleToClose');
+    if (booking.attendance_outcome === 'customer_no_show') return t('provider.note.customerNoShow');
+    if (booking.attendance_outcome === 'provider_no_show') return t('provider.note.providerNoShow');
+    if (booking.closeout_state === 'support_open') return t('provider.note.supportOpen');
+    if (booking.status === 'completed' && booking.closeout_state === 'awaiting_customer') return t('provider.note.awaitingCustomer');
+    if (booking.status === 'completed' && booking.closeout_state === 'open') return t('provider.note.customerAcknowledged');
+    if (booking.status === 'pending') return t('provider.note.newRequest');
+    if (booking.status === 'rescheduled') return t('provider.note.rescheduled');
+    if (booking.status === 'confirmed' && bookingEndEpoch(booking) <= now) return t('provider.note.completionDue');
+    if (booking.status === 'confirmed') return t('provider.note.confirmed');
+    if (booking.status === 'completed') return t('provider.note.completed');
+    return t('provider.note.cancelled');
   };
 
   const load = useCallback(async () => {
@@ -150,11 +147,11 @@ export default function ProviderBookingsManager() {
     try {
       const response = await fetch('/api/provider/bookings', { cache: 'no-store' });
       const payload = await response.json() as { bookings?: ProviderBooking[]; error?: string };
-      if (!response.ok || !payload.bookings) throw new Error(payload.error ?? 'Unable to load bookings.');
+      if (!response.ok || !payload.bookings) throw new Error(payload.error ?? t('provider.loadFallback'));
       setItems(payload.bookings);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to load bookings.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : t('provider.loadFallback')); }
     finally { setLoading(false); }
-  }, []);
+  }, [t]);
 
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
@@ -196,10 +193,10 @@ export default function ProviderBookingsManager() {
     try {
       const response = await fetch(`/api/provider/bookings/${encodeURIComponent(bookingId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, reason }) });
       const payload = await response.json() as { booking?: ProviderBooking; error?: string };
-      if (!response.ok || !payload.booking) throw new Error(payload.error ?? 'Unable to update booking.');
+      if (!response.ok || !payload.booking) throw new Error(payload.error ?? t('provider.updateFallback'));
       setItems((current) => current.map((booking) => booking.id === bookingId ? payload.booking! : booking));
       return true;
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to update booking.'); return false; }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : t('provider.updateFallback')); return false; }
     finally { setBusyId(null); }
   };
 
@@ -217,8 +214,8 @@ export default function ProviderBookingsManager() {
     <ProviderHeading eyebrow={t('provider.operations')} title={t('provider.bookings')} description={t('provider.bookingsIntro')} />
 
     <Card style={{ padding: '1rem', marginBottom: '1rem' }}>
-      <strong>{locale === 'ta-IN' ? 'Completed மற்றும் final history வேறு states' : 'Completed and final history are separate states'}</strong>
-      <p className="summary-note" style={{ margin: '.35rem 0 0' }}>{locale === 'ta-IN' ? 'Completed queue என்பது service delivery முடிந்த பிறகான customer acknowledgement/support follow-up. Closeout queue என்பது no-show அல்லது final lifecycle outcome/history.' : 'Completed is the post-service customer acknowledgement/support follow-up queue. Closeout contains no-show outcomes and records that reached the final lifecycle stage.'}</p>
+      <strong>{t('provider.historyExplainerTitle')}</strong>
+      <p className="summary-note" style={{ margin: '.35rem 0 0' }}>{t('provider.historyExplainerHelp')}</p>
     </Card>
 
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '.75rem', marginBottom: '1rem' }}>
@@ -236,11 +233,11 @@ export default function ProviderBookingsManager() {
         <Select label={t('common.date')} value={dateScope} onChange={(event) => setDateScope(event.target.value as DateScope)}><option value="all">{t('provider.allDates')}</option><option value="today">{t('common.today')}</option><option value="7d">{t('provider.next7')}</option><option value="30d">{t('provider.next30')}</option></Select>
         <Select label={t('common.payment')} value={paymentFilter} onChange={(event) => setPaymentFilter(event.target.value as 'all' | PaymentStatus)}><option value="all">{t('provider.anyPayment')}</option><option value="unpaid">{status('unpaid')}</option><option value="pending">{status('pending')}</option><option value="paid">{status('paid')}</option><option value="failed">{status('failed')}</option><option value="refunded">{status('refunded')}</option></Select>
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '.75rem', alignItems: 'center', marginTop: '.9rem' }}><span className="provider-fixture-note">{locale === 'ta-IN' ? `${items.length} புக்கிங்களில் ${visible.length} காட்டப்படுகிறது` : `${visible.length} of ${items.length} booking${items.length === 1 ? '' : 's'} shown`}</span><Button type="button" variant="quiet" onClick={resetView}>{t('provider.reset')}</Button></div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '.75rem', alignItems: 'center', marginTop: '.9rem' }}><span className="provider-fixture-note">{visible.length} / {items.length} {t(items.length === 1 ? 'provider.bookingSingular' : 'provider.bookingPlural')} {t('provider.shown')}</span><Button type="button" variant="quiet" onClick={resetView}>{t('provider.reset')}</Button></div>
     </Card>
 
     {error ? <Card><p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>{t('common.tryAgain')}</Button></Card> : null}
-    {loading ? <Card><p>{locale === 'ta-IN' ? 'வழங்குநர் புக்கிங்ஸ் ஏற்றப்படுகின்றன…' : 'Loading provider bookings…'}</p></Card> : visible.length ? <div className="provider-booking-list">
+    {loading ? <Card><p>{t('provider.loadingBookings')}</p></Card> : visible.length ? <div className="provider-booking-list">
       {visible.map((booking) => {
         const actionableRequest = booking.status === 'pending' || booking.status === 'rescheduled';
         const rescheduleRequest = booking.status === 'rescheduled';
@@ -264,10 +261,8 @@ export default function ProviderBookingsManager() {
       open={Boolean(declineTarget)}
       eyebrow={declineTarget?.status === 'rescheduled' ? t('provider.declineNewTime') : t('provider.declineBooking')}
       title={declineTarget ? (declineTarget.status === 'rescheduled' ? `${t('provider.declineNewTime')}: ${declineTarget.service_name}?` : `${t('provider.declineBooking')}: ${declineTarget.service_name}?`) : `${t('provider.declineBooking')}?`}
-      description={declineTarget?.status === 'rescheduled'
-        ? (locale === 'ta-IN' ? 'புதிய நேரத்தை ஏற்க முடியாத காரணத்தை தேர்வு செய்யுங்கள். இந்த reschedule-ஐ நிராகரித்தால் பழைய slot ஏற்கனவே release செய்யப்பட்டதால் booking ரத்து செய்யப்படும்.' : 'Choose why the new time cannot be accepted. Declining this reschedule cancels the booking because the previous slot has already been released.')
-        : (locale === 'ta-IN' ? 'மிகத் தெளிவான காரணத்தை தேர்வு செய்யுங்கள். Support மற்றும் audit history-க்காக booking lifecycle-ல் அது சேமிக்கப்படும்.' : 'Choose the clearest reason. It will be saved in the booking lifecycle for support and audit history.')}
-      options={declineTarget?.status === 'rescheduled' ? rescheduleDeclineReasons : declineReasons}
+      description={declineTarget?.status === 'rescheduled' ? t('provider.declineNewTimeHelp') : t('provider.declineBookingHelp')}
+      options={(declineTarget?.status === 'rescheduled' ? rescheduleDeclineReasonKeys : declineReasonKeys).map((key) => t(key))}
       confirmLabel={declineTarget?.status === 'rescheduled' ? t('provider.declineNewTime') : t('provider.declineBooking')}
       busy={Boolean(declineTarget && busyId === declineTarget.id)}
       onClose={() => setDeclineTarget(null)}
