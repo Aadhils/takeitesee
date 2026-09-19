@@ -134,7 +134,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
               </select>
             </label>
             {!isProviderWorkspace ? <Link href="/requirements" className="header-requirement">{t('nav.postRequirement')}</Link> : null}
-            {currentUser ? <GlobalWorkspaceSwitcher fallbackName={currentUser.name} tamil={isTamil} attentionCount={proposalUnreadCount} attentionLabel={proposalBadgeLabel} /> : <Link href={accountAttentionHref} className="header-login">
+            {currentUser ? <GlobalWorkspaceSwitcher fallbackName={currentUser.name} attentionCount={proposalUnreadCount} attentionLabel={proposalBadgeLabel} /> : <Link href={accountAttentionHref} className="header-login">
               <span className="header-account-icon" aria-hidden="true"><ShellIcon name="account" /></span>
               <span className="header-login-label">{t('nav.account')}</span>
             </Link>}
