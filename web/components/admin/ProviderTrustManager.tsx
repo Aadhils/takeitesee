@@ -6,33 +6,204 @@ import { Badge, Button, Card, EmptyState, Input } from '../ui/primitives';
 import { useAdminControlTranslations } from '../i18n/AdminControlTranslations';
 
 type TrustStatus = 'normal' | 'reverification_required' | 'suspended';
-type ProviderTrust = { trust_state_id: string; provider_type: 'professional' | 'business'; provider_id: string; owner_user_id: string; display_name: string; verified: boolean; status: TrustStatus; reason?: string | null; active_services: number; updated_at: string; };
+type ProviderTrust = {
+  trust_state_id: string;
+  provider_type: 'professional' | 'business';
+  provider_id: string;
+  owner_user_id: string;
+  display_name: string;
+  verified: boolean;
+  status: TrustStatus;
+  reason?: string | null;
+  active_services: number;
+  updated_at: string;
+};
 type TrustAction = 'require_reverification' | 'suspend' | 'restore';
-function tone(status: TrustStatus) { if (status === 'normal') return 'success' as const; if (status === 'reverification_required') return 'warning' as const; return 'danger' as const; }
+
+function tone(status: TrustStatus) {
+  if (status === 'normal') return 'success' as const;
+  if (status === 'reverification_required') return 'warning' as const;
+  return 'danger' as const;
+}
 
 export default function ProviderTrustManager() {
   const { locale, t } = useAdminControlTranslations();
-  const tamil = locale.toLowerCase().startsWith('ta');
-  const [items, setItems] = useState<ProviderTrust[]>([]); const [search, setSearch] = useState(''); const [reason, setReason] = useState<Record<string,string>>({}); const [busyId, setBusyId] = useState<string | null>(null); const [loading, setLoading] = useState(true); const [error, setError] = useState('');
-  const load = useCallback(async () => { setLoading(true); setError(''); try { const response = await fetch('/api/super-admin/provider-trust', { cache: 'no-store' }); const body = await response.json() as { providers?: ProviderTrust[]; error?: string }; if (!response.ok || !body.providers) throw new Error(body.error ?? 'Unable to load provider trust state.'); setItems(body.providers); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to load provider trust state.'); } finally { setLoading(false); } }, []);
+  const [items, setItems] = useState<ProviderTrust[]>([]);
+  const [search, setSearch] = useState('');
+  const [reason, setReason] = useState<Record<string, string>>({});
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch('/api/super-admin/provider-trust', { cache: 'no-store' });
+      const body = await response.json() as { providers?: ProviderTrust[]; error?: string };
+      if (!response.ok || !body.providers) throw new Error(body.error ?? t('trust.loadFallback'));
+      setItems(body.providers);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : t('trust.loadFallback'));
+    } finally {
+      setLoading(false);
+    }
+  }, [t]);
+
   useEffect(() => { void load(); }, [load]);
-  const act = async (item: ProviderTrust, action: TrustAction) => { if (busyId) return; const actionReason = (reason[item.trust_state_id] ?? '').trim(); if (actionReason.length < 3) { setError('Enter a clear reason before changing provider trust state.'); return; } setBusyId(item.trust_state_id); setError(''); try { const response = await fetch('/api/super-admin/provider-trust', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ provider_type: item.provider_type, provider_id: item.provider_id, action, reason: actionReason }) }); const body = await response.json() as { error?: string }; if (!response.ok) throw new Error(body.error ?? 'Provider trust action failed.'); setReason((current) => ({ ...current, [item.trust_state_id]: '' })); await load(); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Provider trust action failed.'); } finally { setBusyId(null); } };
-  const counts = useMemo(() => ({ normal: items.filter((item) => item.status === 'normal').length, review: items.filter((item) => item.status === 'reverification_required').length, suspended: items.filter((item) => item.status === 'suspended').length }), [items]);
-  const visible = useMemo(() => { const query = search.trim().toLowerCase(); if (!query) return items; return items.filter((item) => `${item.display_name} ${item.provider_type} ${item.status}`.toLowerCase().includes(query)); }, [items, search]);
-  const statusLabel = (status: TrustStatus) => status === 'normal' ? t('trust.normal') : status === 'reverification_required' ? t('trust.reverification') : t('trust.suspended');
+
+  const act = async (item: ProviderTrust, action: TrustAction) => {
+    if (busyId) return;
+    const actionReason = (reason[item.trust_state_id] ?? '').trim();
+    if (actionReason.length < 3) {
+      setError(t('trust.reasonRequired'));
+      return;
+    }
+    setBusyId(item.trust_state_id);
+    setError('');
+    try {
+      const response = await fetch('/api/super-admin/provider-trust', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider_type: item.provider_type,
+          provider_id: item.provider_id,
+          action,
+          reason: actionReason,
+        }),
+      });
+      const body = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(body.error ?? t('trust.actionFailed'));
+      setReason((current) => ({ ...current, [item.trust_state_id]: '' }));
+      await load();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : t('trust.actionFailed'));
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const counts = useMemo(() => ({
+    normal: items.filter((item) => item.status === 'normal').length,
+    review: items.filter((item) => item.status === 'reverification_required').length,
+    suspended: items.filter((item) => item.status === 'suspended').length,
+  }), [items]);
+
+  const visible = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return items;
+    return items.filter((item) => `${item.display_name} ${item.provider_type} ${item.status}`.toLowerCase().includes(query));
+  }, [items, search]);
+
+  const statusLabel = (status: TrustStatus) => status === 'normal'
+    ? t('trust.normal')
+    : status === 'reverification_required'
+      ? t('trust.reverification')
+      : t('trust.suspended');
 
   return <div className="section-stack">
-    <div className="dashboard-grid"><Card><span className="eyebrow">{t('trust.normal')}</span><h2>{counts.normal}</h2></Card><Card><span className="eyebrow">{t('trust.reverification')}</span><h2>{counts.review}</h2></Card><Card><span className="eyebrow">{t('trust.suspended')}</span><h2>{counts.suspended}</h2></Card></div>
-    <div style={{ maxWidth: 420 }}><Input label={t('trust.find')} placeholder={t('trust.findPlaceholder')} value={search} onChange={(event) => setSearch(event.target.value)} /></div>
-    {error ? <Card><p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>{t('common.reload')}</Button></Card> : null}
+    <div className="dashboard-grid">
+      <Card><span className="eyebrow">{t('trust.normal')}</span><h2>{counts.normal}</h2></Card>
+      <Card><span className="eyebrow">{t('trust.reverification')}</span><h2>{counts.review}</h2></Card>
+      <Card><span className="eyebrow">{t('trust.suspended')}</span><h2>{counts.suspended}</h2></Card>
+    </div>
+
+    <div style={{ maxWidth: 420 }}>
+      <Input
+        label={t('trust.find')}
+        placeholder={t('trust.findPlaceholder')}
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
+      />
+    </div>
+
+    {error ? <Card>
+      <p role="alert" style={{ color: 'var(--danger, #b42318)' }}>{error}</p>
+      <Button type="button" variant="secondary" onClick={() => void load()}>{t('common.reload')}</Button>
+    </Card> : null}
+
     {loading ? <Card><p>{t('trust.loading')}</p></Card> : null}
-    {!loading && !visible.length ? <Card><EmptyState title={t('trust.none')}>{t('trust.noneHelp')}</EmptyState></Card> : null}
-    {visible.map((item) => <Card key={item.trust_state_id}><div className="section-heading"><div><span className="eyebrow">{item.provider_type === 'business' ? t('common.business') : t('common.professional')}</span><h2>{item.display_name}</h2></div><Badge tone={tone(item.status)}>{statusLabel(item.status)}</Badge></div><div className="admin-provider-meta"><span><strong>{item.verified ? t('common.verified') : t('common.notVerified')}</strong> {t('trust.identity')}</span><span><strong>{item.active_services}</strong> {t('common.activeServices')}</span><span><strong>{new Date(item.updated_at).toLocaleDateString(locale)}</strong> {t('trust.lastUpdate')}</span></div>{item.reason ? <p><strong>{t('trust.currentNote')}</strong> {item.reason}</p> : null}<div style={{ display: 'grid', gap: '.75rem', marginTop: '1rem' }}><label className="field"><span className="field-label">{t('trust.reason')}</span><textarea className="field-control" rows={3} maxLength={1200} value={reason[item.trust_state_id] ?? ''} onChange={(event) => setReason((current) => ({ ...current, [item.trust_state_id]: event.target.value }))} placeholder={t('trust.reasonPlaceholder')} /></label><div className="button-row">{item.status === 'normal' ? <Button type="button" variant="secondary" disabled={busyId === item.trust_state_id} onClick={() => void act(item,'require_reverification')}>{t('trust.requireReverification')}</Button> : null}{item.status !== 'suspended' ? <Button type="button" variant="danger" disabled={busyId === item.trust_state_id} onClick={() => void act(item,'suspend')}>{t('trust.suspend')}</Button> : null}{item.status === 'suspended' ? <Button type="button" disabled={busyId === item.trust_state_id} onClick={() => void act(item,'restore')}>{t('trust.restore')}</Button> : null}{item.status === 'reverification_required' ? <Link href="/super-admin/provider-verifications" className="button button-secondary">{tamil ? 'Re-verification review-ஐ திற' : 'Open re-verification review'}</Link> : null}</div><p className="summary-note">{item.status === 'reverification_required'
-      ? tamil
-        ? 'Re-verification status fresh verification request approve ஆன பிறகே Normal ஆகும். Generic trust restore மூலம் இதை clear செய்ய முடியாது.'
-        : 'Re-verification returns to Normal only after a fresh verification request is approved. Generic trust restore cannot clear this state.'
-      : tamil
-        ? 'Suspension active Services மற்றும் Business Products-ஐ pause செய்கிறது; existing bookings, history, support, closeout பாதுகாக்கப்படும். Trust restore ஆன பிறகும் offerings தானாக active ஆகாது; Provider review செய்து மீண்டும் activate செய்ய வேண்டும்.'
-        : 'Suspension pauses active Services and Business Products while preserving existing bookings, history, support, and closeout. Restoring trust never auto-reactivates offerings; the Provider must review and activate them again.'}</p></div></Card>)}
+
+    {!loading && !visible.length
+      ? <Card><EmptyState title={t('trust.none')}>{t('trust.noneHelp')}</EmptyState></Card>
+      : null}
+
+    {visible.map((item) => <Card key={item.trust_state_id}>
+      <div className="section-heading">
+        <div>
+          <span className="eyebrow">{item.provider_type === 'business' ? t('common.business') : t('common.professional')}</span>
+          <h2>{item.display_name}</h2>
+        </div>
+        <Badge tone={tone(item.status)}>{statusLabel(item.status)}</Badge>
+      </div>
+
+      <div className="admin-provider-meta">
+        <span><strong>{item.verified ? t('common.verified') : t('common.notVerified')}</strong> {t('trust.identity')}</span>
+        <span><strong>{item.active_services}</strong> {t('common.activeServices')}</span>
+        <span><strong>{new Date(item.updated_at).toLocaleDateString(locale)}</strong> {t('trust.lastUpdate')}</span>
+      </div>
+
+      {item.reason ? <p><strong>{t('trust.currentNote')}</strong> {item.reason}</p> : null}
+
+      <div style={{ display: 'grid', gap: '.75rem', marginTop: '1rem' }}>
+        <label className="field">
+          <span className="field-label">{t('trust.reason')}</span>
+          <textarea
+            className="field-control"
+            rows={3}
+            maxLength={1200}
+            value={reason[item.trust_state_id] ?? ''}
+            onChange={(event) => setReason((current) => ({ ...current, [item.trust_state_id]: event.target.value }))}
+            placeholder={t('trust.reasonPlaceholder')}
+          />
+        </label>
+
+        <div className="button-row">
+          {item.status === 'normal'
+            ? <Button
+                type="button"
+                variant="secondary"
+                disabled={busyId === item.trust_state_id}
+                onClick={() => void act(item, 'require_reverification')}
+              >
+                {t('trust.requireReverification')}
+              </Button>
+            : null}
+
+          {item.status !== 'suspended'
+            ? <Button
+                type="button"
+                variant="danger"
+                disabled={busyId === item.trust_state_id}
+                onClick={() => void act(item, 'suspend')}
+              >
+                {t('trust.suspend')}
+              </Button>
+            : null}
+
+          {item.status === 'suspended'
+            ? <Button
+                type="button"
+                disabled={busyId === item.trust_state_id}
+                onClick={() => void act(item, 'restore')}
+              >
+                {t('trust.restore')}
+              </Button>
+            : null}
+
+          {item.status === 'reverification_required'
+            ? <Link href="/super-admin/provider-verifications" className="button button-secondary">
+                {t('trust.openReverificationReview')}
+              </Link>
+            : null}
+        </div>
+
+        <p className="summary-note">
+          {item.status === 'reverification_required'
+            ? t('trust.reverificationHelp')
+            : t('trust.suspensionHelp')}
+        </p>
+      </div>
+    </Card>)}
   </div>;
 }
