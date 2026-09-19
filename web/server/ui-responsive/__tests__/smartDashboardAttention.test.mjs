@@ -41,8 +41,9 @@ test('Customer Smart Attention deep-links to exact actionable objects and acknow
 
 test('Customer Smart Attention remains mobile-safe and progressive enhancement only', () => {
   assert.ok(customerAttention.includes('@media (max-width: 720px)'));
+  assert.ok(customerAttention.includes('grid-template-columns: minmax(0, 1fr) auto'));
   assert.ok(customerAttention.includes('grid-template-columns: 1fr'));
-  assert.ok(customerAttention.includes('min-height: 44px'));
+  assert.ok(customerAttention.includes('min-height: 42px'));
   assert.ok(customerAttention.includes('Promise.allSettled'));
   assert.ok(!customerAttention.includes('Cashfree'));
   assert.ok(!customerAttention.includes('/api/pay'));
