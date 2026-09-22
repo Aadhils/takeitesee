@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Badge, Card } from '../ui/primitives';
-import { useOperationalTranslations } from '../i18n/OperationalTranslations';
+import { useCustomerRequirementLifecycleTranslations } from '../i18n/CustomerRequirementLifecycleTranslations';
 
 type RequirementStatus = 'open' | 'paused' | 'awarded' | 'fulfilled' | 'cancelled';
 type RequirementSummary = {
@@ -16,8 +16,7 @@ type RequirementSummary = {
 };
 
 export default function CustomerRequirementLifecycleOverview() {
-  const { locale } = useOperationalTranslations();
-  const tamil = locale.toLowerCase().startsWith('ta');
+  const { t } = useCustomerRequirementLifecycleTranslations();
   const [requirements, setRequirements] = useState<RequirementSummary[]>([]);
   const [loaded, setLoaded] = useState(false);
   const loadSequence = useRef(0);
@@ -66,25 +65,21 @@ export default function CustomerRequirementLifecycleOverview() {
   return <Card className="policy-card">
     <div className="section-heading">
       <div>
-        <span className="eyebrow">{tamil ? 'Requirement lifecycle' : 'Requirement lifecycle'}</span>
-        <h2>{tamil ? 'Active work மற்றும் history தனித்தனியாக' : 'Separate active work from history'}</h2>
+        <span className="eyebrow">{t('requirementLifecycle.eyebrow')}</span>
+        <h2>{t('requirementLifecycle.title')}</h2>
       </div>
       <Badge tone="neutral">{requirements.length}</Badge>
     </div>
-    <p className="detail-copy">
-      {tamil
-        ? 'Open/paused needs இன்னும் provider selection-க்கு முன் உள்ளவை. Awarded என்றால் Provider தேர்ந்தெடுக்கப்பட்டு service journey Bookings-ல் தொடர்கிறது. Fulfilled/cancelled records history ஆகும்.'
-        : 'Open or paused needs are still before provider selection. Awarded means a provider was selected and the service journey continues in Bookings. Fulfilled or cancelled records are history.'}
-    </p>
+    <p className="detail-copy">{t('requirementLifecycle.description')}</p>
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '.75rem', marginTop: '.9rem' }}>
-      <div style={{ padding: '.85rem', border: '1px solid var(--color-border)', borderRadius: '.8rem' }}><span className="eyebrow">{tamil ? 'Open needs' : 'Open needs'}</span><strong style={{ display: 'block', marginTop: '.3rem', fontSize: '1.4rem' }}>{counts.open}</strong></div>
-      <div style={{ padding: '.85rem', border: '1px solid var(--color-border)', borderRadius: '.8rem' }}><span className="eyebrow">{tamil ? 'Awarded work' : 'Awarded work'}</span><strong style={{ display: 'block', marginTop: '.3rem', fontSize: '1.4rem' }}>{counts.awarded}</strong></div>
-      <div style={{ padding: '.85rem', border: '1px solid var(--color-border)', borderRadius: '.8rem' }}><span className="eyebrow">{tamil ? 'History' : 'History'}</span><strong style={{ display: 'block', marginTop: '.3rem', fontSize: '1.4rem' }}>{counts.history}</strong></div>
+      <div style={{ padding: '.85rem', border: '1px solid var(--color-border)', borderRadius: '.8rem' }}><span className="eyebrow">{t('requirementLifecycle.openNeeds')}</span><strong style={{ display: 'block', marginTop: '.3rem', fontSize: '1.4rem' }}>{counts.open}</strong></div>
+      <div style={{ padding: '.85rem', border: '1px solid var(--color-border)', borderRadius: '.8rem' }}><span className="eyebrow">{t('requirementLifecycle.awardedWork')}</span><strong style={{ display: 'block', marginTop: '.3rem', fontSize: '1.4rem' }}>{counts.awarded}</strong></div>
+      <div style={{ padding: '.85rem', border: '1px solid var(--color-border)', borderRadius: '.8rem' }}><span className="eyebrow">{t('requirementLifecycle.history')}</span><strong style={{ display: 'block', marginTop: '.3rem', fontSize: '1.4rem' }}>{counts.history}</strong></div>
     </div>
     {counts.awarded > 0 ? <div style={{ marginTop: '.9rem', display: 'grid', gap: '.45rem' }}>
-      <strong>{tamil ? 'Provider தேர்ந்தெடுத்த work எங்கே?' : 'Where does awarded work continue?'}</strong>
-      <p className="summary-note" style={{ margin: 0 }}>{tamil ? 'Schedule, service execution, completion confirmation மற்றும் support status ஆகியவை My Bookings-ல் தொடர்ந்து track செய்யப்படும். Requirement status final history-ஆக மாறுவது தனி lifecycle step.' : 'Schedule, service execution, completion confirmation and support status continue in My Bookings. The requirement becomes final history only when its existing lifecycle reaches that stage.'}</p>
-      <div><Link className="button button-secondary" href="/bookings">{tamil ? 'My Bookings பார்க்க' : 'Open My Bookings'}</Link></div>
+      <strong>{t('requirementLifecycle.awardedQuestion')}</strong>
+      <p className="summary-note" style={{ margin: 0 }}>{t('requirementLifecycle.awardedBody')}</p>
+      <div><Link className="button button-secondary" href="/bookings">{t('requirementLifecycle.openBookings')}</Link></div>
     </div> : null}
   </Card>;
 }
