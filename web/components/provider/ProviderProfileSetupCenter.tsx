@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { useProviderProfileSetupTranslations } from '../i18n/ProviderProfileSetupTranslations';
 import { Badge, Button, Card, Checkbox, EmptyState, Input, Textarea } from '../ui/primitives';
-import { useIdentityWorkspaceTranslations } from '../i18n/IdentityWorkspaceTranslations';
 import { LiveProviderShell } from './LiveProviderShell';
 import styles from './ProviderProfileSetupCenter.module.css';
 
@@ -62,7 +62,7 @@ const emptyRoleForm: RoleForm = {
 };
 
 export default function ProviderProfileSetupCenter() {
-  const { locale } = useIdentityWorkspaceTranslations();
+  const copy = useProviderProfileSetupTranslations();
   const [profile, setProfile] = useState<ProviderProfilePayload | null>(null);
   const [form, setForm] = useState({ display_name: '', description: '', location: '' });
   const [editingProfile, setEditingProfile] = useState(false);
@@ -79,153 +79,6 @@ export default function ProviderProfileSetupCenter() {
   const [roleForm, setRoleForm] = useState<RoleForm>(emptyRoleForm);
   const [roleError, setRoleError] = useState('');
   const [roleNotice, setRoleNotice] = useState('');
-
-  const copy = useMemo(() => {
-    const tamil = locale.toLowerCase().startsWith('ta');
-    return tamil ? {
-      eyebrow: 'Provider profile',
-      title: 'Profile setup center',
-      subtitle: 'Public profile, talents மற்றும் marketplace launch setup-ஐ ஒரே இடத்தில் எளிதாக நிர்வகிக்கலாம்.',
-      professional: 'Professional',
-      business: 'Business',
-      verified: 'Verified',
-      verificationPending: 'Verification pending',
-      profileReady: 'Profile ready',
-      needsProfile: 'Profile needs details',
-      profileStep: 'Profile',
-      rolesStep: 'Roles',
-      launchStep: 'Launch',
-      done: 'Done',
-      rolesReady: 'Ready',
-      addRole: 'Add role',
-      editProfile: 'Edit profile',
-      serviceArea: 'Service area',
-      services: 'Services',
-      active: 'active',
-      profileEditorTitle: 'Public profile update',
-      profileEditorHelp: '3 விபரங்கள் மட்டும்: name, short description, service area. சுருக்கமாக எழுதினால் போதும்.',
-      displayName: 'Professional headline / display name',
-      businessName: 'Business display name',
-      description: 'Provider description',
-      descriptionHint: '20+ characters. End user உங்களை ஏன் choose செய்ய வேண்டும் என்பதை சுருக்கமாக சொல்லுங்கள்.',
-      saveProfile: 'Save profile',
-      cancel: 'Cancel',
-      savedProfile: 'Profile saved.',
-      profileSaveError: 'Profile save செய்ய முடியவில்லை.',
-      loading: 'Profile load ஆகிறது…',
-      loadError: 'Profile load செய்ய முடியவில்லை.',
-      noDescription: 'Short description சேர்த்தால் end user profile-ஐ விரைவாக புரிந்து கொள்வார்.',
-      rolesEyebrow: 'Professional talents',
-      rolesTitle: 'Talents & roles',
-      rolesIntro: 'ஒவ்வொரு skill-க்கும் ஒரு compact role card. Add role செய்த பிறகு தேவையான opportunity options மட்டும் தேர்வு செய்யலாம்.',
-      swipeRoles: 'மேலும் roles பார்க்க side-ஆ swipe செய்யலாம்',
-      noRolesTitle: 'உங்கள் முதல் role-ஐ சேர்க்கவும்',
-      noRolesBody: 'Web Developer, Driver, Designer போன்ற ஒவ்வொரு talent-ஐ தனி role ஆக வைத்துக்கொள்ளலாம்.',
-      addRoleTitle: 'Quick role setup',
-      editRoleTitle: 'Role edit',
-      addRoleHelp: 'முதலில் role name + short summary மட்டும். மற்ற opportunity settings optional.',
-      roleTitle: 'Role / talent title',
-      roleTitleHint: 'உதா: Web Developer, Acting Driver, Web Designer',
-      roleSummary: 'Short role summary',
-      roleSummaryHint: 'இந்த skill-ல் நீங்கள் என்ன செய்கிறீர்கள் என்பதை ஒரு அல்லது இரண்டு வரியில் எழுதுங்கள்.',
-      experience: 'Experience years (optional)',
-      serviceBookings: 'Service bookings',
-      serviceBookingsHelp: 'Customers இந்த role-ஐ service booking-க்கு காணலாம்.',
-      moreOptions: 'More opportunity options',
-      freelance: 'Freelance',
-      partTime: 'Part-time',
-      fullTime: 'Full-time',
-      contract: 'Contract',
-      activeRole: 'Keep this role active',
-      saveRole: 'Save role',
-      updateRole: 'Update role',
-      roleSaved: 'Role saved.',
-      roleDeleted: 'Role deleted.',
-      roleSaveError: 'Role save செய்ய முடியவில்லை.',
-      duplicate: 'இந்த role ஏற்கனவே உள்ளது. Existing role-ல் Edit பயன்படுத்துங்கள்.',
-      delete: 'Delete',
-      edit: 'Edit',
-      deleteConfirm: 'இந்த role-ஐ delete செய்ய வேண்டுமா?',
-      noExperience: 'Experience not specified',
-      noSummary: 'Short summary இன்னும் சேர்க்கப்படவில்லை.',
-      opportunityNone: 'No opportunity modes selected',
-      nextTitleReady: 'Profile ready. இப்போது marketplace setup-ஐ connect செய்யுங்கள்.',
-      nextTitlePending: 'முதலில் profile basics complete செய்யுங்கள்.',
-      nextBody: 'Category, location approval, availability மற்றும் service launch இந்த next setup flow-ல் இருக்கும்.',
-      continueSetup: 'Continue provider setup',
-    } : {
-      eyebrow: 'Provider profile',
-      title: 'Profile setup center',
-      subtitle: 'Manage your public profile, talents and marketplace launch setup in one simple place.',
-      professional: 'Professional',
-      business: 'Business',
-      verified: 'Verified',
-      verificationPending: 'Verification pending',
-      profileReady: 'Profile ready',
-      needsProfile: 'Profile needs details',
-      profileStep: 'Profile',
-      rolesStep: 'Roles',
-      launchStep: 'Launch',
-      done: 'Done',
-      rolesReady: 'Ready',
-      addRole: 'Add role',
-      editProfile: 'Edit profile',
-      serviceArea: 'Service area',
-      services: 'Services',
-      active: 'active',
-      profileEditorTitle: 'Update public profile',
-      profileEditorHelp: 'Only 3 essentials: name, short description and service area. Keep it simple and clear.',
-      displayName: 'Professional headline / display name',
-      businessName: 'Business display name',
-      description: 'Provider description',
-      descriptionHint: 'Use 20+ characters. Briefly explain what you do and why a customer should choose you.',
-      saveProfile: 'Save profile',
-      cancel: 'Cancel',
-      savedProfile: 'Profile saved.',
-      profileSaveError: 'Unable to save profile.',
-      loading: 'Loading profile…',
-      loadError: 'Unable to load profile.',
-      noDescription: 'Add a short description so customers can understand your profile quickly.',
-      rolesEyebrow: 'Professional talents',
-      rolesTitle: 'Talents & roles',
-      rolesIntro: 'Keep one compact card per skill. Add a role first, then choose only the opportunity types you want.',
-      swipeRoles: 'Swipe sideways to view more roles',
-      noRolesTitle: 'Add your first role',
-      noRolesBody: 'Keep each talent such as Web Developer, Driver or Designer as a separate role.',
-      addRoleTitle: 'Quick role setup',
-      editRoleTitle: 'Edit role',
-      addRoleHelp: 'Start with a role name and short summary. Extra opportunity settings are optional.',
-      roleTitle: 'Role / talent title',
-      roleTitleHint: 'Example: Web Developer, Acting Driver, Web Designer',
-      roleSummary: 'Short role summary',
-      roleSummaryHint: 'Describe what you do in this skill in one or two lines.',
-      experience: 'Experience years (optional)',
-      serviceBookings: 'Service bookings',
-      serviceBookingsHelp: 'Customers can discover this role for service bookings.',
-      moreOptions: 'More opportunity options',
-      freelance: 'Freelance',
-      partTime: 'Part-time',
-      fullTime: 'Full-time',
-      contract: 'Contract',
-      activeRole: 'Keep this role active',
-      saveRole: 'Save role',
-      updateRole: 'Update role',
-      roleSaved: 'Role saved.',
-      roleDeleted: 'Role deleted.',
-      roleSaveError: 'Unable to save role.',
-      duplicate: 'This role already exists. Use Edit on the existing role instead.',
-      delete: 'Delete',
-      edit: 'Edit',
-      deleteConfirm: 'Delete this role?',
-      noExperience: 'Experience not specified',
-      noSummary: 'No short summary has been added yet.',
-      opportunityNone: 'No opportunity modes selected',
-      nextTitleReady: 'Profile ready. Now connect it to the marketplace.',
-      nextTitlePending: 'Complete your profile basics first.',
-      nextBody: 'Category, location approval, availability and service launch continue in Provider Setup.',
-      continueSetup: 'Continue provider setup',
-    };
-  }, [locale]);
 
   const loadRoles = useCallback(async () => {
     try {
@@ -419,7 +272,7 @@ export default function ProviderProfileSetupCenter() {
             </div>
           </div>
 
-          <div className={styles.steps} aria-label="Provider profile progress">
+          <div className={styles.steps} aria-label={copy.progressLabel}>
             <div className={`${styles.step} ${complete ? styles.stepDone : ''}`}><span>1</span><div><strong>{copy.profileStep}</strong><small>{complete ? copy.done : copy.needsProfile}</small></div></div>
             <div className={`${styles.step} ${rolesReady ? styles.stepDone : ''}`}><span>2</span><div><strong>{profile.provider_type === 'professional' ? copy.rolesStep : copy.verified}</strong><small>{profile.provider_type === 'professional' ? `${roles.length} · ${rolesReady ? copy.rolesReady : copy.addRole}` : (profile.verified ? copy.done : copy.verificationPending)}</small></div></div>
             <div className={styles.step}><span>3</span><div><strong>{copy.launchStep}</strong><small>{copy.continueSetup}</small></div></div>
@@ -487,7 +340,7 @@ export default function ProviderProfileSetupCenter() {
                   role.contract_enabled ? copy.contract : null,
                 ].filter((value): value is string => Boolean(value));
                 return <Card key={role.id} className={styles.roleCard}>
-                  <div className={styles.roleCardHead}><div><h3>{role.title}</h3><small>{role.experience_years === null ? copy.noExperience : `${role.experience_years} years experience`}</small></div><Badge tone={role.active ? 'success' : 'neutral'}>{role.active ? copy.active : 'Paused'}</Badge></div>
+                  <div className={styles.roleCardHead}><div><h3>{role.title}</h3><small>{role.experience_years === null ? copy.noExperience : `${role.experience_years} ${copy.yearsExperience}`}</small></div><Badge tone={role.active ? 'success' : 'neutral'}>{role.active ? copy.active : copy.paused}</Badge></div>
                   <p className={styles.roleSummary}>{role.summary || copy.noSummary}</p>
                   <div className={styles.chips}>{opportunityLabels.length ? opportunityLabels.map((label) => <Badge key={label} tone="info">{label}</Badge>) : <Badge>{copy.opportunityNone}</Badge>}</div>
                   <div className={styles.roleActions}><Button type="button" variant="secondary" onClick={() => startEditRole(role)} disabled={roleSaving}>{copy.edit}</Button><Button type="button" variant="danger" onClick={() => void deleteRole(role)} disabled={roleSaving}>{copy.delete}</Button></div>
