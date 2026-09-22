@@ -31,10 +31,14 @@ test('Authenticated user resolution verifies bearer JWTs and server sessions for
   assert.ok(sessionSource.includes("storedRole === 'business'"));
 });
 
-test('Customer Supabase helper is request-aware for future mobile API slices', () => {
+test('Customer Supabase helper preserves explicit Request and can recover bearer auth from active headers', () => {
+  assert.ok(customerSupabase.includes("import { headers } from 'next/headers'"));
   assert.ok(customerSupabase.includes('requireCustomerSupabase(request?: Request)'));
-  assert.ok(customerSupabase.includes('createSupabaseServerClient(request)'));
-  assert.ok(customerSupabase.includes('getSupabaseAuthenticatedUser(supabase, request)'));
+  assert.ok(customerSupabase.includes('if (request) return request'));
+  assert.ok(customerSupabase.includes("(await headers()).get('authorization')"));
+  assert.ok(customerSupabase.includes('const effectiveRequest = await resolveCustomerRequest(request)'));
+  assert.ok(customerSupabase.includes('createSupabaseServerClient(effectiveRequest)'));
+  assert.ok(customerSupabase.includes('getSupabaseAuthenticatedUser(supabase, effectiveRequest)'));
 });
 
 test('Mobile session endpoint exposes only authenticated identity and server-derived roles', () => {
