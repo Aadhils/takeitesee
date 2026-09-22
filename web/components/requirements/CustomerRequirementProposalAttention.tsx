@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Badge, Button, Card } from '../ui/primitives';
+import { useCustomerRequirementProposalAttentionTranslations } from '../i18n/CustomerRequirementProposalAttentionTranslations';
 import { useOperationalTranslations } from '../i18n/OperationalTranslations';
+import { Badge, Button, Card } from '../ui/primitives';
 
 type RequirementStatus = 'open' | 'paused' | 'awarded' | 'fulfilled' | 'cancelled';
 
@@ -36,14 +37,15 @@ function statusTone(value: RequirementStatus) {
 
 export default function CustomerRequirementProposalAttention() {
   const router = useRouter();
-  const { locale, status } = useOperationalTranslations();
+  const { locale, t } = useCustomerRequirementProposalAttentionTranslations();
+  const { status } = useOperationalTranslations();
   const [rows, setRows] = useState<RequirementAttentionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [attentionAvailable, setAttentionAvailable] = useState(true);
   const [error, setError] = useState('');
   const [openingId, setOpeningId] = useState('');
   const loadSequence = useRef(0);
-  const tamil = locale.toLowerCase().startsWith('ta');
+  const loadError = t('proposalAttention.loadError');
 
   const load = useCallback(async () => {
     const sequence = ++loadSequence.current;
@@ -52,16 +54,16 @@ export default function CustomerRequirementProposalAttention() {
     try {
       const response = await fetch('/api/requirements', { cache: 'no-store' });
       const payload = await response.json() as RequirementAttentionPayload;
-      if (!response.ok) throw new Error(payload.error || 'Proposal activity could not be loaded.');
+      if (!response.ok) throw new Error(payload.error || loadError);
       if (sequence !== loadSequence.current) return;
       setRows(payload.requirements ?? []);
       setAttentionAvailable(payload.proposal_attention_status !== 'unavailable');
     } catch (cause) {
-      if (sequence === loadSequence.current) setError(cause instanceof Error ? cause.message : 'Proposal activity could not be loaded.');
+      if (sequence === loadSequence.current) setError(cause instanceof Error ? cause.message : loadError);
     } finally {
       if (sequence === loadSequence.current) setLoading(false);
     }
-  }, []);
+  }, [loadError]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -118,28 +120,28 @@ export default function CustomerRequirementProposalAttention() {
   };
 
   const latestLabel = (value: string | null) => {
-    if (!value) return tamil ? 'இன்னும் proposal வரவில்லை' : 'No proposals yet';
-    return `${tamil ? 'சமீபத்திய proposal' : 'Latest proposal'} · ${new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))}`;
+    if (!value) return t('proposalAttention.noProposalsYet');
+    return `${t('proposalAttention.latestProposal')} · ${new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))}`;
   };
 
   return <section className="customer-proposal-attention" aria-labelledby="proposal-attention-title">
     <div className="section-heading">
       <div>
-        <span className="eyebrow">{tamil ? 'Proposal activity' : 'Proposal activity'}</span>
-        <h2 id="proposal-attention-title">{tamil ? 'உங்கள் Requirements-க்கு வந்த Proposals' : 'Proposals for your requirements'}</h2>
-        <p className="summary-note">{tamil ? 'புதிய proposal வந்த requirement-ஐ உடனே கண்டுபிடித்து, exact latest proposal-ஐ review செய்யலாம்.' : 'Spot requirements with new proposals and jump directly to the latest proposal for review.'}</p>
+        <span className="eyebrow">{t('proposalAttention.eyebrow')}</span>
+        <h2 id="proposal-attention-title">{t('proposalAttention.title')}</h2>
+        <p className="summary-note">{t('proposalAttention.description')}</p>
       </div>
       <div className="customer-proposal-attention-summary">
-        {totalUnread > 0 ? <Badge tone="info">{totalUnread} {tamil ? 'புதியது' : totalUnread === 1 ? 'new proposal' : 'new proposals'}</Badge> : null}
-        <Badge tone="neutral">{requirementsWithProposals} {tamil ? 'proposal உள்ள requirements' : requirementsWithProposals === 1 ? 'requirement with proposals' : 'requirements with proposals'}</Badge>
+        {totalUnread > 0 ? <Badge tone="info">{totalUnread} {t(totalUnread === 1 ? 'proposalAttention.summaryNewSingle' : 'proposalAttention.summaryNewPlural')}</Badge> : null}
+        <Badge tone="neutral">{requirementsWithProposals} {t(requirementsWithProposals === 1 ? 'proposalAttention.requirementWithProposals' : 'proposalAttention.requirementsWithProposals')}</Badge>
       </div>
     </div>
 
-    {loading ? <Card><p>{tamil ? 'Proposal activity load ஆகிறது…' : 'Loading proposal activity…'}</p></Card> : null}
-    {!loading && error ? <Card><p className="field-error" role="alert">{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>{tamil ? 'மீண்டும் முயற்சி செய்' : 'Try again'}</Button></Card> : null}
-    {!loading && !error && !attentionAvailable ? <Card><p className="summary-note">{tamil ? 'Requirements கிடைக்கிறது; proposal attention மட்டும் தற்காலிகமாக கிடைக்கவில்லை.' : 'Your requirements are available, but proposal attention is temporarily unavailable.'}</p></Card> : null}
+    {loading ? <Card><p>{t('proposalAttention.loading')}</p></Card> : null}
+    {!loading && error ? <Card><p className="field-error" role="alert">{error}</p><Button type="button" variant="secondary" onClick={() => void load()}>{t('proposalAttention.tryAgain')}</Button></Card> : null}
+    {!loading && !error && !attentionAvailable ? <Card><p className="summary-note">{t('proposalAttention.unavailable')}</p></Card> : null}
 
-    {!loading && !error && attentionAvailable && rows.length === 0 ? <Card><p className="summary-note">{tamil ? 'இன்னும் requirement இல்லை. கீழே புதிய requirement post செய்யலாம்.' : 'No requirements yet. You can post a new requirement below.'}</p></Card> : null}
+    {!loading && !error && attentionAvailable && rows.length === 0 ? <Card><p className="summary-note">{t('proposalAttention.empty')}</p></Card> : null}
 
     {!loading && !error && attentionAvailable && rows.length > 0 ? <div className="customer-proposal-attention-list">
       {rows.map((row) => {
@@ -149,20 +151,20 @@ export default function CustomerRequirementProposalAttention() {
         return <Card key={row.id} className={`customer-proposal-attention-row${unreadCount ? ' customer-proposal-attention-row-new' : ''}`}>
           <div className="customer-proposal-attention-main">
             <div>
-              <div className="customer-proposal-attention-titleline"><span className="eyebrow">{row.reference}</span>{unreadCount > 0 ? <Badge tone="info">{unreadCount} {tamil ? 'புதிய proposal' : unreadCount === 1 ? 'new proposal' : 'new proposals'}</Badge> : null}</div>
+              <div className="customer-proposal-attention-titleline"><span className="eyebrow">{row.reference}</span>{unreadCount > 0 ? <Badge tone="info">{unreadCount} {t(unreadCount === 1 ? 'proposalAttention.rowNewSingle' : 'proposalAttention.rowNewPlural')}</Badge> : null}</div>
               <h3>{row.title}</h3>
               <p className="summary-note">{latestLabel(row.latest_proposal_at)}</p>
             </div>
             <Badge tone={statusTone(row.status)}>{status(row.status)}</Badge>
           </div>
           <div className="customer-proposal-attention-meta">
-            <Badge tone={proposalCount ? 'neutral' : 'neutral'}>{proposalCount} {tamil ? 'மொத்த proposals' : proposalCount === 1 ? 'proposal' : 'proposals'}</Badge>
-            {submittedCount > 0 ? <Badge tone="success">{submittedCount} {tamil ? 'review செய்யலாம்' : submittedCount === 1 ? 'active to review' : 'active to review'}</Badge> : null}
+            <Badge tone={proposalCount ? 'neutral' : 'neutral'}>{proposalCount} {t(proposalCount === 1 ? 'proposalAttention.proposalSingle' : 'proposalAttention.proposalPlural')}</Badge>
+            {submittedCount > 0 ? <Badge tone="success">{submittedCount} {t('proposalAttention.activeToReview')}</Badge> : null}
           </div>
           <div className="customer-proposal-attention-actions">
             {proposalCount > 0
-              ? <Button type="button" loading={openingId === row.id} disabled={Boolean(openingId && openingId !== row.id)} onClick={() => void reviewProposals(row)}>{unreadCount > 0 ? (tamil ? 'புதிய Proposals review செய்' : 'Review new proposals') : (tamil ? 'Proposals review செய்' : 'Review proposals')}</Button>
-              : <Link className="button button-secondary" href={`/requirements/${encodeURIComponent(row.id)}`}>{tamil ? 'Requirement பார்க்க' : 'View requirement'}</Link>}
+              ? <Button type="button" loading={openingId === row.id} disabled={Boolean(openingId && openingId !== row.id)} onClick={() => void reviewProposals(row)}>{t(unreadCount > 0 ? 'proposalAttention.reviewNew' : 'proposalAttention.review')}</Button>
+              : <Link className="button button-secondary" href={`/requirements/${encodeURIComponent(row.id)}`}>{t('proposalAttention.viewRequirement')}</Link>}
           </div>
         </Card>;
       })}
