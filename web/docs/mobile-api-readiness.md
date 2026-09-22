@@ -24,15 +24,19 @@ Authenticated response:
 
 Provider accounts continue to resolve their server-owned Professional or Business role in addition to Customer. The endpoint does not return access tokens, refresh tokens, passwords, or profile secrets.
 
+## Completed mobile-readiness slices
+
+1. Bearer-aware Supabase server/session foundation and native session handshake.
+2. Customer Requirements auth boundary reads the active request Authorization header when its existing routes call the shared customer Supabase helper without an explicit Request. Existing cookie auth remains the fallback and requirement lifecycle/recurrence logic is unchanged.
+
 ## Next mobile-readiness slices
 
-1. Customer requirements API bearer propagation.
-2. Marketplace search/public provider contracts.
-3. Provider requirement leads and proposal actions.
-4. Customer/provider booking API bearer propagation.
-5. Notifications and messages.
-6. Service completion and reviews.
-7. Final native contract freeze before React Native + Expo application work.
+1. Marketplace search/public provider contracts.
+2. Provider requirement leads and proposal actions, isolated from frozen recurrence logic.
+3. Customer/provider booking RLS client propagation where a route authenticates with Request but later opens a separate Supabase client.
+4. Notifications and messages.
+5. Service completion and reviews.
+6. Final native contract freeze before React Native + Expo application work.
 
 ## Frozen boundaries
 
