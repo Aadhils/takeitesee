@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Badge, Button } from '../ui/primitives';
-import { useLanguage } from '../i18n/LanguageProvider';
+import { interpolateSmartServiceJourney, useSmartServiceJourneyTranslations } from '../i18n/SmartServiceJourneyTranslations';
 import BookingReasonDialog from './BookingReasonDialog';
 
 type Viewer = 'customer' | 'provider';
@@ -80,8 +80,7 @@ export default function SmartServiceJourneyGuide({
   viewer: Viewer;
   chatHref: string;
 }) {
-  const { locale } = useLanguage();
-  const tamil = locale.toLowerCase().startsWith('ta');
+  const { locale, t } = useSmartServiceJourneyTranslations();
   const [booking, setBooking] = useState<BookingSnapshot | null>(null);
   const [closeout, setCloseout] = useState<CloseoutSnapshot | null>(null);
   const [busy, setBusy] = useState(false);
@@ -159,9 +158,12 @@ export default function SmartServiceJourneyGuide({
         ? 3
         : 0;
 
-  const steps = tamil
-    ? ['Request', 'Confirmed', 'Service', 'Completion']
-    : ['Requested', 'Confirmed', 'Service', 'Completion'];
+  const steps = [
+    t('smartJourney.step.requested'),
+    t('smartJourney.step.confirmed'),
+    t('smartJourney.step.service'),
+    t('smartJourney.step.completion'),
+  ];
 
   const providerAction = async (action: 'accept' | 'decline' | 'complete', reason?: string) => {
     if (busy) return false;
@@ -173,14 +175,14 @@ export default function SmartServiceJourneyGuide({
         body: JSON.stringify({ action, reason }),
       });
       const payload = await response.json() as { booking?: BookingSnapshot; error?: string };
-      if (!response.ok || !payload.booking) throw new Error(payload.error ?? 'Unable to update service.');
+      if (!response.ok || !payload.booking) throw new Error(payload.error ?? t('smartJourney.updateFallback'));
       setBooking(payload.booking);
       window.dispatchEvent(new CustomEvent('booking:provider-list-refresh', { detail: { bookingId } }));
       window.dispatchEvent(new CustomEvent('booking:audit-refresh', { detail: { bookingId } }));
       window.dispatchEvent(new CustomEvent('booking:closeout-refresh', { detail: { bookingId } }));
       return true;
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to update service.');
+      setError(cause instanceof Error ? cause.message : t('smartJourney.updateFallback'));
       return false;
     } finally {
       setBusy(false);
@@ -197,12 +199,12 @@ export default function SmartServiceJourneyGuide({
         body: JSON.stringify({ action: 'confirm_completion' }),
       });
       const payload = await response.json() as CloseoutSnapshot & { error?: string };
-      if (!response.ok) throw new Error(payload.error ?? 'Completion could not be confirmed.');
+      if (!response.ok) throw new Error(payload.error ?? t('smartJourney.confirmFallback'));
       setCloseout(payload);
       window.dispatchEvent(new CustomEvent('booking:closeout-refresh', { detail: { bookingId } }));
       window.dispatchEvent(new CustomEvent('booking:audit-refresh', { detail: { bookingId } }));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Completion could not be confirmed.');
+      setError(cause instanceof Error ? cause.message : t('smartJourney.confirmFallback'));
     } finally {
       setBusy(false);
     }
@@ -213,89 +215,89 @@ export default function SmartServiceJourneyGuide({
     : '';
 
   let tone: 'neutral' | 'info' | 'success' | 'warning' | 'danger' = 'info';
-  let label = tamil ? 'Service journey' : 'Service journey';
+  let label = t('smartJourney.label.default');
   let title = '';
   let body = '';
   let primary: 'accept' | 'complete' | 'confirm_completion' | 'review' | null = null;
 
   if (booking.status === 'cancelled') {
     tone = 'danger';
-    label = tamil ? 'Stopped' : 'Stopped';
-    title = tamil ? 'இந்த service request நிறுத்தப்பட்டுள்ளது' : 'This service request has stopped';
-    body = tamil ? 'இந்த booking-க்கு இனி action தேவையில்லை. History மற்றும் support details கீழே பார்க்கலாம்.' : 'No further service action is needed for this booking. History and support details remain available below.';
+    label = t('smartJourney.cancelled.label');
+    title = t('smartJourney.cancelled.title');
+    body = t('smartJourney.cancelled.body');
   } else if (attendanceTerminal) {
     tone = 'warning';
-    label = tamil ? 'Follow-up' : 'Follow-up';
-    title = tamil ? 'Attendance issue பதிவு செய்யப்பட்டுள்ளது' : 'An attendance issue was recorded';
-    body = tamil ? 'Normal service journey இங்கே pause ஆகிறது. Support/closeout section-ல் next resolution-ஐ தொடருங்கள்.' : 'The normal service journey is paused here. Continue through the support and closeout section below.';
+    label = t('smartJourney.attendance.label');
+    title = t('smartJourney.attendance.title');
+    body = t('smartJourney.attendance.body');
   } else if (viewer === 'provider' && booking.status === 'pending') {
     tone = 'warning';
-    label = tamil ? 'Action needed' : 'Action needed';
-    title = tamil ? 'Customer service request-ஐ confirm செய்யுங்கள்' : 'Confirm the customer service request';
-    body = tamil ? 'Date/time உங்களுக்கு சரியாக இருந்தால் confirm செய்யுங்கள். Confirm செய்ததும் Customer-க்கு service ready என்று update ஆகும்.' : 'Confirm if the date and time work for you. The customer will immediately see that the service is ready.';
+    label = t('smartJourney.providerPending.label');
+    title = t('smartJourney.providerPending.title');
+    body = t('smartJourney.providerPending.body');
     primary = 'accept';
   } else if (viewer === 'provider' && booking.status === 'rescheduled') {
     tone = 'warning';
-    label = tamil ? 'Action needed' : 'Action needed';
-    title = tamil ? 'Customer புதிய time கேட்டுள்ளார்' : 'The customer requested a new time';
-    body = tamil ? 'புதிய schedule சரியாக இருந்தால் accept செய்யுங்கள்; முடியாவிட்டால் Other option மூலம் காரணம் சொல்லலாம்.' : 'Accept the new schedule if it works. If it does not, use the other option to give a reason.';
+    label = t('smartJourney.providerRescheduled.label');
+    title = t('smartJourney.providerRescheduled.title');
+    body = t('smartJourney.providerRescheduled.body');
     primary = 'accept';
   } else if (booking.status === 'pending' || booking.status === 'rescheduled') {
     tone = 'info';
-    label = tamil ? 'Waiting' : 'Waiting';
-    title = tamil ? 'Provider confirmation காத்திருக்கிறது' : 'Waiting for provider confirmation';
-    body = tamil ? 'இப்போது நீங்கள் வேறு எதுவும் செய்ய வேண்டியதில்லை. Provider confirm செய்ததும் journey தானாக அடுத்த stage-க்கு நகரும்.' : 'You do not need to do anything else now. The journey moves forward automatically when the provider confirms.';
+    label = t('smartJourney.waiting.label');
+    title = t('smartJourney.waiting.title');
+    body = t('smartJourney.waiting.body');
   } else if (booking.status === 'confirmed' && beforeStart) {
     tone = 'success';
-    label = tamil ? 'Confirmed' : 'Confirmed';
+    label = t('smartJourney.confirmed.label');
     title = viewer === 'provider'
-      ? (tamil ? 'Service confirmed — தயாராகுங்கள்' : 'Service confirmed — get ready')
-      : (tamil ? 'Provider confirmed — service ready' : 'Provider confirmed — your service is ready');
-    body = tamil
-      ? `Service ${moment}க்கு தொடங்கும். தேவையான clarification இருந்தால் ஒரே private chat-ஐ பயன்படுத்துங்கள்.`
-      : `Service starts at ${moment}. Use the same private chat only if you need to clarify anything.`;
+      ? t('smartJourney.confirmed.providerTitle')
+      : t('smartJourney.confirmed.customerTitle');
+    body = interpolateSmartServiceJourney(t('smartJourney.confirmed.body'), { moment });
   } else if (booking.status === 'confirmed' && inService) {
     tone = 'success';
-    label = tamil ? 'In service' : 'In service';
-    title = tamil ? 'Service இப்போது நடைபெறுகிறது' : 'Service is now in progress';
-    body = tamil ? 'இது scheduled service window. தேவையான coordination மட்டும் chat-ல் தொடருங்கள்.' : 'This is the scheduled service window. Keep any needed coordination in the same chat.';
+    label = t('smartJourney.inService.label');
+    title = t('smartJourney.inService.title');
+    body = t('smartJourney.inService.body');
   } else if (booking.status === 'confirmed' && afterServiceWindow) {
     tone = 'warning';
-    label = viewer === 'provider' ? (tamil ? 'Action needed' : 'Action needed') : (tamil ? 'Finishing' : 'Finishing');
+    label = viewer === 'provider'
+      ? t('smartJourney.afterWindow.providerLabel')
+      : t('smartJourney.afterWindow.customerLabel');
     title = viewer === 'provider'
-      ? (tamil ? 'Service முடிந்திருந்தால் complete செய்யுங்கள்' : 'Mark complete if the service is finished')
-      : (tamil ? 'Provider completion update காத்திருக்கிறது' : 'Waiting for the provider to finish the service record');
+      ? t('smartJourney.afterWindow.providerTitle')
+      : t('smartJourney.afterWindow.customerTitle');
     body = viewer === 'provider'
-      ? (tamil ? 'Service உண்மையாக வழங்கி முடித்திருந்தால் மட்டும் complete செய்யுங்கள்.' : 'Only mark complete if the agreed service was actually delivered.')
-      : (tamil ? 'இப்போது action தேவையில்லை. Provider complete செய்ததும் நீங்கள் final confirmation செய்யலாம்.' : 'No action is needed yet. Once the provider marks it complete, you can give the final confirmation.');
+      ? t('smartJourney.afterWindow.providerBody')
+      : t('smartJourney.afterWindow.customerBody');
     if (viewer === 'provider') primary = 'complete';
   } else if (booking.status === 'completed' && hasSupport) {
     tone = 'warning';
-    label = tamil ? 'Support open' : 'Support open';
-    title = tamil ? 'Service issue support-ல் உள்ளது' : 'A service issue is with support';
-    body = tamil ? 'Completion flow-ஐ force செய்ய வேண்டாம். Support resolution வரை coordination available-ஆ இருக்கும்.' : 'Do not force the completion flow. Coordination remains available while support resolves the issue.';
+    label = t('smartJourney.support.label');
+    title = t('smartJourney.support.title');
+    body = t('smartJourney.support.body');
   } else if (booking.status === 'completed' && viewer === 'customer' && !confirmedByCustomer && closeout?.can_confirm_completion) {
     tone = 'warning';
-    label = tamil ? 'Action needed' : 'Action needed';
-    title = tamil ? 'Service முடிந்ததா என்பதை உறுதி செய்யுங்கள்' : 'Confirm whether the service was completed';
-    body = tamil ? 'Service சரியாக முடிந்திருந்தால் confirm செய்யுங்கள். Issue இருந்தால் confirm செய்யாமல் chat/support பயன்படுத்துங்கள்.' : 'Confirm if the service was completed correctly. If there is an issue, do not confirm yet—use chat or support instead.';
+    label = t('smartJourney.customerConfirm.label');
+    title = t('smartJourney.customerConfirm.title');
+    body = t('smartJourney.customerConfirm.body');
     primary = 'confirm_completion';
   } else if (booking.status === 'completed' && viewer === 'customer' && confirmedByCustomer && !hasReview && closeout?.review_window_open !== false) {
     tone = 'success';
-    label = tamil ? 'Completed' : 'Completed';
-    title = tamil ? 'Service complete — experience-ஐ review செய்யலாம்' : 'Service complete — you can review your experience';
-    body = tamil ? 'Core service journey முடிந்தது. விருப்பமிருந்தால் கீழே ஒரு short review கொடுக்கலாம்.' : 'The core service journey is complete. You can leave a short review below if you want.';
+    label = t('smartJourney.review.label');
+    title = t('smartJourney.review.title');
+    body = t('smartJourney.review.body');
     primary = 'review';
   } else if (booking.status === 'completed' && viewer === 'provider' && !confirmedByCustomer) {
     tone = 'info';
-    label = tamil ? 'Waiting' : 'Waiting';
-    title = tamil ? 'Customer acknowledgement காத்திருக்கிறது' : 'Waiting for customer acknowledgement';
-    body = tamil ? 'நீங்கள் service completion பதிவு செய்துள்ளீர்கள். Customer confirm/support action வரும் வரை வேறு action தேவையில்லை.' : 'You recorded service completion. No further action is needed while the customer confirms or raises support.';
+    label = t('smartJourney.providerWaiting.label');
+    title = t('smartJourney.providerWaiting.title');
+    body = t('smartJourney.providerWaiting.body');
   } else if (booking.status === 'completed') {
     tone = 'success';
-    label = tamil ? 'Done' : 'Done';
-    title = tamil ? 'Service journey முடிந்தது' : 'Service journey complete';
-    body = tamil ? 'இந்த service-ன் முக்கிய user actions முடிந்துள்ளன. Audit/history கீழே read-only ஆக இருக்கும்.' : 'The main user actions for this service are complete. Audit and history remain available below.';
+    label = t('smartJourney.done.label');
+    title = t('smartJourney.done.title');
+    body = t('smartJourney.done.body');
   }
 
   const showDecline = viewer === 'provider' && (booking.status === 'pending' || booking.status === 'rescheduled');
@@ -303,13 +305,13 @@ export default function SmartServiceJourneyGuide({
   return <div className="smart-service-journey">
     <div className="section-heading">
       <div>
-        <span className="eyebrow">Smart Service Journey</span>
+        <span className="eyebrow">{t('smartJourney.eyebrow')}</span>
         <h3 style={{ margin: 0 }}>{title}</h3>
       </div>
       <Badge tone={tone}>{label}</Badge>
     </div>
 
-    <div className="smart-service-journey-steps" aria-label={tamil ? 'Service progress' : 'Service progress'}>
+    <div className="smart-service-journey-steps" aria-label={t('smartJourney.progressAria')}>
       {steps.map((step, index) => {
         const reached = booking.status !== 'cancelled' && index <= stageIndex;
         const current = booking.status !== 'cancelled' && index === stageIndex;
@@ -324,19 +326,19 @@ export default function SmartServiceJourneyGuide({
 
     <div className="smart-service-journey-actions">
       {primary === 'accept' ? <Button type="button" disabled={busy} onClick={() => void providerAction('accept')}>
-        {busy ? (tamil ? 'Updating…' : 'Updating…') : booking.status === 'rescheduled' ? (tamil ? 'புதிய time-ஐ accept செய்' : 'Accept new time') : (tamil ? 'Service confirm செய்' : 'Confirm service')}
+        {busy ? t('smartJourney.action.updating') : booking.status === 'rescheduled' ? t('smartJourney.action.acceptNewTime') : t('smartJourney.action.confirmService')}
       </Button> : null}
       {primary === 'complete' ? <Button type="button" disabled={busy} onClick={() => void providerAction('complete')}>
-        {busy ? (tamil ? 'Updating…' : 'Updating…') : (tamil ? 'Service complete செய்' : 'Mark service complete')}
+        {busy ? t('smartJourney.action.updating') : t('smartJourney.action.markComplete')}
       </Button> : null}
       {primary === 'confirm_completion' ? <Button type="button" disabled={busy} onClick={() => void confirmCompletion()}>
-        {busy ? (tamil ? 'Confirming…' : 'Confirming…') : (tamil ? 'Service முடிந்தது உறுதி செய்' : 'Confirm service completed')}
+        {busy ? t('smartJourney.action.confirming') : t('smartJourney.action.confirmCompletion')}
       </Button> : null}
-      {primary === 'review' ? <Link className="button button-primary" href="#customer-review">{tamil ? 'Review கொடு' : 'Leave a review'}</Link> : null}
-      {!primary && booking.status !== 'cancelled' ? <Link className="button button-secondary" href={chatHref}>{viewer === 'provider' ? (tamil ? 'Customer-க்கு message செய்' : 'Message customer') : (tamil ? 'Provider-க்கு message செய்' : 'Message provider')}</Link> : null}
-      {primary && booking.status !== 'cancelled' ? <Link className="button button-secondary" href={chatHref}>{tamil ? 'Message' : 'Message'}</Link> : null}
+      {primary === 'review' ? <Link className="button button-primary" href="#customer-review">{t('smartJourney.action.leaveReview')}</Link> : null}
+      {!primary && booking.status !== 'cancelled' ? <Link className="button button-secondary" href={chatHref}>{viewer === 'provider' ? t('smartJourney.action.messageCustomer') : t('smartJourney.action.messageProvider')}</Link> : null}
+      {primary && booking.status !== 'cancelled' ? <Link className="button button-secondary" href={chatHref}>{t('smartJourney.action.message')}</Link> : null}
       {showDecline ? <Button type="button" variant="quiet" disabled={busy} onClick={() => setDeclineOpen(true)}>
-        {booking.status === 'rescheduled' ? (tamil ? 'இந்த time முடியாது' : 'This time does not work') : (tamil ? 'இந்த request எடுக்க முடியாது' : 'Cannot take this request')}
+        {booking.status === 'rescheduled' ? t('smartJourney.action.declineReschedule') : t('smartJourney.action.declineRequest')}
       </Button> : null}
     </div>
 
@@ -344,11 +346,11 @@ export default function SmartServiceJourneyGuide({
 
     <BookingReasonDialog
       open={declineOpen}
-      eyebrow={booking.status === 'rescheduled' ? (tamil ? 'புதிய time-ஐ decline செய்' : 'Decline new time') : (tamil ? 'Service request decline' : 'Decline service request')}
-      title={booking.status === 'rescheduled' ? (tamil ? 'இந்த புதிய time ஏன் முடியவில்லை?' : 'Why does the new time not work?') : (tamil ? 'இந்த request-ஐ ஏன் எடுக்க முடியவில்லை?' : 'Why can you not take this request?')}
-      description={tamil ? 'Customer-க்கு புரியும் ஒரு காரணத்தை தேர்வு செய்யுங்கள்.' : 'Choose a clear reason for the customer.'}
+      eyebrow={booking.status === 'rescheduled' ? t('smartJourney.dialog.rescheduleEyebrow') : t('smartJourney.dialog.requestEyebrow')}
+      title={booking.status === 'rescheduled' ? t('smartJourney.dialog.rescheduleTitle') : t('smartJourney.dialog.requestTitle')}
+      description={t('smartJourney.dialog.description')}
       options={booking.status === 'rescheduled' ? rescheduleDeclineReasons : declineReasons}
-      confirmLabel={tamil ? 'Decline செய்' : 'Decline'}
+      confirmLabel={t('smartJourney.dialog.confirm')}
       busy={busy}
       onClose={() => setDeclineOpen(false)}
       onConfirm={async (reason) => { if (await providerAction('decline', reason)) setDeclineOpen(false); }}

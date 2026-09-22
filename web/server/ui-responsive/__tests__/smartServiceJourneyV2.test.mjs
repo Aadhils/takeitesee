@@ -12,21 +12,24 @@ const [journey, customerContext, providerContext, providerDetail, customerDetail
 ]);
 
 test('Smart Service Journey V2 presents one shared progress model', () => {
-  assert.ok(journey.includes("['Requested', 'Confirmed', 'Service', 'Completion']"));
+  assert.ok(journey.includes("t('smartJourney.step.requested')"));
+  assert.ok(journey.includes("t('smartJourney.step.confirmed')"));
+  assert.ok(journey.includes("t('smartJourney.step.service')"));
+  assert.ok(journey.includes("t('smartJourney.step.completion')"));
   assert.ok(journey.includes('smart-service-journey-steps'));
-  assert.ok(journey.includes('Waiting for provider confirmation'));
-  assert.ok(journey.includes('Service is now in progress'));
-  assert.ok(journey.includes('Service journey complete'));
+  assert.ok(journey.includes("t('smartJourney.waiting.title')"));
+  assert.ok(journey.includes("t('smartJourney.inService.title')"));
+  assert.ok(journey.includes("t('smartJourney.done.title')"));
 });
 
 test('Smart Service Journey V2 owns the positive next action for each role', () => {
   assert.ok(journey.includes("providerAction('accept')"));
   assert.ok(journey.includes("providerAction('complete')"));
   assert.ok(journey.includes("action: 'confirm_completion'"));
-  assert.ok(journey.includes('Confirm service'));
-  assert.ok(journey.includes('Mark service complete'));
-  assert.ok(journey.includes('Confirm service completed'));
-  assert.ok(journey.includes('Leave a review'));
+  assert.ok(journey.includes("t('smartJourney.action.confirmService')"));
+  assert.ok(journey.includes("t('smartJourney.action.markComplete')"));
+  assert.ok(journey.includes("t('smartJourney.action.confirmCompletion')"));
+  assert.ok(journey.includes("t('smartJourney.action.leaveReview')"));
 });
 
 test('Requirement booking contexts use the unified journey instead of split execution and completion guides', () => {
