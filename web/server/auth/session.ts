@@ -2,7 +2,7 @@ import type { EntityId } from '../../types/entities';
 import type { PlatformRole } from '../../types/ownership';
 import type { ServerCustomerSession } from '../../types/production-domain';
 import { assertProductionBackendConfigured } from '../config';
-import { createSupabaseServerClient } from '../../lib/supabase/server';
+import { createSupabaseServerClient, getSupabaseRequestAccessToken } from '../../lib/supabase/server';
 import { getWorkspacePreference } from './workspace';
 
 export interface ServerAuthProvider {
@@ -14,10 +14,11 @@ export interface ServerAuthProvider {
 
 /** Production boundary backed by Supabase auth plus owned provider/admin records. */
 export const productionAuthProvider: ServerAuthProvider = {
-  async getSession(_request?: Request) {
+  async getSession(request?: Request) {
     assertProductionBackendConfigured();
-    const supabase = await createSupabaseServerClient();
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const accessToken = await getSupabaseRequestAccessToken(request);
+    const supabase = await createSupabaseServerClient(request, accessToken);
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken ?? undefined);
     if (error || !user) return null;
 
     const { data: profile, error: profileError } = await supabase
