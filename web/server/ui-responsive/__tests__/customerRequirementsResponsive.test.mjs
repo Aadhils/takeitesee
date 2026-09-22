@@ -98,8 +98,9 @@ test('Requirements list uses base owner rows and authenticated catalog hydration
 
 
 test('Customer Requirement API paths keep auth and RLS reads on one Supabase client', () => {
-  assert.ok(customerSupabaseSource.includes('const supabase = await createSupabaseServerClient()'));
-  assert.ok(customerSupabaseSource.includes('await supabase.auth.getUser()'));
+  assert.ok(customerSupabaseSource.includes('requireCustomerSupabase(request?: Request)'));
+  assert.ok(customerSupabaseSource.includes('const supabase = await createSupabaseServerClient(request)'));
+  assert.ok(customerSupabaseSource.includes('getSupabaseAuthenticatedUser(supabase, request)'));
   assert.ok(requirementsRouteSource.includes("requireCustomerSupabase"));
   assert.ok(requirementsRouteSource.includes("const { supabase, user } = await requireCustomerSupabase()"));
   assert.ok(requirementsRouteSource.includes(".eq('customer_id', user.id)"));
