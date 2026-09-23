@@ -4,9 +4,9 @@ import { createSupabaseServerClient } from '../../../../lib/supabase/server';
 
 export const runtime = 'nodejs';
 
-async function resolveProvider() {
-  const session = await productionAuthProvider.requireProvider();
-  const supabase = await createSupabaseServerClient();
+async function resolveProvider(request?: Request) {
+  const session = await productionAuthProvider.requireProvider(request);
+  const supabase = await createSupabaseServerClient(request);
   if (session.roles.includes('professional')) {
     const { data, error } = await supabase.from('professional_profiles').select('id').eq('user_id', session.user_id).maybeSingle();
     if (error) throw new Error(error.message);
@@ -22,7 +22,7 @@ async function resolveProvider() {
 export async function GET(request: Request) {
   try {
     await productionAuthProvider.requireProvider(request);
-    const { providerType, providerId, supabase } = await resolveProvider();
+    const { providerType, providerId, supabase } = await resolveProvider(request);
     let query = supabase
       .from('reviews')
       .select('id,booking_id,service_id,rating,comment,status,provider_response,provider_responded_at,provider_response_updated_at,created_at')
@@ -77,7 +77,7 @@ export async function PATCH(request: Request) {
     const responseText = input.response?.trim() ?? '';
     if (!reviewId) return NextResponse.json({ error: 'Review is required.' }, { status: 400 });
     if (responseText.length < 3 || responseText.length > 1000) return NextResponse.json({ error: 'Response must be 3 to 1000 characters.' }, { status: 400 });
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(request);
     const { data, error } = await supabase.rpc('respond_to_owned_review', { target_review_id: reviewId, response_text: responseText }).maybeSingle();
     if (error || !data) throw new Error(error?.message ?? 'Review response could not be saved.');
     return NextResponse.json({ review: data });

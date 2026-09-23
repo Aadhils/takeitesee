@@ -36,7 +36,7 @@ test('Requirement Completion preserves customer/provider read paths and completi
   assert.ok(source.includes('fetch(`/api/bookings/${encodeURIComponent(bookingId)}/closeout`, { cache: \'no-store\' })'));
   assert.ok(source.includes("setCompleted(payload.booking?.status === 'completed')"));
   assert.ok(source.includes('if (!completed || !closeout) return null;'));
-  assert.ok(closeoutRoute.includes('getBookingCloseoutReadModel(bookingId, session.user_id)'));
+  assert.ok(closeoutRoute.includes('getBookingCloseoutReadModel(bookingId, session.user_id, request)'));
 });
 
 test('Requirement Completion preserves exact confirm-completion mutation and server RPC', () => {

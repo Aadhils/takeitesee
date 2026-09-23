@@ -110,8 +110,8 @@ function addDays(value: string | undefined, days: number) {
   return value ? new Date(new Date(value).getTime() + days * 24 * 60 * 60 * 1000).toISOString() : undefined;
 }
 
-export async function getBookingCloseoutReadModel(bookingId: string, viewerUserId: string): Promise<BookingCloseoutReadModel | null> {
-  const supabase = await createSupabaseServerClient();
+export async function getBookingCloseoutReadModel(bookingId: string, viewerUserId: string, request?: Request): Promise<BookingCloseoutReadModel | null> {
+  const supabase = await createSupabaseServerClient(request);
 
   // Opportunistically apply deterministic SLA closure rules whenever an authorized participant opens closeout state.
   // A dedicated sweep RPC exists at the database layer for future scheduled execution.

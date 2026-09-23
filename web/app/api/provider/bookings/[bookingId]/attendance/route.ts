@@ -16,11 +16,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ boo
     const note = body.note?.trim() || null;
     if (note && note.length > 1000) return NextResponse.json({ error: 'No-show details must be 1000 characters or fewer.' }, { status: 400 });
 
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(request);
     const { error } = await supabase.rpc('provider_report_customer_no_show', { target_booking_id: bookingId, report_note: note });
     if (error) throw new Error(error.message);
 
-    const closeout = await getBookingCloseoutReadModel(bookingId, session.user_id);
+    const closeout = await getBookingCloseoutReadModel(bookingId, session.user_id, request);
     if (!closeout) return NextResponse.json({ error: 'Booking closeout could not be loaded.' }, { status: 404 });
     return NextResponse.json(closeout);
   } catch (error) {
