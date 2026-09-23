@@ -12,7 +12,7 @@ export async function GET(request: Request, context: RouteContext) {
     const session = await productionAuthProvider.getSession(request);
     if (!session) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
     const { conversationId } = await context.params;
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(request);
     const { data, error } = await supabase.rpc('get_marketplace_conversation_safety', { target_conversation_id: conversationId });
     if (error) throw new Error(error.message);
     return NextResponse.json({ safety: data ?? { blocked_by_me: false, messaging_blocked: false } });
@@ -31,7 +31,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (typeof body.blocked !== 'boolean') return NextResponse.json({ error: 'Block state is required.' }, { status: 400 });
     const reason = String(body.reason ?? '').trim();
     if (reason.length > 500) return NextResponse.json({ error: 'Block reason must be 500 characters or fewer.' }, { status: 400 });
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(request);
     const { error } = await supabase.rpc('set_marketplace_conversation_block', {
       target_conversation_id: conversationId,
       should_block: body.blocked,
