@@ -87,6 +87,12 @@ export default function ServiceDetailScreen() {
     return `/request-service?${params.toString()}`;
   }, [state]);
 
+  const directBookingReady = state.status === 'ready'
+    && state.service.base_price != null
+    && Boolean(state.service.duration_minutes && state.service.duration_minutes > 0)
+    && Boolean((state.service.location || state.provider.location || '').trim())
+    && ['INR', 'USD'].includes(state.service.currency);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -143,10 +149,28 @@ export default function ServiceDetailScreen() {
                 </Pressable>
               </Link>
 
+              {directBookingReady ? (
+                <Link
+                  href={{
+                    pathname: '/book-service/[serviceId]',
+                    params: {
+                      serviceId: state.service.id,
+                      providerType: state.provider.provider_type,
+                      providerId: state.provider.id,
+                    },
+                  }}
+                  asChild
+                >
+                  <Pressable style={styles.primaryButton}>
+                    <Text style={styles.primaryButtonText}>Book an available time</Text>
+                  </Pressable>
+                </Link>
+              ) : null}
+
               {requestHref ? (
                 <Link href={requestHref} asChild>
-                  <Pressable style={styles.primaryButton}>
-                    <Text style={styles.primaryButtonText}>Request this service</Text>
+                  <Pressable style={styles.secondaryButton}>
+                    <Text style={styles.secondaryButtonText}>Request this service</Text>
                   </Pressable>
                 </Link>
               ) : null}
