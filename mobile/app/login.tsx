@@ -1,4 +1,4 @@
-import { Redirect } from 'expo-router';
+import { Link, Redirect } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -21,9 +21,7 @@ export default function LoginScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  if (auth.status === 'signedIn') {
-    return <Redirect href="/home" />;
-  }
+  if (auth.status === 'signedIn') return <Redirect href="/home" />;
 
   const submit = async () => {
     if (submitting || !email.trim() || !password) return;
@@ -96,13 +94,13 @@ export default function LoginScreen() {
                 (!email.trim() || !password) && styles.buttonDisabled,
               ]}
             >
-              {submitting ? (
-                <ActivityIndicator color="#ffffff" />
-              ) : (
-                <Text style={styles.buttonText}>Sign in</Text>
-              )}
+              {submitting ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.buttonText}>Sign in</Text>}
             </Pressable>
           </View>
+
+          <Link href="/explore" style={styles.exploreLink}>
+            Explore services without signing in
+          </Link>
 
           <Text style={styles.footer}>
             Your access token is validated by TakeItEsee server before the app accepts the session.
@@ -146,5 +144,6 @@ const styles = StyleSheet.create({
   buttonPressed: { opacity: 0.82 },
   buttonDisabled: { opacity: 0.5 },
   buttonText: { color: '#ffffff', fontSize: 16, fontWeight: '700' },
+  exploreLink: { textAlign: 'center', fontSize: 15, fontWeight: '700', color: '#30304a' },
   footer: { fontSize: 12, lineHeight: 18, color: '#77778a' },
 });
