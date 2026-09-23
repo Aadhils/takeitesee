@@ -94,6 +94,11 @@ export type ProviderAttendanceResult = {
   attendance_outcome: AttendanceOutcome;
 };
 
+export type CustomerCompletionResult = {
+  booking_id: string;
+  attendance_outcome: AttendanceOutcome;
+};
+
 async function currentAccessToken() {
   const { data, error } = await supabase.auth.getSession();
   if (error) throw error;
@@ -183,6 +188,15 @@ export async function rescheduleCustomerBooking(
       start_time: bookingTimeTo24Hour(timeLabel),
       reason: validateReason(reason),
     }),
+  });
+}
+
+export async function confirmCustomerServiceCompletion(bookingId: string) {
+  const accessToken = await currentAccessToken();
+  return apiFetch<CustomerCompletionResult>(`/api/bookings/${encodeURIComponent(bookingId)}/attendance`, {
+    method: 'POST',
+    accessToken,
+    body: JSON.stringify({ action: 'confirm_completion' }),
   });
 }
 
