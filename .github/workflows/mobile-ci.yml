@@ -36,5 +36,8 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Native contract regression
+        run: npm run test:contract
+
       - name: Type check
         run: npm run type-check
