@@ -56,6 +56,21 @@ export type BookingAvailability = {
   days: BookingAvailabilityDay[];
 };
 
+export type CreateCustomerBookingInput = {
+  service_id: string;
+  provider_id: string;
+  provider_type: 'professional' | 'business';
+  booking_date: string;
+  time_label: string;
+  timezone: string;
+  duration_minutes: number;
+  location: string;
+  quoted_price: number;
+  currency: 'INR' | 'USD';
+  idempotency_key: string;
+  service_name: string;
+};
+
 export type ProviderBookingHistoryEntry = {
   from_status: BookingStatus | null;
   to_status: BookingStatus;
@@ -133,6 +148,40 @@ export function bookingTimeTo24Hour(label: string) {
 
 export function isCurrentBookingSlot(booking: CustomerBooking, date: string, timeLabel: string) {
   return booking.booking_date === date && booking.start_time.slice(0, 5) === bookingTimeTo24Hour(timeLabel).slice(0, 5);
+}
+
+export async function fetchServiceBookingAvailability(serviceId: string) {
+  if (!serviceId.trim()) throw new Error('Service is required.');
+  return apiFetch<BookingAvailability>(`/api/services/${encodeURIComponent(serviceId)}/availability`, {
+    method: 'GET',
+  });
+}
+
+export async function createCustomerBooking(input: CreateCustomerBookingInput) {
+  if (!input.service_id || !input.provider_id) throw new Error('Service and provider are required.');
+  if (!input.booking_date || !input.time_label) throw new Error('Choose an available date and time.');
+  if (!input.location.trim()) throw new Error('Service location is required.');
+  if (!input.idempotency_key.trim()) throw new Error('Booking request key is required.');
+
+  const accessToken = await currentAccessToken();
+  return apiFetch<{ booking: CustomerBooking }>('/api/bookings', {
+    method: 'POST',
+    accessToken,
+    body: JSON.stringify({
+      service_id: input.service_id,
+      provider_id: input.provider_id,
+      provider_type: input.provider_type,
+      booking_date: input.booking_date,
+      start_time: bookingTimeTo24Hour(input.time_label),
+      timezone: input.timezone,
+      duration_minutes: input.duration_minutes,
+      location: input.location,
+      quoted_price: input.quoted_price,
+      currency: input.currency,
+      idempotency_key: input.idempotency_key,
+      service_name: input.service_name,
+    }),
+  });
 }
 
 export async function fetchCustomerBookings() {
