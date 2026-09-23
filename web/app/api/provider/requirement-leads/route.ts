@@ -26,7 +26,7 @@ type MarketplacePayload = { leads?: unknown[]; proposals?: ProposalRecord[] };
 export async function GET(request: Request) {
   try {
     const session = await productionAuthProvider.requireProvider(request);
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(request);
     const { data, error } = await supabase.rpc('get_provider_requirement_leads');
     if (error) throw new Error(error.message);
 
@@ -73,7 +73,7 @@ export async function GET(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const session = await productionAuthProvider.requireProvider(request);
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(request);
     const { error } = await supabase
       .from('notifications')
       .update({ read_at: new Date().toISOString() })
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
     if (message.length < 20 || message.length > 2000) {
       return NextResponse.json({ error: 'Proposal message must be 20 to 2000 characters.' }, { status: 400 });
     }
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(request);
     const { data, error } = await supabase.rpc('provider_submit_requirement_proposal', {
       target_requirement_id: body.requirement_id,
       target_service_id: body.service_id,
