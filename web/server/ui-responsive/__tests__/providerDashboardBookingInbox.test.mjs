@@ -25,7 +25,7 @@ test('booking inbox prioritizes real operational next actions without mutating b
   assert.ok(!inboxSource.includes("method: 'PATCH'"));
   assert.ok(!inboxSource.includes("method: 'PUT'"));
   assert.ok(!inboxSource.includes("method: 'POST'"));
-  assert.ok(bookingApiSource.includes('productionProviderBookingRepository.list(session)'));
+  assert.ok(bookingApiSource.includes('productionProviderBookingRepository.list(session, request)'));
 });
 
 test('booking inbox refreshes data and time when the Provider returns', () => {
