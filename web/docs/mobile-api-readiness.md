@@ -30,6 +30,7 @@ Provider accounts continue to resolve their server-owned Professional or Busines
 2. Customer Requirements auth boundary reads the active request Authorization header when its existing routes call the shared customer Supabase helper without an explicit Request. Existing cookie auth remains the fallback and requirement lifecycle/recurrence logic is unchanged.
 3. Marketplace discovery contracts are native-ready: `GET /api/marketplace/services/search` and `POST /api/marketplace/services/nearby` stay public JSON APIs, and `GET /api/marketplace/providers` exposes the existing verified Professional/Business public directory as JSON without duplicating eligibility rules.
 4. Provider Requirement Leads authentication is native-ready: GET/PATCH/POST keep their existing provider auth, proposal validation, pricing basis, notification acknowledgement and RPC contracts, while their Supabase RLS client now receives the same bearer-bearing Request. No recurrence behavior was changed.
+5. Public Professional/Business profile detail is available as a native JSON contract through `GET /api/marketplace/providers/{providerType}/{providerId}` while reusing the same public profile eligibility loaders used by the web profile pages.
 
 ### Public provider directory
 
@@ -43,13 +44,24 @@ Optional provider filter:
 
 Each provider row includes the existing public directory fields plus `provider_type` and `profile_path`. The endpoint applies the same verified/disclosure/public-readiness rules already used by the web Professionals and Businesses directories.
 
+### Public provider detail
+
+`GET /api/marketplace/providers/professional/{providerId}`
+
+Professional responses include normalized identity/disclosure/contact data, active services, public roles, public portfolio media and public career/resume data when enabled.
+
+`GET /api/marketplace/providers/business/{providerId}`
+
+Business responses include normalized identity/disclosure/contact data, active services and public product summaries.
+
+Unavailable or non-public profiles return 404. Unknown provider types return 400. These endpoints are public and do not weaken the existing profile eligibility rules.
+
 ## Next mobile-readiness slices
 
-1. Public provider detail JSON contract for Professional and Business profile screens.
-2. Customer/provider booking RLS client propagation where a route authenticates with Request but later opens a separate Supabase client.
-3. Notifications and messages.
-4. Service completion and reviews.
-5. Final native contract freeze before React Native + Expo application work.
+1. Customer/provider booking RLS client propagation where a route authenticates with Request but later opens a separate Supabase client.
+2. Notifications and messages.
+3. Service completion and reviews.
+4. Final native contract freeze before React Native + Expo application work.
 
 ## Frozen boundaries
 
