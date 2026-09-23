@@ -5,6 +5,7 @@ import test from 'node:test';
 const root = new URL('../', import.meta.url);
 const [
   bookingsClient,
+  customerCreate,
   customerList,
   customerDetail,
   customerActions,
@@ -14,6 +15,7 @@ const [
   providerWorkspace,
 ] = await Promise.all([
   readFile(new URL('lib/bookings.ts', root), 'utf8'),
+  readFile(new URL('app/book-service/[serviceId].tsx', root), 'utf8'),
   readFile(new URL('app/bookings.tsx', root), 'utf8'),
   readFile(new URL('app/bookings/[bookingId].tsx', root), 'utf8'),
   readFile(new URL('app/booking-actions/[bookingId].tsx', root), 'utf8'),
@@ -23,22 +25,33 @@ const [
   readFile(new URL('app/provider.tsx', root), 'utf8'),
 ]);
 
-const bookingSlice = [bookingsClient, customerList, customerDetail, customerActions, providerList, providerDetail].join('\n');
+const bookingSlice = [bookingsClient, customerCreate, customerList, customerDetail, customerActions, providerList, providerDetail].join('\n');
 
 test('native bookings client preserves authenticated Customer and bounded Provider actions', () => {
   assert.ok(bookingsClient.includes("'/api/bookings'"));
+  assert.ok(bookingsClient.includes('`/api/services/${encodeURIComponent(serviceId)}/availability`'));
   assert.ok(bookingsClient.includes('`/api/bookings/${encodeURIComponent(bookingId)}`'));
   assert.ok(bookingsClient.includes('`/api/bookings/${encodeURIComponent(bookingId)}/availability`'));
   assert.ok(bookingsClient.includes('`/api/bookings/${encodeURIComponent(bookingId)}/attendance`'));
   assert.ok(bookingsClient.includes("'/api/provider/bookings'"));
   assert.ok(bookingsClient.includes('`/api/provider/bookings/${encodeURIComponent(bookingId)}`'));
   assert.ok(bookingsClient.includes('`/api/provider/bookings/${encodeURIComponent(bookingId)}/attendance`'));
-  assert.equal((bookingsClient.match(/method: 'GET'/g) ?? []).length, 5);
+  assert.equal((bookingsClient.match(/method: 'GET'/g) ?? []).length, 6);
   assert.equal((bookingsClient.match(/method: 'PATCH'/g) ?? []).length, 3);
-  assert.equal((bookingsClient.match(/method: 'POST'/g) ?? []).length, 2);
+  assert.equal((bookingsClient.match(/method: 'POST'/g) ?? []).length, 3);
   assert.ok(bookingsClient.includes('accessToken'));
   assert.ok(bookingsClient.includes('supabase.auth.getSession()'));
   assert.ok(!bookingsClient.includes("method: 'DELETE'"));
+});
+
+test('Customer booking create uses live availability before existing booking management actions', () => {
+  assert.ok(customerCreate.includes('fetchServiceBookingAvailability(serviceId)'));
+  assert.ok(customerCreate.includes('createCustomerBooking({'));
+  assert.ok(customerCreate.includes('day.slots.some((slot) => slot.available)'));
+  assert.ok(customerCreate.includes('disabled={!slot.available}'));
+  assert.ok(customerCreate.includes("pathname: '/bookings/[bookingId]'"));
+  assert.ok(customerCreate.includes('Server-authoritative booking'));
+  assert.ok(customerCreate.includes('No payment is collected here.'));
 });
 
 test('Customer booking detail exposes cancel, reschedule and bounded completion acknowledgement', () => {
@@ -108,6 +121,10 @@ test('native booking actions keep attendance bounded and stay outside finance, c
     '/checkout',
     '/api/payments',
     '/api/cashfree',
+    '/refund',
+    '/payout',
+    '/settlement',
+    '/reconciliation',
     '/recovery',
     '/job',
     'requirementoccurrencerecoverypanel',
