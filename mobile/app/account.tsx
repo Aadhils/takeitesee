@@ -1,4 +1,4 @@
-import { Redirect } from 'expo-router';
+import { Link, Redirect } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -45,8 +45,27 @@ export default function AccountScreen() {
           <Text style={styles.eyebrow}>ACCOUNT</Text>
           <Text style={styles.title}>Your TakeItEsee account</Text>
           <Text style={styles.description}>
-            This native shell uses the server-validated identity from Native Contract v1.
+            This native workspace uses the server-validated identity from Native Contract v1.
           </Text>
+        </View>
+
+        <View style={styles.quickRow}>
+          <Link href="/notifications" asChild>
+            <Pressable style={styles.quickCard}>
+              <Text style={styles.quickEyebrow}>ATTENTION</Text>
+              <Text style={styles.quickTitle}>Notifications</Text>
+              <Text style={styles.quickText}>Booking, proposal and message updates.</Text>
+              <Text style={styles.quickOpen}>Open →</Text>
+            </Pressable>
+          </Link>
+          <Link href="/messages" asChild>
+            <Pressable style={styles.quickCard}>
+              <Text style={styles.quickEyebrow}>CONVERSATIONS</Text>
+              <Text style={styles.quickTitle}>Messages</Text>
+              <Text style={styles.quickText}>Customer and Provider workspace threads.</Text>
+              <Text style={styles.quickOpen}>Open →</Text>
+            </Pressable>
+          </Link>
         </View>
 
         <View style={styles.card}>
@@ -57,11 +76,6 @@ export default function AccountScreen() {
           <Text style={styles.detail}>
             {auth.identity.roles.length ? auth.identity.roles.join(', ') : 'No roles returned'}
           </Text>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Mobile account roadmap</Text>
-          <Text style={styles.detail}>Requirements, bookings, notifications and messages will connect here in the next customer slices.</Text>
         </View>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -90,6 +104,12 @@ const styles = StyleSheet.create({
   eyebrow: { fontSize: 11, fontWeight: '800', letterSpacing: 1.5, color: '#666678' },
   title: { fontSize: 28, lineHeight: 34, fontWeight: '800', color: '#171721' },
   description: { fontSize: 14, lineHeight: 20, color: '#666678' },
+  quickRow: { flexDirection: 'row', gap: 10 },
+  quickCard: { flex: 1, minHeight: 142, gap: 5, padding: 14, borderRadius: 15, backgroundColor: '#fff' },
+  quickEyebrow: { fontSize: 9, fontWeight: '800', letterSpacing: 1, color: '#77778a' },
+  quickTitle: { fontSize: 16, fontWeight: '800', color: '#171721' },
+  quickText: { flex: 1, fontSize: 12, lineHeight: 17, color: '#666678' },
+  quickOpen: { fontSize: 12, fontWeight: '800', color: '#30304a' },
   card: { gap: 8, padding: 18, borderRadius: 16, backgroundColor: '#ffffff' },
   cardTitle: { fontSize: 17, fontWeight: '800', color: '#171721' },
   value: { marginTop: 4, fontSize: 12, fontWeight: '700', color: '#77778a' },
