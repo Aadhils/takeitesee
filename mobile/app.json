@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "TakeItEsee",
+    "slug": "takeitesee",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "takeitesee",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "edgeToEdgeEnabled": true
+    }
+  }
+}
