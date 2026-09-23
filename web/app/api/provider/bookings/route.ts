@@ -7,7 +7,7 @@ export const runtime = 'nodejs';
 export async function GET(request: Request) {
   try {
     const session = await productionAuthProvider.requireProvider(request);
-    const bookings = await productionProviderBookingRepository.list(session);
+    const bookings = await productionProviderBookingRepository.list(session, request);
     return NextResponse.json({ bookings });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to load provider bookings.' }, { status: 401 });
