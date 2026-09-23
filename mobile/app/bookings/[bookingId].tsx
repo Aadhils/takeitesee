@@ -121,7 +121,7 @@ export default function CustomerBookingDetailScreen() {
               {booking.closeout_state ? <DetailRow label="Closeout" value={formatBookingStatus(booking.closeout_state)} /> : null}
               {booking.closed_at ? <DetailRow label="Closed at" value={String(booking.closed_at)} /> : null}
               <View style={styles.readOnlyCard}>
-                <Text style={styles.readOnlyTitle}>Server-authoritative service journey</Text>
+                <Text style={styles.readOnlyTitle}>Read-only native journey</Text>
                 <Text style={styles.muted}>
                   Cancellation, reschedule, attendance and completion actions remain outside this native slice.
                 </Text>
