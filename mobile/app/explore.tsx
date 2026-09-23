@@ -1,3 +1,4 @@
+import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -116,8 +117,8 @@ export default function ExploreScreen() {
 }
 
 function ServiceCard({ service }: { service: MarketplaceService }) {
-  return (
-    <View style={styles.card}>
+  const content = (
+    <>
       <View style={styles.cardHeader}>
         <View style={styles.cardTitleWrap}>
           <Text style={styles.cardTitle}>{service.service_name.en || 'Service'}</Text>
@@ -138,7 +139,27 @@ function ServiceCard({ service }: { service: MarketplaceService }) {
       <Text style={styles.rating}>
         ★ {service.rating.toFixed(1)} · {service.review_count} reviews
       </Text>
-    </View>
+    </>
+  );
+
+  if (!service.provider_id) return <View style={styles.card}>{content}</View>;
+
+  return (
+    <Link
+      href={{
+        pathname: '/service/[serviceId]',
+        params: {
+          serviceId: service.id,
+          providerType: service.provider_type,
+          providerId: service.provider_id,
+        },
+      }}
+      asChild
+    >
+      <Pressable style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
+        {content}
+      </Pressable>
+    </Link>
   );
 }
 
@@ -173,6 +194,7 @@ const styles = StyleSheet.create({
   resultCount: { fontSize: 13, fontWeight: '700', color: '#555565' },
   listContent: { gap: 10, paddingBottom: 8 },
   card: { gap: 9, padding: 16, borderRadius: 16, backgroundColor: '#ffffff' },
+  cardPressed: { opacity: 0.82 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
   cardTitleWrap: { flex: 1, gap: 3 },
   cardTitle: { fontSize: 17, fontWeight: '800', color: '#171721' },
