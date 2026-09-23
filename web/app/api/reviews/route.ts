@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     const session = await productionAuthProvider.requireCustomer(request);
     const url = new URL(request.url);
     const bookingId = url.searchParams.get('bookingId');
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(request);
 
     if (!bookingId) {
       const { data, error } = await supabase
@@ -36,12 +36,12 @@ export async function POST(request: Request) {
     const session = await productionAuthProvider.requireCustomer(request);
     const input = await request.json() as { booking_id?: string; rating?: number; comment?: string };
     if (!input.booking_id || !Number.isInteger(input.rating) || Number(input.rating) < 1 || Number(input.rating) > 5) return NextResponse.json({ error: 'A 1 to 5 star rating is required.' }, { status: 400 });
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(request);
     const { data: booking, error: bookingError } = await supabase.from('bookings').select('id,customer_id,service_id,provider_type,professional_id,business_id,status').eq('id', input.booking_id).eq('customer_id', session.user_id).maybeSingle();
     if (bookingError || !booking) return NextResponse.json({ error: 'Booking not found.' }, { status: 404 });
     if (booking.status !== 'completed') return NextResponse.json({ error: 'Only completed bookings can be reviewed.' }, { status: 409 });
 
-    const closeout = await getBookingCloseoutReadModel(String(booking.id), session.user_id);
+    const closeout = await getBookingCloseoutReadModel(String(booking.id), session.user_id, request);
     if (!closeout?.review_window_open) return NextResponse.json({ error: 'The review window for this booking has ended.' }, { status: 409 });
 
     const { data: existing } = await supabase.from('reviews').select('id').eq('booking_id', booking.id).maybeSingle();
