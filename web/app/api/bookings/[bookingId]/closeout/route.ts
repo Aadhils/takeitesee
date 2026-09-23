@@ -9,7 +9,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ book
     const session = await productionAuthProvider.getSession(request);
     if (!session) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
     const { bookingId } = await params;
-    const closeout = await getBookingCloseoutReadModel(bookingId, session.user_id);
+    const closeout = await getBookingCloseoutReadModel(bookingId, session.user_id, request);
     if (!closeout) return NextResponse.json({ error: 'Booking not found or not accessible.' }, { status: 404 });
     return NextResponse.json(closeout);
   } catch (error) {
