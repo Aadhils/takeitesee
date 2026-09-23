@@ -43,7 +43,7 @@ test('Native Contract v1 lists the core public, customer and provider route fami
 
 test('frozen route families remain backed by the existing server auth boundaries', () => {
   assert.ok(mobileSession.includes('productionAuthProvider.getSession(request)'));
-  assert.ok(requirements.includes('productionAuthProvider.requireCustomer(request)'));
+  assert.ok(requirements.includes('requireCustomerSupabase()'));
   assert.ok(providerLeads.includes('productionAuthProvider.requireProvider(request)'));
   assert.ok(bookings.includes('productionAuthProvider.requireCustomer(request)'));
   assert.ok(providerBookings.includes('productionAuthProvider.requireProvider(request)'));
