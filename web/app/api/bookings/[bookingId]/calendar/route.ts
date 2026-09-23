@@ -7,7 +7,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ book
   try {
     const { bookingId } = await params;
     const session = await productionAuthProvider.requireCustomer(request);
-    const booking = await productionBookingRepository.getBookingById(session, bookingId as EntityId);
+    const booking = await productionBookingRepository.getBookingById(session, bookingId as EntityId, request);
     if (!booking) return new Response(JSON.stringify({ error: 'Booking not found.' }), { status: 404, headers: { 'content-type': 'application/json' } });
 
     const calendar = buildBookingCalendar(booking);
