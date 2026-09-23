@@ -52,7 +52,7 @@ test('client does not invent customer or provider roles', () => {
 test('public Explore uses the frozen marketplace service search contract without bearer auth', () => {
   assert.ok(login.includes('Explore services without signing in'));
   assert.ok(explore.includes('searchMarketplaceServices'));
-  assert.ok(marketplace.includes("'/api/marketplace/services/search"));
+  assert.ok(marketplace.includes('/api/marketplace/services/search?'));
   assert.ok(!marketplace.includes('accessToken'));
   assert.ok(marketplace.includes("provider_type: 'professional' | 'business'"));
 });
