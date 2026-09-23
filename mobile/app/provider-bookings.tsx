@@ -74,10 +74,20 @@ export default function ProviderBookingsScreen() {
             </Pressable>
           </View>
 
+          <Link href="/provider-live-status" asChild>
+            <Pressable style={styles.liveStatusEntry}>
+              <View style={styles.liveStatusCopy}>
+                <Text style={styles.liveStatusTitle}>Live work status</Text>
+                <Text style={styles.liveStatusText}>Set Available, Busy, Offline or Paused with safe short expiry.</Text>
+              </View>
+              <Text style={styles.liveStatusArrow}>→</Text>
+            </Pressable>
+          </Link>
+
           <View style={styles.readOnlyCard}>
-            <Text style={styles.readOnlyTitle}>Read-only in this native slice</Text>
+            <Text style={styles.readOnlyTitle}>Server-authoritative booking journey</Text>
             <Text style={styles.muted}>
-              Accept, decline, completion, attendance and closeout actions are intentionally not available here yet.
+              Open a booking for its allowed native actions. Provider completion, closeout and payment actions remain intentionally excluded.
             </Text>
           </View>
 
@@ -141,6 +151,11 @@ const styles = StyleSheet.create({
   description: { fontSize: 14, lineHeight: 20, color: '#666678' },
   refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: '#ededf4' },
   refreshText: { fontSize: 12, fontWeight: '800', color: '#3f3f58' },
+  liveStatusEntry: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 15, borderRadius: 15, backgroundColor: '#30304a' },
+  liveStatusCopy: { flex: 1, gap: 3 },
+  liveStatusTitle: { fontSize: 15, fontWeight: '800', color: '#fff' },
+  liveStatusText: { fontSize: 12, lineHeight: 17, color: '#dedee9' },
+  liveStatusArrow: { fontSize: 22, fontWeight: '800', color: '#fff' },
   readOnlyCard: { gap: 4, padding: 14, borderRadius: 14, backgroundColor: '#f0f0f6' },
   readOnlyTitle: { fontSize: 13, fontWeight: '800', color: '#3d3d54' },
   inlineStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
