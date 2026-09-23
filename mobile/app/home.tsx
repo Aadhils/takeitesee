@@ -1,8 +1,9 @@
 import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { MobileNav } from '../components/MobileNav';
 import { apiFetch } from '../lib/api';
 import { useAuth } from '../providers/AuthProvider';
 
@@ -21,7 +22,6 @@ type HealthState =
 export default function HomeScreen() {
   const auth = useAuth();
   const [healthState, setHealthState] = useState<HealthState>({ state: 'loading' });
-  const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -41,9 +41,7 @@ export default function HomeScreen() {
     };
   }, []);
 
-  if (auth.status === 'signedOut') {
-    return <Redirect href="/login" />;
-  }
+  if (auth.status === 'signedOut') return <Redirect href="/login" />;
 
   if (auth.status === 'loading') {
     return (
@@ -56,35 +54,15 @@ export default function HomeScreen() {
     );
   }
 
-  const signOut = async () => {
-    if (signingOut) return;
-    setSigningOut(true);
-    try {
-      await auth.signOut();
-    } finally {
-      setSigningOut(false);
-    }
-  };
-
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+      <View style={styles.screen}>
         <View style={styles.header}>
-          <View style={styles.headerCopy}>
-            <Text style={styles.eyebrow}>TAKEITESEE MOBILE</Text>
-            <Text style={styles.title}>Your marketplace</Text>
-            <Text style={styles.description}>
-              Customer access is ready. Provider capabilities will appear only from server-authoritative roles.
-            </Text>
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            disabled={signingOut}
-            onPress={() => void signOut()}
-            style={({ pressed }) => [styles.signOutButton, pressed && styles.buttonPressed]}
-          >
-            <Text style={styles.signOutText}>{signingOut ? 'Signing out…' : 'Sign out'}</Text>
-          </Pressable>
+          <Text style={styles.eyebrow}>TAKEITESEE MOBILE</Text>
+          <Text style={styles.title}>Your marketplace</Text>
+          <Text style={styles.description}>
+            Customer access is ready. Explore services now; Provider navigation appears only from server-authoritative roles.
+          </Text>
         </View>
 
         <View style={styles.card}>
@@ -110,12 +88,12 @@ export default function HomeScreen() {
               <Text style={styles.releaseText}>Release: {healthState.health.release}</Text>
             </View>
           ) : null}
-          {healthState.state === 'error' ? (
-            <Text style={styles.errorText}>{healthState.message}</Text>
-          ) : null}
+          {healthState.state === 'error' ? <Text style={styles.errorText}>{healthState.message}</Text> : null}
         </View>
 
+        <View style={styles.spacer} />
         <Text style={styles.footer}>Native Contract v1 · Finance HOLD · Recurrence FROZEN</Text>
+        <MobileNav />
       </View>
     </SafeAreaView>
   );
@@ -124,9 +102,8 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f7f7fb' },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  container: { flex: 1, justifyContent: 'center', paddingHorizontal: 24, gap: 18 },
-  header: { gap: 14 },
-  headerCopy: { gap: 8 },
+  screen: { flex: 1, paddingHorizontal: 18, paddingTop: 18, paddingBottom: 10, gap: 14 },
+  header: { gap: 8 },
   eyebrow: { fontSize: 12, fontWeight: '700', letterSpacing: 1.6, color: '#5b5b72' },
   title: { fontSize: 32, lineHeight: 38, fontWeight: '800', color: '#171721' },
   description: { fontSize: 16, lineHeight: 24, color: '#555565' },
@@ -137,15 +114,6 @@ const styles = StyleSheet.create({
   statusText: { fontSize: 15, color: '#333342' },
   releaseText: { fontSize: 13, color: '#77778a' },
   errorText: { fontSize: 14, color: '#a12626' },
-  signOutButton: {
-    minHeight: 42,
-    alignSelf: 'flex-start',
-    justifyContent: 'center',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    backgroundColor: '#e9e9f1',
-  },
-  signOutText: { fontSize: 14, fontWeight: '700', color: '#30304a' },
-  buttonPressed: { opacity: 0.78 },
+  spacer: { flex: 1 },
   footer: { fontSize: 12, lineHeight: 18, color: '#7a7a8c' },
 });
