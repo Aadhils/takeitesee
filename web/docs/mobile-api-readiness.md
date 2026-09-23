@@ -36,6 +36,7 @@ Provider accounts continue to resolve their server-owned Professional or Busines
 8. Customer Booking calendar export and owned reschedule-slot availability are bearer-ready: the authenticated Request now stays attached to their owned booking/RLS reads, while the public service availability caller keeps the existing no-Request fallback.
 9. Notifications GET/PATCH is bearer-ready: the same native Request now drives both the Supabase RLS client and explicit user verification while existing unread modes, message destination enrichment and notification acknowledgement semantics remain unchanged.
 10. Provider Booking core is bearer-ready: list/detail reads, status actions and requirement-context reads keep the authenticated Provider Request attached to owner resolution, booking/history/closeout RLS reads and the existing `provider_update_booking_status` RPC. Existing accept/decline/complete validation, completion timing and closeout safety rules are unchanged.
+11. Messages is bearer-ready: inbox/unread workspace reads, conversation read/send, message-notification acknowledgement and conversation safety/block reads and writes keep the native Request attached to the Supabase RLS client while existing RPC payloads, participant checks, idempotency, read acknowledgement and block validation remain unchanged.
 
 ### Public provider directory
 
@@ -65,9 +66,8 @@ Unavailable or non-public profiles return 404. Unknown provider types return 400
 
 ## Next mobile-readiness slices
 
-1. Messages bearer propagation.
-2. Service completion and reviews.
-3. Final native contract freeze before React Native + Expo application work.
+1. Service completion and reviews.
+2. Final native contract freeze before React Native + Expo application work.
 
 ## Frozen boundaries
 
