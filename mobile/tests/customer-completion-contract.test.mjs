@@ -60,12 +60,14 @@ test('Customer completion slice does not add support, finance, closeout-control,
     '/settlement',
     '/reconciliation',
     '/recovery',
-    '/support',
     'cash collection',
     'cash-collection',
     'requirementoccurrencerecoverypanel',
   ]) {
     assert.ok(!slice.includes(forbidden), `unexpected frozen-domain reference: ${forbidden}`);
   }
+  assert.ok(!bookingsClient.includes('/support'));
+  assert.ok(!customerDetail.includes("pathname: '/support"));
+  assert.ok(!customerDetail.includes('href="/support'));
   assert.ok(!bookingsClient.includes("ProviderBookingAction = 'accept' | 'decline' | 'complete'"));
 });
