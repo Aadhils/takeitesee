@@ -3,8 +3,9 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../../../', import.meta.url);
-const [route, repository, ownership, availability] = await Promise.all([
+const [route, detailRoute, repository, ownership, availability] = await Promise.all([
   readFile(new URL('app/api/bookings/route.ts', root), 'utf8'),
+  readFile(new URL('app/api/bookings/[bookingId]/route.ts', root), 'utf8'),
   readFile(new URL('server/bookings/repository.ts', root), 'utf8'),
   readFile(new URL('server/bookings/ownership.ts', root), 'utf8'),
   readFile(new URL('server/bookings/availability.ts', root), 'utf8'),
@@ -20,6 +21,19 @@ test('customer booking list and create forward the bearer-bearing Request throug
   assert.ok(repository.includes('getCustomerBookings(session: ServerCustomerSession, request?: Request)'));
   assert.ok(repository.includes('async createBooking(session, input, request)'));
   assert.ok(repository.includes('async getCustomerBookings(session, request)'));
+});
+
+test('customer booking detail, cancel and reschedule keep the bearer-bearing Request on RLS clients', () => {
+  assert.equal((detailRoute.match(/productionAuthProvider\.requireCustomer\(request\)/g) ?? []).length, 2);
+  assert.ok(detailRoute.includes('productionBookingRepository.getBookingById(session, bookingId as EntityId, request)'));
+  assert.ok(detailRoute.includes('productionBookingRepository.updateBookingStatus(session, bookingId as EntityId, body.status, reason, request)'));
+  assert.ok(detailRoute.includes('productionBookingRepository.rescheduleBooking(session, bookingId as EntityId, { booking_date: body.booking_date, start_time: body.start_time, reason }, request)'));
+  assert.ok(repository.includes('getBookingById(session: ServerCustomerSession, bookingId: EntityId, request?: Request)'));
+  assert.ok(repository.includes('updateBookingStatus(session: ServerCustomerSession, bookingId: EntityId, status: ProductionBookingStatus, reason?: string, request?: Request)'));
+  assert.ok(repository.includes('rescheduleBooking(session: ServerCustomerSession, bookingId: EntityId, input: RescheduleBookingInput, request?: Request)'));
+  assert.ok(repository.includes("supabase.rpc('cancel_owned_booking'"));
+  assert.ok(repository.includes("supabase.rpc('reschedule_owned_booking'"));
+  assert.ok(repository.includes('assertBookingAvailability(availabilityInput, bookingId, request)'));
 });
 
 test('self-booking ownership guard keeps both Professional and Business ownership semantics', () => {
@@ -57,7 +71,7 @@ test('booking availability uses the same Request without changing windows, black
 });
 
 test('customer booking mobile-auth slice does not touch finance or frozen recovery routes', () => {
-  const combined = [route, repository, ownership, availability].join('\n').toLowerCase();
+  const combined = [route, detailRoute, repository, ownership, availability].join('\n').toLowerCase();
   for (const forbidden of ['cashfree', 'refund', 'payout', 'settlement', 'reconciliation', 'payment-intent', 'payment-method', '/checkout', 'requirementoccurrencerecoverypanel']) {
     assert.ok(!combined.includes(forbidden), `unexpected frozen-domain reference: ${forbidden}`);
   }
