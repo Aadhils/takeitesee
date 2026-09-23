@@ -1,6 +1,6 @@
-import { Redirect } from 'expo-router';
+import { Link, Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MobileNav } from '../components/MobileNav';
@@ -65,6 +65,16 @@ export default function HomeScreen() {
           </Text>
         </View>
 
+        <Link href="/bookings" asChild>
+          <Pressable style={styles.journeyCard}>
+            <View style={styles.journeyCopy}>
+              <Text style={styles.cardTitle}>My bookings</Text>
+              <Text style={styles.statusText}>Review your service date, provider and current journey status.</Text>
+            </View>
+            <Text style={styles.journeyArrow}>→</Text>
+          </Pressable>
+        </Link>
+
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Server-validated identity</Text>
           <Text style={styles.statusText}>User: {auth.identity.userId}</Text>
@@ -107,6 +117,9 @@ const styles = StyleSheet.create({
   eyebrow: { fontSize: 12, fontWeight: '700', letterSpacing: 1.6, color: '#5b5b72' },
   title: { fontSize: 32, lineHeight: 38, fontWeight: '800', color: '#171721' },
   description: { fontSize: 16, lineHeight: 24, color: '#555565' },
+  journeyCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 18, borderRadius: 18, backgroundColor: '#30304a' },
+  journeyCopy: { flex: 1, gap: 4 },
+  journeyArrow: { fontSize: 24, fontWeight: '800', color: '#fff' },
   card: { padding: 18, borderRadius: 18, backgroundColor: '#ffffff', gap: 12 },
   cardTitle: { fontSize: 17, fontWeight: '700', color: '#171721' },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
