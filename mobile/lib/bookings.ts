@@ -89,6 +89,11 @@ export type ProviderBooking = {
   closed_at?: string;
 };
 
+export type ProviderAttendanceResult = {
+  booking_id: string;
+  attendance_outcome: AttendanceOutcome;
+};
+
 async function currentAccessToken() {
   const { data, error } = await supabase.auth.getSession();
   if (error) throw error;
@@ -101,6 +106,12 @@ function validateReason(reason: string) {
   const normalized = reason.trim();
   if (normalized.length < 3) throw new Error('Please enter a reason of at least 3 characters.');
   if (normalized.length > 500) throw new Error('Reason must be 500 characters or fewer.');
+  return normalized;
+}
+
+function validateAttendanceNote(note: string) {
+  const normalized = note.trim();
+  if (normalized.length > 1000) throw new Error('No-show details must be 1000 characters or fewer.');
   return normalized;
 }
 
@@ -205,6 +216,19 @@ export async function transitionProviderBooking(
     method: 'PATCH',
     accessToken,
     body: JSON.stringify(body),
+  });
+}
+
+export async function reportProviderCustomerNoShow(bookingId: string, note = '') {
+  const accessToken = await currentAccessToken();
+  const normalizedNote = validateAttendanceNote(note);
+  return apiFetch<ProviderAttendanceResult>(`/api/provider/bookings/${encodeURIComponent(bookingId)}/attendance`, {
+    method: 'POST',
+    accessToken,
+    body: JSON.stringify({
+      action: 'report_customer_no_show',
+      note: normalizedNote || undefined,
+    }),
   });
 }
 
