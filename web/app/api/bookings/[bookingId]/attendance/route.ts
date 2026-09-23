@@ -14,7 +14,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ boo
       return NextResponse.json({ error: 'A valid attendance action is required.' }, { status: 400 });
     }
 
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(request);
     if (body.action === 'confirm_completion') {
       const { error } = await supabase.rpc('customer_confirm_service_completion', { target_booking_id: bookingId });
       if (error) throw new Error(error.message);
@@ -25,7 +25,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ boo
       if (error) throw new Error(error.message);
     }
 
-    const closeout = await getBookingCloseoutReadModel(bookingId, session.user_id);
+    const closeout = await getBookingCloseoutReadModel(bookingId, session.user_id, request);
     if (!closeout) return NextResponse.json({ error: 'Booking closeout could not be loaded.' }, { status: 404 });
     return NextResponse.json(closeout);
   } catch (error) {
