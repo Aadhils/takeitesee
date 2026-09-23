@@ -84,6 +84,16 @@ export default function ProviderBookingsScreen() {
             </Pressable>
           </Link>
 
+          <Link href="/provider-service-availability" asChild>
+            <Pressable style={styles.liveStatusEntry}>
+              <View style={styles.liveStatusCopy}>
+                <Text style={styles.liveStatusTitle}>Service booking mode</Text>
+                <Text style={styles.liveStatusText}>Switch each service between Always available, On request and existing Scheduled hours.</Text>
+              </View>
+              <Text style={styles.liveStatusArrow}>→</Text>
+            </Pressable>
+          </Link>
+
           <View style={styles.readOnlyCard}>
             <Text style={styles.readOnlyTitle}>Server-authoritative booking journey</Text>
             <Text style={styles.muted}>
