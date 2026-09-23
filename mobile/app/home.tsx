@@ -91,7 +91,7 @@ export default function HomeScreen() {
           <Text style={styles.cardTitle}>Server-validated identity</Text>
           <Text style={styles.statusText}>User: {auth.identity.userId}</Text>
           <Text style={styles.statusText}>
-            Roles: {auth.identity.roles.length ? auth.identity.roles.join(', ') : 'customer'}
+            Roles: {auth.identity.roles.length ? auth.identity.roles.join(', ') : 'No roles returned'}
           </Text>
         </View>
 
