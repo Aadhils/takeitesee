@@ -54,6 +54,8 @@ Professional responses include normalized identity/disclosure/contact data, acti
 
 Business responses include normalized identity/disclosure/contact data, active services and public product summaries.
 
+Native clients must treat `providerId` as an opaque identifier returned by marketplace search or the provider directory; clients must not construct or infer provider ids.
+
 Unavailable or non-public profiles return 404. Unknown provider types return 400. These endpoints are public and do not weaken the existing profile eligibility rules.
 
 ## Next mobile-readiness slices
