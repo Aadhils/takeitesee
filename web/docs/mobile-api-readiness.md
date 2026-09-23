@@ -39,7 +39,65 @@ Provider accounts continue to resolve their server-owned Professional or Busines
 11. Messages is bearer-ready: inbox/unread workspace reads, conversation read/send, message-notification acknowledgement and conversation safety/block reads and writes keep the native Request attached to the Supabase RLS client while existing RPC payloads, participant checks, idempotency, read acknowledgement and block validation remain unchanged.
 12. Service completion and Reviews are bearer-ready: customer/provider attendance actions, closeout read state, customer review list/create and provider review list/response keep the authenticated Request attached to RLS reads/writes. Completion/no-show RPC payloads, rating/review-window/duplicate guards, provider response validation, SLA state rules and the existing read-only payment-status close blocker remain unchanged.
 
-### Public provider directory
+## Native Contract v1 — FROZEN
+
+The Phase 1 native API contract is now frozen for the first React Native + Expo client implementation. Existing browser flows remain supported in parallel.
+
+### Authentication contract
+
+- Native authenticated calls send `Authorization: Bearer <Supabase access token>`.
+- The server verifies the Supabase user and derives platform Customer / Professional / Business roles from server-owned records.
+- Native clients must never infer Provider identity, role, ownership, booking eligibility or requirement eligibility locally.
+- 401 means authentication is required or invalid. 403 remains an authorization/participant/ownership denial when a route distinguishes it. Validation/state conflicts continue to use the existing route-specific 4xx responses.
+- Browser cookie authentication remains a supported fallback; the native contract must not remove it.
+
+### Public discovery contract
+
+- `GET /api/marketplace/services/search`
+- `POST /api/marketplace/services/nearby`
+- `GET /api/marketplace/providers`
+- `GET /api/marketplace/providers/{providerType}/{providerId}`
+
+Provider IDs are opaque values returned by TakeItEsee. Native clients must not construct or infer them.
+
+### Customer contract families
+
+- `/api/requirements`
+- `/api/requirements/{requirementId}` and its existing proposal actions
+- `/api/bookings`
+- `/api/bookings/{bookingId}` and existing cancel/reschedule/calendar/availability flows
+- `POST /api/bookings/{bookingId}/attendance`
+- `GET /api/bookings/{bookingId}/closeout`
+- `GET|POST /api/reviews`
+- `GET|PATCH /api/notifications`
+- `GET /api/messages`
+- `GET|POST /api/messages/{conversationId}`
+- `GET|PATCH /api/messages/{conversationId}/safety`
+
+### Provider contract families
+
+- `GET|PATCH|POST /api/provider/requirement-leads`
+- `GET /api/provider/bookings`
+- `GET|PATCH /api/provider/bookings/{bookingId}`
+- `GET /api/provider/bookings/{bookingId}/requirement-context`
+- `POST /api/provider/bookings/{bookingId}/attendance`
+- `GET|PATCH /api/provider/reviews`
+- Provider Notifications and Messages use the same shared notification/message contracts and workspace scoping already used by the web application.
+
+### Contract invariants
+
+- One account remains Customer + exactly one final Provider identity: Professional OR Business, never both.
+- Requirement proposal, booking, message, attendance, closeout and review ownership checks remain server-authoritative.
+- Message idempotency, booking idempotency, proposal validation, booking transition validation, attendance/no-show validation, review-window validation and duplicate-review protection remain unchanged.
+- Notification unread modes, message workspace scoping and message safety/block semantics remain unchanged.
+- Native clients must treat server status/state strings and opaque IDs as authoritative and must not reproduce state machines independently.
+- Additive response fields may be introduced without breaking v1. Removing/renaming existing fields, changing existing mutation payloads, changing route methods/paths, or weakening server-side guards requires an explicit Native Contract v2 decision.
+
+### Native client implementation rule
+
+React Native + Expo may now build against Native Contract v1. Client code should centralize base URL, bearer-token injection, JSON/error parsing and route typing so future contract changes are isolated to the API layer rather than screen components.
+
+## Public provider directory
 
 `GET /api/marketplace/providers`
 
@@ -51,7 +109,7 @@ Optional provider filter:
 
 Each provider row includes the existing public directory fields plus `provider_type` and `profile_path`. The endpoint applies the same verified/disclosure/public-readiness rules already used by the web Professionals and Businesses directories.
 
-### Public provider detail
+## Public provider detail
 
 `GET /api/marketplace/providers/professional/{providerId}`
 
@@ -65,10 +123,10 @@ Native clients must treat `providerId` as an opaque identifier returned by marke
 
 Unavailable or non-public profiles return 404. Unknown provider types return 400. These endpoints are public and do not weaken the existing profile eligibility rules.
 
-## Next mobile-readiness slice
+## Phase 1 status
 
-1. Final native contract freeze before React Native + Expo application work.
+Mobile API Readiness Phase 1 is complete. Native Contract v1 is frozen and ready for React Native + Expo application work.
 
 ## Frozen boundaries
 
-Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD. Recurrence/recovery remains FROZEN. `RequirementOccurrenceRecoveryPanel.tsx` remains untouched.
+Finance/Cashfree/payment/refund/payout/settlement/reconciliation/recovery remain HOLD and are not part of Native Contract v1. Recurrence/recovery remains FROZEN and is not part of Native Contract v1. `RequirementOccurrenceRecoveryPanel.tsx` remains untouched.
