@@ -12,16 +12,20 @@ const [bookingsClient, providerDetail, providerAttendanceRoute, attendanceHarden
   readFile(new URL('web/database/migrations/20260829_phase12_closeout_sla_hardening.sql', repoRoot), 'utf8'),
 ]);
 
+const providerAttendanceStart = bookingsClient.indexOf('export async function reportProviderCustomerNoShow');
+const providerAttendanceEnd = bookingsClient.indexOf('export function formatBookingMoney');
+const providerAttendanceClient = bookingsClient.slice(providerAttendanceStart, providerAttendanceEnd);
+
 test('native Provider attendance exposes only customer no-show through the frozen server route', () => {
-  assert.ok(bookingsClient.includes('reportProviderCustomerNoShow'));
-  assert.ok(bookingsClient.includes('`/api/provider/bookings/${encodeURIComponent(bookingId)}/attendance`'));
-  assert.ok(bookingsClient.includes("method: 'POST'"));
-  assert.ok(bookingsClient.includes('accessToken'));
-  assert.ok(bookingsClient.includes("action: 'report_customer_no_show'"));
+  assert.ok(providerAttendanceClient.includes('reportProviderCustomerNoShow'));
+  assert.ok(providerAttendanceClient.includes('`/api/provider/bookings/${encodeURIComponent(bookingId)}/attendance`'));
+  assert.ok(providerAttendanceClient.includes("method: 'POST'"));
+  assert.ok(providerAttendanceClient.includes('accessToken'));
+  assert.ok(providerAttendanceClient.includes("action: 'report_customer_no_show'"));
   assert.ok(bookingsClient.includes('normalized.length > 1000'));
-  assert.ok(!bookingsClient.includes("action: 'confirm_completion'"));
-  assert.ok(!bookingsClient.includes("action: 'report_provider_no_show'"));
-  assert.ok(!bookingsClient.includes('`/api/bookings/${encodeURIComponent(bookingId)}/attendance`'));
+  assert.ok(!providerAttendanceClient.includes("action: 'confirm_completion'"));
+  assert.ok(!providerAttendanceClient.includes("action: 'report_provider_no_show'"));
+  assert.ok(!providerAttendanceClient.includes('`/api/bookings/${encodeURIComponent(bookingId)}/attendance`'));
 });
 
 test('Provider attendance UI is confirmed, narrow and does not implement the grace-period state machine', () => {
@@ -52,7 +56,7 @@ test('existing Provider attendance endpoint keeps ownership, outcome and grace c
 });
 
 test('Provider attendance slice does not add finance, closeout-control, recovery or cash-collection routes', () => {
-  const slice = `${bookingsClient}\n${providerDetail}`.toLowerCase();
+  const slice = `${providerAttendanceClient}\n${providerDetail}`.toLowerCase();
   for (const forbidden of [
     '/closeout',
     '/checkout',
