@@ -1,4 +1,4 @@
-import { Redirect } from 'expo-router';
+import { Link, Redirect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -156,6 +156,16 @@ export default function ProviderScreen() {
               <Text style={styles.refreshText}>Refresh</Text>
             </Pressable>
           </View>
+
+          <Link href="/provider-bookings" asChild>
+            <Pressable style={styles.bookingEntry}>
+              <View style={styles.bookingEntryCopy}>
+                <Text style={styles.bookingEntryTitle}>Provider bookings</Text>
+                <Text style={styles.bookingEntryText}>Review assigned service bookings and current journey status.</Text>
+              </View>
+              <Text style={styles.bookingEntryArrow}>→</Text>
+            </Pressable>
+          </Link>
 
           {notice ? <View style={styles.successCard}><Text style={styles.successText}>{notice}</Text></View> : null}
           {actionError ? <View style={styles.errorCard}><Text style={styles.errorText}>{actionError}</Text></View> : null}
@@ -325,6 +335,11 @@ const styles = StyleSheet.create({
   description: { fontSize: 14, lineHeight: 20, color: '#666678' },
   refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: '#ededf4' },
   refreshText: { fontSize: 12, fontWeight: '800', color: '#3f3f58' },
+  bookingEntry: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 15, borderRadius: 15, backgroundColor: '#30304a' },
+  bookingEntryCopy: { flex: 1, gap: 3 },
+  bookingEntryTitle: { fontSize: 15, fontWeight: '800', color: '#fff' },
+  bookingEntryText: { fontSize: 12, lineHeight: 17, color: '#dedee9' },
+  bookingEntryArrow: { fontSize: 22, fontWeight: '800', color: '#fff' },
   successCard: { padding: 13, borderRadius: 12, backgroundColor: '#edf8ef' },
   successText: { fontSize: 13, fontWeight: '700', color: '#285c33' },
   errorCard: { padding: 13, borderRadius: 12, backgroundColor: '#fff0f0' },
