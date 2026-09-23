@@ -26,6 +26,8 @@ export default function AccountScreen() {
     return <Redirect href="/login" />;
   }
 
+  const providerAccess = auth.identity.roles.includes('professional') || auth.identity.roles.includes('business_owner');
+
   const signOut = async () => {
     if (signingOut) return;
     setSigningOut(true);
@@ -68,6 +70,27 @@ export default function AccountScreen() {
           </Link>
         </View>
 
+        <View style={styles.quickRow}>
+          <Link href="/reviews" asChild>
+            <Pressable style={styles.quickCard}>
+              <Text style={styles.quickEyebrow}>FEEDBACK</Text>
+              <Text style={styles.quickTitle}>My reviews</Text>
+              <Text style={styles.quickText}>Read your published service feedback and Provider responses.</Text>
+              <Text style={styles.quickOpen}>Open →</Text>
+            </Pressable>
+          </Link>
+          {providerAccess ? (
+            <Link href="/provider-reviews" asChild>
+              <Pressable style={styles.quickCard}>
+                <Text style={styles.quickEyebrow}>PROVIDER</Text>
+                <Text style={styles.quickTitle}>Provider reviews</Text>
+                <Text style={styles.quickText}>Read Customer ratings and your existing response history.</Text>
+                <Text style={styles.quickOpen}>Open →</Text>
+              </Pressable>
+            </Link>
+          ) : <View style={styles.quickSpacer} />}
+        </View>
+
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Identity</Text>
           <Text style={styles.value}>User ID</Text>
@@ -105,7 +128,8 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, lineHeight: 34, fontWeight: '800', color: '#171721' },
   description: { fontSize: 14, lineHeight: 20, color: '#666678' },
   quickRow: { flexDirection: 'row', gap: 10 },
-  quickCard: { flex: 1, minHeight: 142, gap: 5, padding: 14, borderRadius: 15, backgroundColor: '#fff' },
+  quickCard: { flex: 1, minHeight: 132, gap: 5, padding: 14, borderRadius: 15, backgroundColor: '#fff' },
+  quickSpacer: { flex: 1 },
   quickEyebrow: { fontSize: 9, fontWeight: '800', letterSpacing: 1, color: '#77778a' },
   quickTitle: { fontSize: 16, fontWeight: '800', color: '#171721' },
   quickText: { flex: 1, fontSize: 12, lineHeight: 17, color: '#666678' },
