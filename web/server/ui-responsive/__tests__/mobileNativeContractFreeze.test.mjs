@@ -20,7 +20,8 @@ test('Native Contract v1 is explicitly frozen for React Native + Expo', () => {
   assert.ok(doc.includes('## Native Contract v1 — FROZEN'));
   assert.ok(doc.includes('Authorization: Bearer <Supabase access token>'));
   assert.ok(doc.includes('React Native + Expo may now build against Native Contract v1'));
-  assert.ok(doc.includes('Mobile API Readiness Phase 1 is complete'));
+  assert.ok(doc.includes('## Phase 1 status'));
+  assert.ok(doc.includes('Native Contract v1 is frozen and ready for React Native + Expo application work.'));
 });
 
 test('Native Contract v1 lists the core public, customer and provider route families', () => {
