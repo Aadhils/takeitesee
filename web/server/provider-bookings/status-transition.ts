@@ -11,9 +11,10 @@ export async function transitionProviderBookingStatus(
   bookingId: EntityId,
   action: ProviderBookingAction,
   reason?: string,
+  request?: Request,
 ): Promise<ProviderBookingRecord> {
   assertProductionBackendConfigured();
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient(request);
 
   const { error } = await supabase.rpc('provider_update_booking_status', {
     p_booking_id: bookingId,
@@ -23,7 +24,7 @@ export async function transitionProviderBookingStatus(
 
   if (error) throw new Error(error.message);
 
-  const booking = await productionProviderBookingRepository.getById(session, bookingId);
+  const booking = await productionProviderBookingRepository.getById(session, bookingId, request);
   if (!booking) throw new Error('Booking status changed but the booking could not be reloaded.');
   return booking;
 }
