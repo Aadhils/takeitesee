@@ -12,9 +12,13 @@
       "typedRoutes": true
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.uvmart.takeitesee",
+      "buildNumber": "1"
     },
     "android": {
+      "package": "com.uvmart.takeitesee",
+      "versionCode": 1,
       "edgeToEdgeEnabled": true
     }
   }
