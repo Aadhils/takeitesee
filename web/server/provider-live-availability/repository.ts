@@ -56,8 +56,8 @@ function effectiveWorkMode(workMode: ProviderWorkMode, modeExpiresAt: string | n
   return workMode;
 }
 
-async function resolveProviderIdentity(session: ServerCustomerSession): Promise<ProviderIdentity> {
-  const supabase = await createSupabaseServerClient();
+async function resolveProviderIdentity(session: ServerCustomerSession, request?: Request): Promise<ProviderIdentity> {
+  const supabase = await createSupabaseServerClient(request);
   const [{ data: professional, error: professionalError }, { data: business, error: businessError }] = await Promise.all([
     supabase.from('professional_profiles').select('id').eq('user_id', session.user_id).maybeSingle(),
     supabase.from('businesses').select('id').eq('owner_user_id', session.user_id).limit(1).maybeSingle(),
@@ -76,10 +76,10 @@ async function resolveProviderIdentity(session: ServerCustomerSession): Promise<
 }
 
 export const productionProviderLiveAvailabilityRepository = {
-  async get(session: ServerCustomerSession): Promise<ProviderLiveAvailabilityRecord> {
+  async get(session: ServerCustomerSession, request?: Request): Promise<ProviderLiveAvailabilityRecord> {
     assertProductionBackendConfigured();
-    const identity = await resolveProviderIdentity(session);
-    const supabase = await createSupabaseServerClient();
+    const identity = await resolveProviderIdentity(session, request);
+    const supabase = await createSupabaseServerClient(request);
     const query = supabase
       .from('provider_live_availability')
       .select('work_mode,mode_expires_at,status_changed_at,updated_at')
@@ -102,11 +102,11 @@ export const productionProviderLiveAvailabilityRepository = {
     };
   },
 
-  async save(session: ServerCustomerSession, input: ProviderLiveAvailabilityInput): Promise<ProviderLiveAvailabilityRecord> {
+  async save(session: ServerCustomerSession, input: ProviderLiveAvailabilityInput, request?: Request): Promise<ProviderLiveAvailabilityRecord> {
     assertProductionBackendConfigured();
     const normalized = normalizeInput(input);
-    const identity = await resolveProviderIdentity(session);
-    const supabase = await createSupabaseServerClient();
+    const identity = await resolveProviderIdentity(session, request);
+    const supabase = await createSupabaseServerClient(request);
 
     const query = supabase
       .from('provider_live_availability')
@@ -134,6 +134,6 @@ export const productionProviderLiveAvailabilityRepository = {
       if (error) throw new Error(error.message);
     }
 
-    return this.get(session);
+    return this.get(session, request);
   },
 };
