@@ -4,6 +4,7 @@ import { supabase } from './supabase';
 export type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'rescheduled';
 export type AttendanceOutcome = 'pending' | 'service_completed' | 'customer_no_show' | 'provider_no_show';
 export type CloseoutState = 'open' | 'awaiting_customer' | 'support_open' | 'eligible_to_close' | 'closed';
+export type ProviderBookingAction = 'accept' | 'decline';
 
 export type BookingProvider = {
   provider_type: 'professional' | 'business';
@@ -187,6 +188,23 @@ export async function fetchProviderBooking(bookingId: string) {
   return apiFetch<{ booking: ProviderBooking }>(`/api/provider/bookings/${encodeURIComponent(bookingId)}`, {
     method: 'GET',
     accessToken,
+  });
+}
+
+export async function transitionProviderBooking(
+  bookingId: string,
+  action: ProviderBookingAction,
+  reason?: string,
+) {
+  const accessToken = await currentAccessToken();
+  const body = action === 'decline'
+    ? { action, reason: validateReason(reason ?? '') }
+    : { action };
+
+  return apiFetch<{ booking: ProviderBooking }>(`/api/provider/bookings/${encodeURIComponent(bookingId)}`, {
+    method: 'PATCH',
+    accessToken,
+    body: JSON.stringify(body),
   });
 }
 

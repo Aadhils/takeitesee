@@ -25,14 +25,14 @@ const [
 
 const bookingSlice = [bookingsClient, customerList, customerDetail, customerActions, providerList, providerDetail].join('\n');
 
-test('native bookings client preserves authenticated Customer actions and Provider reads', () => {
+test('native bookings client preserves authenticated Customer and safe Provider actions', () => {
   assert.ok(bookingsClient.includes("'/api/bookings'"));
   assert.ok(bookingsClient.includes('`/api/bookings/${encodeURIComponent(bookingId)}`'));
   assert.ok(bookingsClient.includes('`/api/bookings/${encodeURIComponent(bookingId)}/availability`'));
   assert.ok(bookingsClient.includes("'/api/provider/bookings'"));
   assert.ok(bookingsClient.includes('`/api/provider/bookings/${encodeURIComponent(bookingId)}`'));
   assert.equal((bookingsClient.match(/method: 'GET'/g) ?? []).length, 5);
-  assert.equal((bookingsClient.match(/method: 'PATCH'/g) ?? []).length, 2);
+  assert.equal((bookingsClient.match(/method: 'PATCH'/g) ?? []).length, 3);
   assert.ok(bookingsClient.includes('accessToken'));
   assert.ok(bookingsClient.includes('supabase.auth.getSession()'));
   assert.ok(!bookingsClient.includes("method: 'POST'"));
@@ -64,14 +64,21 @@ test('Customer booking action contract mirrors existing server rules without cop
   assert.ok(customerActions.includes("current = isCurrentBookingSlot"));
 });
 
-test('Provider booking journey remains role-gated and read-only', () => {
+test('Provider booking journey is role-gated and exposes only accept or decline actions', () => {
   assert.ok(providerList.includes("roles.includes('professional')"));
   assert.ok(providerList.includes("roles.includes('business_owner')"));
   assert.ok(providerList.includes('fetchProviderBookings'));
   assert.ok(providerDetail.includes('fetchProviderBooking'));
   assert.ok(providerDetail.includes('booking.history'));
-  assert.ok(providerDetail.includes('Read-only native Provider journey'));
-  assert.ok(!providerDetail.includes('transitionProviderBookingStatus'));
+  assert.ok(providerDetail.includes("['pending', 'rescheduled'].includes(booking.status)"));
+  assert.ok(providerDetail.includes("submitAction('accept')"));
+  assert.ok(providerDetail.includes("submitAction('decline')"));
+  assert.ok(providerDetail.includes('declineReason.trim().length < 3'));
+  assert.ok(providerDetail.includes('Server-authoritative Provider journey'));
+  assert.ok(bookingsClient.includes("export type ProviderBookingAction = 'accept' | 'decline';"));
+  assert.ok(bookingsClient.includes("action === 'decline'"));
+  assert.ok(!providerDetail.includes("submitAction('complete')"));
+  assert.ok(!bookingsClient.includes("ProviderBookingAction = 'accept' | 'decline' | 'complete'"));
   assert.ok(!providerDetail.includes('cancelCustomerBooking'));
   assert.ok(!providerDetail.includes('rescheduleCustomerBooking'));
 });
@@ -83,7 +90,7 @@ test('Customer Home and Provider workspace expose focused booking entries', () =
   assert.ok(providerWorkspace.includes('Provider bookings'));
 });
 
-test('Customer booking actions stay outside finance, attendance, completion, recovery and job routes', () => {
+test('native booking actions stay outside finance, attendance, completion, recovery and job routes', () => {
   const lower = bookingSlice.toLowerCase();
   for (const forbidden of [
     '/attendance',

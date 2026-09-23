@@ -1,6 +1,6 @@
 import { Link, Redirect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
@@ -8,7 +8,9 @@ import {
   formatBookingMoney,
   formatBookingStatus,
   formatBookingTime,
+  transitionProviderBooking,
   type ProviderBooking,
+  type ProviderBookingAction,
 } from '../../lib/bookings';
 import { useAuth } from '../../providers/AuthProvider';
 
@@ -22,6 +24,9 @@ export default function ProviderBookingDetailScreen() {
   const params = useLocalSearchParams<{ bookingId?: string | string[] }>();
   const bookingId = Array.isArray(params.bookingId) ? params.bookingId[0] : params.bookingId;
   const [state, setState] = useState<DetailState>({ status: 'loading', booking: null });
+  const [declineReason, setDeclineReason] = useState('');
+  const [actionError, setActionError] = useState('');
+  const [busyAction, setBusyAction] = useState<ProviderBookingAction | null>(null);
 
   const isProvider = auth.status === 'signedIn'
     && (auth.identity.roles.includes('professional') || auth.identity.roles.includes('business_owner'));
@@ -44,6 +49,25 @@ export default function ProviderBookingDetailScreen() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const submitAction = async (action: ProviderBookingAction) => {
+    if (!bookingId || busyAction) return;
+    setActionError('');
+    setBusyAction(action);
+    try {
+      const payload = await transitionProviderBooking(
+        bookingId,
+        action,
+        action === 'decline' ? declineReason : undefined,
+      );
+      setState({ status: 'ready', booking: payload.booking });
+      setDeclineReason('');
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Unable to update booking.');
+    } finally {
+      setBusyAction(null);
+    }
+  };
 
   if (auth.status === 'loading') {
     return (
@@ -71,10 +95,11 @@ export default function ProviderBookingDetailScreen() {
   }
 
   const booking = state.status === 'ready' ? state.booking : null;
+  const canRespond = booking ? ['pending', 'rescheduled'].includes(booking.status) : false;
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.topRow}>
           <Link href="/provider-bookings" style={styles.backLink}>← Provider bookings</Link>
           <Pressable onPress={() => void load()} style={styles.refreshButton}>
@@ -114,6 +139,57 @@ export default function ProviderBookingDetailScreen() {
               {booking.customer_notes ? <DetailRow label="Customer note" value={booking.customer_notes} /> : null}
             </View>
 
+            {canRespond ? (
+              <View style={styles.actionCard}>
+                <Text style={styles.eyebrow}>{booking.status === 'rescheduled' ? 'Reschedule request' : 'Booking request'}</Text>
+                <Text style={styles.sectionTitle}>
+                  {booking.status === 'rescheduled' ? 'Confirm the customer’s new time' : 'Respond to this booking'}
+                </Text>
+                <Text style={styles.muted}>
+                  Accept confirms this booking. Decline requires a reason and cancels the request. The server remains authoritative for ownership and status rules.
+                </Text>
+
+                <Pressable
+                  disabled={busyAction !== null}
+                  onPress={() => void submitAction('accept')}
+                  style={({ pressed }) => [styles.acceptButton, pressed && styles.pressed, busyAction !== null && styles.disabled]}
+                >
+                  <Text style={styles.acceptButtonText}>
+                    {busyAction === 'accept'
+                      ? 'Accepting…'
+                      : booking.status === 'rescheduled' ? 'Accept new time' : 'Accept booking'}
+                  </Text>
+                </Pressable>
+
+                <View style={styles.declineBox}>
+                  <Text style={styles.fieldLabel}>Decline reason</Text>
+                  <TextInput
+                    editable={busyAction === null}
+                    maxLength={500}
+                    multiline
+                    onChangeText={setDeclineReason}
+                    placeholder="Tell the customer why you cannot take this booking"
+                    style={styles.input}
+                    value={declineReason}
+                  />
+                  <Text style={styles.counter}>{declineReason.trim().length}/500</Text>
+                  <Pressable
+                    disabled={busyAction !== null || declineReason.trim().length < 3}
+                    onPress={() => void submitAction('decline')}
+                    style={({ pressed }) => [
+                      styles.declineButton,
+                      pressed && styles.pressed,
+                      (busyAction !== null || declineReason.trim().length < 3) && styles.disabled,
+                    ]}
+                  >
+                    <Text style={styles.declineButtonText}>{busyAction === 'decline' ? 'Declining…' : 'Decline booking'}</Text>
+                  </Pressable>
+                </View>
+
+                {actionError ? <Text style={styles.errorText}>{actionError}</Text> : null}
+              </View>
+            ) : null}
+
             <View style={styles.card}>
               <Text style={styles.sectionTitle}>Journey status</Text>
               <DetailRow label="Booking" value={formatBookingStatus(booking.status)} />
@@ -141,9 +217,9 @@ export default function ProviderBookingDetailScreen() {
             </View>
 
             <View style={styles.readOnlyCard}>
-              <Text style={styles.readOnlyTitle}>Read-only native Provider journey</Text>
+              <Text style={styles.readOnlyTitle}>Server-authoritative Provider journey</Text>
               <Text style={styles.muted}>
-                Accept, decline, completion, attendance and closeout actions are intentionally outside this slice.
+                Completion, attendance, closeout and payment actions remain outside this native slice.
               </Text>
             </View>
           </>
@@ -172,9 +248,10 @@ const styles = StyleSheet.create({
   refreshText: { fontSize: 12, fontWeight: '800', color: '#3f3f58' },
   inlineStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   card: { gap: 12, padding: 17, borderRadius: 17, backgroundColor: '#fff' },
+  actionCard: { gap: 12, padding: 17, borderRadius: 17, backgroundColor: '#fff7e8' },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
   cardTitleWrap: { flex: 1, gap: 4 },
-  eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.1, color: '#77778a' },
+  eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.1, color: '#77778a', textTransform: 'uppercase' },
   title: { fontSize: 24, lineHeight: 30, fontWeight: '800', color: '#171721' },
   description: { fontSize: 14, lineHeight: 20, color: '#555565' },
   statusBadge: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase', color: '#4b4b65', backgroundColor: '#efeff5', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
@@ -182,6 +259,16 @@ const styles = StyleSheet.create({
   detailRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 },
   detailLabel: { flex: 1, fontSize: 12, color: '#77778a' },
   detailValue: { flex: 1.3, fontSize: 13, fontWeight: '700', textAlign: 'right', color: '#333342' },
+  acceptButton: { alignItems: 'center', paddingHorizontal: 14, paddingVertical: 13, borderRadius: 12, backgroundColor: '#1f6b45' },
+  acceptButtonText: { fontSize: 13, fontWeight: '800', color: '#fff' },
+  declineBox: { gap: 8, paddingTop: 4 },
+  fieldLabel: { fontSize: 12, fontWeight: '800', color: '#3d3d54' },
+  input: { minHeight: 86, padding: 12, borderWidth: 1, borderColor: '#d9d9e3', borderRadius: 12, backgroundColor: '#fff', color: '#171721', textAlignVertical: 'top' },
+  counter: { alignSelf: 'flex-end', fontSize: 11, color: '#77778a' },
+  declineButton: { alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: '#9a3d3d', backgroundColor: '#fff' },
+  declineButtonText: { fontSize: 13, fontWeight: '800', color: '#8b3535' },
+  pressed: { opacity: 0.82 },
+  disabled: { opacity: 0.45 },
   historyRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   historyDot: { width: 9, height: 9, marginTop: 5, borderRadius: 999, backgroundColor: '#30304a' },
   historyCopy: { flex: 1, gap: 2 },
