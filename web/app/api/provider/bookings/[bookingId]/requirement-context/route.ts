@@ -11,7 +11,7 @@ export async function GET(request: Request, context: RouteContext) {
   try {
     const session = await productionAuthProvider.requireProvider(request);
     const { bookingId } = await context.params;
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(request);
     const { data, error } = await supabase.rpc('provider_get_booking_requirement_context', { target_booking_id: bookingId });
     if (error) throw new Error(error.message);
     if (!data || typeof data !== 'object' || Array.isArray(data)) return NextResponse.json({ context: data ?? null });

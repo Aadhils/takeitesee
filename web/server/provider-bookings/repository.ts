@@ -71,8 +71,8 @@ function completionEligibleAt(row: Record<string, unknown>) {
   return start + Number(row.duration_minutes || 0) * 60_000;
 }
 
-async function resolveOwner(session: ServerCustomerSession): Promise<ProviderOwner> {
-  const supabase = await createSupabaseServerClient();
+async function resolveOwner(session: ServerCustomerSession, request?: Request): Promise<ProviderOwner> {
+  const supabase = await createSupabaseServerClient(request);
   if (session.roles.includes('professional')) {
     const { data, error } = await supabase.from('professional_profiles').select('id,headline').eq('user_id', session.user_id).maybeSingle();
     if (error) throw new Error(error.message);
@@ -126,15 +126,15 @@ function mapBooking(row: Record<string, unknown>, owner: ProviderOwner, history:
   };
 }
 
-async function ownedBookingQuery(owner: ProviderOwner, bookingId: EntityId) {
-  const supabase = await createSupabaseServerClient();
+async function ownedBookingQuery(owner: ProviderOwner, bookingId: EntityId, request?: Request) {
+  const supabase = await createSupabaseServerClient(request);
   let query = supabase.from('bookings').select('*').eq('id', bookingId);
   query = owner.provider_type === 'professional' ? query.eq('professional_id', owner.provider_id) : query.eq('business_id', owner.provider_id);
   return query.maybeSingle();
 }
 
-async function loadCloseout(bookingId: EntityId): Promise<CloseoutRow | null> {
-  const supabase = await createSupabaseServerClient();
+async function loadCloseout(bookingId: EntityId, request?: Request): Promise<CloseoutRow | null> {
+  const supabase = await createSupabaseServerClient(request);
   const { data, error } = await supabase
     .from('booking_closeouts')
     .select('attendance_outcome,state,closed_at')
@@ -145,10 +145,10 @@ async function loadCloseout(bookingId: EntityId): Promise<CloseoutRow | null> {
 }
 
 export const productionProviderBookingRepository = {
-  async list(session: ServerCustomerSession): Promise<ProviderBookingRecord[]> {
+  async list(session: ServerCustomerSession, request?: Request): Promise<ProviderBookingRecord[]> {
     assertProductionBackendConfigured();
-    const owner = await resolveOwner(session);
-    const supabase = await createSupabaseServerClient();
+    const owner = await resolveOwner(session, request);
+    const supabase = await createSupabaseServerClient(request);
     let query = supabase.from('bookings').select('*').order('created_at', { ascending: false });
     query = owner.provider_type === 'professional' ? query.eq('professional_id', owner.provider_id) : query.eq('business_id', owner.provider_id);
     const { data, error } = await query;
@@ -169,12 +169,12 @@ export const productionProviderBookingRepository = {
     return rows.map((row) => mapBooking(row as Record<string, unknown>, owner, [], closeoutByBooking.get(String(row.id))));
   },
 
-  async getById(session: ServerCustomerSession, bookingId: EntityId): Promise<ProviderBookingRecord | null> {
+  async getById(session: ServerCustomerSession, bookingId: EntityId, request?: Request): Promise<ProviderBookingRecord | null> {
     assertProductionBackendConfigured();
-    const owner = await resolveOwner(session);
-    const supabase = await createSupabaseServerClient();
+    const owner = await resolveOwner(session, request);
+    const supabase = await createSupabaseServerClient(request);
     const [{ data, error }, { data: historyRows, error: historyError }, { data: closeout, error: closeoutError }] = await Promise.all([
-      ownedBookingQuery(owner, bookingId),
+      ownedBookingQuery(owner, bookingId, request),
       supabase
         .from('booking_status_history')
         .select('from_status,to_status,reason,created_at')
@@ -194,17 +194,17 @@ export const productionProviderBookingRepository = {
     return mapBooking(data as Record<string, unknown>, owner, history, closeout as CloseoutRow | null);
   },
 
-  async updateStatus(session: ServerCustomerSession, bookingId: EntityId, action: 'accept' | 'decline' | 'complete'): Promise<ProviderBookingRecord> {
+  async updateStatus(session: ServerCustomerSession, bookingId: EntityId, action: 'accept' | 'decline' | 'complete', request?: Request): Promise<ProviderBookingRecord> {
     assertProductionBackendConfigured();
-    const owner = await resolveOwner(session);
-    const supabase = await createSupabaseServerClient();
+    const owner = await resolveOwner(session, request);
+    const supabase = await createSupabaseServerClient(request);
     const expectedStatus: ProductionBookingStatus = action === 'complete' ? 'confirmed' : 'pending';
     const nextStatus: ProductionBookingStatus = action === 'accept' ? 'confirmed' : action === 'complete' ? 'completed' : 'cancelled';
 
     if (action === 'complete') {
       const [{ data: current, error: currentError }, closeout] = await Promise.all([
-        ownedBookingQuery(owner, bookingId),
-        loadCloseout(bookingId),
+        ownedBookingQuery(owner, bookingId, request),
+        loadCloseout(bookingId, request),
       ]);
       if (currentError) throw new Error(currentError.message);
       if (!current || current.status !== 'confirmed') throw new Error('Only a confirmed booking can be completed.');
@@ -223,7 +223,7 @@ export const productionProviderBookingRepository = {
     const { data, error } = await query.select('*').maybeSingle();
     if (error) throw new Error(error.message);
     if (!data) throw new Error(`Booking was not found, is no longer ${expectedStatus}, or is not owned by this provider.`);
-    const closeout = await loadCloseout(bookingId);
+    const closeout = await loadCloseout(bookingId, request);
     return mapBooking(data as Record<string, unknown>, owner, [], closeout);
   },
 };
