@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '../../../../lib/supabase/server';
+import { createSupabaseServerClient, getSupabaseAuthenticatedUser } from '../../../../lib/supabase/server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 type RouteContext = { params: Promise<{ conversationId: string }> };
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
   try {
     const { conversationId } = await context.params;
-    const supabase = await createSupabaseServerClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const supabase = await createSupabaseServerClient(request);
+    const { data: { user }, error: authError } = await getSupabaseAuthenticatedUser(supabase, request);
     if (authError || !user) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
 
     const { data, error } = await supabase.rpc('get_marketplace_conversation', { target_conversation_id: conversationId });
@@ -40,8 +40,8 @@ export async function POST(request: Request, context: RouteContext) {
   try {
     const { conversationId } = await context.params;
     const body = await request.json() as { idempotency_key?: string; message?: string };
-    const supabase = await createSupabaseServerClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const supabase = await createSupabaseServerClient(request);
+    const { data: { user }, error: authError } = await getSupabaseAuthenticatedUser(supabase, request);
     if (authError || !user) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
 
     const { data, error } = await supabase.rpc('send_marketplace_message', {
