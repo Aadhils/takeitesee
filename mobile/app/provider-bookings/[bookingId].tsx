@@ -8,6 +8,7 @@ import {
   formatBookingMoney,
   formatBookingStatus,
   formatBookingTime,
+  reportProviderCustomerNoShow,
   transitionProviderBooking,
   type ProviderBooking,
   type ProviderBookingAction,
@@ -27,6 +28,10 @@ export default function ProviderBookingDetailScreen() {
   const [declineReason, setDeclineReason] = useState('');
   const [actionError, setActionError] = useState('');
   const [busyAction, setBusyAction] = useState<ProviderBookingAction | null>(null);
+  const [noShowNote, setNoShowNote] = useState('');
+  const [attendanceError, setAttendanceError] = useState('');
+  const [attendanceBusy, setAttendanceBusy] = useState(false);
+  const [attendanceConfirmOpen, setAttendanceConfirmOpen] = useState(false);
 
   const isProvider = auth.status === 'signedIn'
     && (auth.identity.roles.includes('professional') || auth.identity.roles.includes('business_owner'));
@@ -51,7 +56,7 @@ export default function ProviderBookingDetailScreen() {
   }, [load]);
 
   const submitAction = async (action: ProviderBookingAction) => {
-    if (!bookingId || busyAction) return;
+    if (!bookingId || busyAction || attendanceBusy) return;
     setActionError('');
     setBusyAction(action);
     try {
@@ -66,6 +71,23 @@ export default function ProviderBookingDetailScreen() {
       setActionError(error instanceof Error ? error.message : 'Unable to update booking.');
     } finally {
       setBusyAction(null);
+    }
+  };
+
+  const submitCustomerNoShow = async () => {
+    if (!bookingId || attendanceBusy || busyAction) return;
+    setAttendanceError('');
+    setAttendanceBusy(true);
+    try {
+      await reportProviderCustomerNoShow(bookingId, noShowNote);
+      const payload = await fetchProviderBooking(bookingId);
+      setState({ status: 'ready', booking: payload.booking });
+      setNoShowNote('');
+      setAttendanceConfirmOpen(false);
+    } catch (error) {
+      setAttendanceError(error instanceof Error ? error.message : 'Unable to record attendance.');
+    } finally {
+      setAttendanceBusy(false);
     }
   };
 
@@ -96,6 +118,9 @@ export default function ProviderBookingDetailScreen() {
 
   const booking = state.status === 'ready' ? state.booking : null;
   const canRespond = booking ? ['pending', 'rescheduled'].includes(booking.status) : false;
+  const canOfferCustomerNoShow = booking
+    ? booking.status === 'confirmed' && booking.attendance_outcome === 'pending'
+    : false;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -150,9 +175,9 @@ export default function ProviderBookingDetailScreen() {
                 </Text>
 
                 <Pressable
-                  disabled={busyAction !== null}
+                  disabled={busyAction !== null || attendanceBusy}
                   onPress={() => void submitAction('accept')}
-                  style={({ pressed }) => [styles.acceptButton, pressed && styles.pressed, busyAction !== null && styles.disabled]}
+                  style={({ pressed }) => [styles.acceptButton, pressed && styles.pressed, (busyAction !== null || attendanceBusy) && styles.disabled]}
                 >
                   <Text style={styles.acceptButtonText}>
                     {busyAction === 'accept'
@@ -164,7 +189,7 @@ export default function ProviderBookingDetailScreen() {
                 <View style={styles.declineBox}>
                   <Text style={styles.fieldLabel}>Decline reason</Text>
                   <TextInput
-                    editable={busyAction === null}
+                    editable={busyAction === null && !attendanceBusy}
                     maxLength={500}
                     multiline
                     onChangeText={setDeclineReason}
@@ -174,12 +199,12 @@ export default function ProviderBookingDetailScreen() {
                   />
                   <Text style={styles.counter}>{declineReason.trim().length}/500</Text>
                   <Pressable
-                    disabled={busyAction !== null || declineReason.trim().length < 3}
+                    disabled={busyAction !== null || attendanceBusy || declineReason.trim().length < 3}
                     onPress={() => void submitAction('decline')}
                     style={({ pressed }) => [
                       styles.declineButton,
                       pressed && styles.pressed,
-                      (busyAction !== null || declineReason.trim().length < 3) && styles.disabled,
+                      (busyAction !== null || attendanceBusy || declineReason.trim().length < 3) && styles.disabled,
                     ]}
                   >
                     <Text style={styles.declineButtonText}>{busyAction === 'decline' ? 'Declining…' : 'Decline booking'}</Text>
@@ -187,6 +212,76 @@ export default function ProviderBookingDetailScreen() {
                 </View>
 
                 {actionError ? <Text style={styles.errorText}>{actionError}</Text> : null}
+              </View>
+            ) : null}
+
+            {canOfferCustomerNoShow ? (
+              <View style={styles.attendanceCard}>
+                <Text style={styles.eyebrow}>Attendance</Text>
+                <Text style={styles.sectionTitle}>Customer did not attend?</Text>
+                <Text style={styles.muted}>
+                  Use this only when the customer did not attend the confirmed booking. The server verifies Provider ownership, the no-show grace period and whether an attendance outcome is already recorded.
+                </Text>
+
+                <View style={styles.declineBox}>
+                  <Text style={styles.fieldLabel}>Optional attendance note</Text>
+                  <TextInput
+                    editable={!attendanceBusy && busyAction === null}
+                    maxLength={1000}
+                    multiline
+                    onChangeText={setNoShowNote}
+                    placeholder="Add factual details that may help if the customer disputes the report"
+                    style={styles.input}
+                    value={noShowNote}
+                  />
+                  <Text style={styles.counter}>{noShowNote.trim().length}/1000</Text>
+                </View>
+
+                {!attendanceConfirmOpen ? (
+                  <Pressable
+                    disabled={attendanceBusy || busyAction !== null}
+                    onPress={() => {
+                      setAttendanceError('');
+                      setAttendanceConfirmOpen(true);
+                    }}
+                    style={({ pressed }) => [
+                      styles.reportButton,
+                      pressed && styles.pressed,
+                      (attendanceBusy || busyAction !== null) && styles.disabled,
+                    ]}
+                  >
+                    <Text style={styles.reportButtonText}>Report customer no-show</Text>
+                  </Pressable>
+                ) : (
+                  <View style={styles.confirmBox}>
+                    <Text style={styles.confirmText}>
+                      Confirm only if the customer was absent. This records the attendance outcome through the existing server workflow and notifies the customer; it does not complete the booking or collect payment.
+                    </Text>
+                    <View style={styles.confirmActions}>
+                      <Pressable
+                        disabled={attendanceBusy || busyAction !== null}
+                        onPress={() => void submitCustomerNoShow()}
+                        style={({ pressed }) => [
+                          styles.reportButton,
+                          styles.confirmPrimary,
+                          pressed && styles.pressed,
+                          (attendanceBusy || busyAction !== null) && styles.disabled,
+                        ]}
+                      >
+                        <Text style={styles.reportButtonText}>{attendanceBusy ? 'Reporting…' : 'Confirm no-show'}</Text>
+                      </Pressable>
+                      <Pressable
+                        disabled={attendanceBusy}
+                        onPress={() => setAttendanceConfirmOpen(false)}
+                        style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed, attendanceBusy && styles.disabled]}
+                      >
+                        <Text style={styles.secondaryButtonText}>Go back</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                )}
+
+                {attendanceError ? <Text style={styles.errorText}>{attendanceError}</Text> : null}
               </View>
             ) : null}
 
@@ -219,7 +314,7 @@ export default function ProviderBookingDetailScreen() {
             <View style={styles.readOnlyCard}>
               <Text style={styles.readOnlyTitle}>Server-authoritative Provider journey</Text>
               <Text style={styles.muted}>
-                Completion, attendance, closeout and payment actions remain outside this native slice.
+                Provider completion, Customer attendance actions, closeout controls and payment actions remain outside this native slice.
               </Text>
             </View>
           </>
@@ -249,6 +344,7 @@ const styles = StyleSheet.create({
   inlineStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   card: { gap: 12, padding: 17, borderRadius: 17, backgroundColor: '#fff' },
   actionCard: { gap: 12, padding: 17, borderRadius: 17, backgroundColor: '#fff7e8' },
+  attendanceCard: { gap: 12, padding: 17, borderRadius: 17, backgroundColor: '#eef7f2' },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
   cardTitleWrap: { flex: 1, gap: 4 },
   eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.1, color: '#77778a', textTransform: 'uppercase' },
@@ -267,6 +363,14 @@ const styles = StyleSheet.create({
   counter: { alignSelf: 'flex-end', fontSize: 11, color: '#77778a' },
   declineButton: { alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: '#9a3d3d', backgroundColor: '#fff' },
   declineButtonText: { fontSize: 13, fontWeight: '800', color: '#8b3535' },
+  reportButton: { alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, backgroundColor: '#7a3b2e' },
+  reportButtonText: { fontSize: 13, fontWeight: '800', color: '#fff' },
+  confirmBox: { gap: 10, padding: 12, borderRadius: 12, backgroundColor: '#fff' },
+  confirmText: { fontSize: 12, lineHeight: 18, color: '#4f4f61' },
+  confirmActions: { gap: 8 },
+  confirmPrimary: { flex: 1 },
+  secondaryButton: { alignItems: 'center', paddingHorizontal: 14, paddingVertical: 11, borderRadius: 12, borderWidth: 1, borderColor: '#c8c8d3', backgroundColor: '#fff' },
+  secondaryButtonText: { fontSize: 13, fontWeight: '800', color: '#4f4f61' },
   pressed: { opacity: 0.82 },
   disabled: { opacity: 0.45 },
   historyRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
