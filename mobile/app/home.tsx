@@ -68,8 +68,8 @@ export default function HomeScreen() {
         <Link href="/bookings" asChild>
           <Pressable style={styles.journeyCard}>
             <View style={styles.journeyCopy}>
-              <Text style={styles.cardTitle}>My bookings</Text>
-              <Text style={styles.statusText}>Review your service date, provider and current journey status.</Text>
+              <Text style={styles.journeyTitle}>My bookings</Text>
+              <Text style={styles.journeyText}>Review your service date, provider and current journey status.</Text>
             </View>
             <Text style={styles.journeyArrow}>→</Text>
           </Pressable>
@@ -119,6 +119,8 @@ const styles = StyleSheet.create({
   description: { fontSize: 16, lineHeight: 24, color: '#555565' },
   journeyCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 18, borderRadius: 18, backgroundColor: '#30304a' },
   journeyCopy: { flex: 1, gap: 4 },
+  journeyTitle: { fontSize: 17, fontWeight: '800', color: '#fff' },
+  journeyText: { fontSize: 14, lineHeight: 20, color: '#dedee9' },
   journeyArrow: { fontSize: 24, fontWeight: '800', color: '#fff' },
   card: { padding: 18, borderRadius: 18, backgroundColor: '#ffffff', gap: 12 },
   cardTitle: { fontSize: 17, fontWeight: '700', color: '#171721' },
