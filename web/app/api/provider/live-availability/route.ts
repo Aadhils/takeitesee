@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   try {
     const session = await productionAuthProvider.requireProvider(request);
-    const availability = await productionProviderLiveAvailabilityRepository.get(session);
+    const availability = await productionProviderLiveAvailabilityRepository.get(session, request);
     return NextResponse.json({ availability }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     return NextResponse.json(
@@ -25,7 +25,7 @@ export async function PUT(request: Request) {
   try {
     const session = await productionAuthProvider.requireProvider(request);
     const input = await request.json() as ProviderLiveAvailabilityInput;
-    const availability = await productionProviderLiveAvailabilityRepository.save(session, input);
+    const availability = await productionProviderLiveAvailabilityRepository.save(session, input, request);
     return NextResponse.json({ availability }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     return NextResponse.json(
