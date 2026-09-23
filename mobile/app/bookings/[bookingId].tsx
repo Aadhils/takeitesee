@@ -123,10 +123,19 @@ export default function CustomerBookingDetailScreen() {
               <View style={styles.readOnlyCard}>
                 <Text style={styles.readOnlyTitle}>Read-only native journey</Text>
                 <Text style={styles.muted}>
-                  Cancellation, reschedule, attendance and completion actions are intentionally outside this slice.
+                  Cancellation, reschedule, attendance and completion actions remain outside this native slice.
                 </Text>
               </View>
             </View>
+
+            {booking.status === 'completed' ? (
+              <Link
+                href={{ pathname: '/reviews/[bookingId]', params: { bookingId: booking.id } }}
+                style={styles.reviewLink}
+              >
+                Leave or view review
+              </Link>
+            ) : null}
 
             <Link
               href={{
@@ -178,6 +187,7 @@ const styles = StyleSheet.create({
   detailValue: { flex: 1.3, fontSize: 13, fontWeight: '700', textAlign: 'right', color: '#333342' },
   readOnlyCard: { gap: 4, padding: 13, borderRadius: 12, backgroundColor: '#f0f0f6' },
   readOnlyTitle: { fontSize: 13, fontWeight: '800', color: '#3d3d54' },
+  reviewLink: { textAlign: 'center', paddingVertical: 13, paddingHorizontal: 14, borderRadius: 12, backgroundColor: '#171721', color: '#fff', fontWeight: '800' },
   providerLink: { textAlign: 'center', paddingVertical: 13, paddingHorizontal: 14, borderRadius: 12, backgroundColor: '#30304a', color: '#fff', fontWeight: '800' },
   muted: { fontSize: 13, lineHeight: 18, color: '#77778a' },
   errorText: { fontSize: 13, lineHeight: 19, color: '#8b3535' },

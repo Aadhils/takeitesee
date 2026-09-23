@@ -56,7 +56,7 @@ export default function CustomerReviewsScreen() {
               <Text style={styles.eyebrow}>MY REVIEWS</Text>
               <Text style={styles.title}>Your service feedback</Text>
               <Text style={styles.description}>
-                Review history and Provider responses are read-only in this native slice.
+                Review history, Provider responses and completed-booking feedback stay connected here.
               </Text>
             </View>
             <Pressable onPress={() => void load()} style={styles.refreshButton}>
@@ -65,8 +65,9 @@ export default function CustomerReviewsScreen() {
           </View>
 
           <View style={styles.readOnlyCard}>
-            <Text style={styles.readOnlyTitle}>History only</Text>
-            <Text style={styles.muted}>Creating or editing a review is intentionally outside this slice.</Text>
+            <Text style={styles.readOnlyTitle}>Ready to review?</Text>
+            <Text style={styles.muted}>Open a completed booking to leave feedback. The server validates review window and duplicate protection.</Text>
+            <Link href="/bookings" style={styles.openLink}>Open completed bookings →</Link>
           </View>
 
           {state.status === 'loading' ? (
@@ -130,7 +131,7 @@ const styles = StyleSheet.create({
   description: { fontSize: 14, lineHeight: 20, color: '#666678' },
   refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: '#ededf4' },
   refreshText: { fontSize: 12, fontWeight: '800', color: '#3f3f58' },
-  readOnlyCard: { gap: 4, padding: 14, borderRadius: 14, backgroundColor: '#f0f0f6' },
+  readOnlyCard: { gap: 6, padding: 14, borderRadius: 14, backgroundColor: '#f0f0f6' },
   readOnlyTitle: { fontSize: 13, fontWeight: '800', color: '#3d3d54' },
   inlineStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   card: { gap: 10, padding: 16, borderRadius: 16, backgroundColor: '#fff' },
