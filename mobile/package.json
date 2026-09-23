@@ -7,6 +7,7 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
+    "test:contract": "node --test tests/*.test.mjs",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
