@@ -38,7 +38,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         return NextResponse.json({ error: 'Service notes must be 1000 characters or fewer.' }, { status: 400 });
       }
 
-      const supabase = await createSupabaseServerClient();
+      const supabase = await createSupabaseServerClient(request);
       const { data, error } = await supabase.rpc('customer_choose_and_schedule_requirement_provider', {
         target_requirement_id: requirementId,
         target_proposal_id: proposalId,
@@ -50,7 +50,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       return NextResponse.json(data, { status: 201 });
     }
 
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(request);
     const { data, error } = await supabase.rpc('customer_decide_requirement_proposal', {
       target_proposal_id: proposalId,
       target_decision: body.decision,
