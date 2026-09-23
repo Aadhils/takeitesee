@@ -69,6 +69,10 @@ export default function CustomerBookingDetailScreen() {
   const booking = state.status === 'ready' ? state.booking : null;
   const providerLabel = booking?.provider_name
     || (booking?.provider.provider_type === 'business' ? 'Business provider' : 'Professional provider');
+  const canManage = booking
+    ? ['pending', 'confirmed', 'rescheduled'].includes(booking.status)
+      && !['customer_no_show', 'provider_no_show'].includes(booking.attendance_outcome ?? '')
+    : false;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -121,12 +125,21 @@ export default function CustomerBookingDetailScreen() {
               {booking.closeout_state ? <DetailRow label="Closeout" value={formatBookingStatus(booking.closeout_state)} /> : null}
               {booking.closed_at ? <DetailRow label="Closed at" value={String(booking.closed_at)} /> : null}
               <View style={styles.readOnlyCard}>
-                <Text style={styles.readOnlyTitle}>Read-only native journey</Text>
+                <Text style={styles.readOnlyTitle}>Server-authoritative booking journey</Text>
                 <Text style={styles.muted}>
-                  Cancellation, reschedule, attendance and completion actions remain outside this native slice.
+                  Cancel and reschedule use the existing booking APIs. Attendance and completion actions remain outside this native slice.
                 </Text>
               </View>
             </View>
+
+            {canManage ? (
+              <Link
+                href={{ pathname: '/booking-actions/[bookingId]', params: { bookingId: booking.id } }}
+                style={styles.actionLink}
+              >
+                Manage booking
+              </Link>
+            ) : null}
 
             {booking.status === 'completed' ? (
               <Link
@@ -187,6 +200,7 @@ const styles = StyleSheet.create({
   detailValue: { flex: 1.3, fontSize: 13, fontWeight: '700', textAlign: 'right', color: '#333342' },
   readOnlyCard: { gap: 4, padding: 13, borderRadius: 12, backgroundColor: '#f0f0f6' },
   readOnlyTitle: { fontSize: 13, fontWeight: '800', color: '#3d3d54' },
+  actionLink: { textAlign: 'center', paddingVertical: 13, paddingHorizontal: 14, borderRadius: 12, backgroundColor: '#5a4378', color: '#fff', fontWeight: '800' },
   reviewLink: { textAlign: 'center', paddingVertical: 13, paddingHorizontal: 14, borderRadius: 12, backgroundColor: '#171721', color: '#fff', fontWeight: '800' },
   providerLink: { textAlign: 'center', paddingVertical: 13, paddingHorizontal: 14, borderRadius: 12, backgroundColor: '#30304a', color: '#fff', fontWeight: '800' },
   muted: { fontSize: 13, lineHeight: 18, color: '#77778a' },

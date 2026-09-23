@@ -36,6 +36,25 @@ export type CustomerBooking = {
   updated_at: string;
 };
 
+export type BookingAvailabilitySlot = {
+  time: string;
+  available: boolean;
+  reason?: string;
+};
+
+export type BookingAvailabilityDay = {
+  date: string;
+  label: string;
+  slots: BookingAvailabilitySlot[];
+};
+
+export type BookingAvailability = {
+  mode: 'always_available' | 'on_request' | 'scheduled';
+  timezone: string;
+  duration_minutes: number;
+  days: BookingAvailabilityDay[];
+};
+
 export type ProviderBookingHistoryEntry = {
   from_status: BookingStatus | null;
   to_status: BookingStatus;
@@ -77,6 +96,28 @@ async function currentAccessToken() {
   return token;
 }
 
+function validateReason(reason: string) {
+  const normalized = reason.trim();
+  if (normalized.length < 3) throw new Error('Please enter a reason of at least 3 characters.');
+  if (normalized.length > 500) throw new Error('Reason must be 500 characters or fewer.');
+  return normalized;
+}
+
+export function bookingTimeTo24Hour(label: string) {
+  const match = label.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return label;
+  let hour = Number(match[1]);
+  const minute = match[2];
+  const suffix = match[3].toUpperCase();
+  if (suffix === 'AM' && hour === 12) hour = 0;
+  if (suffix === 'PM' && hour !== 12) hour += 12;
+  return `${String(hour).padStart(2, '0')}:${minute}:00`;
+}
+
+export function isCurrentBookingSlot(booking: CustomerBooking, date: string, timeLabel: string) {
+  return booking.booking_date === date && booking.start_time.slice(0, 5) === bookingTimeTo24Hour(timeLabel).slice(0, 5);
+}
+
 export async function fetchCustomerBookings() {
   const accessToken = await currentAccessToken();
   return apiFetch<{ bookings: CustomerBooking[] }>('/api/bookings', {
@@ -90,6 +131,46 @@ export async function fetchCustomerBooking(bookingId: string) {
   return apiFetch<{ booking: CustomerBooking }>(`/api/bookings/${encodeURIComponent(bookingId)}`, {
     method: 'GET',
     accessToken,
+  });
+}
+
+export async function fetchCustomerBookingAvailability(bookingId: string) {
+  const accessToken = await currentAccessToken();
+  return apiFetch<BookingAvailability>(`/api/bookings/${encodeURIComponent(bookingId)}/availability`, {
+    method: 'GET',
+    accessToken,
+  });
+}
+
+export async function cancelCustomerBooking(bookingId: string, reason: string) {
+  const accessToken = await currentAccessToken();
+  return apiFetch<{ booking: CustomerBooking }>(`/api/bookings/${encodeURIComponent(bookingId)}`, {
+    method: 'PATCH',
+    accessToken,
+    body: JSON.stringify({
+      status: 'cancelled',
+      reason: validateReason(reason),
+    }),
+  });
+}
+
+export async function rescheduleCustomerBooking(
+  bookingId: string,
+  bookingDate: string,
+  timeLabel: string,
+  reason: string,
+) {
+  if (!bookingDate || !timeLabel) throw new Error('Choose a new date and time.');
+  const accessToken = await currentAccessToken();
+  return apiFetch<{ booking: CustomerBooking }>(`/api/bookings/${encodeURIComponent(bookingId)}`, {
+    method: 'PATCH',
+    accessToken,
+    body: JSON.stringify({
+      status: 'rescheduled',
+      booking_date: bookingDate,
+      start_time: bookingTimeTo24Hour(timeLabel),
+      reason: validateReason(reason),
+    }),
   });
 }
 
