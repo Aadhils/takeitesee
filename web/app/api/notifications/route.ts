@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '../../../lib/supabase/server';
+import { createSupabaseServerClient, getSupabaseAuthenticatedUser } from '../../../lib/supabase/server';
 
 const requirementIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const productOrderUpdateEvents = ['product_order_accepted', 'product_order_declined', 'product_order_fulfilled'];
@@ -23,8 +23,8 @@ type NotificationRow = {
 
 export async function GET(request: Request) {
   try {
-    const supabase = await createSupabaseServerClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const supabase = await createSupabaseServerClient(request);
+    const { data: { user }, error: authError } = await getSupabaseAuthenticatedUser(supabase, request);
     if (authError || !user) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
 
     const url = new URL(request.url);
@@ -114,8 +114,8 @@ export async function PATCH(request: Request) {
       mark_product_order_updates_read?: boolean;
       order_id?: string;
     };
-    const supabase = await createSupabaseServerClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const supabase = await createSupabaseServerClient(request);
+    const { data: { user }, error: authError } = await getSupabaseAuthenticatedUser(supabase, request);
     if (authError || !user) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
 
     let query = supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('recipient_user_id', user.id);
