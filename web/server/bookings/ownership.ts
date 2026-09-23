@@ -6,8 +6,9 @@ export async function assertCustomerIsNotProviderOwner(
   session: ServerCustomerSession,
   providerType: 'professional' | 'business',
   providerId: EntityId,
+  request?: Request,
 ) {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient(request);
 
   if (providerType === 'business') {
     const { data, error } = await supabase

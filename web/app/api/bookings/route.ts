@@ -9,12 +9,12 @@ export const runtime = 'nodejs';
 export async function GET(request: Request) {
   try {
     const session = await productionAuthProvider.requireCustomer(request);
-    const bookings = await productionBookingRepository.getCustomerBookings(session);
+    const bookings = await productionBookingRepository.getCustomerBookings(session, request);
     const bookingIds = bookings.map((booking) => booking.id);
     const closeoutByBooking = new Map<string, { attendance_outcome: string; state: string; closed_at: string | null }>();
 
     if (bookingIds.length) {
-      const supabase = await createSupabaseServerClient();
+      const supabase = await createSupabaseServerClient(request);
       const { data, error } = await supabase
         .from('booking_closeouts')
         .select('booking_id,attendance_outcome,state,closed_at')
@@ -49,8 +49,8 @@ export async function POST(request: Request) {
   try {
     const session = await productionAuthProvider.requireCustomer(request);
     const input = await request.json() as CreateBookingInput;
-    await assertCustomerIsNotProviderOwner(session, input.provider_type, input.provider_id);
-    const booking = await productionBookingRepository.createBooking(session, input);
+    await assertCustomerIsNotProviderOwner(session, input.provider_type, input.provider_id, request);
+    const booking = await productionBookingRepository.createBooking(session, input, request);
     return NextResponse.json({ booking }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to create booking.' }, { status: 400 });

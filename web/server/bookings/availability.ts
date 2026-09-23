@@ -14,8 +14,8 @@ function bookingRange(input: CreateBookingInput) {
   return { start, end: start + input.duration_minutes };
 }
 
-export async function assertBookingAvailability(input: CreateBookingInput, excludeBookingId?: EntityId) {
-  const supabase = await createSupabaseServerClient();
+export async function assertBookingAvailability(input: CreateBookingInput, excludeBookingId?: EntityId, request?: Request) {
+  const supabase = await createSupabaseServerClient(request);
   const { data: setting, error: settingError } = await supabase
     .from('service_availability')
     .select('mode,timezone')

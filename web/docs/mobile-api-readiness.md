@@ -31,6 +31,7 @@ Provider accounts continue to resolve their server-owned Professional or Busines
 3. Marketplace discovery contracts are native-ready: `GET /api/marketplace/services/search` and `POST /api/marketplace/services/nearby` stay public JSON APIs, and `GET /api/marketplace/providers` exposes the existing verified Professional/Business public directory as JSON without duplicating eligibility rules.
 4. Provider Requirement Leads authentication is native-ready: GET/PATCH/POST keep their existing provider auth, proposal validation, pricing basis, notification acknowledgement and RPC contracts, while their Supabase RLS client now receives the same bearer-bearing Request. No recurrence behavior was changed.
 5. Public Professional/Business profile detail is available as a native JSON contract through `GET /api/marketplace/providers/{providerType}/{providerId}` while reusing the same public profile eligibility loaders used by the web profile pages.
+6. Customer Booking list/create is bearer-ready end to end: the existing Customer auth Request is propagated through booking list closeout enrichment, self-booking ownership checks, booking repository reads/inserts and availability/conflict validation. Existing booking payload, idempotency, canonical service values and browser cookie fallback are unchanged.
 
 ### Public provider directory
 
@@ -60,10 +61,11 @@ Unavailable or non-public profiles return 404. Unknown provider types return 400
 
 ## Next mobile-readiness slices
 
-1. Customer/provider booking RLS client propagation where a route authenticates with Request but later opens a separate Supabase client.
-2. Notifications and messages.
-3. Service completion and reviews.
-4. Final native contract freeze before React Native + Expo application work.
+1. Customer booking detail/cancel/reschedule bearer propagation, isolated from all payment routes.
+2. Provider booking bearer propagation.
+3. Notifications and messages.
+4. Service completion and reviews.
+5. Final native contract freeze before React Native + Expo application work.
 
 ## Frozen boundaries
 

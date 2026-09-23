@@ -25,9 +25,9 @@ export interface CreateBookingInput {
 export interface RescheduleBookingInput { booking_date: string; start_time: string; reason: string; }
 
 export interface ProductionBookingRepository {
-  createBooking(session: ServerCustomerSession, input: CreateBookingInput): Promise<ProductionBooking>;
+  createBooking(session: ServerCustomerSession, input: CreateBookingInput, request?: Request): Promise<ProductionBooking>;
   getBookingById(session: ServerCustomerSession, bookingId: EntityId): Promise<ProductionBooking | null>;
-  getCustomerBookings(session: ServerCustomerSession): Promise<ProductionBooking[]>;
+  getCustomerBookings(session: ServerCustomerSession, request?: Request): Promise<ProductionBooking[]>;
   updateBookingStatus(session: ServerCustomerSession, bookingId: EntityId, status: ProductionBookingStatus, reason?: string): Promise<ProductionBooking>;
   rescheduleBooking(session: ServerCustomerSession, bookingId: EntityId, input: RescheduleBookingInput): Promise<ProductionBooking>;
 }
@@ -60,11 +60,11 @@ async function mapBookingWithProvider(
 }
 
 export const productionBookingRepository: ProductionBookingRepository = {
-  async createBooking(session, input) {
+  async createBooking(session, input, request) {
     assertProductionBackendConfigured();
     if (!session.roles.includes('customer')) throw new Error('Customer role is required.');
     validateCreateBookingInput(input);
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(request);
 
     const { data: existing, error: existingError } = await supabase
       .from('bookings')
@@ -112,7 +112,7 @@ export const productionBookingRepository: ProductionBookingRepository = {
       service_name: String(service.name),
     };
 
-    await assertBookingAvailability(canonicalInput);
+    await assertBookingAvailability(canonicalInput, undefined, request);
     const providerFields = canonicalInput.provider_type === 'professional'
       ? { professional_id: canonicalInput.provider_id, business_id: null }
       : { professional_id: null, business_id: canonicalInput.provider_id };
@@ -148,9 +148,9 @@ export const productionBookingRepository: ProductionBookingRepository = {
     return data ? mapBookingWithProvider(supabase, data as Record<string, unknown>) : null;
   },
 
-  async getCustomerBookings(session) {
+  async getCustomerBookings(session, request) {
     assertProductionBackendConfigured();
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(request);
     const { data, error } = await supabase.from('bookings').select(bookingSelect).eq('customer_id', session.user_id).order('created_at', { ascending: false });
     if (error) throw new Error(error.message);
     return Promise.all((data ?? []).map((row) => mapBookingWithProvider(supabase, row as Record<string, unknown>)));
