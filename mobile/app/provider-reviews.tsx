@@ -153,6 +153,7 @@ const styles = StyleSheet.create({
   readOnlyTitle: { fontSize: 13, fontWeight: '800', color: '#3d3d54' },
   inlineStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   card: { gap: 10, padding: 16, borderRadius: 16, backgroundColor: '#fff' },
+  cardTitle: { fontSize: 16, fontWeight: '800', color: '#171721' },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
   cardTitleWrap: { flex: 1, gap: 4 },
   serviceName: { fontSize: 16, fontWeight: '800', color: '#171721' },
