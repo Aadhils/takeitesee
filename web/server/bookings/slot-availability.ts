@@ -49,8 +49,8 @@ function candidateEpoch(date: string, totalMinutes: number, timezone: string) {
   return new Date(`${date}T${hh}:${mm}:00${offset}`).getTime();
 }
 
-export async function loadServiceSlotAvailability(serviceId: string, options: AvailabilityOptions = {}): Promise<ServiceAvailabilityResult> {
-  const supabase = await createSupabaseServerClient();
+export async function loadServiceSlotAvailability(serviceId: string, options: AvailabilityOptions = {}, request?: Request): Promise<ServiceAvailabilityResult> {
+  const supabase = await createSupabaseServerClient(request);
   const { data: service, error: serviceError } = await supabase
     .from('services')
     .select('id,duration_minutes,provider_type,professional_id,business_id,active')
