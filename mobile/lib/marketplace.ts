@@ -43,10 +43,9 @@ export type MarketplaceSearchResponse = {
   total: number;
   geo_status: 'not_requested' | string;
   page: {
-    cursor: number;
+    limit: number;
     next_cursor: number | null;
     has_more: boolean;
-    limit: number;
   };
 };
 
