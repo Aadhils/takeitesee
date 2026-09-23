@@ -29,18 +29,19 @@ test('native bookings client preserves authenticated Customer and bounded Provid
   assert.ok(bookingsClient.includes("'/api/bookings'"));
   assert.ok(bookingsClient.includes('`/api/bookings/${encodeURIComponent(bookingId)}`'));
   assert.ok(bookingsClient.includes('`/api/bookings/${encodeURIComponent(bookingId)}/availability`'));
+  assert.ok(bookingsClient.includes('`/api/bookings/${encodeURIComponent(bookingId)}/attendance`'));
   assert.ok(bookingsClient.includes("'/api/provider/bookings'"));
   assert.ok(bookingsClient.includes('`/api/provider/bookings/${encodeURIComponent(bookingId)}`'));
   assert.ok(bookingsClient.includes('`/api/provider/bookings/${encodeURIComponent(bookingId)}/attendance`'));
   assert.equal((bookingsClient.match(/method: 'GET'/g) ?? []).length, 5);
   assert.equal((bookingsClient.match(/method: 'PATCH'/g) ?? []).length, 3);
-  assert.equal((bookingsClient.match(/method: 'POST'/g) ?? []).length, 1);
+  assert.equal((bookingsClient.match(/method: 'POST'/g) ?? []).length, 2);
   assert.ok(bookingsClient.includes('accessToken'));
   assert.ok(bookingsClient.includes('supabase.auth.getSession()'));
   assert.ok(!bookingsClient.includes("method: 'DELETE'"));
 });
 
-test('Customer booking detail exposes server-authoritative cancel and reschedule actions', () => {
+test('Customer booking detail exposes cancel, reschedule and bounded completion acknowledgement', () => {
   assert.ok(customerList.includes('fetchCustomerBookings'));
   assert.ok(customerList.includes("pathname: '/bookings/[bookingId]'"));
   assert.ok(customerDetail.includes('fetchCustomerBooking'));
@@ -51,6 +52,9 @@ test('Customer booking detail exposes server-authoritative cancel and reschedule
   assert.ok(customerActions.includes('rescheduleCustomerBooking'));
   assert.ok(customerActions.includes('fetchCustomerBookingAvailability'));
   assert.ok(customerActions.includes('isCurrentBookingSlot'));
+  assert.ok(customerDetail.includes('confirmCustomerServiceCompletion'));
+  assert.ok(customerDetail.includes("booking.closeout_state === 'awaiting_customer'"));
+  assert.ok(customerDetail.includes('Confirm service completed'));
 });
 
 test('Customer booking action contract mirrors existing server rules without copying the state machine', () => {
@@ -63,6 +67,8 @@ test('Customer booking action contract mirrors existing server rules without cop
   assert.ok(customerActions.includes("['customer_no_show', 'provider_no_show'].includes"));
   assert.ok(customerActions.includes("slot.available && !isCurrentBookingSlot"));
   assert.ok(customerActions.includes("current = isCurrentBookingSlot"));
+  assert.ok(bookingsClient.includes("body: JSON.stringify({ action: 'confirm_completion' })"));
+  assert.ok(!bookingsClient.includes("action: 'report_provider_no_show'"));
 });
 
 test('Provider booking journey is role-gated and exposes accept, decline and bounded attendance only', () => {
@@ -95,7 +101,7 @@ test('Customer Home and Provider workspace expose focused booking entries', () =
   assert.ok(providerWorkspace.includes('Provider bookings'));
 });
 
-test('native booking actions keep attendance bounded and stay outside finance, closeout controls, completion, recovery and job routes', () => {
+test('native booking actions keep attendance bounded and stay outside finance, closeout controls, recovery and job routes', () => {
   const lower = bookingSlice.toLowerCase();
   for (const forbidden of [
     '/closeout',
@@ -109,9 +115,11 @@ test('native booking actions keep attendance bounded and stay outside finance, c
   ]) {
     assert.ok(!lower.includes(forbidden), `unexpected frozen-domain reference: ${forbidden}`);
   }
-  assert.equal((bookingSlice.match(/\/attendance/g) ?? []).length, 1);
+  assert.equal((bookingSlice.match(/\/attendance/g) ?? []).length, 2);
+  assert.ok(bookingsClient.includes('`/api/bookings/${encodeURIComponent(bookingId)}/attendance`'));
   assert.ok(bookingsClient.includes('`/api/provider/bookings/${encodeURIComponent(bookingId)}/attendance`'));
-  assert.ok(!bookingsClient.includes('`/api/bookings/${encodeURIComponent(bookingId)}/attendance`'));
-  assert.ok(!bookingsClient.includes("action: 'confirm_completion'"));
+  assert.ok(bookingsClient.includes("action: 'confirm_completion'"));
+  assert.ok(bookingsClient.includes("action: 'report_customer_no_show'"));
   assert.ok(!bookingsClient.includes("action: 'report_provider_no_show'"));
+  assert.ok(!bookingsClient.includes("ProviderBookingAction = 'accept' | 'decline' | 'complete'"));
 });
