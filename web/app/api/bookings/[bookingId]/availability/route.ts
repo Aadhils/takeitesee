@@ -10,13 +10,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ book
   try {
     const { bookingId } = await params;
     const session = await productionAuthProvider.requireCustomer(request);
-    const booking = await productionBookingRepository.getBookingById(session, bookingId as EntityId);
+    const booking = await productionBookingRepository.getBookingById(session, bookingId as EntityId, request);
     if (!booking) return NextResponse.json({ error: 'Booking not found.' }, { status: 404 });
     if (!['pending', 'confirmed', 'rescheduled'].includes(booking.status)) {
       return NextResponse.json({ error: `This ${booking.status} booking cannot be rescheduled.` }, { status: 400 });
     }
 
-    const availability = await loadServiceSlotAvailability(booking.service_id, { excludeOwnedBookingId: bookingId });
+    const availability = await loadServiceSlotAvailability(booking.service_id, { excludeOwnedBookingId: bookingId }, request);
     return NextResponse.json(availability);
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to load reschedule availability.' }, { status: 400 });

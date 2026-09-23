@@ -33,6 +33,7 @@ Provider accounts continue to resolve their server-owned Professional or Busines
 5. Public Professional/Business profile detail is available as a native JSON contract through `GET /api/marketplace/providers/{providerType}/{providerId}` while reusing the same public profile eligibility loaders used by the web profile pages.
 6. Customer Booking list/create is bearer-ready end to end: the existing Customer auth Request is propagated through booking list closeout enrichment, self-booking ownership checks, booking repository reads/inserts and availability/conflict validation. Existing booking payload, idempotency, canonical service values and browser cookie fallback are unchanged.
 7. Customer Booking detail/cancel/reschedule is bearer-ready: the same authenticated Request now stays attached to booking ownership reads, cancellation RPC, reschedule availability/conflict checks and reschedule RPC. Existing validation, status rules and mutation payloads are unchanged.
+8. Customer Booking calendar export and owned reschedule-slot availability are bearer-ready: the authenticated Request now stays attached to their owned booking/RLS reads, while the public service availability caller keeps the existing no-Request fallback.
 
 ### Public provider directory
 
