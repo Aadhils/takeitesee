@@ -20,6 +20,12 @@
       "package": "com.uvmart.takeitesee",
       "versionCode": 1,
       "edgeToEdgeEnabled": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "aee79da4-1e18-4cdb-b5bd-421180d0decd"
+      }
+    },
+    "owner": "uvmart-takeitesee"
   }
 }
