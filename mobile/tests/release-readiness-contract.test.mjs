@@ -21,6 +21,11 @@ test('native store identity is explicit and aligned across Android and iOS', () 
   assert.match(expo.ios.buildNumber, /^\d+(?:\.\d+)*$/);
 });
 
+test('Expo project ownership and EAS project link are explicit', () => {
+  assert.equal(expo.owner, 'uvmart-takeitesee');
+  assert.equal(expo.extra?.eas?.projectId, 'aee79da4-1e18-4cdb-b5bd-421180d0decd');
+});
+
 test('EAS preview build is device-installable and production build is store-ready', () => {
   assert.equal(easConfig.cli.version, '>= 16.18.0');
   assert.equal(easConfig.cli.requireCommit, true);
