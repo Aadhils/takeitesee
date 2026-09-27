@@ -109,7 +109,7 @@ export default function ProviderReviewsScreen() {
               <Text style={styles.eyebrow}>PROVIDER REVIEWS</Text>
               <Text style={styles.title}>Customer feedback</Text>
               <Text style={styles.description}>
-                Read published feedback and respond through the server-owned Provider review contract.
+                Read published feedback and respond to Customer reviews.
               </Text>
             </View>
             <Pressable onPress={() => void load()} style={styles.refreshButton}>
@@ -130,8 +130,8 @@ export default function ProviderReviewsScreen() {
           </View>
 
           <View style={styles.guardCard}>
-            <Text style={styles.guardTitle}>Server-guarded responses</Text>
-            <Text style={styles.muted}>Only reviews owned by your verified Provider identity can be updated.</Text>
+            <Text style={styles.guardTitle}>Response access</Text>
+            <Text style={styles.muted}>You can respond only to reviews linked to your Provider profile.</Text>
           </View>
 
           {notice ? <Text style={styles.noticeText}>{notice}</Text> : null}
