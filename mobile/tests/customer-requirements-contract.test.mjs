@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../', import.meta.url);
+const normalizeNewlines = (value) => value.replace(/\r\n/g, '\n');
 const [requirementsClient, requirementsList, requirementDetail, mobileNav] = await Promise.all([
   readFile(new URL('lib/requirements.ts', root), 'utf8'),
   readFile(new URL('app/requirements.tsx', root), 'utf8'),
@@ -11,7 +12,8 @@ const [requirementsClient, requirementsList, requirementDetail, mobileNav] = awa
 ]);
 
 test('Customer requirements list and detail reuse frozen bearer API routes', () => {
-  assert.ok(requirementsClient.includes("apiFetch<{\n    requirements: CustomerRequirementSummary[];"));
+  const normalizedRequirementsClient = normalizeNewlines(requirementsClient);
+  assert.ok(normalizedRequirementsClient.includes("apiFetch<{\n    requirements: CustomerRequirementSummary[];"));
   assert.ok(requirementsClient.includes("}>('/api/requirements',"));
   assert.ok(requirementsClient.includes('`/api/requirements/${encodeURIComponent(requirementId)}`'));
   assert.ok(requirementsClient.includes('method: \'GET\''));
