@@ -30,7 +30,7 @@ test('Customer review action starts from completed booking and stays server-auth
   assert.ok(bookingDetail.includes("pathname: '/reviews/[bookingId]'"));
   assert.ok(reviewComposer.includes('fetchCustomerReviewForBooking'));
   assert.ok(reviewComposer.includes('submitCustomerReview'));
-  assert.ok(reviewComposer.includes('Final eligibility, duplicate protection and review-window validation stay server-authoritative.'));
+  assert.ok(reviewComposer.includes('You can publish one review for an eligible completed booking. Duplicate submissions are prevented.'));
   assert.ok(reviewComposer.includes('maxLength={1000}'));
   assert.ok(reviewsClient.includes("input.rating < 1 || input.rating > 5"));
   assert.ok(customerReviews.includes('Open a completed booking to leave feedback.'));
