@@ -11,12 +11,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandLogo } from '../components/BrandLogo';
 import { MobileNav } from '../components/MobileNav';
 import {
   formatMarketplacePrice,
   type MarketplaceService,
   searchMarketplaceServices,
 } from '../lib/marketplace';
+import { cardShadow, theme } from '../lib/theme';
 
 type SearchState =
   | { status: 'loading'; services: MarketplaceService[]; total: number }
@@ -58,6 +60,7 @@ export default function ExploreScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
         <View style={styles.header}>
+          <BrandLogo compact />
           <Text style={styles.eyebrow}>EXPLORE</Text>
           <Text style={styles.title}>Find a service</Text>
           <Text style={styles.description}>
@@ -165,48 +168,48 @@ function ServiceCard({ service }: { service: MarketplaceService }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f7f7fb' },
+  safeArea: { flex: 1, backgroundColor: theme.colors.canvas },
   screen: { flex: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 10, gap: 12 },
   header: { gap: 5 },
-  eyebrow: { fontSize: 11, fontWeight: '800', letterSpacing: 1.5, color: '#666678' },
-  title: { fontSize: 28, lineHeight: 34, fontWeight: '800', color: '#171721' },
-  description: { fontSize: 14, lineHeight: 20, color: '#666678' },
+  eyebrow: { fontSize: 11, fontWeight: '900', letterSpacing: 1.5, color: theme.colors.primary },
+  title: { fontSize: 28, lineHeight: 34, fontWeight: '900', letterSpacing: -0.4, color: theme.colors.ink },
+  description: { fontSize: 14, lineHeight: 20, color: theme.colors.inkMuted },
   searchRow: { flexDirection: 'row', gap: 8 },
   searchInput: {
     flex: 1,
     minHeight: 48,
     borderWidth: 1,
-    borderColor: '#d9d9e3',
+    borderColor: theme.colors.border,
     borderRadius: 12,
     paddingHorizontal: 14,
     fontSize: 15,
-    color: '#171721',
-    backgroundColor: '#ffffff',
+    color: theme.colors.ink,
+    backgroundColor: theme.colors.surface,
   },
   searchButton: {
     minHeight: 48,
     justifyContent: 'center',
     borderRadius: 12,
     paddingHorizontal: 16,
-    backgroundColor: '#30304a',
+    backgroundColor: theme.colors.primary,
   },
   searchButtonText: { color: '#ffffff', fontSize: 14, fontWeight: '700' },
   inlineStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  resultCount: { fontSize: 13, fontWeight: '700', color: '#555565' },
+  resultCount: { fontSize: 13, fontWeight: '800', color: theme.colors.inkMuted },
   listContent: { gap: 10, paddingBottom: 8 },
-  card: { gap: 9, padding: 16, borderRadius: 16, backgroundColor: '#ffffff' },
+  card: { gap: 9, padding: 16, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, ...cardShadow },
   cardPressed: { opacity: 0.82 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
   cardTitleWrap: { flex: 1, gap: 3 },
-  cardTitle: { fontSize: 17, fontWeight: '800', color: '#171721' },
-  provider: { fontSize: 13, color: '#666678' },
-  price: { fontSize: 15, fontWeight: '800', color: '#30304a' },
-  descriptionText: { fontSize: 14, lineHeight: 20, color: '#555565' },
+  cardTitle: { fontSize: 17, fontWeight: '900', color: theme.colors.ink },
+  provider: { fontSize: 13, color: theme.colors.inkMuted },
+  price: { fontSize: 15, fontWeight: '900', color: theme.colors.primaryStrong },
+  descriptionText: { fontSize: 14, lineHeight: 20, color: theme.colors.inkMuted },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  meta: { fontSize: 12, color: '#555565', backgroundColor: '#f0f0f5', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
-  rating: { fontSize: 12, fontWeight: '700', color: '#555565' },
-  openText: { fontSize: 12, fontWeight: '800', color: '#30304a' },
-  muted: { fontSize: 13, lineHeight: 19, color: '#77778a' },
+  meta: { fontSize: 12, color: theme.colors.primaryStrong, backgroundColor: theme.colors.secondary, paddingHorizontal: 8, paddingVertical: 5, borderRadius: theme.radii.sm },
+  rating: { fontSize: 12, fontWeight: '700', color: theme.colors.inkMuted },
+  openText: { fontSize: 12, fontWeight: '900', color: theme.colors.primary },
+  muted: { fontSize: 13, lineHeight: 19, color: theme.colors.inkMuted },
   error: { fontSize: 13, lineHeight: 19, color: '#a12626' },
-  emptyCard: { padding: 18, borderRadius: 16, backgroundColor: '#ffffff', gap: 6 },
+  emptyCard: { padding: 18, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, gap: 6 },
 });
