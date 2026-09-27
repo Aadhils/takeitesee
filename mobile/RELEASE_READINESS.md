@@ -74,19 +74,25 @@ Android production creates an AAB for Google Play. The first iOS device/TestFlig
 
 ## Still required before store submission
 
-- authorized Expo/EAS account login and project linkage
-- successful Android preview APK cloud build
-- Android real-device Customer + Provider UAT
-- final square TakeItEsee app icon and Android adaptive icon assets
-- splash/launch branding assets
+- Expo/EAS project linkage is complete (`uvmart-takeitesee` / committed EAS project ID).
+- Android preview APK workflow and real-device Customer + Provider UAT are complete through the current mobile release baseline.
+- Native splash and launcher branding are configured with the bundled official TakeItEsee logo.
+- A dedicated square Play Store listing icon is still required; do not treat the current rectangular bundled logo as final store artwork.
 - final package/bundle identifier confirmation before store registration
 - production EAS environment values
-- Android signing / Google Play Console application registration
+- Android signing/keystore state must be verified in the authorized EAS account; repository config alone cannot prove credential existence.
+- Google Play Console application registration and Play App Signing state must be verified externally.
 - Apple signing / App Store Connect application registration
 - iOS TestFlight real-device UAT
-- store screenshots and listing copy
+- store screenshots, 512×512 Play listing icon, feature graphic, and listing copy
 - Google Play Data safety disclosure and Apple App Privacy answers based on the implemented app behavior
 - final release version and store-submission verification
+
+## Google Play internal-track handoff
+
+The production submit profile intentionally targets Google Play `internal` testing first. This does not publish the app to production. A production AAB and authorized Google Play service credentials are still required before `npm run submit:android:internal` can succeed.
+
+Do not change the submit track to `production` until Play Console setup, disclosures, store assets, internal testing, and release review are complete.
 
 ## Preserved boundaries
 
