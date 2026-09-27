@@ -249,9 +249,9 @@ export default function BookServiceScreen() {
                 ) : null}
 
                 <View style={styles.infoCard}>
-                  <Text style={styles.infoTitle}>Server-authoritative booking</Text>
+                  <Text style={styles.infoTitle}>Booking protection</Text>
                   <Text style={styles.muted}>
-                    The server revalidates Customer identity, Provider ownership separation, service availability, conflicts, price, duration, currency and location before creating the booking. No payment is collected here.
+                    We recheck the selected time and service details before confirming your booking. No payment is collected here.
                   </Text>
                 </View>
 
