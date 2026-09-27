@@ -108,7 +108,7 @@ test('Provider booking journey is role-gated and exposes accept, decline and bou
 });
 
 test('Customer Home and Provider workspace expose focused booking entries', () => {
-  assert.ok(home.includes('href="/bookings"'));
+  assert.ok(home.includes("router.push('/bookings')"));
   assert.ok(home.includes('My bookings'));
   assert.ok(providerWorkspace.includes('href="/provider-bookings"'));
   assert.ok(providerWorkspace.includes('Provider bookings'));
