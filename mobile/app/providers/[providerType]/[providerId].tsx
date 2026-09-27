@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandLogo } from '../../../components/BrandLogo';
+
 import {
   fetchPublicProvider,
   formatPublicServicePrice,
@@ -69,6 +71,7 @@ export default function ProviderProfileScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
+        <BrandLogo compact />
         <Link href="/explore" asChild>
           <Pressable style={styles.backButton}>
             <Text style={styles.backText}>‹ Back to Explore</Text>
