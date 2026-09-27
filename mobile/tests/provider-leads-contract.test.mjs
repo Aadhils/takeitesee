@@ -22,7 +22,8 @@ test('native proposal submission is hard-limited to one-time per-occurrence prop
   assert.ok(client.includes("pricing_basis: 'per_occurrence'"));
   assert.ok(providerScreen.includes("lead.schedule_pattern !== 'one_time'"));
   assert.ok(providerScreen.includes("lead.schedule_pattern === 'recurring'"));
-  assert.ok(providerScreen.includes('Recurring lead · read-only in native v1'));
+  assert.ok(providerScreen.includes('Recurring requirement'));
+  assert.ok(providerScreen.includes('Recurring proposal actions are available on the web for now.'));
   assert.ok(providerScreen.includes('submitOneTimeRequirementProposal'));
 });
 
