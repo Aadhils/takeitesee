@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandLogo } from '../components/BrandLogo';
 import { MobileNav } from '../components/MobileNav';
 import {
   fetchNotifications,
@@ -10,6 +11,7 @@ import {
   markNotificationRead,
   type NativeNotification,
 } from '../lib/notifications';
+import { cardShadow, theme } from '../lib/theme';
 import { useAuth } from '../providers/AuthProvider';
 
 type NotificationState =
@@ -18,6 +20,18 @@ type NotificationState =
   | { status: 'error'; notifications: NativeNotification[]; message: string };
 
 const UUID = '[0-9a-fA-F-]{36}';
+
+function formatNotificationTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString(undefined, {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
 
 export default function NotificationsScreen() {
   const auth = useAuth();
@@ -122,11 +136,12 @@ export default function NotificationsScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
         <ScrollView contentContainerStyle={styles.content}>
+          <BrandLogo compact />
           <View style={styles.headerRow}>
             <View style={styles.headerCopy}>
               <Text style={styles.eyebrow}>NOTIFICATIONS</Text>
               <Text style={styles.title}>Updates that need attention</Text>
-              <Text style={styles.description}>Booking, proposal and messaging updates from your server-owned marketplace account.</Text>
+              <Text style={styles.description}>Booking, proposal and messaging updates from your marketplace activity.</Text>
             </View>
             <Text style={styles.count}>{unreadCount}</Text>
           </View>
@@ -158,7 +173,7 @@ export default function NotificationsScreen() {
                   {unread ? <Text style={styles.unreadBadge}>NEW</Text> : null}
                 </View>
                 <Text style={styles.body}>{item.body}</Text>
-                <Text style={styles.timestamp}>{item.created_at}</Text>
+                <Text style={styles.timestamp}>{formatNotificationTime(item.created_at)}</Text>
                 <Text style={styles.openText}>{item.target_path || item.conversation_id || item.booking_id ? 'Open update →' : unread ? 'Mark as read' : 'Read'}</Text>
               </Pressable>
             );
@@ -171,33 +186,33 @@ export default function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f7f7fb' },
+  safeArea: { flex: 1, backgroundColor: theme.colors.canvas },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   screen: { flex: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 10, gap: 10 },
   content: { gap: 12, paddingBottom: 8 },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   headerCopy: { flex: 1, gap: 5 },
-  eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.4, color: '#77778a' },
-  title: { fontSize: 27, lineHeight: 33, fontWeight: '800', color: '#171721' },
-  description: { fontSize: 14, lineHeight: 20, color: '#666678' },
-  count: { minWidth: 38, textAlign: 'center', fontSize: 14, fontWeight: '800', color: '#fff', backgroundColor: '#30304a', paddingHorizontal: 9, paddingVertical: 8, borderRadius: 999 },
+  eyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1.4, color: theme.colors.primary },
+  title: { fontSize: 27, lineHeight: 33, fontWeight: '900', color: theme.colors.ink },
+  description: { fontSize: 14, lineHeight: 20, color: theme.colors.inkMuted },
+  count: { minWidth: 38, textAlign: 'center', fontSize: 14, fontWeight: '900', color: theme.colors.white, backgroundColor: theme.colors.primary, paddingHorizontal: 9, paddingVertical: 8, borderRadius: theme.radii.pill },
   actionRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },
-  primaryButton: { minHeight: 42, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 13, borderRadius: 10, backgroundColor: '#30304a' },
+  primaryButton: { minHeight: 42, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 13, borderRadius: theme.radii.md, backgroundColor: theme.colors.primary },
   primaryText: { fontSize: 12, fontWeight: '800', color: '#fff' },
-  secondaryButton: { minHeight: 42, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 13, borderRadius: 10, backgroundColor: '#ededf4' },
-  secondaryText: { fontSize: 12, fontWeight: '800', color: '#3f3f58' },
+  secondaryButton: { minHeight: 42, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 13, borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary },
+  secondaryText: { fontSize: 12, fontWeight: '900', color: theme.colors.primaryStrong },
   disabled: { opacity: 0.45 },
   inlineStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  card: { gap: 8, padding: 15, borderRadius: 15, backgroundColor: '#fff', borderWidth: 1, borderColor: 'transparent' },
-  unreadCard: { borderColor: '#b8b8d0' },
+  card: { gap: 8, padding: 15, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, ...cardShadow },
+  unreadCard: { borderColor: theme.colors.accent, backgroundColor: '#FBFAFF' },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
   cardTitleWrap: { flex: 1, gap: 3 },
-  eventType: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase', color: '#77778a' },
+  eventType: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase', color: theme.colors.primary },
   cardTitle: { fontSize: 16, fontWeight: '800', color: '#171721' },
   unreadBadge: { fontSize: 9, fontWeight: '800', color: '#285c33', backgroundColor: '#edf8ef', paddingHorizontal: 7, paddingVertical: 4, borderRadius: 8 },
   body: { fontSize: 13, lineHeight: 19, color: '#555565' },
   timestamp: { fontSize: 11, color: '#888899' },
-  openText: { fontSize: 12, fontWeight: '800', color: '#30304a' },
+  openText: { fontSize: 12, fontWeight: '900', color: theme.colors.primary },
   muted: { fontSize: 13, lineHeight: 18, color: '#77778a' },
   errorText: { fontSize: 13, lineHeight: 19, color: '#8b3535' },
 });
