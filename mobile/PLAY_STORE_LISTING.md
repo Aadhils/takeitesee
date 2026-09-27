@@ -5,7 +5,7 @@ This file is a reviewable source for Play Console entry. It does not publish any
 ## Identity
 
 - App name: TakeItEsee
-- Android package: com.takeitesee.app
+- Android package: com.uvmart.takeitesee
 - Legal operator: UV MART Enterprises Private Limited
 - Website: https://www.takeitesee.com
 
