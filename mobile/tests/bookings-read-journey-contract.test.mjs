@@ -50,7 +50,7 @@ test('Customer booking create uses live availability before existing booking man
   assert.ok(customerCreate.includes('day.slots.some((slot) => slot.available)'));
   assert.ok(customerCreate.includes('disabled={!slot.available}'));
   assert.ok(customerCreate.includes("pathname: '/bookings/[bookingId]'"));
-  assert.ok(customerCreate.includes('Server-authoritative booking'));
+  assert.ok(customerCreate.includes('Booking protection'));
   assert.ok(customerCreate.includes('No payment is collected here.'));
 });
 
@@ -60,7 +60,7 @@ test('Customer booking detail exposes cancel, reschedule and bounded completion 
   assert.ok(customerDetail.includes('fetchCustomerBooking'));
   assert.ok(customerDetail.includes("pathname: '/booking-actions/[bookingId]'"));
   assert.ok(customerDetail.includes("pathname: '/providers/[providerType]/[providerId]'"));
-  assert.ok(customerDetail.includes('Server-authoritative booking journey'));
+  assert.ok(customerDetail.includes('Manage this booking'));
   assert.ok(customerActions.includes('cancelCustomerBooking'));
   assert.ok(customerActions.includes('rescheduleCustomerBooking'));
   assert.ok(customerActions.includes('fetchCustomerBookingAvailability'));
@@ -97,7 +97,7 @@ test('Provider booking journey is role-gated and exposes accept, decline and bou
   assert.ok(providerDetail.includes('reportProviderCustomerNoShow'));
   assert.ok(providerDetail.includes("booking.status === 'confirmed' && booking.attendance_outcome === 'pending'"));
   assert.ok(providerDetail.includes('Confirm no-show'));
-  assert.ok(providerDetail.includes('Server-authoritative Provider journey'));
+  assert.ok(providerDetail.includes('Booking actions'));
   assert.ok(bookingsClient.includes("export type ProviderBookingAction = 'accept' | 'decline';"));
   assert.ok(bookingsClient.includes("action === 'decline'"));
   assert.ok(bookingsClient.includes("action: 'report_customer_no_show'"));
