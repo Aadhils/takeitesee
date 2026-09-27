@@ -7,7 +7,16 @@
     "scheme": "takeitesee",
     "userInterfaceStyle": "automatic",
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/official-takeitesee-logo.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#F8F7FF"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
