@@ -115,7 +115,7 @@ export default function RequestServiceScreen() {
             <Text style={styles.eyebrow}>CUSTOMER REQUEST</Text>
             <Text style={styles.title}>Sign in to post a requirement</Text>
             <Text style={styles.description}>
-              Explore stays public. Posting a requirement uses your server-validated Customer account.
+              Explore is open to everyone. Sign in to post a requirement and receive Provider proposals.
             </Text>
             <Link href="/login" asChild>
               <Pressable style={styles.primaryButton}>
