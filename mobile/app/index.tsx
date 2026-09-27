@@ -2,6 +2,8 @@ import { Redirect } from 'expo-router';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandLogo } from '../components/BrandLogo';
+import { theme } from '../lib/theme';
 import { useAuth } from '../providers/AuthProvider';
 
 export default function AppEntryScreen() {
@@ -18,17 +20,16 @@ export default function AppEntryScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <ActivityIndicator />
-        <Text style={styles.title}>TakeItEsee</Text>
-        <Text style={styles.message}>Validating your saved session with the server…</Text>
+        <BrandLogo />
+        <ActivityIndicator color={theme.colors.primary} />
+        <Text style={styles.message}>Getting your marketplace ready…</Text>
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f7f7fb' },
+  safeArea: { flex: 1, backgroundColor: theme.colors.canvas },
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
-  title: { fontSize: 24, fontWeight: '800', color: '#171721' },
-  message: { fontSize: 14, lineHeight: 20, textAlign: 'center', color: '#666678' },
+  message: { fontSize: 14, lineHeight: 20, textAlign: 'center', color: theme.colors.inkMuted },
 });
