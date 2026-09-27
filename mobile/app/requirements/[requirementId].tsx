@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandLogo } from '../../components/BrandLogo';
+
 import {
   decideCustomerRequirementProposal,
   fetchCustomerRequirementDetail,
@@ -123,6 +125,7 @@ export default function RequirementDetailScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
+        <BrandLogo compact />
         <Link href="/requirements" asChild>
           <Pressable style={styles.backButton}>
             <Text style={styles.backText}>‹ Back to Requirements</Text>
