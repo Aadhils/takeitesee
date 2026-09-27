@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandLogo } from '../../components/BrandLogo';
+
 import {
   conversationCanCompose,
   conversationTitle,
@@ -132,6 +134,7 @@ export default function MessageThreadScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
+        <BrandLogo compact />
         <View style={styles.topRow}>
           <Link href={{ pathname: '/messages', params: { workspace } }} style={styles.backLink}>← Messages</Link>
           <Pressable onPress={() => void load()} style={styles.refreshButton}>

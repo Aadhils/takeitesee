@@ -3,6 +3,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandLogo } from '../../components/BrandLogo';
+
 import {
   confirmCustomerServiceCompletion,
   fetchCustomerBooking,
@@ -102,6 +104,7 @@ export default function CustomerBookingDetailScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
+        <BrandLogo compact />
         <View style={styles.topRow}>
           <Link href="/bookings" style={styles.backLink}>← My bookings</Link>
           <Pressable onPress={() => void load()} style={styles.refreshButton}>

@@ -3,6 +3,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandLogo } from '../components/BrandLogo';
+
 import { MobileNav } from '../components/MobileNav';
 import {
   fetchCustomerBookings,
@@ -57,6 +59,7 @@ export default function CustomerBookingsScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
         <ScrollView contentContainerStyle={styles.content}>
+          <BrandLogo compact />
           <View style={styles.headerRow}>
             <View style={styles.headerCopy}>
               <Text style={styles.eyebrow}>MY BOOKINGS</Text>

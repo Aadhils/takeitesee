@@ -3,6 +3,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandLogo } from '../../components/BrandLogo';
+
 import {
   fetchCustomerReviewForBooking,
   stars,
@@ -85,6 +87,7 @@ export default function CustomerReviewComposerScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <BrandLogo compact />
         <View style={styles.topRow}>
           <Link
             href={{ pathname: '/bookings/[bookingId]', params: { bookingId } }}

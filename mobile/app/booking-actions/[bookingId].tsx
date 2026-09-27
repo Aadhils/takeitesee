@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandLogo } from '../../components/BrandLogo';
+
 import {
   cancelCustomerBooking,
   fetchCustomerBooking,
@@ -141,6 +143,7 @@ export default function CustomerBookingActionsScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <BrandLogo compact />
         <View style={styles.topRow}>
           <Link href={{ pathname: '/bookings/[bookingId]', params: { bookingId } }} style={styles.backLink}>← Booking detail</Link>
           <Pressable onPress={() => void load()} style={styles.refreshButton}><Text style={styles.refreshText}>Refresh</Text></Pressable>
