@@ -41,10 +41,10 @@ These are Console/account state and cannot be proven by repository configuration
 - App registration and Play App Signing.
 - Privacy Policy URL entered in Play Console and accessible in-app.
 - Data safety answers checked against actual app code, APIs, permissions, and third-party SDK behavior.
-- Account deletion declarations and deletion path checked for every account-creation flow.
+- Account deletion declarations and deletion path checked for every account-creation flow. See `PLAY_DATA_SAFETY_AUDIT.md`; the native in-app path is present, while an external no-app-access deletion resource remains a submission gate.
 - App access / reviewer credentials supplied for login-gated functionality.
 - Content rating and target-audience declarations completed.
 - Ads declaration checked against actual app behavior.
 - Production AAB uploaded to Internal testing before any production-track release.
 
-Never infer Data safety answers from marketing copy. Audit the shipped app and SDKs first.
+Never infer Data safety answers from marketing copy. Audit the shipped app and SDKs first. The repository evidence review lives in `PLAY_DATA_SAFETY_AUDIT.md`.
