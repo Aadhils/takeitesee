@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import styles from './privacy.module.css';
 
 const description = 'Read the TakeItEsee Privacy Policy, including how personal information is collected, used, stored, shared, protected and how to contact the Grievance Officer.';
@@ -86,7 +87,7 @@ export default function PrivacyPolicyPage() {
         <section id="privacy-requests">
           <h2>8. Your choices and privacy requests</h2>
           <p>You may update available profile details, communication preferences, language preferences and recommendation settings through TakeItEsee where those controls are provided.</p>
-          <p>You may also request access to, correction of, or deletion of eligible personal information by contacting the Grievance Officer listed below. Because automated account deletion is not currently available from the account settings interface, deletion requests may require manual review and processing.</p>
+          <p>You may also request access to, correction of, or deletion of eligible personal information. For account deletion, use the <Link href="/account-deletion">TakeItEsee account deletion resource</Link> to verify your account and initiate the request, or contact the Grievance Officer listed below if you cannot sign in. Deletion requests may require review and processing.</p>
           <p>Some information may need to be retained even after a deletion request where retention is required by law or is reasonably necessary for security, fraud prevention, dispute resolution, audit integrity, or protection of legal rights.</p>
           <p>As applicable provisions of India&apos;s Digital Personal Data Protection framework come into force, TakeItEsee will provide and maintain applicable Data Principal rights and request mechanisms required by law.</p>
         </section>
