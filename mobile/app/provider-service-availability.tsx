@@ -13,6 +13,7 @@ import {
   type ProviderServiceAvailability,
   type ProviderServiceAvailabilityMode,
 } from '../lib/provider-service-availability';
+import { cardShadow, theme } from '../lib/theme';
 import { useAuth } from '../providers/AuthProvider';
 
 type ScreenState =
@@ -21,8 +22,8 @@ type ScreenState =
   | { status: 'error'; services: ProviderServiceAvailability[]; message: string };
 
 const modes: { value: ProviderServiceAvailabilityMode; label: string; detail: string }[] = [
-  { value: 'always_available', label: 'Always available', detail: 'Customers can receive server-generated availability without weekly-hour gating.' },
-  { value: 'on_request', label: 'On request', detail: 'Keep booking flexible and confirm timing through the normal booking journey.' },
+  { value: 'always_available', label: 'Always available', detail: 'Customers can see available booking times even without weekly hours.' },
+  { value: 'on_request', label: 'On request', detail: 'Keep booking flexible and confirm the time with the customer.' },
   { value: 'scheduled', label: 'Scheduled', detail: 'Use your existing weekly booking hours. Weekly hours must already exist.' },
 ];
 
@@ -92,14 +93,14 @@ export default function ProviderServiceAvailabilityScreen() {
             <View style={styles.headerCopy}>
               <Text style={styles.eyebrow}>SERVICE AVAILABILITY</Text>
               <Text style={styles.title}>Booking mode</Text>
-              <Text style={styles.description}>Quickly switch each owned service between flexible and existing scheduled booking modes.</Text>
+              <Text style={styles.description}>Choose how each service accepts bookings without changing your detailed schedule.</Text>
             </View>
             <Pressable onPress={() => void load()} style={styles.refreshButton}><Text style={styles.refreshText}>Refresh</Text></Pressable>
           </View>
 
           <View style={styles.boundaryCard}>
             <Text style={styles.boundaryTitle}>Quick control only</Text>
-            <Text style={styles.muted}>This screen changes only the service availability mode. Existing timezone, weekly hours and blackout periods are preserved. Detailed schedule editing remains on web.</Text>
+            <Text style={styles.muted}>Existing timezone, weekly hours and blackout periods are preserved. For detailed schedule editing, use the web.</Text>
           </View>
 
           {notice ? <View style={styles.successCard}><Text style={styles.successText}>{notice}</Text></View> : null}
@@ -159,40 +160,40 @@ export default function ProviderServiceAvailabilityScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f7f7fb' },
+  safeArea: { flex: 1, backgroundColor: theme.colors.canvas },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   screen: { flex: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 10, gap: 10 },
   content: { gap: 12, paddingBottom: 8 },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   headerCopy: { flex: 1, gap: 5 },
-  eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.4, color: '#77778a' },
-  title: { fontSize: 28, lineHeight: 34, fontWeight: '800', color: '#171721' },
-  description: { fontSize: 14, lineHeight: 20, color: '#666678' },
-  refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: '#ededf4' },
-  refreshText: { fontSize: 12, fontWeight: '800', color: '#3f3f58' },
-  boundaryCard: { gap: 4, padding: 14, borderRadius: 14, backgroundColor: '#f0f0f6' },
-  boundaryTitle: { fontSize: 13, fontWeight: '800', color: '#3d3d54' },
+  eyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1.4, color: theme.colors.primary },
+  title: { fontSize: 28, lineHeight: 34, fontWeight: '900', color: theme.colors.ink },
+  description: { fontSize: 14, lineHeight: 20, color: theme.colors.inkMuted },
+  refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary },
+  refreshText: { fontSize: 12, fontWeight: '900', color: theme.colors.primaryStrong },
+  boundaryCard: { gap: 4, padding: 14, borderRadius: theme.radii.lg, backgroundColor: theme.colors.secondary },
+  boundaryTitle: { fontSize: 13, fontWeight: '900', color: theme.colors.primaryStrong },
   successCard: { padding: 13, borderRadius: 12, backgroundColor: '#edf8ef' },
   successText: { fontSize: 13, fontWeight: '700', color: '#285c33' },
   errorCard: { padding: 13, borderRadius: 12, backgroundColor: '#fff0f0' },
   errorText: { fontSize: 13, lineHeight: 19, color: '#8b3535' },
   inlineStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  card: { gap: 12, padding: 16, borderRadius: 16, backgroundColor: '#fff' },
+  card: { gap: 12, padding: 16, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, ...cardShadow },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
   cardTitleWrap: { flex: 1, gap: 3 },
-  cardTitle: { fontSize: 17, fontWeight: '800', color: '#171721' },
-  modeBadge: { fontSize: 10, fontWeight: '800', color: '#4b4b65', backgroundColor: '#efeff5', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
+  cardTitle: { fontSize: 17, fontWeight: '900', color: theme.colors.ink },
+  modeBadge: { fontSize: 10, fontWeight: '900', color: theme.colors.primaryStrong, backgroundColor: theme.colors.secondary, paddingHorizontal: 8, paddingVertical: 5, borderRadius: theme.radii.sm },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
-  meta: { fontSize: 11, fontWeight: '700', color: '#555565', backgroundColor: '#f4f4f8', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
+  meta: { fontSize: 11, fontWeight: '700', color: theme.colors.primaryStrong, backgroundColor: theme.colors.secondary, paddingHorizontal: 8, paddingVertical: 5, borderRadius: theme.radii.sm },
   modeList: { gap: 8 },
-  modeButton: { minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 13, paddingVertical: 10, borderRadius: 13, backgroundColor: '#f5f5f9' },
-  modeSelected: { backgroundColor: '#30304a' },
+  modeButton: { minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 13, paddingVertical: 10, borderRadius: theme.radii.lg, backgroundColor: theme.colors.secondary },
+  modeSelected: { backgroundColor: theme.colors.primary },
   modeDisabled: { opacity: 0.48 },
   modeCopy: { flex: 1, gap: 2 },
-  modeTitle: { fontSize: 13, fontWeight: '800', color: '#30304a' },
-  modeDetail: { fontSize: 11, lineHeight: 16, color: '#6d6d7d' },
+  modeTitle: { fontSize: 13, fontWeight: '900', color: theme.colors.ink },
+  modeDetail: { fontSize: 11, lineHeight: 16, color: theme.colors.inkMuted },
   modeSelectedText: { color: '#fff' },
-  modeSelectedDetail: { color: '#dedee9' },
-  modeMark: { fontSize: 18, fontWeight: '800', color: '#30304a' },
-  muted: { fontSize: 13, lineHeight: 18, color: '#77778a' },
+  modeSelectedDetail: { color: '#F0EDFF' },
+  modeMark: { fontSize: 18, fontWeight: '900', color: theme.colors.primary },
+  muted: { fontSize: 13, lineHeight: 18, color: theme.colors.inkMuted },
 });

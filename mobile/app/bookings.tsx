@@ -12,6 +12,7 @@ import {
   formatBookingTime,
   type CustomerBooking,
 } from '../lib/bookings';
+import { cardShadow, theme } from '../lib/theme';
 import { useAuth } from '../providers/AuthProvider';
 
 type BookingState =
@@ -46,7 +47,7 @@ export default function CustomerBookingsScreen() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.centered}>
-          <ActivityIndicator />
+          <ActivityIndicator color={theme.colors.primary} />
           <Text style={styles.muted}>Checking your session…</Text>
         </View>
       </SafeAreaView>
@@ -58,8 +59,8 @@ export default function CustomerBookingsScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
+        <BrandLogo compact />
         <ScrollView contentContainerStyle={styles.content}>
-          <BrandLogo compact />
           <View style={styles.headerRow}>
             <View style={styles.headerCopy}>
               <Text style={styles.eyebrow}>MY BOOKINGS</Text>
@@ -126,32 +127,32 @@ export default function CustomerBookingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f7f7fb' },
+  safeArea: { flex: 1, backgroundColor: theme.colors.canvas },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   screen: { flex: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 10, gap: 10 },
   content: { gap: 12, paddingBottom: 8 },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   headerCopy: { flex: 1, gap: 5 },
-  eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.4, color: '#77778a' },
-  title: { fontSize: 28, lineHeight: 34, fontWeight: '800', color: '#171721' },
-  description: { fontSize: 14, lineHeight: 20, color: '#666678' },
-  refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: '#ededf4' },
-  refreshText: { fontSize: 12, fontWeight: '800', color: '#3f3f58' },
+  eyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1.4, color: theme.colors.primary },
+  title: { fontSize: 28, lineHeight: 34, fontWeight: '900', color: theme.colors.ink },
+  description: { fontSize: 14, lineHeight: 20, color: theme.colors.inkMuted },
+  refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary },
+  refreshText: { fontSize: 12, fontWeight: '900', color: theme.colors.primaryStrong },
   readOnlyCard: { gap: 4, padding: 14, borderRadius: 14, backgroundColor: '#f0f0f6' },
   readOnlyTitle: { fontSize: 13, fontWeight: '800', color: '#3d3d54' },
   inlineStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  card: { gap: 10, padding: 16, borderRadius: 16, backgroundColor: '#fff' },
+  card: { gap: 10, padding: 16, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, ...cardShadow },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
   cardTitleWrap: { flex: 1, gap: 3 },
-  reference: { fontSize: 10, fontWeight: '800', letterSpacing: 0.7, color: '#77778a' },
-  cardTitle: { fontSize: 17, fontWeight: '800', color: '#171721' },
-  statusBadge: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase', color: '#4b4b65', backgroundColor: '#efeff5', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
-  detail: { fontSize: 13, lineHeight: 19, color: '#555565' },
+  reference: { fontSize: 10, fontWeight: '900', letterSpacing: 0.7, color: theme.colors.primary },
+  cardTitle: { fontSize: 17, fontWeight: '900', color: theme.colors.ink },
+  statusBadge: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase', color: theme.colors.primaryStrong, backgroundColor: theme.colors.secondary, paddingHorizontal: 8, paddingVertical: 5, borderRadius: theme.radii.sm },
+  detail: { fontSize: 13, lineHeight: 19, color: theme.colors.inkMuted },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
-  meta: { fontSize: 11, fontWeight: '700', color: '#555565', backgroundColor: '#f4f4f8', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
+  meta: { fontSize: 11, fontWeight: '700', color: theme.colors.primaryStrong, backgroundColor: theme.colors.secondary, paddingHorizontal: 8, paddingVertical: 5, borderRadius: theme.radii.sm },
   attendance: { fontSize: 12, fontWeight: '700', color: '#285c33' },
-  openText: { fontSize: 12, fontWeight: '800', color: '#30304a' },
-  primaryLink: { alignSelf: 'flex-start', marginTop: 2, paddingVertical: 9, paddingHorizontal: 12, borderRadius: 10, backgroundColor: '#30304a', color: '#fff', fontWeight: '800' },
-  muted: { fontSize: 13, lineHeight: 18, color: '#77778a' },
+  openText: { fontSize: 12, fontWeight: '900', color: theme.colors.primary },
+  primaryLink: { alignSelf: 'flex-start', marginTop: 2, paddingVertical: 9, paddingHorizontal: 12, borderRadius: theme.radii.md, backgroundColor: theme.colors.primary, color: theme.colors.white, fontWeight: '900' },
+  muted: { fontSize: 13, lineHeight: 18, color: theme.colors.inkMuted },
   errorText: { fontSize: 13, lineHeight: 19, color: '#8b3535' },
 });

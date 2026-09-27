@@ -31,7 +31,7 @@ test('native Provider live status is role-gated and keeps the established short 
   assert.ok(screen.includes('fetchProviderLiveAvailability'));
   assert.ok(screen.includes('updateProviderLiveAvailability'));
   assert.ok(screen.includes('effectiveProviderWorkMode'));
-  assert.ok(screen.includes('does not change per-service booking schedules, booking states, or shop hours'));
+  assert.ok(screen.includes('Let customers know whether you can take work right now.'));
   assert.ok(providerBookings.includes('href="/provider-live-status"'));
   assert.ok(providerBookings.includes('Live work status'));
 });
