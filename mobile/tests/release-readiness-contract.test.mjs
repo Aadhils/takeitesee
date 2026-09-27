@@ -44,7 +44,7 @@ test('EAS preview build is device-installable and production build is store-read
   assert.equal(easConfig.build.production.environment, 'production');
   assert.equal(easConfig.build.production.autoIncrement, true);
   assert.equal(easConfig.build.production.android.buildType, 'app-bundle');
-  assert.deepEqual(easConfig.submit.production, {});
+  assert.deepEqual(easConfig.submit.production, { android: { track: 'internal' } });
 });
 
 test('release commands expose explicit EAS account, preview, and production handoffs', () => {
@@ -57,6 +57,10 @@ test('release commands expose explicit EAS account, preview, and production hand
   assert.equal(
     packageConfig.scripts['build:android:production'],
     'npx eas-cli@latest build --platform android --profile production',
+  );
+  assert.equal(
+    packageConfig.scripts['submit:android:internal'],
+    'npx eas-cli@latest submit --platform android --profile production',
   );
   assert.equal(
     packageConfig.scripts['build:ios:production'],
