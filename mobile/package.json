@@ -13,7 +13,8 @@
     "eas:project:info": "npx eas-cli@latest project:info",
     "build:android:preview": "npx eas-cli@latest build --platform android --profile preview",
     "build:android:production": "npx eas-cli@latest build --platform android --profile production",
-    "build:ios:production": "npx eas-cli@latest build --platform ios --profile production"
+    "build:ios:production": "npx eas-cli@latest build --platform ios --profile production",
+    "submit:android:internal": "npx eas-cli@latest submit --platform android --profile production"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
