@@ -164,7 +164,7 @@ export default function CustomerReviewComposerScreen() {
               <Text style={styles.primaryButtonText}>{submitting ? 'Submitting…' : 'Publish review'}</Text>
             </Pressable>
             <Text style={styles.muted}>
-              Final eligibility, duplicate protection and review-window validation stay server-authoritative.
+              You can publish one review for an eligible completed booking. Duplicate submissions are prevented.
             </Text>
           </View>
         ) : null}
