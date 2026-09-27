@@ -81,3 +81,16 @@ test('release foundation does not introduce frozen finance or recovery configura
     assert.equal(releaseConfig.includes(forbidden), false, `release config must not introduce ${forbidden}`);
   }
 });
+
+
+test('Play Store listing source keeps external release blockers explicit', async () => {
+  const listing = await readFile(new URL('../PLAY_STORE_LISTING.md', import.meta.url), 'utf8');
+  assert.match(listing, /App name: TakeItEsee/);
+  assert.match(listing, /Android package: com\.takeitesee\.app/);
+  assert.match(listing, /512 × 512 px/);
+  assert.match(listing, /1024 × 500 px/);
+  assert.match(listing, /Data safety answers checked against actual app code/);
+  assert.match(listing, /Account deletion declarations/);
+  assert.match(listing, /reviewer credentials/);
+  assert.match(listing, /Do not upload the current rectangular bundled logo/);
+});
