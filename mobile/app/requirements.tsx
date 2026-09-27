@@ -10,12 +10,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandLogo } from '../components/BrandLogo';
 import { MobileNav } from '../components/MobileNav';
 import {
   fetchCustomerRequirements,
   formatRequirementMoney,
   type CustomerRequirementSummary,
 } from '../lib/requirements';
+import { cardShadow, theme } from '../lib/theme';
 import { useAuth } from '../providers/AuthProvider';
 
 type ListState =
@@ -78,12 +80,13 @@ export default function RequirementsScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
+        <BrandLogo compact />
         <View style={styles.headerRow}>
           <View style={styles.headerCopy}>
             <Text style={styles.eyebrow}>MY REQUESTS</Text>
             <Text style={styles.title}>Requirements</Text>
             <Text style={styles.description}>
-              Track provider proposals from the same Customer account you use on the web.
+              Track your service requests and Provider proposals in one place.
             </Text>
           </View>
           <Pressable
@@ -179,23 +182,23 @@ function RequirementCard({ requirement }: { requirement: CustomerRequirementSumm
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f7f7fb' },
+  safeArea: { flex: 1, backgroundColor: theme.colors.canvas },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   screen: { flex: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 10, gap: 12 },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   headerCopy: { flex: 1, gap: 5 },
-  eyebrow: { fontSize: 11, fontWeight: '800', letterSpacing: 1.5, color: '#666678' },
-  title: { fontSize: 28, lineHeight: 34, fontWeight: '800', color: '#171721' },
-  description: { fontSize: 14, lineHeight: 20, color: '#666678' },
-  refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: '#ededf4' },
-  refreshText: { fontSize: 12, fontWeight: '800', color: '#3f3f58' },
-  newButton: { minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: '#30304a' },
+  eyebrow: { fontSize: 11, fontWeight: '900', letterSpacing: 1.5, color: theme.colors.primary },
+  title: { fontSize: 28, lineHeight: 34, fontWeight: '900', color: theme.colors.ink },
+  description: { fontSize: 14, lineHeight: 20, color: theme.colors.inkMuted },
+  refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary },
+  refreshText: { fontSize: 12, fontWeight: '900', color: theme.colors.primaryStrong },
+  newButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: theme.radii.md, backgroundColor: theme.colors.primary, ...cardShadow },
   newButtonText: { color: '#fff', fontSize: 14, fontWeight: '800' },
   inlineStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   noticeCard: { padding: 12, borderRadius: 12, backgroundColor: '#fff8e7' },
   noticeText: { fontSize: 12, lineHeight: 18, color: '#66522b' },
   listContent: { gap: 10, paddingBottom: 8 },
-  card: { gap: 10, padding: 16, borderRadius: 16, backgroundColor: '#fff' },
+  card: { gap: 10, padding: 16, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, ...cardShadow },
   cardPressed: { opacity: 0.82 },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
   cardTitleWrap: { flex: 1, gap: 3 },
@@ -207,8 +210,8 @@ const styles = StyleSheet.create({
   meta: { fontSize: 11, color: '#555565', backgroundColor: '#f3f3f7', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
   proposalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   proposalText: { fontSize: 12, fontWeight: '700', color: '#555565' },
-  unread: { fontSize: 11, fontWeight: '800', color: '#fff', backgroundColor: '#30304a', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 999 },
-  emptyCard: { padding: 18, borderRadius: 16, backgroundColor: '#fff', gap: 6 },
+  unread: { fontSize: 11, fontWeight: '900', color: theme.colors.white, backgroundColor: theme.colors.primary, paddingHorizontal: 8, paddingVertical: 5, borderRadius: theme.radii.pill },
+  emptyCard: { padding: 18, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, gap: 6, ...cardShadow },
   muted: { fontSize: 13, lineHeight: 19, color: '#77778a' },
   error: { fontSize: 13, lineHeight: 19, color: '#a12626' },
 });
