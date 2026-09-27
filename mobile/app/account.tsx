@@ -1,4 +1,5 @@
 import { Link, Redirect } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -107,6 +108,30 @@ export default function AccountScreen() {
             ) : null}
           </View>
 
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Privacy & account</Text>
+            <Text style={styles.detail}>
+              Read how TakeItEsee handles your information or start an account-deletion request.
+            </Text>
+            <Pressable
+              accessibilityRole="link"
+              onPress={() => void Linking.openURL('https://www.takeitesee.com/privacy')}
+              style={({ pressed }) => [styles.accountLink, pressed && styles.buttonPressed]}
+            >
+              <Text style={styles.accountLinkText}>Privacy Policy →</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="link"
+              onPress={() => void Linking.openURL('https://www.takeitesee.com/account/privacy')}
+              style={({ pressed }) => [styles.accountLink, pressed && styles.buttonPressed]}
+            >
+              <Text style={styles.accountLinkText}>Request account deletion →</Text>
+            </Pressable>
+            <Text style={styles.privacyNote}>
+              Deletion requests are reviewed through TakeItEsee's privacy-request workflow. Some records may be retained where required for security, fraud prevention, disputes, audit integrity, or legal obligations.
+            </Text>
+          </View>
+
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
           <Pressable
@@ -145,6 +170,9 @@ const styles = StyleSheet.create({
   value: { marginTop: 4, fontSize: 12, fontWeight: '900', color: theme.colors.primary },
   detail: { fontSize: 14, lineHeight: 20, color: theme.colors.inkMuted },
   muted: { fontSize: 13, color: theme.colors.inkMuted },
+  accountLink: { minHeight: 44, justifyContent: 'center', borderBottomWidth: 1, borderBottomColor: theme.colors.border },
+  accountLinkText: { fontSize: 14, fontWeight: '900', color: theme.colors.primaryStrong },
+  privacyNote: { fontSize: 12, lineHeight: 18, color: theme.colors.inkMuted },
   error: { fontSize: 13, lineHeight: 19, color: '#a12626' },
   signOutButton: {
     minHeight: 46,

@@ -94,3 +94,19 @@ test('Play Store listing source keeps external release blockers explicit', () =>
   assert.match(listing, /reviewer credentials/);
   assert.match(listing, /Do not upload the current rectangular bundled logo/);
 });
+
+
+test('native account exposes Play-required privacy and deletion request paths', () => {
+  const account = readFileSync(new URL('../app/account.tsx', import.meta.url), 'utf8');
+  assert.match(account, /https:\/\/www\.takeitesee\.com\/privacy/);
+  assert.match(account, /https:\/\/www\.takeitesee\.com\/account\/privacy/);
+  assert.match(account, /Request account deletion/);
+});
+
+test('Data Safety audit preserves unresolved submission gates', () => {
+  const audit = readFileSync(new URL('../PLAY_DATA_SAFETY_AUDIT.md', import.meta.url), 'utf8');
+  assert.match(audit, /final production AAB permissions\/merged manifest are inspected/);
+  assert.match(audit, /external web deletion resource/);
+  assert.match(audit, /does not directly declare camera, microphone, contacts/);
+  assert.match(audit, /not proof of the final generated Android manifest/);
+});
