@@ -36,13 +36,15 @@ test('mobile routing separates loading, signed out and signed in states', () => 
   assert.ok(entry.includes('<Redirect href="/home" />'));
   assert.ok(entry.includes("auth.status === 'signedOut'"));
   assert.ok(entry.includes('<Redirect href="/login" />'));
-  assert.ok(home.includes('Server-validated identity'));
+  assert.ok(home.includes('Your marketplace'));
+  assert.ok(home.includes('Explore services'));
 });
 
 test('client does not invent customer or provider roles', () => {
   assert.ok(!provider.includes("roles: ['customer']"));
   assert.ok(!provider.includes("roles: ['provider']"));
-  assert.ok(home.includes("'No roles returned'"));
+  assert.ok(!home.includes('auth.identity.userId'));
+  assert.ok(!home.includes('Server roles'));
   assert.ok(nav.includes("roles.includes('professional')"));
   assert.ok(nav.includes("roles.includes('business_owner')"));
   assert.ok(providerScreen.includes("roles.includes('professional')"));
