@@ -39,12 +39,12 @@ Implemented paths:
 - Public Privacy Policy explains deletion requests and legitimate retention reasons.
 
 Remaining external-web requirement:
-- The Play Console deletion URL must remain useful to a user who has uninstalled the app or cannot access it. The current `/account/privacy` workflow is authenticated. Before Play submission, provide or verify a prominent external deletion-request resource that does not require the user to reinstall the app.
+- Public external resource: `https://www.takeitesee.com/account-deletion`. It does not require the mobile app to be installed and clearly routes the user through web sign-in for identity verification, then to the existing deletion-request workflow.
 
 ## Submission gate
 
 Do not submit Data Safety or claim account-deletion compliance until:
 1. final production AAB permissions/merged manifest are inspected;
 2. final API/storage/SDK data flows are mapped to Google's categories and purposes;
-3. the external web deletion resource is usable without requiring app access;
+3. the external web deletion resource is production-verified and entered in the Play Console Data deletion URL field;
 4. Play Console answers are reconciled with the published Privacy Policy.
