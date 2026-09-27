@@ -48,7 +48,7 @@ export default function AccountScreen() {
             <Text style={styles.eyebrow}>ACCOUNT</Text>
             <Text style={styles.title}>Your TakeItEsee account</Text>
             <Text style={styles.description}>
-              This native workspace uses the server-validated identity from Native Contract v1.
+              Manage your bookings, messages, notifications and reviews from one place.
             </Text>
           </View>
 
@@ -65,7 +65,7 @@ export default function AccountScreen() {
               <Pressable style={styles.quickCard}>
                 <Text style={styles.quickEyebrow}>CONVERSATIONS</Text>
                 <Text style={styles.quickTitle}>Messages</Text>
-                <Text style={styles.quickText}>Customer and Provider workspace threads.</Text>
+                <Text style={styles.quickText}>Your service conversations in one place.</Text>
                 <Text style={styles.quickOpen}>Open →</Text>
               </Pressable>
             </Link>
@@ -93,13 +93,15 @@ export default function AccountScreen() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Identity</Text>
-            <Text style={styles.value}>User ID</Text>
-            <Text style={styles.detail}>{auth.identity.userId}</Text>
-            <Text style={styles.value}>Server roles</Text>
-            <Text style={styles.detail}>
-              {auth.identity.roles.length ? auth.identity.roles.join(', ') : 'No roles returned'}
-            </Text>
+            <Text style={styles.cardTitle}>Your access</Text>
+            <Text style={styles.value}>Customer</Text>
+            <Text style={styles.detail}>Book services, post requirements and manage your marketplace activity.</Text>
+            {providerAccess ? (
+              <>
+                <Text style={styles.value}>Provider</Text>
+                <Text style={styles.detail}>Provider tools are available for your Professional or Business profile.</Text>
+              </>
+            ) : null}
           </View>
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
