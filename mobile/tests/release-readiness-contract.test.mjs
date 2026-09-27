@@ -83,10 +83,10 @@ test('release foundation does not introduce frozen finance or recovery configura
 });
 
 
-test('Play Store listing source keeps external release blockers explicit', async () => {
-  const listing = await readFile(new URL('../PLAY_STORE_LISTING.md', import.meta.url), 'utf8');
+test('Play Store listing source keeps external release blockers explicit', () => {
+  const listing = readFileSync(new URL('../PLAY_STORE_LISTING.md', import.meta.url), 'utf8');
   assert.match(listing, /App name: TakeItEsee/);
-  assert.match(listing, /Android package: com\.takeitesee\.app/);
+  assert.match(listing, /Android package: com\\.uvmart\\.takeitesee/);
   assert.match(listing, /512 × 512 px/);
   assert.match(listing, /1024 × 500 px/);
   assert.match(listing, /Data safety answers checked against actual app code/);
