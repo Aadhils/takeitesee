@@ -173,9 +173,9 @@ export default function ProviderLiveStatusScreen() {
           {actionError ? <View style={styles.errorCard}><Text style={styles.errorText}>{actionError}</Text></View> : null}
 
           <View style={styles.infoCard}>
-            <Text style={styles.infoTitle}>Server-authoritative live status</Text>
+            <Text style={styles.infoTitle}>How status works</Text>
             <Text style={styles.muted}>
-              Provider identity, ownership, expiry limits and stored state are enforced by the existing server API. Expired Available or Busy safely displays as Offline.
+              Available and Busy automatically return to Offline after the selected time. You can switch to Offline or Paused anytime.
             </Text>
           </View>
         </ScrollView>
