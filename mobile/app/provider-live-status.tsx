@@ -14,6 +14,7 @@ import {
   type ProviderLiveDurationMinutes,
   type ProviderWorkMode,
 } from '../lib/provider-live-availability';
+import { cardShadow, theme } from '../lib/theme';
 import { useAuth } from '../providers/AuthProvider';
 
 type State =
@@ -112,7 +113,7 @@ export default function ProviderLiveStatusScreen() {
               <Text style={styles.eyebrow}>PROVIDER LIVE STATUS</Text>
               <Text style={styles.title}>Are you available now?</Text>
               <Text style={styles.description}>
-                This is a short-lived marketplace signal. It does not change per-service booking schedules, booking states, or shop hours.
+                Let customers know whether you can take work right now. Available and Busy can be set for a short time.
               </Text>
             </View>
             <Pressable onPress={() => void load()} style={styles.refreshButton}>
@@ -189,42 +190,42 @@ export default function ProviderLiveStatusScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f7f7fb' },
+  safeArea: { flex: 1, backgroundColor: theme.colors.canvas },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 20 },
   screen: { flex: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 10, gap: 10 },
   content: { gap: 12, paddingBottom: 10 },
   topRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   headerCopy: { flex: 1, gap: 5 },
-  eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.2, color: '#77778a' },
-  title: { fontSize: 28, lineHeight: 34, fontWeight: '800', color: '#171721' },
-  description: { fontSize: 14, lineHeight: 20, color: '#666678' },
-  refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: '#ededf4' },
-  refreshText: { fontSize: 12, fontWeight: '800', color: '#3f3f58' },
-  backLink: { fontSize: 13, fontWeight: '800', color: '#30304a' },
-  statusCard: { gap: 5, padding: 17, borderRadius: 17, backgroundColor: '#fff' },
-  statusTitle: { fontSize: 24, fontWeight: '800', textTransform: 'capitalize', color: '#171721' },
+  eyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1.2, color: theme.colors.primary },
+  title: { fontSize: 28, lineHeight: 34, fontWeight: '900', color: theme.colors.ink },
+  description: { fontSize: 14, lineHeight: 20, color: theme.colors.inkMuted },
+  refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary },
+  refreshText: { fontSize: 12, fontWeight: '900', color: theme.colors.primaryStrong },
+  backLink: { fontSize: 13, fontWeight: '900', color: theme.colors.primary },
+  statusCard: { gap: 5, padding: 17, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, ...cardShadow },
+  statusTitle: { fontSize: 24, fontWeight: '900', textTransform: 'capitalize', color: theme.colors.ink },
   inline: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  card: { gap: 12, padding: 17, borderRadius: 17, backgroundColor: '#fff' },
-  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#171721' },
+  card: { gap: 12, padding: 17, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, ...cardShadow },
+  sectionTitle: { fontSize: 18, fontWeight: '900', color: theme.colors.ink },
   choiceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  durationChip: { minWidth: 82, alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 999, backgroundColor: '#efeff5' },
-  durationChipSelected: { backgroundColor: '#30304a' },
-  durationText: { fontSize: 12, fontWeight: '800', color: '#555565' },
+  durationChip: { minWidth: 82, alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10, borderRadius: theme.radii.pill, backgroundColor: theme.colors.secondary },
+  durationChipSelected: { backgroundColor: theme.colors.primary },
+  durationText: { fontSize: 12, fontWeight: '900', color: theme.colors.primaryStrong },
   durationTextSelected: { color: '#fff' },
-  modeButton: { minHeight: 66, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 14, backgroundColor: '#f2f2f7' },
-  modeButtonSelected: { backgroundColor: '#30304a' },
+  modeButton: { minHeight: 66, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: theme.radii.lg, backgroundColor: theme.colors.secondary },
+  modeButtonSelected: { backgroundColor: theme.colors.primary },
   modeCopy: { flex: 1, gap: 3 },
-  modeLabel: { fontSize: 15, fontWeight: '800', color: '#242433' },
+  modeLabel: { fontSize: 15, fontWeight: '900', color: theme.colors.ink },
   modeLabelSelected: { color: '#fff' },
-  modeHelp: { fontSize: 12, lineHeight: 17, color: '#6f6f82' },
-  modeHelpSelected: { color: '#dedee9' },
-  modeMark: { fontSize: 18, fontWeight: '800', color: '#555565' },
+  modeHelp: { fontSize: 12, lineHeight: 17, color: theme.colors.inkMuted },
+  modeHelpSelected: { color: '#F0EDFF' },
+  modeMark: { fontSize: 18, fontWeight: '900', color: theme.colors.primary },
   buttonMuted: { opacity: 0.55 },
   successCard: { padding: 13, borderRadius: 12, backgroundColor: '#edf8ef' },
   successText: { fontSize: 13, fontWeight: '700', color: '#285c33' },
   errorCard: { padding: 13, borderRadius: 12, backgroundColor: '#fff0f0' },
   errorText: { fontSize: 13, lineHeight: 19, color: '#8b3535' },
-  infoCard: { gap: 5, padding: 15, borderRadius: 15, backgroundColor: '#f0f0f6' },
-  infoTitle: { fontSize: 13, fontWeight: '800', color: '#3d3d54' },
-  muted: { fontSize: 13, lineHeight: 18, color: '#77778a' },
+  infoCard: { gap: 5, padding: 15, borderRadius: theme.radii.lg, backgroundColor: theme.colors.secondary },
+  infoTitle: { fontSize: 13, fontWeight: '900', color: theme.colors.primaryStrong },
+  muted: { fontSize: 13, lineHeight: 18, color: theme.colors.inkMuted },
 });
