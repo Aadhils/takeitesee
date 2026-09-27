@@ -66,7 +66,7 @@ export default function ProviderBookingsScreen() {
               <Text style={styles.eyebrow}>PROVIDER BOOKINGS</Text>
               <Text style={styles.title}>Service schedule</Text>
               <Text style={styles.description}>
-                Review bookings assigned to your server-verified Provider identity.
+                Review your assigned service bookings and current status.
               </Text>
             </View>
             <Pressable onPress={() => void load()} style={styles.refreshButton}>
@@ -78,7 +78,7 @@ export default function ProviderBookingsScreen() {
             <Pressable style={styles.liveStatusEntry}>
               <View style={styles.liveStatusCopy}>
                 <Text style={styles.liveStatusTitle}>Live work status</Text>
-                <Text style={styles.liveStatusText}>Set Available, Busy, Offline or Paused with safe short expiry.</Text>
+                <Text style={styles.liveStatusText}>Set Available, Busy, Offline or Paused for the time that suits you.</Text>
               </View>
               <Text style={styles.liveStatusArrow}>→</Text>
             </Pressable>
@@ -95,9 +95,9 @@ export default function ProviderBookingsScreen() {
           </Link>
 
           <View style={styles.readOnlyCard}>
-            <Text style={styles.readOnlyTitle}>Server-authoritative booking journey</Text>
+            <Text style={styles.readOnlyTitle}>Booking actions</Text>
             <Text style={styles.muted}>
-              Open a booking for its allowed native actions. Provider completion, closeout and payment actions remain intentionally excluded.
+              Open a booking to see the actions available for its current status.
             </Text>
           </View>
 
@@ -112,7 +112,7 @@ export default function ProviderBookingsScreen() {
           {state.status === 'ready' && state.bookings.length === 0 ? (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>No provider bookings yet</Text>
-              <Text style={styles.muted}>Accepted service bookings will appear here when assigned to this Provider identity.</Text>
+              <Text style={styles.muted}>Service bookings will appear here when they are assigned to you.</Text>
             </View>
           ) : null}
 
@@ -138,7 +138,7 @@ export default function ProviderBookingsScreen() {
                 {booking.attendance_outcome !== 'pending' ? (
                   <Text style={styles.attendance}>Attendance: {formatBookingStatus(booking.attendance_outcome)}</Text>
                 ) : null}
-                <Text style={styles.openText}>View provider booking →</Text>
+                <Text style={styles.openText}>View booking →</Text>
               </Pressable>
             </Link>
           ))}

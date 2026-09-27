@@ -312,9 +312,9 @@ export default function ProviderBookingDetailScreen() {
             </View>
 
             <View style={styles.readOnlyCard}>
-              <Text style={styles.readOnlyTitle}>Server-authoritative Provider journey</Text>
+              <Text style={styles.readOnlyTitle}>Booking actions</Text>
               <Text style={styles.muted}>
-                Provider completion, Customer attendance actions, closeout controls and payment actions remain outside this native slice.
+                Accept, decline or report a Customer no-show when those actions are available for this booking.
               </Text>
             </View>
           </>

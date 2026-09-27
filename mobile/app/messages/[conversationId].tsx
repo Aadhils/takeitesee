@@ -168,7 +168,7 @@ export default function MessageThreadScreen() {
             {state.safety.messaging_blocked ? (
               <View style={styles.blockedCard}>
                 <Text style={styles.blockedTitle}>Messaging is blocked for this conversation</Text>
-                <Text style={styles.muted}>Message history stays visible. Block/unblock controls remain outside this native slice.</Text>
+                <Text style={styles.muted}>You can still read earlier messages, but sending new messages is unavailable while this conversation is blocked.</Text>
               </View>
             ) : conversation.conversation_status !== 'open' ? (
               <View style={styles.readOnlyCard}>

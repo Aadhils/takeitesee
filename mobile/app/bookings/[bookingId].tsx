@@ -150,9 +150,9 @@ export default function CustomerBookingDetailScreen() {
               {booking.closeout_state ? <DetailRow label="Closeout" value={formatBookingStatus(booking.closeout_state)} /> : null}
               {booking.closed_at ? <DetailRow label="Closed at" value={String(booking.closed_at)} /> : null}
               <View style={styles.readOnlyCard}>
-                <Text style={styles.readOnlyTitle}>Server-authoritative booking journey</Text>
+                <Text style={styles.readOnlyTitle}>Manage this booking</Text>
                 <Text style={styles.muted}>
-                  Cancel, reschedule and completion acknowledgement use existing server APIs. Provider no-show/support and payment actions remain outside this native slice.
+                  Available actions depend on the booking status. You can cancel, reschedule or confirm completion when those options are available.
                 </Text>
               </View>
             </View>

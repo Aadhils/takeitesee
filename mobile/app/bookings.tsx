@@ -62,19 +62,12 @@ export default function CustomerBookingsScreen() {
               <Text style={styles.eyebrow}>MY BOOKINGS</Text>
               <Text style={styles.title}>Service journey</Text>
               <Text style={styles.description}>
-                Review your confirmed marketplace service bookings and current server status.
+                Review your marketplace service bookings and current status.
               </Text>
             </View>
             <Pressable onPress={() => void load()} style={styles.refreshButton}>
               <Text style={styles.refreshText}>Refresh</Text>
             </Pressable>
-          </View>
-
-          <View style={styles.readOnlyCard}>
-            <Text style={styles.readOnlyTitle}>Read-only in this native slice</Text>
-            <Text style={styles.muted}>
-              Cancellation, reschedule, attendance and completion actions stay outside this release slice.
-            </Text>
           </View>
 
           {state.status === 'loading' ? (

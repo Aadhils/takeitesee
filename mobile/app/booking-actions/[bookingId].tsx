@@ -252,8 +252,8 @@ export default function CustomerBookingActionsScreen() {
 
             {actionError ? <Text style={styles.errorText}>{actionError}</Text> : null}
             <View style={styles.infoCard}>
-              <Text style={styles.infoTitle}>Server-authoritative actions</Text>
-              <Text style={styles.muted}>The app only submits your selected action. Booking state transitions, conflicts and eligibility are enforced by the existing server APIs.</Text>
+              <Text style={styles.infoTitle}>Before you continue</Text>
+              <Text style={styles.muted}>Available actions depend on the booking status. We recheck availability and booking details before saving changes.</Text>
             </View>
           </>
         ) : null}

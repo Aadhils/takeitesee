@@ -139,6 +139,7 @@ function ServiceCard({ service }: { service: MarketplaceService }) {
       <Text style={styles.rating}>
         ★ {service.rating.toFixed(1)} · {service.review_count} reviews
       </Text>
+      {service.provider_id ? <Text style={styles.openText}>View service →</Text> : null}
     </>
   );
 
@@ -204,6 +205,7 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   meta: { fontSize: 12, color: '#555565', backgroundColor: '#f0f0f5', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
   rating: { fontSize: 12, fontWeight: '700', color: '#555565' },
+  openText: { fontSize: 12, fontWeight: '800', color: '#30304a' },
   muted: { fontSize: 13, lineHeight: 19, color: '#77778a' },
   error: { fontSize: 13, lineHeight: 19, color: '#a12626' },
   emptyCard: { padding: 18, borderRadius: 16, backgroundColor: '#ffffff', gap: 6 },
