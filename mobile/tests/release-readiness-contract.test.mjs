@@ -21,6 +21,12 @@ test('native store identity is explicit and aligned across Android and iOS', () 
   assert.match(expo.ios.buildNumber, /^\d+(?:\.\d+)*$/);
 });
 
+test('native launcher branding uses the bundled official TakeItEsee asset', () => {
+  assert.equal(expo.icon, './assets/official-takeitesee-logo.png');
+  assert.equal(expo.android.adaptiveIcon.foregroundImage, './assets/official-takeitesee-logo.png');
+  assert.equal(expo.android.adaptiveIcon.backgroundColor, '#F8F7FF');
+});
+
 test('Expo project ownership and EAS project link are explicit', () => {
   assert.equal(expo.owner, 'uvmart-takeitesee');
   assert.equal(expo.extra?.eas?.projectId, 'aee79da4-1e18-4cdb-b5bd-421180d0decd');

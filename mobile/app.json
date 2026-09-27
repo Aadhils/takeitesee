@@ -28,13 +28,18 @@
     },
     "android": {
       "package": "com.uvmart.takeitesee",
-      "versionCode": 1
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/official-takeitesee-logo.png",
+        "backgroundColor": "#F8F7FF"
+      }
     },
     "extra": {
       "eas": {
         "projectId": "aee79da4-1e18-4cdb-b5bd-421180d0decd"
       }
     },
-    "owner": "uvmart-takeitesee"
+    "owner": "uvmart-takeitesee",
+    "icon": "./assets/official-takeitesee-logo.png"
   }
 }
