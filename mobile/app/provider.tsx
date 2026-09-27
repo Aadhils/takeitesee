@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandLogo } from '../components/BrandLogo';
 import { MobileNav } from '../components/MobileNav';
 import {
   fetchProviderRequirementLeads,
@@ -21,6 +22,7 @@ import {
   type ProviderRequirementMarketplace,
   type ProviderRequirementProposal,
 } from '../lib/provider-leads';
+import { cardShadow, theme } from '../lib/theme';
 import { useAuth } from '../providers/AuthProvider';
 
 type ProviderState =
@@ -144,12 +146,13 @@ export default function ProviderScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <BrandLogo compact />
           <View style={styles.headerRow}>
             <View style={styles.headerCopy}>
               <Text style={styles.eyebrow}>PROVIDER</Text>
               <Text style={styles.title}>{providerType} leads</Text>
               <Text style={styles.description}>
-                Respond to matching one-time Customer requirements using your server-verified provider identity.
+                Respond to matching one-time Customer requirements from your Provider workspace.
               </Text>
             </View>
             <Pressable onPress={() => setRefreshKey((value) => value + 1)} style={styles.refreshButton}>
@@ -189,7 +192,7 @@ export default function ProviderScreen() {
           {state.status === 'ready' && state.marketplace.leads.length === 0 ? (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>No matching leads right now</Text>
-              <Text style={styles.muted}>New matching requirements will appear here when the server finds them.</Text>
+              <Text style={styles.muted}>New matching requirements will appear here automatically.</Text>
             </View>
           ) : null}
 
@@ -219,9 +222,9 @@ export default function ProviderScreen() {
 
                 {recurring ? (
                   <View style={styles.freezeCard}>
-                    <Text style={styles.freezeTitle}>Recurring lead · read-only in native v1</Text>
+                    <Text style={styles.freezeTitle}>Recurring requirement</Text>
                     <Text style={styles.muted}>
-                      Recurring pricing and occurrence workflows remain frozen outside the native proposal action flow.
+                      Recurring proposal actions are available on the web for now.
                     </Text>
                   </View>
                 ) : alreadyProposed ? (
@@ -287,7 +290,7 @@ export default function ProviderScreen() {
           {state.status === 'ready' && state.marketplace.proposals.length === 0 ? (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>No proposal history yet</Text>
-              <Text style={styles.muted}>Submitted proposals will remain visible here with server status.</Text>
+              <Text style={styles.muted}>Submitted proposals will remain visible here with their latest status.</Text>
             </View>
           ) : null}
 
@@ -324,18 +327,18 @@ function ProposalHistoryCard({ proposal }: { proposal: ProviderRequirementPropos
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f7f7fb' },
+  safeArea: { flex: 1, backgroundColor: theme.colors.canvas },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   screen: { flex: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 10, gap: 10 },
   content: { gap: 12, paddingBottom: 8 },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   headerCopy: { flex: 1, gap: 5 },
-  eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.4, color: '#77778a' },
-  title: { fontSize: 28, lineHeight: 34, fontWeight: '800', color: '#171721' },
-  description: { fontSize: 14, lineHeight: 20, color: '#666678' },
-  refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: '#ededf4' },
-  refreshText: { fontSize: 12, fontWeight: '800', color: '#3f3f58' },
-  bookingEntry: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 15, borderRadius: 15, backgroundColor: '#30304a' },
+  eyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1.4, color: theme.colors.primary },
+  title: { fontSize: 28, lineHeight: 34, fontWeight: '900', color: theme.colors.ink },
+  description: { fontSize: 14, lineHeight: 20, color: theme.colors.inkMuted },
+  refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary },
+  refreshText: { fontSize: 12, fontWeight: '900', color: theme.colors.primaryStrong },
+  bookingEntry: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: theme.radii.lg, backgroundColor: theme.colors.primary, ...cardShadow },
   bookingEntryCopy: { flex: 1, gap: 3 },
   bookingEntryTitle: { fontSize: 15, fontWeight: '800', color: '#fff' },
   bookingEntryText: { fontSize: 12, lineHeight: 17, color: '#dedee9' },
@@ -347,8 +350,8 @@ const styles = StyleSheet.create({
   inlineStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 4 },
   sectionTitle: { fontSize: 20, fontWeight: '800', color: '#171721' },
-  count: { minWidth: 34, textAlign: 'center', fontSize: 13, fontWeight: '800', color: '#fff', backgroundColor: '#30304a', paddingHorizontal: 9, paddingVertical: 7, borderRadius: 999 },
-  card: { gap: 10, padding: 16, borderRadius: 16, backgroundColor: '#fff' },
+  count: { minWidth: 34, textAlign: 'center', fontSize: 13, fontWeight: '900', color: theme.colors.white, backgroundColor: theme.colors.primary, paddingHorizontal: 9, paddingVertical: 7, borderRadius: theme.radii.pill },
+  card: { gap: 10, padding: 16, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, ...cardShadow },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
   cardTitleWrap: { flex: 1, gap: 3 },
   reference: { fontSize: 10, fontWeight: '800', letterSpacing: 0.7, color: '#77778a' },
@@ -368,10 +371,10 @@ const styles = StyleSheet.create({
   messageInput: { minHeight: 112 },
   helper: { fontSize: 11, color: '#77778a' },
   actionRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  primaryButton: { minHeight: 44, flexGrow: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 11, backgroundColor: '#30304a', paddingHorizontal: 14 },
+  primaryButton: { minHeight: 44, flexGrow: 1, alignItems: 'center', justifyContent: 'center', borderRadius: theme.radii.md, backgroundColor: theme.colors.primary, paddingHorizontal: 14 },
   primaryButtonText: { color: '#fff', fontSize: 13, fontWeight: '800' },
-  secondaryButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 11, backgroundColor: '#ededf4', paddingHorizontal: 14 },
-  secondaryButtonText: { color: '#30304a', fontSize: 13, fontWeight: '800' },
+  secondaryButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary, paddingHorizontal: 14 },
+  secondaryButtonText: { color: theme.colors.primaryStrong, fontSize: 13, fontWeight: '900' },
   buttonDisabled: { opacity: 0.45 },
   acceptedText: { fontSize: 12, fontWeight: '800', color: '#285c33' },
   muted: { fontSize: 13, lineHeight: 19, color: '#77778a' },

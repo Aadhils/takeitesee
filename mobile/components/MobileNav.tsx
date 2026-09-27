@@ -1,6 +1,7 @@
 import { Link, usePathname } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { theme } from '../lib/theme';
 import { useAuth } from '../providers/AuthProvider';
 
 const items = [
@@ -21,52 +22,58 @@ export function MobileNav() {
     pathname === href || (href === '/requirements' && pathname.startsWith('/requirements/'));
 
   return (
-    <View style={styles.nav}>
-      {items.map((item) => {
-        if (item.auth && auth.status !== 'signedIn') return null;
-        const active = isActive(item.href);
-        return (
-          <Link key={item.href} href={item.href} style={[styles.link, active && styles.activeLink]}>
-            <Text style={[styles.label, active && styles.activeLabel]}>{item.label}</Text>
+    <View style={styles.shell}>
+      <View style={styles.nav}>
+        {items.map((item) => {
+          if (item.auth && auth.status !== 'signedIn') return null;
+          const active = isActive(item.href);
+          return (
+            <Link key={item.href} href={item.href} style={[styles.link, active && styles.activeLink]}>
+              <Text style={[styles.label, active && styles.activeLabel]}>{item.label}</Text>
+            </Link>
+          );
+        })}
+        {isProvider ? (
+          <Link href="/provider" style={[styles.link, pathname === '/provider' && styles.activeLink]}>
+            <Text style={[styles.label, pathname === '/provider' && styles.activeLabel]}>Provider</Text>
           </Link>
-        );
-      })}
-      {isProvider ? (
-        <Link href="/provider" style={[styles.link, pathname === '/provider' && styles.activeLink]}>
-          <Text style={[styles.label, pathname === '/provider' && styles.activeLabel]}>Provider</Text>
-        </Link>
-      ) : null}
+        ) : null}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  shell: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radii.xl,
+    backgroundColor: theme.colors.surface,
+    padding: 4,
+  },
   nav: {
     flexDirection: 'row',
-    gap: 5,
-    padding: 7,
-    borderRadius: 16,
-    backgroundColor: '#ffffff',
+    gap: 4,
   },
   link: {
     flex: 1,
-    minHeight: 42,
+    minHeight: 44,
     textAlign: 'center',
     textAlignVertical: 'center',
-    borderRadius: 10,
+    borderRadius: theme.radii.md,
     paddingVertical: 12,
-    paddingHorizontal: 5,
+    paddingHorizontal: 4,
   },
   activeLink: {
-    backgroundColor: '#30304a',
+    backgroundColor: theme.colors.primary,
   },
   label: {
     textAlign: 'center',
     fontSize: 12,
-    fontWeight: '700',
-    color: '#555565',
+    fontWeight: '800',
+    color: theme.colors.inkMuted,
   },
   activeLabel: {
-    color: '#ffffff',
+    color: theme.colors.white,
   },
 });

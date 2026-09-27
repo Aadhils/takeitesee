@@ -18,6 +18,7 @@ import {
   type PublicProviderService,
   type PublicProviderType,
 } from '../../lib/providers';
+import { cardShadow, theme } from '../../lib/theme';
 
 type DetailState =
   | { status: 'loading' }
@@ -193,27 +194,27 @@ export default function ServiceDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f7f7fb' },
+  safeArea: { flex: 1, backgroundColor: theme.colors.canvas },
   content: { padding: 18, gap: 14 },
   backButton: { alignSelf: 'flex-start', paddingVertical: 7, paddingRight: 12 },
-  backText: { fontSize: 14, fontWeight: '700', color: '#42425f' },
+  backText: { fontSize: 14, fontWeight: '800', color: theme.colors.primary },
   loadingCard: { padding: 20, borderRadius: 18, backgroundColor: '#fff', gap: 10, alignItems: 'center' },
   errorCard: { padding: 20, borderRadius: 18, backgroundColor: '#fff0f0', gap: 8 },
   errorTitle: { fontSize: 18, fontWeight: '800', color: '#7f2020' },
   errorText: { fontSize: 14, lineHeight: 20, color: '#8b3535' },
-  heroCard: { padding: 20, borderRadius: 20, backgroundColor: '#fff', gap: 10 },
-  eyebrow: { fontSize: 11, fontWeight: '800', letterSpacing: 1.5, color: '#666678' },
-  title: { fontSize: 28, lineHeight: 34, fontWeight: '800', color: '#171721' },
+  heroCard: { padding: 20, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.xl, backgroundColor: theme.colors.surface, gap: 10, ...cardShadow },
+  eyebrow: { fontSize: 11, fontWeight: '900', letterSpacing: 1.5, color: theme.colors.primary },
+  title: { fontSize: 28, lineHeight: 34, fontWeight: '900', color: theme.colors.ink },
   providerName: { fontSize: 15, fontWeight: '700', color: '#4b4b65' },
   description: { fontSize: 15, lineHeight: 22, color: '#555565' },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
-  meta: { fontSize: 12, color: '#44445d', backgroundColor: '#f0f0f5', paddingHorizontal: 9, paddingVertical: 6, borderRadius: 9 },
-  actionsCard: { padding: 16, borderRadius: 18, backgroundColor: '#fff', gap: 10 },
-  primaryButton: { minHeight: 50, justifyContent: 'center', alignItems: 'center', borderRadius: 12, backgroundColor: '#30304a' },
+  meta: { fontSize: 12, color: theme.colors.primaryStrong, backgroundColor: theme.colors.secondary, paddingHorizontal: 9, paddingVertical: 6, borderRadius: theme.radii.sm },
+  actionsCard: { padding: 16, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, gap: 10, ...cardShadow },
+  primaryButton: { minHeight: 50, justifyContent: 'center', alignItems: 'center', borderRadius: theme.radii.md, backgroundColor: theme.colors.primary },
   primaryButtonText: { color: '#fff', fontSize: 15, fontWeight: '800' },
-  secondaryButton: { minHeight: 48, justifyContent: 'center', alignItems: 'center', borderRadius: 12, backgroundColor: '#ededf4' },
-  secondaryButtonText: { color: '#30304a', fontSize: 14, fontWeight: '800' },
-  infoCard: { padding: 18, borderRadius: 18, backgroundColor: '#fff', gap: 6 },
+  secondaryButton: { minHeight: 48, justifyContent: 'center', alignItems: 'center', borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary },
+  secondaryButtonText: { color: theme.colors.primaryStrong, fontSize: 14, fontWeight: '900' },
+  infoCard: { padding: 18, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, gap: 6 },
   cardTitle: { fontSize: 16, fontWeight: '800', color: '#171721' },
   infoText: { fontSize: 14, color: '#44445d' },
   muted: { fontSize: 13, lineHeight: 19, color: '#77778a' },

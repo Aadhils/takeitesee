@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandLogo } from '../components/BrandLogo';
 import { MobileNav } from '../components/MobileNav';
 import {
   fetchProviderBookings,
@@ -10,6 +11,7 @@ import {
   formatBookingTime,
   type ProviderBooking,
 } from '../lib/bookings';
+import { cardShadow, theme } from '../lib/theme';
 import { useAuth } from '../providers/AuthProvider';
 
 type BookingState =
@@ -61,6 +63,7 @@ export default function ProviderBookingsScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
         <ScrollView contentContainerStyle={styles.content}>
+          <BrandLogo compact />
           <View style={styles.headerRow}>
             <View style={styles.headerCopy}>
               <Text style={styles.eyebrow}>PROVIDER BOOKINGS</Text>
@@ -150,26 +153,26 @@ export default function ProviderBookingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f7f7fb' },
+  safeArea: { flex: 1, backgroundColor: theme.colors.canvas },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   screen: { flex: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 10, gap: 10 },
   content: { gap: 12, paddingBottom: 8 },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   headerCopy: { flex: 1, gap: 5 },
-  eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.4, color: '#77778a' },
-  title: { fontSize: 28, lineHeight: 34, fontWeight: '800', color: '#171721' },
+  eyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1.4, color: theme.colors.primary },
+  title: { fontSize: 28, lineHeight: 34, fontWeight: '900', color: theme.colors.ink },
   description: { fontSize: 14, lineHeight: 20, color: '#666678' },
   refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: '#ededf4' },
   refreshText: { fontSize: 12, fontWeight: '800', color: '#3f3f58' },
-  liveStatusEntry: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 15, borderRadius: 15, backgroundColor: '#30304a' },
+  liveStatusEntry: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: theme.radii.lg, backgroundColor: theme.colors.primary, ...cardShadow },
   liveStatusCopy: { flex: 1, gap: 3 },
   liveStatusTitle: { fontSize: 15, fontWeight: '800', color: '#fff' },
   liveStatusText: { fontSize: 12, lineHeight: 17, color: '#dedee9' },
   liveStatusArrow: { fontSize: 22, fontWeight: '800', color: '#fff' },
-  readOnlyCard: { gap: 4, padding: 14, borderRadius: 14, backgroundColor: '#f0f0f6' },
+  readOnlyCard: { gap: 4, padding: 14, borderRadius: theme.radii.lg, backgroundColor: theme.colors.secondary },
   readOnlyTitle: { fontSize: 13, fontWeight: '800', color: '#3d3d54' },
   inlineStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  card: { gap: 10, padding: 16, borderRadius: 16, backgroundColor: '#fff' },
+  card: { gap: 10, padding: 16, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, ...cardShadow },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
   cardTitleWrap: { flex: 1, gap: 3 },
   reference: { fontSize: 10, fontWeight: '800', letterSpacing: 0.7, color: '#77778a' },
@@ -178,7 +181,7 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   meta: { fontSize: 11, fontWeight: '700', color: '#555565', backgroundColor: '#f4f4f8', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
   attendance: { fontSize: 12, fontWeight: '700', color: '#285c33' },
-  openText: { fontSize: 12, fontWeight: '800', color: '#30304a' },
+  openText: { fontSize: 12, fontWeight: '900', color: theme.colors.primary },
   muted: { fontSize: 13, lineHeight: 18, color: '#77778a' },
   errorText: { fontSize: 13, lineHeight: 19, color: '#8b3535' },
 });

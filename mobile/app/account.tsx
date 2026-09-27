@@ -3,7 +3,9 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandLogo } from '../components/BrandLogo';
 import { MobileNav } from '../components/MobileNav';
+import { cardShadow, theme } from '../lib/theme';
 import { useAuth } from '../providers/AuthProvider';
 
 export default function AccountScreen() {
@@ -45,6 +47,7 @@ export default function AccountScreen() {
       <View style={styles.screen}>
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.header}>
+            <BrandLogo compact />
             <Text style={styles.eyebrow}>ACCOUNT</Text>
             <Text style={styles.title}>Your TakeItEsee account</Text>
             <Text style={styles.description}>
@@ -122,34 +125,36 @@ export default function AccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f7f7fb' },
+  safeArea: { flex: 1, backgroundColor: theme.colors.canvas },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   screen: { flex: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 10, gap: 10 },
   content: { gap: 14, paddingBottom: 8 },
   header: { gap: 6 },
-  eyebrow: { fontSize: 11, fontWeight: '800', letterSpacing: 1.5, color: '#666678' },
-  title: { fontSize: 28, lineHeight: 34, fontWeight: '800', color: '#171721' },
-  description: { fontSize: 14, lineHeight: 20, color: '#666678' },
+  eyebrow: { fontSize: 11, fontWeight: '900', letterSpacing: 1.5, color: theme.colors.primary },
+  title: { fontSize: 28, lineHeight: 34, fontWeight: '900', letterSpacing: -0.4, color: theme.colors.ink },
+  description: { fontSize: 14, lineHeight: 20, color: theme.colors.inkMuted },
   quickRow: { flexDirection: 'row', gap: 10 },
-  quickCard: { flex: 1, minHeight: 128, gap: 5, padding: 14, borderRadius: 15, backgroundColor: '#fff' },
+  quickCard: { flex: 1, minHeight: 128, gap: 6, padding: 14, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, ...cardShadow },
   quickSpacer: { flex: 1 },
-  quickEyebrow: { fontSize: 9, fontWeight: '800', letterSpacing: 1, color: '#77778a' },
-  quickTitle: { fontSize: 16, fontWeight: '800', color: '#171721' },
-  quickText: { flex: 1, fontSize: 12, lineHeight: 17, color: '#666678' },
-  quickOpen: { fontSize: 12, fontWeight: '800', color: '#30304a' },
-  card: { gap: 8, padding: 18, borderRadius: 16, backgroundColor: '#ffffff' },
-  cardTitle: { fontSize: 17, fontWeight: '800', color: '#171721' },
-  value: { marginTop: 4, fontSize: 12, fontWeight: '700', color: '#77778a' },
-  detail: { fontSize: 14, lineHeight: 20, color: '#444454' },
-  muted: { fontSize: 13, color: '#77778a' },
+  quickEyebrow: { fontSize: 9, fontWeight: '900', letterSpacing: 1, color: theme.colors.primary },
+  quickTitle: { fontSize: 16, fontWeight: '900', color: theme.colors.ink },
+  quickText: { flex: 1, fontSize: 12, lineHeight: 17, color: theme.colors.inkMuted },
+  quickOpen: { fontSize: 12, fontWeight: '900', color: theme.colors.primaryStrong },
+  card: { gap: 8, padding: 18, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, ...cardShadow },
+  cardTitle: { fontSize: 17, fontWeight: '900', color: theme.colors.ink },
+  value: { marginTop: 4, fontSize: 12, fontWeight: '900', color: theme.colors.primary },
+  detail: { fontSize: 14, lineHeight: 20, color: theme.colors.inkMuted },
+  muted: { fontSize: 13, color: theme.colors.inkMuted },
   error: { fontSize: 13, lineHeight: 19, color: '#a12626' },
   signOutButton: {
     minHeight: 46,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
-    backgroundColor: '#e9e9f1',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radii.md,
+    backgroundColor: theme.colors.secondary,
   },
-  signOutText: { fontSize: 14, fontWeight: '800', color: '#30304a' },
+  signOutText: { fontSize: 14, fontWeight: '900', color: theme.colors.primaryStrong },
   buttonPressed: { opacity: 0.78 },
 });

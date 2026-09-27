@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandLogo } from '../components/BrandLogo';
+import { cardShadow, theme } from '../lib/theme';
 import { useAuth } from '../providers/AuthProvider';
 
 export default function LoginScreen() {
@@ -45,7 +47,7 @@ export default function LoginScreen() {
       >
         <View style={styles.container}>
           <View style={styles.intro}>
-            <Text style={styles.eyebrow}>TAKEITESEE</Text>
+            <BrandLogo />
             <Text style={styles.title}>Welcome back</Text>
             <Text style={styles.description}>
               Sign in with the same email and password you use on TakeItEsee web.
@@ -102,9 +104,7 @@ export default function LoginScreen() {
             Explore services without signing in
           </Link>
 
-          <Text style={styles.footer}>
-            Your access token is validated by TakeItEsee server before the app accepts the session.
-          </Text>
+          <Text style={styles.footer}>Secure sign-in for your TakeItEsee account.</Text>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -112,38 +112,37 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f7f7fb' },
+  safeArea: { flex: 1, backgroundColor: theme.colors.canvas },
   keyboardView: { flex: 1 },
   container: { flex: 1, justifyContent: 'center', paddingHorizontal: 24, gap: 22 },
   intro: { gap: 8 },
-  eyebrow: { fontSize: 12, fontWeight: '700', letterSpacing: 1.6, color: '#5b5b72' },
-  title: { fontSize: 32, lineHeight: 38, fontWeight: '800', color: '#171721' },
-  description: { fontSize: 16, lineHeight: 24, color: '#555565' },
-  card: { gap: 16, padding: 20, borderRadius: 20, backgroundColor: '#ffffff' },
+  title: { fontSize: 32, lineHeight: 38, fontWeight: '900', color: theme.colors.ink },
+  description: { fontSize: 16, lineHeight: 24, color: theme.colors.inkMuted },
+  card: { gap: 16, padding: 20, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.xl, backgroundColor: theme.colors.surface, ...cardShadow },
   field: { gap: 7 },
   label: { fontSize: 14, fontWeight: '600', color: '#333342' },
   input: {
     minHeight: 50,
     borderWidth: 1,
-    borderColor: '#d9d9e3',
+    borderColor: theme.colors.border,
     borderRadius: 12,
     paddingHorizontal: 14,
     fontSize: 16,
-    color: '#171721',
-    backgroundColor: '#ffffff',
+    color: theme.colors.ink,
+    backgroundColor: theme.colors.surface,
   },
   error: { fontSize: 14, lineHeight: 20, color: '#a12626' },
   button: {
     minHeight: 50,
-    borderRadius: 12,
+    borderRadius: theme.radii.md,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#30304a',
+    backgroundColor: theme.colors.primary,
     paddingHorizontal: 18,
   },
   buttonPressed: { opacity: 0.82 },
   buttonDisabled: { opacity: 0.5 },
   buttonText: { color: '#ffffff', fontSize: 16, fontWeight: '700' },
-  exploreLink: { textAlign: 'center', fontSize: 15, fontWeight: '700', color: '#30304a' },
-  footer: { fontSize: 12, lineHeight: 18, color: '#77778a' },
+  exploreLink: { textAlign: 'center', fontSize: 15, fontWeight: '800', color: theme.colors.primary },
+  footer: { textAlign: 'center', fontSize: 12, lineHeight: 18, color: theme.colors.inkMuted },
 });
