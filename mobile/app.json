@@ -6,8 +6,9 @@
     "orientation": "portrait",
     "scheme": "takeitesee",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router"
+    ],
     "experiments": {
       "typedRoutes": true
     },
@@ -18,8 +19,7 @@
     },
     "android": {
       "package": "com.uvmart.takeitesee",
-      "versionCode": 1,
-      "edgeToEdgeEnabled": true
+      "versionCode": 1
     },
     "extra": {
       "eas": {
