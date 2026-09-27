@@ -84,7 +84,8 @@ Android production creates an AAB for Google Play. The first iOS device/TestFlig
 - Google Play Console application registration and Play App Signing state must be verified externally.
 - Apple signing / App Store Connect application registration
 - iOS TestFlight real-device UAT
-- store screenshots, 512×512 Play listing icon, feature graphic, and listing copy
+- store screenshots, 512×512 Play listing icon, and feature graphic
+- review and approve the Play Store listing copy in `PLAY_STORE_LISTING.md`
 - Google Play Data safety disclosure and Apple App Privacy answers based on the implemented app behavior
 - final release version and store-submission verification
 
@@ -93,6 +94,8 @@ Android production creates an AAB for Google Play. The first iOS device/TestFlig
 The production submit profile intentionally targets Google Play `internal` testing first. This does not publish the app to production. A production AAB and authorized Google Play service credentials are still required before `npm run submit:android:internal` can succeed.
 
 Do not change the submit track to `production` until Play Console setup, disclosures, store assets, internal testing, and release review are complete.
+
+`PLAY_STORE_LISTING.md` is the repository source for reviewable listing copy and the external Console checklist. It must not claim that Console-only requirements are complete.
 
 ## Preserved boundaries
 
