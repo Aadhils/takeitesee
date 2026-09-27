@@ -3,6 +3,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandLogo } from '../../components/BrandLogo';
+
 import {
   fetchProviderBooking,
   formatBookingMoney,
@@ -125,6 +127,7 @@ export default function ProviderBookingDetailScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <BrandLogo compact />
         <View style={styles.topRow}>
           <Link href="/provider-bookings" style={styles.backLink}>← Provider bookings</Link>
           <Pressable onPress={() => void load()} style={styles.refreshButton}>
