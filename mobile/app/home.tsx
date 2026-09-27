@@ -1,45 +1,12 @@
 import { Link, Redirect } from 'expo-router';
-import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MobileNav } from '../components/MobileNav';
-import { apiFetch } from '../lib/api';
 import { useAuth } from '../providers/AuthProvider';
-
-type HealthResponse = {
-  status: string;
-  app: string;
-  database: string;
-  release: string;
-};
-
-type HealthState =
-  | { state: 'loading' }
-  | { state: 'ready'; health: HealthResponse }
-  | { state: 'error'; message: string };
 
 export default function HomeScreen() {
   const auth = useAuth();
-  const [healthState, setHealthState] = useState<HealthState>({ state: 'loading' });
-
-  useEffect(() => {
-    let active = true;
-
-    apiFetch<HealthResponse>('/api/health')
-      .then((health) => {
-        if (active) setHealthState({ state: 'ready', health });
-      })
-      .catch((error: unknown) => {
-        if (!active) return;
-        const message = error instanceof Error ? error.message : 'Unable to reach TakeItEsee API.';
-        setHealthState({ state: 'error', message });
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
 
   if (auth.status === 'signedOut') return <Redirect href="/login" />;
 
@@ -48,7 +15,7 @@ export default function HomeScreen() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.centered}>
           <ActivityIndicator />
-          <Text style={styles.statusText}>Validating your session…</Text>
+          <Text style={styles.statusText}>Loading your account…</Text>
         </View>
       </SafeAreaView>
     );
@@ -58,51 +25,44 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
         <View style={styles.header}>
-          <Text style={styles.eyebrow}>TAKEITESEE MOBILE</Text>
+          <Text style={styles.eyebrow}>TAKEITESEE</Text>
           <Text style={styles.title}>Your marketplace</Text>
           <Text style={styles.description}>
-            Customer access is ready. Explore services now; Provider navigation appears only from server-authoritative roles.
+            Find services, manage bookings and keep up with your requests in one place.
           </Text>
         </View>
 
-        <Link href="/bookings" asChild>
-          <Pressable style={styles.journeyCard}>
-            <View style={styles.journeyCopy}>
-              <Text style={styles.journeyTitle}>My bookings</Text>
-              <Text style={styles.journeyText}>Review your service date, provider and current journey status.</Text>
+        <Link href="/explore" asChild>
+          <Pressable style={styles.primaryCard}>
+            <View style={styles.primaryCopy}>
+              <Text style={styles.primaryTitle}>Explore services</Text>
+              <Text style={styles.primaryText}>Find Professionals and Businesses for the service you need.</Text>
             </View>
-            <Text style={styles.journeyArrow}>→</Text>
+            <Text style={styles.primaryArrow}>→</Text>
           </Pressable>
         </Link>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Server-validated identity</Text>
-          <Text style={styles.statusText}>User: {auth.identity.userId}</Text>
-          <Text style={styles.statusText}>
-            Roles: {auth.identity.roles.length ? auth.identity.roles.join(', ') : 'No roles returned'}
-          </Text>
-        </View>
+        <View style={styles.quickRow}>
+          <Link href="/bookings" asChild>
+            <Pressable style={styles.quickCard}>
+              <Text style={styles.quickEyebrow}>BOOKINGS</Text>
+              <Text style={styles.quickTitle}>My bookings</Text>
+              <Text style={styles.quickText}>Review upcoming and completed service bookings.</Text>
+              <Text style={styles.quickOpen}>Open →</Text>
+            </Pressable>
+          </Link>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Backend connection</Text>
-          {healthState.state === 'loading' ? (
-            <View style={styles.statusRow}>
-              <ActivityIndicator />
-              <Text style={styles.statusText}>Checking production API…</Text>
-            </View>
-          ) : null}
-          {healthState.state === 'ready' ? (
-            <View style={styles.statusList}>
-              <Text style={styles.statusText}>App: {healthState.health.app}</Text>
-              <Text style={styles.statusText}>Database: {healthState.health.database}</Text>
-              <Text style={styles.releaseText}>Release: {healthState.health.release}</Text>
-            </View>
-          ) : null}
-          {healthState.state === 'error' ? <Text style={styles.errorText}>{healthState.message}</Text> : null}
+          <Link href="/requirements" asChild>
+            <Pressable style={styles.quickCard}>
+              <Text style={styles.quickEyebrow}>REQUESTS</Text>
+              <Text style={styles.quickTitle}>Post a requirement</Text>
+              <Text style={styles.quickText}>Describe what you need and receive proposals from matching Providers.</Text>
+              <Text style={styles.quickOpen}>Post →</Text>
+            </Pressable>
+          </Link>
         </View>
 
         <View style={styles.spacer} />
-        <Text style={styles.footer}>Native Contract v1 · Finance HOLD · Recurrence FROZEN</Text>
         <MobileNav />
       </View>
     </SafeAreaView>
@@ -117,18 +77,17 @@ const styles = StyleSheet.create({
   eyebrow: { fontSize: 12, fontWeight: '700', letterSpacing: 1.6, color: '#5b5b72' },
   title: { fontSize: 32, lineHeight: 38, fontWeight: '800', color: '#171721' },
   description: { fontSize: 16, lineHeight: 24, color: '#555565' },
-  journeyCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 18, borderRadius: 18, backgroundColor: '#30304a' },
-  journeyCopy: { flex: 1, gap: 4 },
-  journeyTitle: { fontSize: 17, fontWeight: '800', color: '#fff' },
-  journeyText: { fontSize: 14, lineHeight: 20, color: '#dedee9' },
-  journeyArrow: { fontSize: 24, fontWeight: '800', color: '#fff' },
-  card: { padding: 18, borderRadius: 18, backgroundColor: '#ffffff', gap: 12 },
-  cardTitle: { fontSize: 17, fontWeight: '700', color: '#171721' },
-  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  statusList: { gap: 6 },
+  primaryCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 18, borderRadius: 18, backgroundColor: '#30304a' },
+  primaryCopy: { flex: 1, gap: 4 },
+  primaryTitle: { fontSize: 17, fontWeight: '800', color: '#fff' },
+  primaryText: { fontSize: 14, lineHeight: 20, color: '#dedee9' },
+  primaryArrow: { fontSize: 24, fontWeight: '800', color: '#fff' },
+  quickRow: { flexDirection: 'row', gap: 10 },
+  quickCard: { flex: 1, minHeight: 138, gap: 5, padding: 15, borderRadius: 16, backgroundColor: '#fff' },
+  quickEyebrow: { fontSize: 9, fontWeight: '800', letterSpacing: 1, color: '#77778a' },
+  quickTitle: { fontSize: 16, fontWeight: '800', color: '#171721' },
+  quickText: { flex: 1, fontSize: 12, lineHeight: 17, color: '#666678' },
+  quickOpen: { fontSize: 12, fontWeight: '800', color: '#30304a' },
   statusText: { fontSize: 15, color: '#333342' },
-  releaseText: { fontSize: 13, color: '#77778a' },
-  errorText: { fontSize: 14, color: '#a12626' },
   spacer: { flex: 1 },
-  footer: { fontSize: 12, lineHeight: 18, color: '#7a7a8c' },
 });
