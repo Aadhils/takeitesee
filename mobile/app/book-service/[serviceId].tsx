@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandLogo } from '../../components/BrandLogo';
+
 import {
   createCustomerBooking,
   fetchServiceBookingAvailability,
@@ -171,6 +173,7 @@ export default function BookServiceScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
+        <BrandLogo compact />
         <Link
           href={{ pathname: '/service/[serviceId]', params: { serviceId, providerType, providerId } }}
           style={styles.backLink}
