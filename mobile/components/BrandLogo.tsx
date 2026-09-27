@@ -1,6 +1,4 @@
-import { Image, StyleSheet, Text, View } from 'react-native';
-
-import { theme } from '../lib/theme';
+import { Image, StyleSheet, View } from 'react-native';
 
 type BrandLogoProps = {
   compact?: boolean;
