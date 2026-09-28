@@ -110,3 +110,15 @@ test('Data Safety audit preserves unresolved submission gates', () => {
   assert.match(audit, /does not directly declare camera, microphone, contacts/);
   assert.match(audit, /not proof of the final generated Android manifest/);
 });
+
+
+test('Play Console declarations keep evidence and external gates explicit', () => {
+  const declarations = readFileSync(new URL('../PLAY_CONSOLE_DECLARATIONS.md', import.meta.url), 'utf8');
+  assert.match(declarations, /18 years of age or older/);
+  assert.match(declarations, /legal_age_18_confirmed: true/);
+  assert.match(declarations, /Never commit reviewer passwords/);
+  assert.match(declarations, /production AAB/);
+  assert.match(declarations, /merged Android manifest/);
+  assert.match(declarations, /does not replace the Play content-rating questionnaire/);
+  assert.match(declarations, /submit track remains `internal`/);
+});
