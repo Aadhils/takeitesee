@@ -31,7 +31,7 @@ No `developmentClient` profile is enabled yet because `expo-dev-client` is not i
 
 ## Android preview build handoff
 
-An authorized Expo/EAS account must link this mobile workspace to an EAS project before the first cloud build. The repository intentionally does not contain an Expo access token or account credential.
+The mobile workspace is already linked in repository configuration to the EAS project owned by `uvmart-takeitesee` with project ID `aee79da4-1e18-4cdb-b5bd-421180d0decd`. The repository intentionally does not contain an Expo access token or account credential. Authorized account access and signing state still require external verification before a production build.
 
 From `mobile/`, verify account state first:
 
@@ -39,19 +39,13 @@ From `mobile/`, verify account state first:
 npm run eas:whoami
 ```
 
-If the project is not linked yet, sign in with the authorized Expo account and run:
-
-```bash
-npx eas-cli@latest init
-```
-
-Then verify the linked project:
+Do not run `eas init` again for this linked project. Verify that the authorized Expo account resolves the committed project identity:
 
 ```bash
 npm run eas:project:info
 ```
 
-The linked project adds `expo.extra.eas.projectId` to app configuration. Do not invent or hard-code a project ID before EAS creates or returns it.
+The committed `expo.extra.eas.projectId` and `owner` are the repository identity for this app. If `eas:project:info` reports a different owner or project ID, stop the release handoff and reconcile the account/project mapping instead of re-initializing or overwriting the committed identity.
 
 With account access and project linkage complete, queue the installable Android preview APK with:
 
