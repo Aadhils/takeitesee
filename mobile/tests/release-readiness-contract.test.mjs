@@ -68,6 +68,15 @@ test('release commands expose explicit EAS account, preview, and production hand
   );
 });
 
+test('release handoff preserves the committed EAS identity and avoids re-initialization', () => {
+  const readiness = readFileSync(new URL('../RELEASE_READINESS.md', import.meta.url), 'utf8');
+  assert.match(readiness, /uvmart-takeitesee/);
+  assert.match(readiness, /aee79da4-1e18-4cdb-b5bd-421180d0decd/);
+  assert.match(readiness, /Do not run `eas init` again/);
+  assert.match(readiness, /stop the release handoff and reconcile/);
+  assert.doesNotMatch(readiness, /If the project is not linked yet/);
+});
+
 test('release foundation does not introduce frozen finance or recovery configuration', () => {
   const releaseConfig = `${JSON.stringify(appConfig)}\n${JSON.stringify(easConfig)}\n${JSON.stringify(packageConfig.scripts)}`.toLowerCase();
   for (const forbidden of [
