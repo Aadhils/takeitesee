@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const appConfig = JSON.parse(readFileSync(new URL('../app.json', import.meta.url), 'utf8'));
@@ -87,8 +87,11 @@ test('Play Store listing source keeps external release blockers explicit', () =>
   const listing = readFileSync(new URL('../PLAY_STORE_LISTING.md', import.meta.url), 'utf8');
   assert.match(listing, /App name: TakeItEsee/);
   assert.match(listing, /Android package: com\.uvmart\.takeitesee/);
-  assert.match(listing, /512 × 512 px/);
+  assert.match(listing, /store-assets\/takeitesee-play-icon-512\.png/);
+  assert.equal(existsSync(new URL('../store-assets/takeitesee-play-icon-512.png', import.meta.url)), true);
+  assert.match(listing, /Feature graphic: still pending repository handoff/);
   assert.match(listing, /1024 × 500 px/);
+  assert.match(listing, /Phone screenshots: still pending/);
   assert.match(listing, /Data safety answers checked against actual app code/);
   assert.match(listing, /Account deletion declarations/);
   assert.match(listing, /reviewer credentials/);
