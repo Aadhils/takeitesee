@@ -25,13 +25,13 @@ Full description:
 >
 > TakeItEsee is operated by UV MART Enterprises Private Limited.
 
-## Required graphic assets — not yet satisfied
+## Graphic asset readiness
 
-Do not upload the current rectangular bundled logo as the final Play listing icon.
+Do not upload the current rectangular bundled launcher logo as the final Play listing icon.
 
-- Play listing app icon: 512 × 512 px, 32-bit PNG, <= 1024 KB.
-- Feature graphic: 1024 × 500 px, JPEG or 24-bit PNG without alpha.
-- Phone screenshots: capture only real production/native screens and keep listing claims aligned with shipped functionality.
+- Play listing app icon: approved 512 × 512 px PNG is present at `store-assets/takeitesee-play-icon-512.png`.
+- Feature graphic: still pending repository handoff; required size is 1024 × 500 px, JPEG or 24-bit PNG without alpha.
+- Phone screenshots: still pending; capture only fresh real production/native screens and keep listing claims aligned with shipped functionality.
 
 ## Play Console disclosures — verify before submission
 
