@@ -77,14 +77,14 @@ Android production creates an AAB for Google Play. The first iOS device/TestFlig
 - Expo/EAS project linkage is complete (`uvmart-takeitesee` / committed EAS project ID).
 - Android preview APK workflow and real-device Customer + Provider UAT are complete through the current mobile release baseline.
 - Native splash and launcher branding are configured with the bundled official TakeItEsee logo.
-- A dedicated square Play Store listing icon is still required; do not treat the current rectangular bundled logo as final store artwork.
+- The approved dedicated 512 × 512 Play Store listing icon is present at `store-assets/takeitesee-play-icon-512.png`; do not treat the rectangular bundled launcher logo as final store artwork.
 - final package/bundle identifier confirmation before store registration
 - production EAS environment values
 - Android signing/keystore state must be verified in the authorized EAS account; repository config alone cannot prove credential existence.
 - Google Play Console application registration and Play App Signing state must be verified externally.
 - Apple signing / App Store Connect application registration
 - iOS TestFlight real-device UAT
-- store screenshots, 512×512 Play listing icon, and feature graphic
+- real production/native store screenshots and the 1024 × 500 feature graphic
 - review and approve the Play Store listing copy in `PLAY_STORE_LISTING.md`
 - Google Play Data safety disclosure and Apple App Privacy answers based on the implemented app behavior
 - final release version and store-submission verification
