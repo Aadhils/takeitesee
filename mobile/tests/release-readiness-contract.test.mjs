@@ -95,7 +95,7 @@ test('Play Store listing source keeps external release blockers explicit', () =>
   assert.match(listing, /Data safety answers checked against actual app code/);
   assert.match(listing, /Account deletion declarations/);
   assert.match(listing, /reviewer credentials/);
-  assert.match(listing, /Do not upload the current rectangular bundled logo/);
+  assert.match(listing, /Do not upload the current rectangular bundled launcher logo/);
 });
 
 
