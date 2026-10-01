@@ -33,6 +33,31 @@ Do not upload the current rectangular bundled launcher logo as the final Play li
 - Feature graphic: still pending repository handoff; required size is 1024 × 500 px, JPEG or 24-bit PNG without alpha.
 - Phone screenshots: still pending; capture only fresh real production/native screens and keep listing claims aligned with shipped functionality.
 
+### Real native screenshot capture plan
+
+Do not use mockups, web screenshots, AI-generated UI, or old pre-polish captures as Play listing screenshots. Capture the current Android production/native experience from a real device or the exact Internal testing build.
+
+Recommended capture set (use only screens that are actually available in the shipped build):
+
+1. **Explore / service discovery** — show the branded native discovery experience with real current UI and no personal/private data.
+2. **Service detail / provider discovery** — show a representative service or public provider context without fabricated ratings, prices, availability, or claims.
+3. **Customer requirements** — show the one-time requirement journey in a clean representative state.
+4. **Customer bookings** — show the current booking-management UI without exposing real customer/provider personal data.
+5. **Provider leads / proposals** — use a dedicated test/reviewer account and show the shipped provider workflow.
+6. **Provider bookings / availability** — show the real provider booking or service-availability controls.
+7. **Messages / notifications** — only if a clean test state is available; redact nothing into a misleading state and avoid real-user conversations.
+8. **Account / privacy** — show the branded account experience and privacy/account-deletion access where useful.
+
+Capture rules:
+
+- Keep the TakeItEsee logo and locked white + navy/purple brand treatment visible where the shipped screen naturally shows them.
+- Use one consistent Android device/orientation for the primary phone set.
+- Hide status-bar notifications or other unrelated personal information before capture.
+- Use seeded/test content that truthfully exercises the production UI; never invent functionality solely for a screenshot.
+- Do not add marketing text, device frames, badges, ratings, prices, or feature claims onto the raw screenshot unless separately reviewed as listing artwork.
+- Re-capture any screen whose UI changes materially before submission.
+- After the AAB is uploaded to Internal testing, verify the final screenshot set against the exact tested build before Play submission.
+
 ## Play Console disclosures — verify before submission
 
 These are Console/account state and cannot be proven by repository configuration alone:
