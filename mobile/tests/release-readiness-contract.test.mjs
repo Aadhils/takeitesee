@@ -117,7 +117,7 @@ test('native account exposes Play-required privacy and deletion request paths', 
 
 test('Data Safety audit preserves unresolved submission gates', () => {
   const audit = readFileSync(new URL('../PLAY_DATA_SAFETY_AUDIT.md', import.meta.url), 'utf8');
-  assert.match(audit, /final production AAB permissions\/merged manifest are inspected/);
+  assert.match(audit, /processed manifest\/App Bundle Explorer confirms the final effective permissions/);
   assert.match(audit, /external web deletion resource/);
   assert.match(audit, /does not directly declare camera, microphone, contacts/);
   assert.match(audit, /not proof of the final generated Android manifest/);
@@ -130,7 +130,7 @@ test('Play Console declarations keep evidence and external gates explicit', () =
   assert.match(declarations, /legal_age_18_confirmed: true/);
   assert.match(declarations, /Never commit reviewer passwords/);
   assert.match(declarations, /production AAB/);
-  assert.match(declarations, /merged Android manifest/);
+  assert.match(declarations, /processed manifest\/App Bundle Explorer/);
   assert.match(declarations, /does not replace the Play content-rating questionnaire/);
   assert.match(declarations, /submit track remains `internal`/);
 });
