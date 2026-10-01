@@ -134,3 +134,16 @@ test('Play Console declarations keep evidence and external gates explicit', () =
   assert.match(declarations, /does not replace the Play content-rating questionnaire/);
   assert.match(declarations, /submit track remains `internal`/);
 });
+
+
+test('post-AAB release evidence stays explicit without claiming Play Console completion', () => {
+  const readiness = readFileSync(new URL('../RELEASE_READINESS.md', import.meta.url), 'utf8');
+  const declarations = readFileSync(new URL('../PLAY_CONSOLE_DECLARATIONS.md', import.meta.url), 'utf8');
+  const audit = readFileSync(new URL('../PLAY_DATA_SAFETY_AUDIT.md', import.meta.url), 'utf8');
+  assert.match(readiness, /5d3c3698-f7e4-404c-a403-6cedefc073f3/);
+  assert.match(readiness, /version code advanced to `2`/);
+  assert.match(declarations, /offline AAB\/package audit completed/);
+  assert.match(declarations, /processed manifest\/App Bundle Explorer/);
+  assert.match(audit, /SYSTEM_ALERT_WINDOW/);
+  assert.match(audit, /string presence alone is not treated as an effective runtime-permission declaration/);
+});
