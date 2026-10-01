@@ -24,14 +24,14 @@ Core Customer and Provider workflows are login-gated, so Play review must be giv
 
 ## Ads declaration
 
-The repository audit has not established a final Play Console ads answer.
+The production AAB has now been built and an offline artifact inspection found no obvious packaged advertising/analytics SDK evidence. This is useful release evidence, but it does not by itself establish the final Play Console ads answer because runtime sponsored/ad-serving behavior and Play's processed artifact view still need reconciliation.
 
 The current native dependency/config review does not by itself prove the behavior of the final Android artifact. Before locking the Play Console Ads declaration:
 
-1. Build the production AAB.
-2. Inspect the generated/merged Android manifest and packaged SDK/dependency set.
+1. Production AAB build `5d3c3698-f7e4-404c-a403-6cedefc073f3` is complete and used EAS remote Android signing.
+2. Offline AAB inspection is complete; no obvious packaged advertising/analytics SDK evidence was found. Permission strings still require confirmation against Play's processed manifest view.
 3. Verify actual production runtime behavior for advertising, sponsored placements, or ad-serving integrations.
-4. Reconcile the result with the Play Console definition in force at submission time.
+4. Reconcile the result with the Play Console definition and processed App Bundle Explorer view in force at submission time.
 
 Do not mark the Ads declaration complete from source-package names or marketing copy alone.
 
@@ -45,8 +45,8 @@ The repository's 18+ eligibility rule does not replace the Play content-rating q
 
 Before Play Internal Testing submission is treated as release-ready:
 
-- production AAB signing/keystore state verified in the authorized EAS account;
-- final AAB/merged manifest and packaged SDK audit completed;
+- production AAB signing/keystore use verified through the successful EAS production build;
+- offline AAB/package audit completed; final effective permissions remain to be confirmed in Play's processed manifest/App Bundle Explorer after upload;
 - Data Safety answers reconciled with the shipped artifact and Privacy Policy;
 - Ads declaration completed from verified shipped behavior;
 - Target Audience and Content Rating questionnaires completed in Play Console;
