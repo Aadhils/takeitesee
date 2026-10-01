@@ -45,6 +45,6 @@ These are Console/account state and cannot be proven by repository configuration
 - App access / reviewer credentials supplied for login-gated functionality. Repository evidence checklist: `PLAY_CONSOLE_DECLARATIONS.md`.
 - Content rating and target-audience declarations completed from actual shipped behavior and the 18+ eligibility evidence in `PLAY_CONSOLE_DECLARATIONS.md`.
 - Ads declaration checked against the final production AAB/SDK/runtime behavior; do not infer it from source dependencies alone. See `PLAY_CONSOLE_DECLARATIONS.md`.
-- Production AAB uploaded to Internal testing before any production-track release.
+- Production AAB build is complete; upload the audited artifact to Internal testing after Play organisation onboarding is unblocked. Do not use the production track first.
 
 Never infer Data safety answers from marketing copy. Audit the shipped app and SDKs first. The repository evidence review lives in `PLAY_DATA_SAFETY_AUDIT.md`.
