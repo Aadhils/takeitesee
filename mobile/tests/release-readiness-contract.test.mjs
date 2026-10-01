@@ -147,3 +147,14 @@ test('post-AAB release evidence stays explicit without claiming Play Console com
   assert.match(audit, /SYSTEM_ALERT_WINDOW/);
   assert.match(audit, /string presence alone is not treated as an effective runtime-permission declaration/);
 });
+
+
+test('Play Console handoff preserves reviewer-secret and Internal testing boundaries', () => {
+  const declarations = readFileSync(new URL('../PLAY_CONSOLE_DECLARATIONS.md', import.meta.url), 'utf8');
+  assert.match(declarations, /Reviewer handoff template/);
+  assert.match(declarations, /protected Play Console App access fields/);
+  assert.match(declarations, /Finance boundary/);
+  assert.match(declarations, /Upload the audited production AAB to \*\*Internal testing\*\*/);
+  assert.match(declarations, /App Bundle Explorer \/ processed manifest/);
+  assert.match(declarations, /real-device UAT from the exact Internal testing build/);
+});
