@@ -120,7 +120,7 @@ test('Data Safety audit preserves unresolved submission gates', () => {
   assert.match(audit, /processed manifest\/App Bundle Explorer confirms the final effective permissions/);
   assert.match(audit, /external web deletion resource/);
   assert.match(audit, /does not directly declare camera, microphone, contacts/);
-  assert.match(audit, /not proof of the final generated Android manifest/);
+  assert.match(audit, /string presence alone is not treated as an effective runtime-permission declaration/);
 });
 
 
