@@ -31,7 +31,7 @@ No `developmentClient` profile is enabled yet because `expo-dev-client` is not i
 
 ## Android preview build handoff
 
-The mobile workspace is already linked in repository configuration to the EAS project owned by `uvmart-takeitesee` with project ID `aee79da4-1e18-4cdb-b5bd-421180d0decd`. The repository intentionally does not contain an Expo access token or account credential. Authorized account access and signing state still require external verification before a production build.
+The mobile workspace is already linked in repository configuration to the EAS project owned by `uvmart-takeitesee` with project ID `aee79da4-1e18-4cdb-b5bd-421180d0decd`. The repository intentionally does not contain an Expo access token or account credential. Authorized EAS account access, project linkage, and Android remote signing have now been externally verified through a successful production AAB build.
 
 From `mobile/`, verify account state first:
 
@@ -74,13 +74,15 @@ Android production creates an AAB for Google Play. The first iOS device/TestFlig
 - The approved dedicated 512 × 512 Play Store listing icon is present at `store-assets/takeitesee-play-icon-512.png`; do not treat the rectangular bundled launcher logo as final store artwork.
 - final package/bundle identifier confirmation before store registration
 - production EAS environment values
-- Android signing/keystore state must be verified in the authorized EAS account; repository config alone cannot prove credential existence.
+- Android EAS remote signing/keystore use is verified by successful production build `5d3c3698-f7e4-404c-a403-6cedefc073f3`.
 - Google Play Console application registration and Play App Signing state must be verified externally.
 - Apple signing / App Store Connect application registration
 - iOS TestFlight real-device UAT
 - real production/native store screenshots and the 1024 × 500 feature graphic
 - review and approve the Play Store listing copy in `PLAY_STORE_LISTING.md`
 - Google Play Data safety disclosure and Apple App Privacy answers based on the implemented app behavior
+- production AAB build `5d3c3698-f7e4-404c-a403-6cedefc073f3` completed successfully; remote Android version code advanced to `2`
+- final Play Console-generated manifest/permissions review after upload to Internal testing
 - final release version and store-submission verification
 
 ## Google Play internal-track handoff

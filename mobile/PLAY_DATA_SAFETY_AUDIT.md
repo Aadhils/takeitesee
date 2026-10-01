@@ -23,7 +23,7 @@ The public Privacy Policy additionally describes profile/location/service-region
 
 At this audit point, `mobile/app.json` does not directly declare camera, microphone, contacts, SMS/call-log, health, or precise/background-location permissions. The mobile dependency manifest contains Supabase and Expo application/runtime libraries and does not list an advertising or analytics SDK.
 
-This is a source-code observation, not proof of the final generated Android manifest. Re-check the production AAB / merged manifest before submitting Data Safety.
+The production AAB has now been built and inspected offline. The archive/package audit found no obvious advertising/analytics SDK evidence. The generated artifact contains permission strings including `INTERNET`, `VIBRATE`, `READ_EXTERNAL_STORAGE`, `WRITE_EXTERNAL_STORAGE`, `SYSTEM_ALERT_WINDOW`, and `DUMP`; because Android App Bundle manifests are protobuf-encoded and may carry SDK/tooling constraints, string presence alone is not treated as an effective runtime-permission declaration. Confirm the final effective permissions in Play's processed manifest/App Bundle Explorer after Internal testing upload.
 
 ## Sharing / processors
 
@@ -44,7 +44,7 @@ Remaining external-web requirement:
 ## Submission gate
 
 Do not submit Data Safety or claim account-deletion compliance until:
-1. final production AAB permissions/merged manifest are inspected;
+1. Play's processed manifest/App Bundle Explorer confirms the final effective permissions for the uploaded production AAB;
 2. final API/storage/SDK data flows are mapped to Google's categories and purposes;
 3. the external web deletion resource is production-verified and entered in the Play Console Data deletion URL field;
 4. Play Console answers are reconciled with the published Privacy Policy.

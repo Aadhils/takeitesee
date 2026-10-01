@@ -117,10 +117,10 @@ test('native account exposes Play-required privacy and deletion request paths', 
 
 test('Data Safety audit preserves unresolved submission gates', () => {
   const audit = readFileSync(new URL('../PLAY_DATA_SAFETY_AUDIT.md', import.meta.url), 'utf8');
-  assert.match(audit, /final production AAB permissions\/merged manifest are inspected/);
+  assert.match(audit, /processed manifest\/App Bundle Explorer confirms the final effective permissions/);
   assert.match(audit, /external web deletion resource/);
   assert.match(audit, /does not directly declare camera, microphone, contacts/);
-  assert.match(audit, /not proof of the final generated Android manifest/);
+  assert.match(audit, /string presence alone is not treated as an effective runtime-permission declaration/);
 });
 
 
@@ -130,7 +130,20 @@ test('Play Console declarations keep evidence and external gates explicit', () =
   assert.match(declarations, /legal_age_18_confirmed: true/);
   assert.match(declarations, /Never commit reviewer passwords/);
   assert.match(declarations, /production AAB/);
-  assert.match(declarations, /merged Android manifest/);
+  assert.match(declarations, /processed manifest\/App Bundle Explorer/);
   assert.match(declarations, /does not replace the Play content-rating questionnaire/);
   assert.match(declarations, /submit track remains `internal`/);
+});
+
+
+test('post-AAB release evidence stays explicit without claiming Play Console completion', () => {
+  const readiness = readFileSync(new URL('../RELEASE_READINESS.md', import.meta.url), 'utf8');
+  const declarations = readFileSync(new URL('../PLAY_CONSOLE_DECLARATIONS.md', import.meta.url), 'utf8');
+  const audit = readFileSync(new URL('../PLAY_DATA_SAFETY_AUDIT.md', import.meta.url), 'utf8');
+  assert.match(readiness, /5d3c3698-f7e4-404c-a403-6cedefc073f3/);
+  assert.match(readiness, /version code advanced to `2`/);
+  assert.match(declarations, /offline AAB\/package audit completed/);
+  assert.match(declarations, /processed manifest\/App Bundle Explorer/);
+  assert.match(audit, /SYSTEM_ALERT_WINDOW/);
+  assert.match(audit, /string presence alone is not treated as an effective runtime-permission declaration/);
 });
