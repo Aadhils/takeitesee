@@ -158,3 +158,13 @@ test('Play Console handoff preserves reviewer-secret and Internal testing bounda
   assert.match(declarations, /App Bundle Explorer \/ processed manifest/);
   assert.match(declarations, /real-device UAT from the exact Internal testing build/);
 });
+
+
+test('Play screenshot readiness requires real current native captures', () => {
+  const listing = readFileSync(new URL('../PLAY_STORE_LISTING.md', import.meta.url), 'utf8');
+  assert.match(listing, /Real native screenshot capture plan/);
+  assert.match(listing, /Do not use mockups, web screenshots, AI-generated UI/);
+  assert.match(listing, /one consistent Android device\/orientation/);
+  assert.match(listing, /avoid real-user conversations/);
+  assert.match(listing, /verify the final screenshot set against the exact tested build/);
+});
