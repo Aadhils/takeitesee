@@ -16,6 +16,19 @@ Play Console target-audience and content-rating answers must still be completed 
 
 Core Customer and Provider workflows are login-gated, so Play review must be given working access instructions and controlled reviewer credentials when required.
 
+### Reviewer handoff template
+
+Copy this structure into Play Console only after a dedicated reviewer account has been created and verified. Keep credentials out of GitHub.
+
+- Access required: Yes — representative Customer and Provider workflows require authentication.
+- Sign-in entry: Open TakeItEsee and choose the normal sign-in action.
+- Reviewer account: provide the dedicated reviewer email/identifier in Play Console only.
+- Password / OTP / recovery information: provide only through the protected Play Console App access fields; never place it in repository text.
+- Customer path: sign in, then use Explore / Requirements / Bookings / Messages / Notifications / Account to review the shipped customer experience.
+- Provider path: use an account with the required Provider identity/state, then use Leads / Proposals / Bookings / Availability / Live Work Status / Messages / Notifications to review the shipped provider experience.
+- Preconditions: disclose any approval, seeded data, service availability, location, or account-state prerequisite that is actually required by the reviewer account.
+- Finance boundary: do not describe payment, refund, payout, settlement, reconciliation, or recovery as available reviewer functionality while those flows remain on hold.
+
 - Never commit reviewer passwords, OTPs, recovery codes, service-account credentials, or other secrets to this repository.
 - Create or maintain a dedicated production reviewer account outside source control.
 - Reviewer instructions should explain how to sign in and reach representative Customer and Provider functionality.
@@ -40,6 +53,19 @@ Do not mark the Ads declaration complete from source-package names or marketing 
 Content rating is a Play Console questionnaire and cannot be completed from repository configuration alone. Use actual shipped functionality as evidence, including user-generated marketplace content, messaging, provider/customer interactions, moderation, and any other questionnaire-relevant behavior.
 
 The repository's 18+ eligibility rule does not replace the Play content-rating questionnaire and must not be treated as a rating result.
+
+## Console handoff order
+
+After organisation verification is complete, use this order to reduce rework:
+
+1. Create/register the Play Console app with package `com.uvmart.takeitesee`.
+2. Enter the approved store listing text and real store assets; do not fabricate screenshots.
+3. Enter the Privacy Policy and public account-deletion resource.
+4. Configure App access with the externally held reviewer credentials and accurate prerequisites.
+5. Upload the audited production AAB to **Internal testing** and wait for Play processing.
+6. Inspect App Bundle Explorer / processed manifest and reconcile effective permissions and SDK evidence.
+7. Complete Data Safety, Ads, Target Audience, and Content Rating from the processed artifact plus actual shipped behavior.
+8. Run real-device UAT from the exact Internal testing build before considering any production-track rollout.
 
 ## Submission gates
 
