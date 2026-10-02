@@ -63,7 +63,9 @@ export default function MessageThreadScreen() {
       });
       setActionError('');
     } catch (error) {
-      if (!silent) {
+      if (silent) {
+        setActionError('Message sent, but the conversation could not refresh. Tap Refresh to update the history.');
+      } else {
         setState({
           status: 'error',
           conversation: null,
@@ -139,15 +141,16 @@ export default function MessageThreadScreen() {
         <BrandLogo compact />
         <View style={styles.topRow}>
           <Link href={{ pathname: '/messages', params: { workspace } }} style={styles.backLink}>← Messages</Link>
-          <Pressable onPress={() => void load()} style={styles.refreshButton}>
-            <Text style={styles.refreshText}>Refresh</Text>
+          <Pressable accessibilityRole="button" disabled={sending || state.status === 'loading'} onPress={() => void load()} style={[styles.refreshButton, (sending || state.status === 'loading') && styles.disabled]}>
+            <Text style={styles.refreshText}>{state.status === 'loading' ? 'Loading…' : 'Refresh'}</Text>
           </Pressable>
         </View>
 
         {state.status === 'loading' ? (
           <View style={styles.inlineStatus}><ActivityIndicator /><Text style={styles.muted}>Loading conversation…</Text></View>
         ) : null}
-        {state.status === 'error' ? <Text style={styles.errorText}>{state.message}</Text> : null}
+        {state.status === 'error' ? <Text accessibilityRole="alert" style={styles.errorText}>{state.message}</Text> : null}
+        {actionError ? <Text accessibilityRole="alert" style={styles.errorText}>{actionError}</Text> : null}
 
         {conversation ? (
           <>
@@ -187,7 +190,6 @@ export default function MessageThreadScreen() {
               </View>
             ) : (
               <View style={styles.composer}>
-                {actionError ? <Text style={styles.errorText}>{actionError}</Text> : null}
                 <TextInput
                   value={draft}
                   onChangeText={setDraft}
