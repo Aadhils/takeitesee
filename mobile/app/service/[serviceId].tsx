@@ -99,9 +99,9 @@ export default function ServiceDetailScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
-        <BrandLogo compact />
+        <View style={styles.brandRow}><BrandLogo compact /></View>
         <Link href="/explore" asChild>
-          <Pressable style={styles.backButton}>
+          <Pressable accessibilityRole="button" style={styles.backButton}>
             <Text style={styles.backText}>‹ Back to Explore</Text>
           </Pressable>
         </Link>
@@ -109,7 +109,7 @@ export default function ServiceDetailScreen() {
         {state.status === 'loading' ? (
           <View style={styles.loadingCard}>
             <ActivityIndicator />
-            <Text style={styles.muted}>Loading verified service…</Text>
+            <Text style={styles.muted}>Loading service…</Text>
           </View>
         ) : null}
 
@@ -123,9 +123,17 @@ export default function ServiceDetailScreen() {
         {state.status === 'ready' ? (
           <>
             <View style={styles.heroCard}>
-              <Text style={styles.eyebrow}>VERIFIED SERVICE</Text>
-              <Text style={styles.title}>{state.service.name}</Text>
-              <Text style={styles.providerName}>{state.provider.name}</Text>
+              <Text style={styles.eyebrow}>SERVICE DETAILS</Text>
+              <View style={styles.serviceHeading}>
+                <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.serviceVisual}>
+                  <Text style={styles.serviceInitial}>{state.service.name.trim().slice(0, 1).toUpperCase()}</Text>
+                </View>
+                <View style={styles.headingText}>
+                  <Text style={styles.title}>{state.service.name}</Text>
+                  <Text style={styles.providerName}>{state.provider.name}</Text>
+                  <Text style={styles.providerKind}>{state.provider.provider_type === 'business' ? 'Business' : 'Professional'}</Text>
+                </View>
+              </View>
               {state.service.description ? (
                 <Text style={styles.description}>{state.service.description}</Text>
               ) : null}
@@ -141,6 +149,8 @@ export default function ServiceDetailScreen() {
             </View>
 
             <View style={styles.actionsCard}>
+              <Text style={styles.cardTitle}>Your next step</Text>
+              <Text style={styles.muted}>Choose a time or share what you need in a service request.</Text>
               <Link
                 href={{
                   pathname: '/providers/[providerType]/[providerId]',
@@ -148,7 +158,7 @@ export default function ServiceDetailScreen() {
                 }}
                 asChild
               >
-                <Pressable style={styles.secondaryButton}>
+                <Pressable accessibilityRole="button" style={styles.secondaryButton}>
                   <Text style={styles.secondaryButtonText}>View provider profile</Text>
                 </Pressable>
               </Link>
@@ -165,7 +175,7 @@ export default function ServiceDetailScreen() {
                   }}
                   asChild
                 >
-                  <Pressable style={styles.primaryButton}>
+                  <Pressable accessibilityRole="button" style={styles.primaryButton}>
                     <Text style={styles.primaryButtonText}>Book an available time</Text>
                   </Pressable>
                 </Link>
@@ -173,7 +183,7 @@ export default function ServiceDetailScreen() {
 
               {requestHref ? (
                 <Link href={requestHref} asChild>
-                  <Pressable style={styles.secondaryButton}>
+                  <Pressable accessibilityRole="button" style={styles.secondaryButton}>
                     <Text style={styles.secondaryButtonText}>Request this service</Text>
                   </Pressable>
                 </Link>
@@ -197,9 +207,15 @@ export default function ServiceDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: theme.colors.canvas },
-  content: { padding: 18, gap: 14 },
-  backButton: { alignSelf: 'flex-start', paddingVertical: 7, paddingRight: 12 },
+  safeArea: { flex: 1, backgroundColor: '#ffffff' },
+  content: { padding: 18, paddingBottom: 28, gap: 14 },
+  brandRow: { alignItems: 'center' },
+  serviceHeading: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  headingText: { flex: 1, minWidth: 0, gap: 5 },
+  serviceVisual: { width: 64, height: 76, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.secondary },
+  serviceInitial: { fontSize: 32, fontWeight: '900', color: theme.colors.primaryStrong },
+  providerKind: { fontSize: 12, fontWeight: '800', color: theme.colors.primaryStrong },
+  backButton: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingRight: 12 },
   backText: { fontSize: 14, fontWeight: '800', color: theme.colors.primary },
   loadingCard: { padding: 20, borderRadius: 18, backgroundColor: '#fff', gap: 10, alignItems: 'center' },
   errorCard: { padding: 20, borderRadius: 18, backgroundColor: '#fff0f0', gap: 8 },
@@ -207,18 +223,18 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 14, lineHeight: 20, color: '#8b3535' },
   heroCard: { padding: 20, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.xl, backgroundColor: theme.colors.surface, gap: 10, ...cardShadow },
   eyebrow: { fontSize: 11, fontWeight: '900', letterSpacing: 1.5, color: theme.colors.primary },
-  title: { fontSize: 28, lineHeight: 34, fontWeight: '900', color: theme.colors.ink },
-  providerName: { fontSize: 15, fontWeight: '700', color: '#4b4b65' },
-  description: { fontSize: 15, lineHeight: 22, color: '#555565' },
+  title: { fontSize: 23, lineHeight: 29, fontWeight: '900', color: theme.colors.ink },
+  providerName: { fontSize: 15, fontWeight: '700', color: theme.colors.inkMuted },
+  description: { fontSize: 15, lineHeight: 22, color: theme.colors.inkMuted },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   meta: { fontSize: 12, color: theme.colors.primaryStrong, backgroundColor: theme.colors.secondary, paddingHorizontal: 9, paddingVertical: 6, borderRadius: theme.radii.sm },
   actionsCard: { padding: 16, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, gap: 10, ...cardShadow },
-  primaryButton: { minHeight: 50, justifyContent: 'center', alignItems: 'center', borderRadius: theme.radii.md, backgroundColor: theme.colors.primary },
+  primaryButton: { minHeight: 50, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderRadius: theme.radii.md, backgroundColor: theme.colors.primary },
   primaryButtonText: { color: '#fff', fontSize: 15, fontWeight: '800' },
-  secondaryButton: { minHeight: 48, justifyContent: 'center', alignItems: 'center', borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary },
+  secondaryButton: { minHeight: 48, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary },
   secondaryButtonText: { color: theme.colors.primaryStrong, fontSize: 14, fontWeight: '900' },
   infoCard: { padding: 18, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, gap: 6 },
-  cardTitle: { fontSize: 16, fontWeight: '800', color: '#171721' },
-  infoText: { fontSize: 14, color: '#44445d' },
-  muted: { fontSize: 13, lineHeight: 19, color: '#77778a' },
+  cardTitle: { fontSize: 16, fontWeight: '800', color: theme.colors.ink },
+  infoText: { fontSize: 14, color: theme.colors.inkMuted },
+  muted: { fontSize: 13, lineHeight: 19, color: theme.colors.inkMuted },
 });
