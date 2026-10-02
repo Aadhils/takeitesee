@@ -35,7 +35,10 @@ test('mobile routing separates loading, signed out and signed in states', () => 
   assert.ok(entry.includes("auth.status === 'signedIn'"));
   assert.ok(entry.includes('<Redirect href="/home" />'));
   assert.ok(entry.includes("auth.status === 'signedOut'"));
-  assert.ok(entry.includes('<Redirect href="/login" />'));
+  assert.ok(entry.includes('<Link href="/login" asChild>'));
+  assert.ok(entry.includes('<Link href="/explore" asChild>'));
+  assert.ok(entry.includes('Get Started'));
+  assert.ok(entry.includes('<BrandLogo large />'));
   assert.ok(home.includes('Find the right service'));
   assert.ok(home.includes('Explore services'));
 });
