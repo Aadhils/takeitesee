@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Keyboard,
   Pressable,
   StyleSheet,
   Text,
@@ -28,6 +29,7 @@ type SearchState =
 export default function ExploreScreen() {
   const [query, setQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState('');
+  const [searchAttempt, setSearchAttempt] = useState(0);
   const [state, setState] = useState<SearchState>({ status: 'loading', services: [], total: 0 });
 
   useEffect(() => {
@@ -52,9 +54,27 @@ export default function ExploreScreen() {
     return () => {
       active = false;
     };
-  }, [submittedQuery]);
+  }, [submittedQuery, searchAttempt]);
 
-  const submit = () => setSubmittedQuery(query.trim());
+  const submit = () => {
+    if (state.status === 'loading') return;
+    Keyboard.dismiss();
+    setSubmittedQuery(query.trim());
+    setSearchAttempt((current) => current + 1);
+  };
+
+  const retry = () => {
+    Keyboard.dismiss();
+    setSearchAttempt((current) => current + 1);
+  };
+
+  const clearSearch = () => {
+    if (state.status === 'loading') return;
+    Keyboard.dismiss();
+    setQuery('');
+    setSubmittedQuery('');
+    setSearchAttempt((current) => current + 1);
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -70,6 +90,7 @@ export default function ExploreScreen() {
 
         <View style={styles.searchRow}>
           <TextInput
+            accessibilityLabel="Search services"
             value={query}
             onChangeText={setQuery}
             onSubmitEditing={submit}
@@ -77,8 +98,8 @@ export default function ExploreScreen() {
             placeholder="Website developer, plumber, salon…"
             style={styles.searchInput}
           />
-          <Pressable accessibilityRole="button" onPress={submit} style={styles.searchButton}>
-            <Text style={styles.searchButtonText}>Search</Text>
+          <Pressable accessibilityRole="button" disabled={state.status === 'loading'} onPress={submit} style={[styles.searchButton, state.status === 'loading' && styles.disabled]}>
+            <Text style={styles.searchButtonText}>{state.status === 'loading' ? 'Searching…' : 'Search'}</Text>
           </Pressable>
         </View>
 
@@ -89,7 +110,20 @@ export default function ExploreScreen() {
           </View>
         ) : null}
 
-        {state.status === 'error' ? <Text style={styles.error}>{state.message}</Text> : null}
+        {state.status === 'error' ? (
+          <View style={styles.emptyCard}>
+            <Text accessibilityRole="alert" style={styles.error}>{state.message}</Text>
+            <Pressable accessibilityRole="button" onPress={retry} style={styles.recoveryButton}>
+              <Text style={styles.recoveryText}>Try again</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {submittedQuery && state.status !== 'loading' ? (
+          <Pressable accessibilityRole="button" onPress={clearSearch} style={styles.recoveryButton}>
+            <Text style={styles.recoveryText}>Clear search · Show all services</Text>
+          </Pressable>
+        ) : null}
 
         {state.status === 'ready' ? (
           <Text style={styles.resultCount}>
@@ -98,6 +132,7 @@ export default function ExploreScreen() {
         ) : null}
 
         <FlatList
+          keyboardShouldPersistTaps="handled"
           data={state.services}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
@@ -193,6 +228,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     backgroundColor: theme.colors.primary,
   },
+  disabled: { opacity: 0.5 },
+  recoveryButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary },
+  recoveryText: { color: theme.colors.primaryStrong, fontSize: 13, fontWeight: '800' },
   searchButtonText: { color: '#ffffff', fontSize: 14, fontWeight: '700' },
   inlineStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   resultCount: { fontSize: 13, fontWeight: '800', color: theme.colors.inkMuted },
