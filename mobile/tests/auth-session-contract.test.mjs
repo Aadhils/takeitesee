@@ -36,7 +36,7 @@ test('mobile routing separates loading, signed out and signed in states', () => 
   assert.ok(entry.includes('<Redirect href="/home" />'));
   assert.ok(entry.includes("auth.status === 'signedOut'"));
   assert.ok(entry.includes('<Redirect href="/login" />'));
-  assert.ok(home.includes('Your marketplace'));
+  assert.ok(home.includes('Find the right service'));
   assert.ok(home.includes('Explore services'));
 });
 
@@ -45,7 +45,7 @@ test('client does not invent customer or provider roles', () => {
   assert.ok(!provider.includes("roles: ['provider']"));
   assert.ok(!home.includes('auth.identity.userId'));
   assert.ok(!home.includes('Server roles'));
-  assert.ok(nav.includes("roles.includes('professional')"));
+  assert.ok(home.includes("roles.includes('professional')"));
   assert.ok(nav.includes("roles.includes('business_owner')"));
   assert.ok(providerScreen.includes("roles.includes('professional')"));
   assert.ok(providerScreen.includes("roles.includes('business_owner')"));
@@ -59,9 +59,21 @@ test('public Explore uses the frozen marketplace service search contract without
   assert.ok(marketplace.includes("provider_type: 'professional' | 'business'"));
 });
 
-test('customer first navigation keeps Provider conditional on server returned roles', () => {
-  assert.ok(nav.includes("{ href: '/home', label: 'Home', auth: true }"));
-  assert.ok(nav.includes("{ href: '/explore', label: 'Explore', auth: false }"));
-  assert.ok(nav.includes("{ href: '/account', label: 'Account', auth: true }"));
-  assert.ok(nav.includes('isProvider ?'));
+test('reference navigation gates private tabs and keeps Provider access role-controlled on Home', () => {
+  const definition = nav.split('const items = ')[1].split(' as const;')[0];
+  const items = Function('return (' + definition + ')')();
+  assert.deepEqual(items.map((item) => item.href), ['/home', '/explore', '/request-service', '/bookings', '/account']);
+  assert.deepEqual(items.filter((item) => !item.auth).map((item) => item.href), ['/explore']);
+  assert.ok(nav.includes("item.auth && auth.status !== 'signedIn'"));
+  assert.ok(home.includes('providerAccess ?'));
+  assert.ok(home.includes("router.push('/provider')"));
+});
+
+test('Home search hands real query text to Explore and categories come from marketplace data', () => {
+  assert.ok(home.includes("searchMarketplaceServices('')"));
+  assert.ok(home.includes("params: { q: text.trim() }"));
+  assert.ok(explore.includes('useLocalSearchParams'));
+  assert.ok(explore.includes('setSubmittedQuery(incomingQuery.trim())'));
+  assert.ok(home.includes('marketplace?.categories'));
+  assert.ok(home.includes('service.review_count > 0'));
 });
