@@ -79,6 +79,20 @@ export default function MessageThreadScreen() {
     void load();
   }, [load]);
 
+  const conversation = state.status === 'ready' ? state.conversation : null;
+  const canCompose = conversation ? conversationCanCompose(conversation, state.safety) : false;
+  const contextSummary = useMemo(() => {
+    if (!conversation) return '';
+    if (conversation.conversation_kind === 'requirement') {
+      return [conversation.requirement_reference, conversation.service_name, conversation.requirement_status].filter(Boolean).join(' · ');
+    }
+    if (conversation.conversation_kind === 'job_application') {
+      return [conversation.business_name, conversation.application_status].filter(Boolean).join(' · ');
+    }
+    return [conversation.product_order_business_name, conversation.product_order_status].filter(Boolean).join(' · ');
+  }, [conversation]);
+
+
   if (auth.status === 'loading') {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -102,18 +116,6 @@ export default function MessageThreadScreen() {
     );
   }
 
-  const conversation = state.status === 'ready' ? state.conversation : null;
-  const canCompose = conversation ? conversationCanCompose(conversation, state.safety) : false;
-  const contextSummary = useMemo(() => {
-    if (!conversation) return '';
-    if (conversation.conversation_kind === 'requirement') {
-      return [conversation.requirement_reference, conversation.service_name, conversation.requirement_status].filter(Boolean).join(' · ');
-    }
-    if (conversation.conversation_kind === 'job_application') {
-      return [conversation.business_name, conversation.application_status].filter(Boolean).join(' · ');
-    }
-    return [conversation.product_order_business_name, conversation.product_order_status].filter(Boolean).join(' · ');
-  }, [conversation]);
 
   const send = async () => {
     const body = draft.trim();
