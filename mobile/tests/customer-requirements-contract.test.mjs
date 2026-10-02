@@ -48,7 +48,9 @@ test('provider eligibility and public profile context remain server-derived', ()
   assert.ok(requirementDetail.includes("pathname: '/providers/[providerType]/[providerId]'"));
 });
 
-test('Requests navigation is Customer-authenticated and active on requirement detail routes', () => {
-  assert.ok(mobileNav.includes("{ href: '/requirements', label: 'Requests', auth: true }"));
-  assert.ok(mobileNav.includes("href === '/requirements' && pathname.startsWith('/requirements/')"));
+test('central request navigation is authenticated and active on requirement detail routes', () => {
+  const definition = mobileNav.split('const items = ')[1].split(' as const;')[0];
+  const items = Function('return (' + definition + ')')();
+  assert.equal(items.find((item) => item.href === '/request-service')?.auth, true);
+  assert.ok(mobileNav.includes("item.href === '/request-service' && pathname.startsWith('/requirements')"));
 });

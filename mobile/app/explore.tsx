@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { Link, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -27,10 +27,17 @@ type SearchState =
   | { status: 'error'; services: MarketplaceService[]; total: number; message: string };
 
 export default function ExploreScreen() {
-  const [query, setQuery] = useState('');
-  const [submittedQuery, setSubmittedQuery] = useState('');
+  const params = useLocalSearchParams<{ q?: string | string[] }>();
+  const incomingQuery = (Array.isArray(params.q) ? params.q[0] : params.q) ?? '';
+  const [query, setQuery] = useState(incomingQuery);
+  const [submittedQuery, setSubmittedQuery] = useState(incomingQuery);
   const [searchAttempt, setSearchAttempt] = useState(0);
   const [state, setState] = useState<SearchState>({ status: 'loading', services: [], total: 0 });
+
+  useEffect(() => {
+    setQuery(incomingQuery);
+    setSubmittedQuery(incomingQuery.trim());
+  }, [incomingQuery]);
 
   useEffect(() => {
     let active = true;
