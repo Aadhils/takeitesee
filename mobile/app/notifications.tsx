@@ -39,6 +39,7 @@ export default function NotificationsScreen() {
   const [state, setState] = useState<NotificationState>({ status: 'loading', notifications: [] });
   const [busyId, setBusyId] = useState('');
   const [markingAll, setMarkingAll] = useState(false);
+  const [actionError, setActionError] = useState('');
 
   const load = useCallback(async () => {
     if (auth.status !== 'signedIn') return;
@@ -101,7 +102,8 @@ export default function NotificationsScreen() {
   };
 
   const openNotification = async (item: NativeNotification) => {
-    if (busyId) return;
+    if (busyId || markingAll || state.status === 'loading') return;
+    setActionError('');
     setBusyId(item.id);
     try {
       if (!item.read_at) await markNotificationRead(item.id);
@@ -112,13 +114,16 @@ export default function NotificationsScreen() {
           : row),
       }));
       openNativeTarget(item);
+    } catch {
+      setActionError('Could not open this update. Please try again.');
     } finally {
       setBusyId('');
     }
   };
 
   const markAll = async () => {
-    if (markingAll || unreadCount === 0) return;
+    if (markingAll || busyId || state.status !== 'ready' || unreadCount === 0) return;
+    setActionError('');
     setMarkingAll(true);
     try {
       await markAllNotificationsRead();
@@ -127,6 +132,8 @@ export default function NotificationsScreen() {
         ...current,
         notifications: current.notifications.map((item) => ({ ...item, read_at: item.read_at || now })),
       }));
+    } catch {
+      setActionError('Could not mark notifications as read. Please try again.');
     } finally {
       setMarkingAll(false);
     }
@@ -147,16 +154,17 @@ export default function NotificationsScreen() {
           </View>
 
           <View style={styles.actionRow}>
-            <Pressable onPress={() => void load()} style={styles.secondaryButton}>
+            <Pressable accessibilityRole="button" disabled={state.status === 'loading' || !!busyId || markingAll} onPress={() => { setActionError(''); void load(); }} style={[styles.secondaryButton, (state.status === 'loading' || !!busyId || markingAll) && styles.disabled]}>
               <Text style={styles.secondaryText}>Refresh</Text>
             </Pressable>
-            <Pressable disabled={markingAll || unreadCount === 0} onPress={() => void markAll()} style={[styles.primaryButton, (markingAll || unreadCount === 0) && styles.disabled]}>
+            <Pressable accessibilityRole="button" disabled={markingAll || !!busyId || state.status !== 'ready' || unreadCount === 0} onPress={() => void markAll()} style={[styles.primaryButton, (markingAll || !!busyId || state.status !== 'ready' || unreadCount === 0) && styles.disabled]}>
               {markingAll ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryText}>Mark all read</Text>}
             </Pressable>
           </View>
 
           {state.status === 'loading' ? <View style={styles.inlineStatus}><ActivityIndicator /><Text style={styles.muted}>Loading notifications…</Text></View> : null}
-          {state.status === 'error' ? <Text style={styles.errorText}>{state.message}</Text> : null}
+          {state.status === 'error' ? <Text accessibilityRole="alert" style={styles.errorText}>{state.message}</Text> : null}
+          {actionError ? <Text accessibilityRole="alert" style={styles.errorText}>{actionError}</Text> : null}
           {state.status === 'ready' && state.notifications.length === 0 ? (
             <View style={styles.card}><Text style={styles.cardTitle}>No notifications yet</Text><Text style={styles.muted}>New marketplace updates will appear here.</Text></View>
           ) : null}
@@ -164,7 +172,7 @@ export default function NotificationsScreen() {
           {state.notifications.map((item) => {
             const unread = !item.read_at;
             return (
-              <Pressable key={item.id} disabled={busyId === item.id} onPress={() => void openNotification(item)} style={[styles.card, unread && styles.unreadCard]}>
+              <Pressable key={item.id} accessibilityRole="button" accessibilityState={{ busy: busyId === item.id }} disabled={!!busyId || markingAll || state.status === 'loading'} onPress={() => void openNotification(item)} style={[styles.card, unread && styles.unreadCard]}>
                 <View style={styles.cardHeader}>
                   <View style={styles.cardTitleWrap}>
                     <Text style={styles.eventType}>{item.event_type.replaceAll('_', ' ')}</Text>
@@ -174,7 +182,7 @@ export default function NotificationsScreen() {
                 </View>
                 <Text style={styles.body}>{item.body}</Text>
                 <Text style={styles.timestamp}>{formatNotificationTime(item.created_at)}</Text>
-                <Text style={styles.openText}>{item.target_path || item.conversation_id || item.booking_id ? 'Open update →' : unread ? 'Mark as read' : 'Read'}</Text>
+                <Text style={styles.openText}>{busyId === item.id ? 'Opening…' : item.target_path || item.conversation_id || item.booking_id ? 'Open update →' : unread ? 'Mark as read' : 'Read'}</Text>
               </Pressable>
             );
           })}
