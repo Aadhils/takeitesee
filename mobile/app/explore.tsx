@@ -87,11 +87,11 @@ export default function ExploreScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
         <View style={styles.header}>
-          <BrandLogo compact />
-          <Text style={styles.eyebrow}>EXPLORE</Text>
+          <View style={styles.brandRow}><BrandLogo compact /></View>
+          <Text style={styles.eyebrow}>EXPLORE SERVICES</Text>
           <Text style={styles.title}>Find a service</Text>
           <Text style={styles.description}>
-            Search Professional and Business services together from the public marketplace.
+            Discover services and choose a provider that fits your needs.
           </Text>
         </View>
 
@@ -162,29 +162,37 @@ export default function ExploreScreen() {
 }
 
 function ServiceCard({ service }: { service: MarketplaceService }) {
+  const name = service.service_name.en || 'Service';
   const content = (
     <>
       <View style={styles.cardHeader}>
-        <View style={styles.cardTitleWrap}>
-          <Text style={styles.cardTitle}>{service.service_name.en || 'Service'}</Text>
-          <Text style={styles.provider}>{service.provider_name}</Text>
+        <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.serviceVisual}>
+          <Text style={styles.serviceInitial}>{name.trim().slice(0, 1).toUpperCase()}</Text>
         </View>
-        <Text style={styles.price}>{formatMarketplacePrice(service)}</Text>
+        <View style={styles.cardTitleWrap}>
+          <Text style={styles.cardTitle} numberOfLines={2}>{name}</Text>
+          <Text style={styles.provider} numberOfLines={2}>{service.provider_name}</Text>
+          <Text style={styles.rating}>
+            {service.review_count > 0
+              ? `★ ${service.rating.toFixed(1)} · ${service.review_count} reviews`
+              : 'No reviews yet'}
+          </Text>
+        </View>
       </View>
       {service.description.en ? (
-        <Text style={styles.descriptionText} numberOfLines={2}>
-          {service.description.en}
-        </Text>
+        <Text style={styles.descriptionText} numberOfLines={2}>{service.description.en}</Text>
       ) : null}
       <View style={styles.metaRow}>
         <Text style={styles.meta}>{service.provider_type === 'business' ? 'Business' : 'Professional'}</Text>
         {service.location ? <Text style={styles.meta}>{service.location}</Text> : null}
         <Text style={styles.meta}>{service.availability}</Text>
       </View>
-      <Text style={styles.rating}>
-        ★ {service.rating.toFixed(1)} · {service.review_count} reviews
-      </Text>
-      {service.provider_id ? <Text style={styles.openText}>View service →</Text> : null}
+      <View style={styles.cardFooter}>
+        <Text style={styles.price}>{formatMarketplacePrice(service)}</Text>
+        {service.provider_id ? (
+          <View style={styles.openAction}><Text style={styles.openText}>View service →</Text></View>
+        ) : <Text style={styles.muted}>Details unavailable</Text>}
+      </View>
     </>
   );
 
@@ -202,7 +210,7 @@ function ServiceCard({ service }: { service: MarketplaceService }) {
       }}
       asChild
     >
-      <Pressable style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
+      <Pressable accessibilityRole="button" accessibilityLabel={`View ${name} from ${service.provider_name}`} style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
         {content}
       </Pressable>
     </Link>
@@ -210,9 +218,10 @@ function ServiceCard({ service }: { service: MarketplaceService }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: theme.colors.canvas },
+  safeArea: { flex: 1, backgroundColor: '#ffffff' },
   screen: { flex: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 10, gap: 12 },
   header: { gap: 5 },
+  brandRow: { alignItems: 'center', paddingBottom: 6 },
   eyebrow: { fontSize: 11, fontWeight: '900', letterSpacing: 1.5, color: theme.colors.primary },
   title: { fontSize: 28, lineHeight: 34, fontWeight: '900', letterSpacing: -0.4, color: theme.colors.ink },
   description: { fontSize: 14, lineHeight: 20, color: theme.colors.inkMuted },
@@ -245,7 +254,11 @@ const styles = StyleSheet.create({
   card: { gap: 9, padding: 16, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, ...cardShadow },
   cardPressed: { opacity: 0.82 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
-  cardTitleWrap: { flex: 1, gap: 3 },
+  cardTitleWrap: { flex: 1, minWidth: 0, gap: 4 },
+  serviceVisual: { width: 64, height: 72, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.secondary },
+  serviceInitial: { fontSize: 30, fontWeight: '900', color: theme.colors.primaryStrong },
+  cardFooter: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  openAction: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 16, borderRadius: 10, backgroundColor: theme.colors.primary },
   cardTitle: { fontSize: 17, fontWeight: '900', color: theme.colors.ink },
   provider: { fontSize: 13, color: theme.colors.inkMuted },
   price: { fontSize: 15, fontWeight: '900', color: theme.colors.primaryStrong },
@@ -253,7 +266,7 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   meta: { fontSize: 12, color: theme.colors.primaryStrong, backgroundColor: theme.colors.secondary, paddingHorizontal: 8, paddingVertical: 5, borderRadius: theme.radii.sm },
   rating: { fontSize: 12, fontWeight: '700', color: theme.colors.inkMuted },
-  openText: { fontSize: 12, fontWeight: '900', color: theme.colors.primary },
+  openText: { fontSize: 13, fontWeight: '800', color: '#ffffff' },
   muted: { fontSize: 13, lineHeight: 19, color: theme.colors.inkMuted },
   error: { fontSize: 13, lineHeight: 19, color: '#a12626' },
   emptyCard: { padding: 18, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, gap: 6 },
