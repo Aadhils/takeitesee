@@ -1,5 +1,5 @@
 import { Link, Redirect } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -26,14 +26,19 @@ export default function MessagesScreen() {
   const [workspace, setWorkspace] = useState<MessageWorkspace>('customer');
   const [state, setState] = useState<InboxState>({ status: 'loading', conversations: [] });
 
+  const requestVersion = useRef(0);
+
   const load = useCallback(async () => {
     if (auth.status !== 'signedIn') return;
     const effectiveWorkspace = workspace === 'provider' && !providerAccess ? 'customer' : workspace;
-    setState((current) => ({ status: 'loading', conversations: current.conversations }));
+    const version = ++requestVersion.current;
+    setState({ status: 'loading', conversations: [] });
     try {
       const payload = await fetchMessageInbox(effectiveWorkspace);
+      if (version !== requestVersion.current) return;
       setState({ status: 'ready', conversations: payload.conversations ?? [] });
     } catch (error) {
+      if (version !== requestVersion.current) return;
       setState({
         status: 'error',
         conversations: [],
@@ -44,6 +49,7 @@ export default function MessagesScreen() {
 
   useEffect(() => {
     void load();
+    return () => { requestVersion.current += 1; };
   }, [load]);
 
   const unreadCount = useMemo(
@@ -65,6 +71,9 @@ export default function MessagesScreen() {
 
   const changeWorkspace = (next: MessageWorkspace) => {
     if (next === 'provider' && !providerAccess) return;
+    if (next === workspace) return;
+    requestVersion.current += 1;
+    setState({ status: 'loading', conversations: [] });
     setWorkspace(next);
   };
 
@@ -77,30 +86,30 @@ export default function MessagesScreen() {
             <View style={styles.headerCopy}>
               <Text style={styles.eyebrow}>MESSAGES</Text>
               <Text style={styles.title}>Marketplace conversations</Text>
-              <Text style={styles.description}>Threads stay scoped to the server-owned Customer or Provider workspace.</Text>
+              <Text style={styles.description}>View your conversations as a Customer or Provider.</Text>
             </View>
             <Text style={styles.count}>{unreadCount}</Text>
           </View>
 
           {providerAccess ? (
             <View style={styles.workspaceRow}>
-              <Pressable onPress={() => changeWorkspace('customer')} style={[styles.workspaceButton, workspace === 'customer' && styles.workspaceButtonActive]}>
+              <Pressable accessibilityRole="button" accessibilityState={{ selected: workspace === 'customer' }} onPress={() => changeWorkspace('customer')} style={[styles.workspaceButton, workspace === 'customer' && styles.workspaceButtonActive]}>
                 <Text style={[styles.workspaceText, workspace === 'customer' && styles.workspaceTextActive]}>Customer</Text>
               </Pressable>
-              <Pressable onPress={() => changeWorkspace('provider')} style={[styles.workspaceButton, workspace === 'provider' && styles.workspaceButtonActive]}>
+              <Pressable accessibilityRole="button" accessibilityState={{ selected: workspace === 'provider' }} onPress={() => changeWorkspace('provider')} style={[styles.workspaceButton, workspace === 'provider' && styles.workspaceButtonActive]}>
                 <Text style={[styles.workspaceText, workspace === 'provider' && styles.workspaceTextActive]}>Provider</Text>
               </Pressable>
             </View>
           ) : null}
 
           <View style={styles.actionRow}>
-            <Pressable onPress={() => void load()} style={styles.refreshButton}>
-              <Text style={styles.refreshText}>Refresh</Text>
+            <Pressable accessibilityRole="button" disabled={state.status === 'loading'} onPress={() => void load()} style={[styles.refreshButton, state.status === 'loading' && styles.disabled]}>
+              <Text style={styles.refreshText}>{state.status === 'loading' ? 'Loading…' : state.status === 'error' ? 'Try again' : 'Refresh'}</Text>
             </Pressable>
           </View>
 
           {state.status === 'loading' ? <View style={styles.inlineStatus}><ActivityIndicator /><Text style={styles.muted}>Loading conversations…</Text></View> : null}
-          {state.status === 'error' ? <Text style={styles.errorText}>{state.message}</Text> : null}
+          {state.status === 'error' ? <Text accessibilityRole="alert" style={styles.errorText}>{state.message}</Text> : null}
           {state.status === 'ready' && state.conversations.length === 0 ? (
             <View style={styles.card}><Text style={styles.cardTitle}>No conversations yet</Text><Text style={styles.muted}>Marketplace conversations will appear here when a workflow opens one.</Text></View>
           ) : null}
@@ -157,6 +166,7 @@ const styles = StyleSheet.create({
   workspaceText: { fontSize: 12, fontWeight: '800', color: '#555565' },
   workspaceTextActive: { color: '#fff' },
   actionRow: { flexDirection: 'row', justifyContent: 'flex-end' },
+  disabled: { opacity: 0.5 },
   refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: '#ededf4' },
   refreshText: { fontSize: 12, fontWeight: '800', color: '#3f3f58' },
   inlineStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
