@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import test from 'node:test';
+import { createHash } from 'node:crypto';
 
 const appConfig = JSON.parse(readFileSync(new URL('../app.json', import.meta.url), 'utf8'));
 const easConfig = JSON.parse(readFileSync(new URL('../eas.json', import.meta.url), 'utf8'));
@@ -98,7 +99,14 @@ test('Play Store listing source keeps external release blockers explicit', () =>
   assert.match(listing, /Android package: com\.uvmart\.takeitesee/);
   assert.match(listing, /store-assets\/takeitesee-play-icon-512\.png/);
   assert.equal(existsSync(new URL('../store-assets/takeitesee-play-icon-512.png', import.meta.url)), true);
-  assert.match(listing, /Feature graphic: still pending repository handoff/);
+  assert.match(listing, /store-assets\/takeitesee-feature-graphic-1024x500\.png/);
+  const graphic = readFileSync(new URL('../store-assets/takeitesee-feature-graphic-1024x500.png', import.meta.url));
+  assert.equal(createHash('sha256').update(graphic).digest('hex'), 'edb830ee302da38a1472dc61dedf47bc452b5cc7e04ad008b8640e74b866ce35');
+  assert.equal(graphic.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
+  assert.equal(graphic.readUInt32BE(16), 1024);
+  assert.equal(graphic.readUInt32BE(20), 500);
+  assert.equal(graphic[24], 8);
+  assert.equal(graphic[25], 2);
   assert.match(listing, /1024 × 500 px/);
   assert.match(listing, /Phone screenshots: still pending/);
   assert.match(listing, /Data safety answers checked against actual app code/);
