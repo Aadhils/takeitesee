@@ -10,6 +10,20 @@ import { useAuth } from '../providers/AuthProvider';
 
 const categoryColors = ['#F2EFFF', '#EAF4FF', '#E9F8F0', '#FFF2E6', '#FFEFF4', '#EDF2FF'];
 
+function categorySymbol(name: string) {
+  const value = name.toLowerCase();
+  if (/home|clean|repair|plumb/.test(value)) return '🏠';
+  if (/business|legal/.test(value)) return '💼';
+  if (/digital|tech|software|website/.test(value)) return '💻';
+  if (/vehicle|driver|auto/.test(value)) return '🚗';
+  if (/health|wellness|fitness/.test(value)) return '♥';
+  if (/education|learn|tuition/.test(value)) return '🎓';
+  if (/food|cater/.test(value)) return '🍴';
+  if (/travel|tour/.test(value)) return '✈';
+  if (/event|lifestyle/.test(value)) return '🎉';
+  return name.slice(0, 1).toUpperCase();
+}
+
 export default function HomeScreen() {
   const auth = useAuth();
   const router = useRouter();
@@ -63,7 +77,7 @@ export default function HomeScreen() {
         {loading ? <View style={styles.status}><ActivityIndicator color={theme.colors.primary} /><Text style={styles.description}>Loading services…</Text></View> : null}
         {error ? <View style={styles.emptyCard}><Text accessibilityRole="alert" style={styles.error}>{error}</Text><Pressable accessibilityRole="button" onPress={() => setAttempt((current) => current + 1)} style={styles.textButton}><Text style={styles.textAction}>Try again →</Text></Pressable></View> : null}
         {!loading && !error && marketplace?.categories.length === 0 ? <Text style={styles.description}>Browse Explore to discover available services.</Text> : null}
-        {!error ? <View style={styles.categoryGrid}>{marketplace?.categories.slice(0, 8).map((category, index) => <Pressable key={category.slug} accessibilityRole="button" onPress={() => search(category.name)} style={({ pressed }) => [styles.category, pressed && styles.pressed]}><View style={[styles.categoryIcon, { backgroundColor: categoryColors[index % categoryColors.length] }]}><Text style={styles.categoryInitial}>{category.name.slice(0, 1).toUpperCase()}</Text></View><Text numberOfLines={2} style={styles.categoryName}>{category.name}</Text></Pressable>)}</View> : null}
+        {!error ? <View style={styles.categoryGrid}>{marketplace?.categories.slice(0, 8).map((category, index) => <Pressable key={category.slug} accessibilityRole="button" onPress={() => search(category.name)} style={({ pressed }) => [styles.category, pressed && styles.pressed]}><View style={[styles.categoryIcon, { backgroundColor: categoryColors[index % categoryColors.length] }]}><Text style={styles.categoryInitial}>{categorySymbol(category.name)}</Text></View><Text numberOfLines={2} style={styles.categoryName}>{category.name}</Text></Pressable>)}</View> : null}
 
         <View style={styles.sectionHeading}><Text style={styles.sectionTitle}>Your service journey</Text></View>
         <Text style={styles.description}>Find services, manage bookings and keep up with your requests in one place.</Text>
