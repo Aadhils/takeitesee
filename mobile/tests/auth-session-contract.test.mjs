@@ -46,7 +46,7 @@ test('client does not invent customer or provider roles', () => {
   assert.ok(!home.includes('auth.identity.userId'));
   assert.ok(!home.includes('Server roles'));
   assert.ok(home.includes("roles.includes('professional')"));
-  assert.ok(nav.includes("roles.includes('business_owner')"));
+  assert.ok(home.includes("roles.includes('business_owner')"));
   assert.ok(providerScreen.includes("roles.includes('professional')"));
   assert.ok(providerScreen.includes("roles.includes('business_owner')"));
 });
