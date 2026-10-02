@@ -30,7 +30,7 @@ Full description:
 Do not upload the current rectangular bundled launcher logo as the final Play listing icon.
 
 - Play listing app icon: approved 512 × 512 px PNG is present at `store-assets/takeitesee-play-icon-512.png`.
-- Feature graphic: still pending repository handoff; required size is 1024 × 500 px, JPEG or 24-bit PNG without alpha.
+- Feature graphic: approved asset is present at `store-assets/takeitesee-feature-graphic-1024x500.png` (1024 × 500 px, RGB PNG without alpha). SHA-256: `edb830ee302da38a1472dc61dedf47bc452b5cc7e04ad008b8640e74b866ce35`.
 - Phone screenshots: still pending; capture only fresh real production/native screens and keep listing claims aligned with shipped functionality.
 
 ### Real native screenshot capture plan
