@@ -173,7 +173,7 @@ export default function BookServiceScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
-        <BrandLogo compact />
+        <View style={styles.brandRow}><BrandLogo compact /></View>
         <Link
           href={{ pathname: '/service/[serviceId]', params: { serviceId, providerType, providerId } }}
           style={styles.backLink}
@@ -189,7 +189,7 @@ export default function BookServiceScreen() {
         {ready ? (
           <>
             <View style={styles.headerCard}>
-              <Text style={styles.eyebrow}>DIRECT BOOKING</Text>
+              <Text style={styles.eyebrow}>BOOK A SERVICE</Text>
               <Text style={styles.title}>{ready.service.name}</Text>
               <Text style={styles.providerName}>{ready.provider.name}</Text>
               <View style={styles.metaRow}>
@@ -210,8 +210,9 @@ export default function BookServiceScreen() {
             ) : (
               <>
                 <View style={styles.card}>
+                  <Text style={styles.stepLabel}>STEP 1</Text>
                   <Text style={styles.sectionTitle}>Choose a date</Text>
-                  <Text style={styles.muted}>Only live server-generated availability can be selected.</Text>
+                  <Text style={styles.muted}>Choose from the provider’s available dates.</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dateRow}>
                     {ready.availability.days.map((day) => {
                       const count = day.slots.filter((slot) => slot.available).length;
@@ -219,6 +220,8 @@ export default function BookServiceScreen() {
                       return (
                         <Pressable
                           key={day.date}
+                          accessibilityRole="button"
+                          accessibilityState={{ selected, disabled: !count }}
                           disabled={!count}
                           onPress={() => { setSelectedDate(day.date); setSelectedTime(''); }}
                           style={[styles.dateChip, selected && styles.dateChipSelected, !count && styles.disabled]}
@@ -233,13 +236,17 @@ export default function BookServiceScreen() {
 
                 {selectedDay ? (
                   <View style={styles.card}>
+                    <Text style={styles.stepLabel}>STEP 2</Text>
                     <Text style={styles.sectionTitle}>Choose a time</Text>
+                    <Text style={styles.muted}>Times shown in {ready.availability.timezone}</Text>
                     <View style={styles.slotGrid}>
                       {selectedDay.slots.map((slot) => {
                         const selected = selectedTime === slot.time;
                         return (
                           <Pressable
                             key={slot.time}
+                            accessibilityRole="button"
+                            accessibilityState={{ selected, disabled: !slot.available }}
                             disabled={!slot.available}
                             onPress={() => setSelectedTime(slot.time)}
                             style={[styles.slotChip, selected && styles.slotSelected, !slot.available && styles.disabled]}
@@ -259,8 +266,15 @@ export default function BookServiceScreen() {
                   </Text>
                 </View>
 
-                {actionError ? <Text style={styles.errorText}>{actionError}</Text> : null}
+                <View style={styles.summaryCard}>
+                  <Text style={styles.sectionTitle}>Your selection</Text>
+                  <Text style={styles.summaryText}>{selectedDay?.label || 'Choose a date'} · {selectedTime || 'Choose a time'}</Text>
+                  <Text style={styles.muted}>{formatPublicServicePrice(ready.service)} · {ready.availability.duration_minutes} min</Text>
+                </View>
+                {actionError ? <Text accessibilityRole="alert" style={styles.errorText}>{actionError}</Text> : null}
                 <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: busy || !selectedDate || !selectedTime, busy }}
                   disabled={busy || !selectedDate || !selectedTime}
                   onPress={() => void submit()}
                   style={({ pressed }) => [styles.primaryButton, (pressed || busy || !selectedDate || !selectedTime) && styles.disabled]}
@@ -277,35 +291,39 @@ export default function BookServiceScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: theme.colors.canvas },
+  safeArea: { flex: 1, backgroundColor: '#ffffff' },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 20 },
   content: { padding: 18, gap: 12, paddingBottom: 34 },
+  brandRow: { alignItems: 'center' },
+  stepLabel: { fontSize: 11, fontWeight: '900', letterSpacing: 1, color: theme.colors.primary },
+  summaryCard: { padding: 17, gap: 8, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface },
+  summaryText: { fontSize: 15, lineHeight: 22, fontWeight: '800', color: theme.colors.primaryStrong },
   backLink: { fontSize: 13, fontWeight: '900', color: theme.colors.primary },
   inlineStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   headerCard: { gap: 8, padding: 18, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, ...cardShadow },
   eyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1.2, color: theme.colors.primary },
   title: { fontSize: 26, lineHeight: 32, fontWeight: '900', color: theme.colors.ink },
-  providerName: { fontSize: 14, fontWeight: '700', color: '#555565' },
+  providerName: { fontSize: 14, fontWeight: '700', color: theme.colors.inkMuted },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   meta: { fontSize: 11, color: theme.colors.primaryStrong, backgroundColor: theme.colors.secondary, paddingHorizontal: 9, paddingVertical: 6, borderRadius: theme.radii.sm },
   card: { gap: 12, padding: 17, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, ...cardShadow },
-  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#171721' },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: theme.colors.ink },
   dateRow: { gap: 8, paddingVertical: 2 },
-  dateChip: { width: 126, gap: 4, padding: 11, borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary },
+  dateChip: { minWidth: 126, minHeight: 64, gap: 4, padding: 11, borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary },
   dateChipSelected: { backgroundColor: theme.colors.primary },
-  dateLabel: { fontSize: 11, fontWeight: '800', color: '#444454' },
-  dateCount: { fontSize: 9, color: '#77778a' },
+  dateLabel: { fontSize: 13, fontWeight: '800', color: theme.colors.inkMuted },
+  dateCount: { fontSize: 11, color: theme.colors.inkMuted },
   slotGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  slotChip: { paddingHorizontal: 11, paddingVertical: 9, borderRadius: theme.radii.sm, backgroundColor: theme.colors.secondary },
+  slotChip: { minWidth: 76, minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14, paddingVertical: 10, borderRadius: theme.radii.sm, backgroundColor: theme.colors.secondary },
   slotSelected: { backgroundColor: theme.colors.primary },
-  slotText: { fontSize: 11, fontWeight: '700', color: '#444454' },
+  slotText: { fontSize: 14, fontWeight: '700', color: theme.colors.inkMuted },
   selectedText: { color: '#fff' },
   disabled: { opacity: 0.4 },
   infoCard: { gap: 6, padding: 15, borderRadius: theme.radii.lg, backgroundColor: theme.colors.secondary },
-  infoTitle: { fontSize: 13, fontWeight: '800', color: '#3d3d54' },
+  infoTitle: { fontSize: 13, fontWeight: '800', color: theme.colors.ink },
   requestLink: { marginTop: 6, fontSize: 13, fontWeight: '900', color: theme.colors.primary },
-  primaryButton: { alignItems: 'center', paddingVertical: 14, borderRadius: theme.radii.md, backgroundColor: theme.colors.primary, ...cardShadow },
+  primaryButton: { minHeight: 52, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 14, borderRadius: theme.radii.md, backgroundColor: theme.colors.primary, ...cardShadow },
   primaryButtonText: { color: '#fff', fontSize: 14, fontWeight: '800' },
-  muted: { fontSize: 13, lineHeight: 19, color: '#77778a' },
+  muted: { fontSize: 13, lineHeight: 19, color: theme.colors.inkMuted },
   errorText: { fontSize: 13, lineHeight: 19, color: '#8b3535' },
 });
