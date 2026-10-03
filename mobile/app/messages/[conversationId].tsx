@@ -24,6 +24,7 @@ import {
   type MessageRow,
   type MessageWorkspace,
 } from '../../lib/messages';
+import { theme } from '../../lib/theme';
 import { useAuth } from '../../providers/AuthProvider';
 
 type ThreadState =
@@ -138,7 +139,7 @@ export default function MessageThreadScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
-        <BrandLogo compact />
+        <View style={styles.brandRow}><BrandLogo compact /></View>
         <View style={styles.topRow}>
           <Link href={{ pathname: '/messages', params: { workspace } }} style={styles.backLink}>← Messages</Link>
           <Pressable accessibilityRole="button" disabled={sending || state.status === 'loading'} onPress={() => void load()} style={[styles.refreshButton, (sending || state.status === 'loading') && styles.disabled]}>
@@ -191,6 +192,7 @@ export default function MessageThreadScreen() {
             ) : (
               <View style={styles.composer}>
                 <TextInput
+                  accessibilityLabel="Message text"
                   value={draft}
                   onChangeText={setDraft}
                   placeholder="Write a message…"
@@ -202,7 +204,7 @@ export default function MessageThreadScreen() {
                 />
                 <View style={styles.composerFooter}>
                   <Text style={styles.helper}>{draft.trim().length}/2000</Text>
-                  <Pressable disabled={sending || !draft.trim()} onPress={() => void send()} style={[styles.sendButton, (sending || !draft.trim()) && styles.disabled]}>
+                  <Pressable accessibilityRole="button" disabled={sending || !draft.trim()} onPress={() => void send()} style={[styles.sendButton, (sending || !draft.trim()) && styles.disabled]}>
                     {sending ? <ActivityIndicator color="#fff" /> : <Text style={styles.sendText}>Send</Text>}
                   </Pressable>
                 </View>
@@ -216,39 +218,40 @@ export default function MessageThreadScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f7f7fb' },
+  safeArea: { flex: 1, backgroundColor: theme.colors.white },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 20 },
+  brandRow: { alignItems: 'center' },
   screen: { flex: 1, padding: 16, gap: 10 },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  backLink: { fontSize: 13, fontWeight: '800', color: '#30304a' },
-  refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: '#ededf4' },
-  refreshText: { fontSize: 12, fontWeight: '800', color: '#3f3f58' },
+  backLink: { fontSize: 13, fontWeight: '800', color: theme.colors.primaryStrong },
+  refreshButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: theme.colors.secondary },
+  refreshText: { fontSize: 12, fontWeight: '800', color: theme.colors.primaryStrong },
   inlineStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headerCard: { gap: 4, padding: 14, borderRadius: 14, backgroundColor: '#fff' },
-  eyebrow: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1.1, color: '#77778a' },
-  title: { fontSize: 20, lineHeight: 25, fontWeight: '800', color: '#171721' },
-  counterpart: { fontSize: 13, fontWeight: '800', color: '#444454' },
-  context: { fontSize: 12, lineHeight: 18, color: '#77778a' },
-  statusText: { fontSize: 11, fontWeight: '700', color: '#666678' },
+  headerCard: { borderWidth: 1, borderColor: theme.colors.border, gap: 4, padding: 14, borderRadius: 14, backgroundColor: '#fff' },
+  eyebrow: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1.1, color: theme.colors.inkMuted },
+  title: { fontSize: 20, lineHeight: 25, fontWeight: '800', color: theme.colors.ink },
+  counterpart: { fontSize: 13, fontWeight: '800', color: theme.colors.inkMuted },
+  context: { fontSize: 12, lineHeight: 18, color: theme.colors.inkMuted },
+  statusText: { fontSize: 11, fontWeight: '700', color: theme.colors.inkMuted },
   messageScroll: { flex: 1 },
   messageContent: { gap: 8, paddingVertical: 4 },
   messageBubble: { maxWidth: '86%', gap: 4, padding: 11, borderRadius: 13 },
-  mineBubble: { alignSelf: 'flex-end', backgroundColor: '#e8e8f2' },
-  theirBubble: { alignSelf: 'flex-start', backgroundColor: '#fff' },
-  sender: { fontSize: 10, fontWeight: '800', color: '#666678' },
-  messageBody: { fontSize: 14, lineHeight: 20, color: '#22222f' },
-  timestamp: { fontSize: 9, color: '#888899' },
+  mineBubble: { alignSelf: 'flex-end', backgroundColor: theme.colors.secondary },
+  theirBubble: { borderWidth: 1, borderColor: theme.colors.border, alignSelf: 'flex-start', backgroundColor: '#fff' },
+  sender: { fontSize: 10, fontWeight: '800', color: theme.colors.inkMuted },
+  messageBody: { fontSize: 14, lineHeight: 20, color: theme.colors.ink },
+  timestamp: { fontSize: 9, color: theme.colors.inkMuted },
   blockedCard: { gap: 4, padding: 13, borderRadius: 12, backgroundColor: '#fff0f0' },
   blockedTitle: { fontSize: 13, fontWeight: '800', color: '#8b3535' },
-  readOnlyCard: { gap: 4, padding: 13, borderRadius: 12, backgroundColor: '#f0f0f6' },
-  readOnlyTitle: { fontSize: 13, fontWeight: '800', color: '#3d3d54' },
-  composer: { gap: 8, padding: 12, borderRadius: 13, backgroundColor: '#fff' },
-  input: { minHeight: 78, maxHeight: 140, borderWidth: 1, borderColor: '#d9d9e3', borderRadius: 11, paddingHorizontal: 11, paddingVertical: 10, fontSize: 14, color: '#171721' },
+  readOnlyCard: { gap: 4, padding: 13, borderRadius: 12, backgroundColor: theme.colors.secondary },
+  readOnlyTitle: { fontSize: 13, fontWeight: '800', color: theme.colors.ink },
+  composer: { borderWidth: 1, borderColor: theme.colors.border, gap: 8, padding: 12, borderRadius: 13, backgroundColor: '#fff' },
+  input: { minHeight: 78, maxHeight: 140, borderWidth: 1, borderColor: theme.colors.border, borderRadius: 11, paddingHorizontal: 11, paddingVertical: 10, fontSize: 14, color: theme.colors.ink },
   composerFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  helper: { fontSize: 10, color: '#77778a' },
-  sendButton: { minWidth: 88, minHeight: 42, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14, borderRadius: 10, backgroundColor: '#30304a' },
+  helper: { fontSize: 10, color: theme.colors.inkMuted },
+  sendButton: { minWidth: 88, minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14, borderRadius: 10, backgroundColor: theme.colors.primary },
   sendText: { fontSize: 12, fontWeight: '800', color: '#fff' },
   disabled: { opacity: 0.45 },
-  muted: { fontSize: 13, lineHeight: 18, color: '#77778a' },
+  muted: { fontSize: 13, lineHeight: 18, color: theme.colors.inkMuted },
   errorText: { fontSize: 13, lineHeight: 19, color: '#8b3535' },
 });
