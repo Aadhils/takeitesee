@@ -18,6 +18,7 @@ import {
   type PublicProviderProfile,
   type PublicProviderType,
 } from '../../../lib/providers';
+import { theme } from '../../../lib/theme';
 
 function firstParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -51,6 +52,7 @@ export default function ProviderProfileScreen() {
       };
     }
 
+    setState({ status: 'loading' });
     fetchPublicProvider(providerType, providerId)
       .then(({ provider }) => {
         if (active) setState({ status: 'ready', provider });
@@ -71,9 +73,9 @@ export default function ProviderProfileScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
-        <BrandLogo compact />
+        <View style={styles.brandRow}><BrandLogo compact /></View>
         <Link href="/explore" asChild>
-          <Pressable style={styles.backButton}>
+          <Pressable accessibilityRole="button" style={styles.backButton}>
             <Text style={styles.backText}>‹ Back to Explore</Text>
           </Pressable>
         </Link>
@@ -98,8 +100,15 @@ export default function ProviderProfileScreen() {
               <Text style={styles.eyebrow}>
                 {state.provider.provider_type === 'business' ? 'BUSINESS PROVIDER' : 'PROFESSIONAL PROVIDER'}
               </Text>
-              <Text style={styles.title}>{state.provider.name}</Text>
-              {state.provider.location ? <Text style={styles.location}>{state.provider.location}</Text> : null}
+              <View style={styles.providerHeading}>
+                <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.providerVisual}>
+                  <Text style={styles.providerInitial}>{state.provider.name.trim().slice(0, 1).toUpperCase()}</Text>
+                </View>
+                <View style={styles.headingCopy}>
+                  <Text style={styles.title}>{state.provider.name}</Text>
+                  {state.provider.location ? <Text style={styles.location}>{state.provider.location}</Text> : null}
+                </View>
+              </View>
               {state.provider.description ? (
                 <Text style={styles.description}>{state.provider.description}</Text>
               ) : null}
@@ -121,14 +130,17 @@ export default function ProviderProfileScreen() {
                     }}
                     asChild
                   >
-                    <Pressable style={styles.serviceRow}>
+                    <Pressable accessibilityRole="button" accessibilityLabel={`View ${service.name}`} style={({ pressed }) => [styles.serviceRow, pressed && styles.pressed]}>
                       <View style={styles.serviceCopy}>
                         <Text style={styles.serviceName}>{service.name}</Text>
                         {service.description ? (
                           <Text style={styles.muted} numberOfLines={2}>{service.description}</Text>
                         ) : null}
                       </View>
-                      <Text style={styles.price}>{formatPublicServicePrice(service)}</Text>
+                      <View style={styles.serviceFooter}>
+                        <Text style={styles.price}>{formatPublicServicePrice(service)}</Text>
+                        <View style={styles.serviceAction}><Text style={styles.serviceActionText}>View service →</Text></View>
+                      </View>
                     </Pressable>
                   </Link>
                 ))
@@ -175,25 +187,34 @@ export default function ProviderProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f7f7fb' },
-  content: { padding: 18, gap: 14 },
-  backButton: { alignSelf: 'flex-start', paddingVertical: 7, paddingRight: 12 },
-  backText: { fontSize: 14, fontWeight: '700', color: '#42425f' },
+  safeArea: { flex: 1, backgroundColor: '#ffffff' },
+  content: { padding: 18, paddingBottom: 28, gap: 14 },
+  brandRow: { alignItems: 'center' },
+  providerHeading: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  headingCopy: { flex: 1, minWidth: 0, gap: 5 },
+  providerVisual: { width: 64, height: 72, borderRadius: 14, backgroundColor: theme.colors.secondary, alignItems: 'center', justifyContent: 'center' },
+  providerInitial: { fontSize: 30, fontWeight: '900', color: theme.colors.primaryStrong },
+  serviceFooter: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  serviceAction: { minHeight: 44, paddingHorizontal: 14, justifyContent: 'center', borderRadius: 10, backgroundColor: theme.colors.primary },
+  serviceActionText: { fontSize: 13, fontWeight: '800', color: '#ffffff' },
+  pressed: { opacity: 0.8 },
+  backButton: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingRight: 12 },
+  backText: { fontSize: 14, fontWeight: '700', color: theme.colors.primary },
   loadingCard: { padding: 20, borderRadius: 18, backgroundColor: '#fff', gap: 10, alignItems: 'center' },
   errorCard: { padding: 20, borderRadius: 18, backgroundColor: '#fff0f0', gap: 8 },
   errorTitle: { fontSize: 18, fontWeight: '800', color: '#7f2020' },
   errorText: { fontSize: 14, lineHeight: 20, color: '#8b3535' },
-  heroCard: { padding: 20, borderRadius: 20, backgroundColor: '#fff', gap: 8 },
-  eyebrow: { fontSize: 11, fontWeight: '800', letterSpacing: 1.4, color: '#666678' },
-  title: { fontSize: 28, lineHeight: 34, fontWeight: '800', color: '#171721' },
-  location: { fontSize: 14, fontWeight: '700', color: '#4d4d67' },
-  description: { fontSize: 15, lineHeight: 22, color: '#555565' },
-  card: { padding: 18, borderRadius: 18, backgroundColor: '#fff', gap: 10 },
-  cardTitle: { fontSize: 17, fontWeight: '800', color: '#171721' },
-  serviceRow: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#eeeeF4' },
-  serviceCopy: { flex: 1, gap: 4 },
-  serviceName: { fontSize: 15, fontWeight: '800', color: '#222235' },
-  price: { fontSize: 13, fontWeight: '800', color: '#44445d' },
-  infoText: { fontSize: 14, lineHeight: 20, color: '#44445d' },
-  muted: { fontSize: 13, lineHeight: 19, color: '#77778a' },
+  heroCard: { padding: 20, borderWidth: 1, borderColor: theme.colors.border, borderRadius: 20, backgroundColor: '#fff', gap: 8 },
+  eyebrow: { fontSize: 11, fontWeight: '800', letterSpacing: 1.4, color: theme.colors.primary },
+  title: { fontSize: 23, lineHeight: 29, fontWeight: '800', color: theme.colors.ink },
+  location: { fontSize: 14, fontWeight: '700', color: theme.colors.inkMuted },
+  description: { fontSize: 15, lineHeight: 22, color: theme.colors.inkMuted },
+  card: { padding: 18, borderWidth: 1, borderColor: theme.colors.border, borderRadius: 18, backgroundColor: '#fff', gap: 10 },
+  cardTitle: { fontSize: 17, fontWeight: '800', color: theme.colors.ink },
+  serviceRow: { gap: 12, paddingVertical: 14, borderTopWidth: 1, borderTopColor: theme.colors.border },
+  serviceCopy: { minWidth: 0, gap: 4 },
+  serviceName: { fontSize: 15, fontWeight: '800', color: theme.colors.ink },
+  price: { fontSize: 13, fontWeight: '800', color: theme.colors.inkMuted },
+  infoText: { fontSize: 14, lineHeight: 20, color: theme.colors.inkMuted },
+  muted: { fontSize: 13, lineHeight: 19, color: theme.colors.inkMuted },
 });
