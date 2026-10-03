@@ -51,7 +51,8 @@ test('Customer direct booking UI selects only live server-generated dates and sl
   assert.ok(bookingScreen.includes('disabled={!slot.available}'));
   assert.ok(bookingScreen.includes('setSelectedTime(slot.time)'));
   assert.ok(!bookingScreen.includes('TextInput'));
-  assert.ok(bookingScreen.includes('Only live server-generated availability can be selected.'));
+  assert.ok(bookingScreen.includes('Times shown in {ready.availability.timezone}'));
+  assert.ok(bookingScreen.includes("setSelectedDate(day.date); setSelectedTime('');"));
 });
 
 test('existing server remains authoritative for availability, ownership, canonical service data and conflicts', () => {
