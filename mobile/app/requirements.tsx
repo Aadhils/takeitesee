@@ -80,11 +80,11 @@ export default function RequirementsScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
-        <BrandLogo compact />
+        <View style={styles.brandRow}><BrandLogo compact /></View>
         <View style={styles.headerRow}>
           <View style={styles.headerCopy}>
             <Text style={styles.eyebrow}>MY REQUESTS</Text>
-            <Text style={styles.title}>Requirements</Text>
+            <Text style={styles.title}>My service requests</Text>
             <Text style={styles.description}>
               Track your service requests and Provider proposals in one place.
             </Text>
@@ -92,14 +92,15 @@ export default function RequirementsScreen() {
           <Pressable
             accessibilityRole="button"
             onPress={() => setRefreshKey((value) => value + 1)}
-            style={styles.refreshButton}
+            disabled={state.status === 'loading'}
+            style={[styles.refreshButton, state.status === 'loading' && styles.disabled]}
           >
             <Text style={styles.refreshText}>Refresh</Text>
           </Pressable>
         </View>
 
         <Link href="/request-service" asChild>
-          <Pressable style={styles.newButton}>
+          <Pressable accessibilityRole="button" style={styles.newButton}>
             <Text style={styles.newButtonText}>+ Post a requirement</Text>
           </Pressable>
         </Link>
@@ -152,15 +153,16 @@ function RequirementCard({ requirement }: { requirement: CustomerRequirementSumm
       href={{ pathname: '/requirements/[requirementId]', params: { requirementId: requirement.id } }}
       asChild
     >
-      <Pressable style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
+      <Pressable accessibilityRole="button" accessibilityLabel={`View request ${requirement.title}`} style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
         <View style={styles.cardHeader}>
           <View style={styles.cardTitleWrap}>
             <Text style={styles.reference}>{requirement.reference}</Text>
             <Text style={styles.cardTitle}>{requirement.title}</Text>
           </View>
-          <Text style={styles.status}>{requirement.status}</Text>
+          
         </View>
 
+        <Text style={styles.status}>{requirement.status}</Text>
         {requirement.description ? (
           <Text style={styles.cardDescription} numberOfLines={2}>{requirement.description}</Text>
         ) : null}
@@ -176,21 +178,26 @@ function RequirementCard({ requirement }: { requirement: CustomerRequirementSumm
           <Text style={styles.proposalText}>{proposals} active proposal{proposals === 1 ? '' : 's'}</Text>
           {unread > 0 ? <Text style={styles.unread}>{unread} new</Text> : null}
         </View>
+        <View style={styles.openAction}><Text style={styles.openText}>View request →</Text></View>
       </Pressable>
     </Link>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: theme.colors.canvas },
+  safeArea: { flex: 1, backgroundColor: theme.colors.white },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   screen: { flex: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 10, gap: 12 },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  headerCopy: { flex: 1, gap: 5 },
+  headerCopy: { flex: 1, minWidth: 0, gap: 5 },
   eyebrow: { fontSize: 11, fontWeight: '900', letterSpacing: 1.5, color: theme.colors.primary },
   title: { fontSize: 28, lineHeight: 34, fontWeight: '900', color: theme.colors.ink },
   description: { fontSize: 14, lineHeight: 20, color: theme.colors.inkMuted },
-  refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary },
+  brandRow: { alignItems: 'center', paddingBottom: 6 },
+  disabled: { opacity: 0.5 },
+  openAction: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingHorizontal: 16, borderRadius: 10, backgroundColor: theme.colors.primary },
+  openText: { fontSize: 13, fontWeight: '800', color: theme.colors.white },
+  refreshButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 9, borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary },
   refreshText: { fontSize: 12, fontWeight: '900', color: theme.colors.primaryStrong },
   newButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: theme.radii.md, backgroundColor: theme.colors.primary, ...cardShadow },
   newButtonText: { color: '#fff', fontSize: 14, fontWeight: '800' },
@@ -201,17 +208,17 @@ const styles = StyleSheet.create({
   card: { gap: 10, padding: 16, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, ...cardShadow },
   cardPressed: { opacity: 0.82 },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
-  cardTitleWrap: { flex: 1, gap: 3 },
-  reference: { fontSize: 10, fontWeight: '800', letterSpacing: 0.7, color: '#77778a' },
-  cardTitle: { fontSize: 17, fontWeight: '800', color: '#171721' },
-  status: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase', color: '#4b4b65', backgroundColor: '#efeff5', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
-  cardDescription: { fontSize: 13, lineHeight: 19, color: '#5c5c70' },
+  cardTitleWrap: { flex: 1, minWidth: 0, gap: 3 },
+  reference: { fontSize: 10, fontWeight: '800', letterSpacing: 0.7, color: theme.colors.inkMuted },
+  cardTitle: { fontSize: 17, fontWeight: '800', color: theme.colors.ink },
+  status: { alignSelf: 'flex-start', fontSize: 12, fontWeight: '800', textTransform: 'uppercase', color: theme.colors.primaryStrong, backgroundColor: theme.colors.secondary, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
+  cardDescription: { fontSize: 13, lineHeight: 19, color: theme.colors.inkMuted },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  meta: { fontSize: 11, color: '#555565', backgroundColor: '#f3f3f7', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
-  proposalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  proposalText: { fontSize: 12, fontWeight: '700', color: '#555565' },
+  meta: { fontSize: 11, color: theme.colors.inkMuted, backgroundColor: theme.colors.secondary, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
+  proposalRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  proposalText: { fontSize: 12, fontWeight: '700', color: theme.colors.inkMuted },
   unread: { fontSize: 11, fontWeight: '900', color: theme.colors.white, backgroundColor: theme.colors.primary, paddingHorizontal: 8, paddingVertical: 5, borderRadius: theme.radii.pill },
   emptyCard: { padding: 18, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, gap: 6, ...cardShadow },
-  muted: { fontSize: 13, lineHeight: 19, color: '#77778a' },
+  muted: { fontSize: 13, lineHeight: 19, color: theme.colors.inkMuted },
   error: { fontSize: 13, lineHeight: 19, color: '#a12626' },
 });
