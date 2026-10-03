@@ -59,17 +59,17 @@ export default function CustomerBookingsScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
-        <BrandLogo compact />
+        <View style={styles.brandRow}><BrandLogo compact /></View>
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.headerRow}>
             <View style={styles.headerCopy}>
               <Text style={styles.eyebrow}>MY BOOKINGS</Text>
-              <Text style={styles.title}>Service journey</Text>
+              <Text style={styles.title}>My bookings</Text>
               <Text style={styles.description}>
-                Review your marketplace service bookings and current status.
+                Your service dates, providers and latest booking status.
               </Text>
             </View>
-            <Pressable onPress={() => void load()} style={styles.refreshButton}>
+            <Pressable accessibilityRole="button" disabled={state.status === 'loading'} onPress={() => void load()} style={[styles.refreshButton, state.status === 'loading' && styles.disabled]}>
               <Text style={styles.refreshText}>Refresh</Text>
             </Pressable>
           </View>
@@ -80,7 +80,7 @@ export default function CustomerBookingsScreen() {
               <Text style={styles.muted}>Loading bookings…</Text>
             </View>
           ) : null}
-          {state.status === 'error' ? <Text style={styles.errorText}>{state.message}</Text> : null}
+          {state.status === 'error' ? <Text accessibilityRole="alert" style={styles.errorText}>{state.message}</Text> : null}
 
           {state.status === 'ready' && state.bookings.length === 0 ? (
             <View style={styles.card}>
@@ -96,14 +96,15 @@ export default function CustomerBookingsScreen() {
               href={{ pathname: '/bookings/[bookingId]', params: { bookingId: booking.id } }}
               asChild
             >
-              <Pressable style={styles.card}>
+              <Pressable accessibilityRole="button" accessibilityLabel={`View booking for ${booking.service_name}`} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
                 <View style={styles.cardHeader}>
                   <View style={styles.cardTitleWrap}>
                     <Text style={styles.reference}>{booking.booking_reference}</Text>
                     <Text style={styles.cardTitle}>{booking.service_name}</Text>
                   </View>
-                  <Text style={styles.statusBadge}>{formatBookingStatus(booking.status)}</Text>
+                  
                 </View>
+                <Text style={styles.statusBadge}>{formatBookingStatus(booking.status)}</Text>
                 <Text style={styles.detail}>
                   {booking.provider_name || (booking.provider.provider_type === 'business' ? 'Business provider' : 'Professional provider')}
                 </Text>
@@ -115,7 +116,7 @@ export default function CustomerBookingsScreen() {
                 {booking.attendance_outcome && booking.attendance_outcome !== 'pending' ? (
                   <Text style={styles.attendance}>Attendance: {formatBookingStatus(booking.attendance_outcome)}</Text>
                 ) : null}
-                <Text style={styles.openText}>View booking →</Text>
+                <View style={styles.openAction}><Text style={styles.openText}>View booking →</Text></View>
               </Pressable>
             </Link>
           ))}
@@ -127,31 +128,35 @@ export default function CustomerBookingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: theme.colors.canvas },
+  safeArea: { flex: 1, backgroundColor: theme.colors.white },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   screen: { flex: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 10, gap: 10 },
   content: { gap: 12, paddingBottom: 8 },
+  brandRow: { alignItems: 'center', paddingBottom: 6 },
+  pressed: { opacity: 0.8 },
+  disabled: { opacity: 0.5 },
+  openAction: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingHorizontal: 16, borderRadius: 10, backgroundColor: theme.colors.primary },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  headerCopy: { flex: 1, gap: 5 },
+  headerCopy: { flex: 1, minWidth: 0, gap: 5 },
   eyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1.4, color: theme.colors.primary },
   title: { fontSize: 28, lineHeight: 34, fontWeight: '900', color: theme.colors.ink },
   description: { fontSize: 14, lineHeight: 20, color: theme.colors.inkMuted },
-  refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary },
+  refreshButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 9, borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary },
   refreshText: { fontSize: 12, fontWeight: '900', color: theme.colors.primaryStrong },
   readOnlyCard: { gap: 4, padding: 14, borderRadius: 14, backgroundColor: '#f0f0f6' },
   readOnlyTitle: { fontSize: 13, fontWeight: '800', color: '#3d3d54' },
   inlineStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   card: { gap: 10, padding: 16, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, ...cardShadow },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
-  cardTitleWrap: { flex: 1, gap: 3 },
+  cardTitleWrap: { flex: 1, minWidth: 0, gap: 3 },
   reference: { fontSize: 10, fontWeight: '900', letterSpacing: 0.7, color: theme.colors.primary },
   cardTitle: { fontSize: 17, fontWeight: '900', color: theme.colors.ink },
-  statusBadge: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase', color: theme.colors.primaryStrong, backgroundColor: theme.colors.secondary, paddingHorizontal: 8, paddingVertical: 5, borderRadius: theme.radii.sm },
+  statusBadge: { alignSelf: 'flex-start', fontSize: 12, fontWeight: '900', textTransform: 'uppercase', color: theme.colors.primaryStrong, backgroundColor: theme.colors.secondary, paddingHorizontal: 8, paddingVertical: 5, borderRadius: theme.radii.sm },
   detail: { fontSize: 13, lineHeight: 19, color: theme.colors.inkMuted },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   meta: { fontSize: 11, fontWeight: '700', color: theme.colors.primaryStrong, backgroundColor: theme.colors.secondary, paddingHorizontal: 8, paddingVertical: 5, borderRadius: theme.radii.sm },
   attendance: { fontSize: 12, fontWeight: '700', color: '#285c33' },
-  openText: { fontSize: 12, fontWeight: '900', color: theme.colors.primary },
+  openText: { fontSize: 13, fontWeight: '800', color: theme.colors.white },
   primaryLink: { alignSelf: 'flex-start', marginTop: 2, paddingVertical: 9, paddingHorizontal: 12, borderRadius: theme.radii.md, backgroundColor: theme.colors.primary, color: theme.colors.white, fontWeight: '900' },
   muted: { fontSize: 13, lineHeight: 18, color: theme.colors.inkMuted },
   errorText: { fontSize: 13, lineHeight: 19, color: '#8b3535' },

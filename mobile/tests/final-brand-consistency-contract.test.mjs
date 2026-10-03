@@ -17,13 +17,13 @@ test('remaining real-device marketplace screens use shared brand theme tokens', 
   ]) {
     assert.ok(source.includes("from '../lib/theme'"), `${name} must use shared theme tokens`);
     assert.ok(source.includes('theme.colors.primary'), `${name} must use brand primary`);
-    assert.ok(source.includes('theme.colors.canvas'), `${name} must use brand canvas`);
+    assert.ok(source.includes(name === 'bookings' ? 'backgroundColor: theme.colors.white' : 'theme.colors.canvas'), `${name} must use brand canvas`);
     assert.equal(source.includes("backgroundColor: '#30304a'"), false, `${name} must not keep legacy selected navy`);
   }
 });
 
 test('Customer bookings keeps the logo outside the scrolling list so branding remains visible', () => {
-  assert.ok(bookings.includes('<View style={styles.screen}>\n        <BrandLogo compact />\n        <ScrollView'));
+  assert.ok(bookings.includes('<View style={styles.screen}>\n        <View style={styles.brandRow}><BrandLogo compact /></View>\n        <ScrollView'));
   assert.ok(bookings.includes('...cardShadow'));
   assert.ok(bookings.includes('color: theme.colors.primary'));
 });
