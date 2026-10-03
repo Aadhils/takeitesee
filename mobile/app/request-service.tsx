@@ -19,6 +19,7 @@ import {
   type CreatedRequirement,
   type RequirementCatalog,
 } from '../lib/requirements';
+import { theme } from '../lib/theme';
 import { useAuth } from '../providers/AuthProvider';
 
 function firstParam(value: string | string[] | undefined) {
@@ -113,6 +114,7 @@ export default function RequestServiceScreen() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.centeredCardWrap}>
+          <View style={styles.brandRow}><BrandLogo compact /></View>
           <View style={styles.card}>
             <Text style={styles.eyebrow}>CUSTOMER REQUEST</Text>
             <Text style={styles.title}>Sign in to post a requirement</Text>
@@ -158,7 +160,7 @@ export default function RequestServiceScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <BrandLogo compact />
+        <View style={styles.brandRow}><BrandLogo compact /></View>
         <Link href="/explore" asChild>
           <Pressable style={styles.backButton}>
             <Text style={styles.backText}>‹ Back to Explore</Text>
@@ -175,10 +177,11 @@ export default function RequestServiceScreen() {
 
         <View style={styles.card}>
           <Text style={styles.label}>Title</Text>
-          <TextInput value={title} onChangeText={setTitle} style={styles.input} placeholder="What service do you need?" />
+          <TextInput accessibilityLabel="Request title" value={title} onChangeText={setTitle} style={styles.input} placeholder="What service do you need?" />
 
           <Text style={styles.label}>Description</Text>
           <TextInput
+            accessibilityLabel="Request description"
             value={description}
             onChangeText={setDescription}
             style={[styles.input, styles.multiline]}
@@ -195,6 +198,8 @@ export default function RequestServiceScreen() {
             {(catalog?.categories ?? []).map((item) => (
               <Pressable
                 key={item.id}
+                accessibilityRole="button"
+                accessibilityState={{ selected: categoryId === item.id }}
                 onPress={() => setCategoryId(item.id)}
                 style={[styles.chip, categoryId === item.id && styles.chipSelected]}
               >
@@ -210,6 +215,8 @@ export default function RequestServiceScreen() {
             {(catalog?.locations ?? []).map((item) => (
               <Pressable
                 key={item.id}
+                accessibilityRole="button"
+                accessibilityState={{ selected: locationId === item.id }}
                 onPress={() => setLocationId(item.id)}
                 style={[styles.chip, locationId === item.id && styles.chipSelected]}
               >
@@ -239,34 +246,35 @@ export default function RequestServiceScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f7f7fb' },
+  safeArea: { flex: 1, backgroundColor: theme.colors.white },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
-  centeredCardWrap: { flex: 1, justifyContent: 'center', padding: 20 },
-  content: { padding: 18, gap: 14 },
+  centeredCardWrap: { flex: 1, justifyContent: 'center', padding: 20, gap: 18 },
+  brandRow: { alignItems: 'center' },
+  content: { padding: 18, paddingBottom: 32, gap: 14 },
   backButton: { alignSelf: 'flex-start', paddingVertical: 7, paddingRight: 12 },
-  backText: { fontSize: 14, fontWeight: '700', color: '#42425f' },
+  backText: { fontSize: 14, fontWeight: '700', color: theme.colors.primaryStrong },
   header: { gap: 7 },
-  eyebrow: { fontSize: 11, fontWeight: '800', letterSpacing: 1.4, color: '#666678' },
-  title: { fontSize: 27, lineHeight: 33, fontWeight: '800', color: '#171721' },
-  description: { fontSize: 14, lineHeight: 21, color: '#666678' },
-  card: { padding: 18, borderRadius: 18, backgroundColor: '#fff', gap: 10 },
+  eyebrow: { fontSize: 11, fontWeight: '800', letterSpacing: 1.4, color: theme.colors.inkMuted },
+  title: { fontSize: 27, lineHeight: 33, fontWeight: '800', color: theme.colors.ink },
+  description: { fontSize: 14, lineHeight: 21, color: theme.colors.inkMuted },
+  card: { borderWidth: 1, borderColor: theme.colors.border, padding: 18, borderRadius: 18, backgroundColor: '#fff', gap: 10 },
   successCard: { padding: 20, borderRadius: 20, backgroundColor: '#fff', gap: 12 },
-  cardTitle: { fontSize: 16, fontWeight: '800', color: '#171721' },
-  label: { fontSize: 13, fontWeight: '700', color: '#44445d' },
-  input: { minHeight: 48, borderWidth: 1, borderColor: '#d9d9e3', borderRadius: 12, paddingHorizontal: 13, paddingVertical: 10, fontSize: 15, color: '#171721', backgroundColor: '#fff' },
+  cardTitle: { fontSize: 16, fontWeight: '800', color: theme.colors.ink },
+  label: { fontSize: 13, fontWeight: '700', color: theme.colors.inkMuted },
+  input: { minHeight: 48, borderWidth: 1, borderColor: theme.colors.border, borderRadius: 12, paddingHorizontal: 13, paddingVertical: 10, fontSize: 15, color: theme.colors.ink, backgroundColor: '#fff' },
   multiline: { minHeight: 118 },
   chips: { gap: 8, paddingVertical: 2 },
-  chip: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 999, backgroundColor: '#efeff5' },
-  chipSelected: { backgroundColor: '#30304a' },
-  chipText: { fontSize: 13, fontWeight: '700', color: '#4b4b65' },
+  chip: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 9, borderRadius: 999, backgroundColor: theme.colors.secondary },
+  chipSelected: { backgroundColor: theme.colors.primary },
+  chipText: { fontSize: 13, fontWeight: '700', color: theme.colors.primaryStrong },
   chipTextSelected: { color: '#fff' },
-  primaryButton: { minHeight: 50, justifyContent: 'center', alignItems: 'center', borderRadius: 12, backgroundColor: '#30304a', paddingHorizontal: 18 },
+  primaryButton: { minHeight: 50, justifyContent: 'center', alignItems: 'center', borderRadius: 12, backgroundColor: theme.colors.primary, paddingHorizontal: 18 },
   primaryButtonText: { color: '#fff', fontSize: 15, fontWeight: '800' },
-  secondaryButton: { minHeight: 48, justifyContent: 'center', alignItems: 'center', borderRadius: 12, backgroundColor: '#ededf4' },
-  secondaryButtonText: { color: '#30304a', fontSize: 14, fontWeight: '800' },
+  secondaryButton: { minHeight: 48, justifyContent: 'center', alignItems: 'center', borderRadius: 12, backgroundColor: theme.colors.secondary },
+  secondaryButtonText: { color: theme.colors.primaryStrong, fontSize: 14, fontWeight: '800' },
   buttonPressed: { opacity: 0.82 },
   buttonDisabled: { opacity: 0.45 },
-  reference: { fontSize: 14, fontWeight: '800', color: '#3f3f58' },
-  muted: { fontSize: 13, lineHeight: 19, color: '#77778a' },
+  reference: { fontSize: 14, fontWeight: '800', color: theme.colors.primaryStrong },
+  muted: { fontSize: 13, lineHeight: 19, color: theme.colors.inkMuted },
   error: { fontSize: 13, lineHeight: 19, color: '#a12626' },
 });
