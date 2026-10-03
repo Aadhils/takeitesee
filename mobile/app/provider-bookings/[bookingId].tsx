@@ -15,6 +15,7 @@ import {
   type ProviderBooking,
   type ProviderBookingAction,
 } from '../../lib/bookings';
+import { theme } from '../../lib/theme';
 import { useAuth } from '../../providers/AuthProvider';
 
 type DetailState =
@@ -127,10 +128,10 @@ export default function ProviderBookingDetailScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <BrandLogo compact />
+        <View style={styles.brandRow}><BrandLogo compact /></View>
         <View style={styles.topRow}>
           <Link href="/provider-bookings" style={styles.backLink}>← Provider bookings</Link>
-          <Pressable onPress={() => void load()} style={styles.refreshButton}>
+          <Pressable accessibilityRole="button" disabled={state.status === 'loading' || !!busyAction || attendanceBusy} onPress={() => void load()} style={[styles.refreshButton, (state.status === 'loading' || !!busyAction || attendanceBusy) && styles.disabled]}>
             <Text style={styles.refreshText}>Refresh</Text>
           </Pressable>
         </View>
@@ -151,8 +152,9 @@ export default function ProviderBookingDetailScreen() {
                   <Text style={styles.eyebrow}>{booking.booking_reference}</Text>
                   <Text style={styles.title}>{booking.service_name}</Text>
                 </View>
-                <Text style={styles.statusBadge}>{formatBookingStatus(booking.status)}</Text>
+                
               </View>
+              <Text style={styles.statusBadge}>{formatBookingStatus(booking.status)}</Text>
               <Text style={styles.description}>{booking.provider_name} · {booking.provider_type}</Text>
             </View>
 
@@ -178,6 +180,7 @@ export default function ProviderBookingDetailScreen() {
                 </Text>
 
                 <Pressable
+                  accessibilityRole="button"
                   disabled={busyAction !== null || attendanceBusy}
                   onPress={() => void submitAction('accept')}
                   style={({ pressed }) => [styles.acceptButton, pressed && styles.pressed, (busyAction !== null || attendanceBusy) && styles.disabled]}
@@ -195,6 +198,7 @@ export default function ProviderBookingDetailScreen() {
                     editable={busyAction === null && !attendanceBusy}
                     maxLength={500}
                     multiline
+                    accessibilityLabel="Decline reason"
                     onChangeText={setDeclineReason}
                     placeholder="Tell the customer why you cannot take this booking"
                     style={styles.input}
@@ -202,6 +206,7 @@ export default function ProviderBookingDetailScreen() {
                   />
                   <Text style={styles.counter}>{declineReason.trim().length}/500</Text>
                   <Pressable
+                  accessibilityRole="button"
                     disabled={busyAction !== null || attendanceBusy || declineReason.trim().length < 3}
                     onPress={() => void submitAction('decline')}
                     style={({ pressed }) => [
@@ -232,6 +237,7 @@ export default function ProviderBookingDetailScreen() {
                     editable={!attendanceBusy && busyAction === null}
                     maxLength={1000}
                     multiline
+                    accessibilityLabel="Optional attendance note"
                     onChangeText={setNoShowNote}
                     placeholder="Add factual details that may help if the customer disputes the report"
                     style={styles.input}
@@ -242,6 +248,7 @@ export default function ProviderBookingDetailScreen() {
 
                 {!attendanceConfirmOpen ? (
                   <Pressable
+                  accessibilityRole="button"
                     disabled={attendanceBusy || busyAction !== null}
                     onPress={() => {
                       setAttendanceError('');
@@ -262,6 +269,7 @@ export default function ProviderBookingDetailScreen() {
                     </Text>
                     <View style={styles.confirmActions}>
                       <Pressable
+                  accessibilityRole="button"
                         disabled={attendanceBusy || busyAction !== null}
                         onPress={() => void submitCustomerNoShow()}
                         style={({ pressed }) => [
@@ -274,6 +282,7 @@ export default function ProviderBookingDetailScreen() {
                         <Text style={styles.reportButtonText}>{attendanceBusy ? 'Reporting…' : 'Confirm no-show'}</Text>
                       </Pressable>
                       <Pressable
+                  accessibilityRole="button"
                         disabled={attendanceBusy}
                         onPress={() => setAttendanceConfirmOpen(false)}
                         style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed, attendanceBusy && styles.disabled]}
@@ -337,52 +346,53 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f7f7fb' },
+  safeArea: { flex: 1, backgroundColor: theme.colors.white },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 20 },
+  brandRow: { alignItems: 'center' },
   content: { padding: 18, gap: 12, paddingBottom: 28 },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  backLink: { fontSize: 13, fontWeight: '800', color: '#30304a' },
-  refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: '#ededf4' },
-  refreshText: { fontSize: 12, fontWeight: '800', color: '#3f3f58' },
+  backLink: { fontSize: 13, fontWeight: '800', color: theme.colors.primaryStrong },
+  refreshButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: theme.colors.secondary },
+  refreshText: { fontSize: 12, fontWeight: '800', color: theme.colors.primaryStrong },
   inlineStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  card: { gap: 12, padding: 17, borderRadius: 17, backgroundColor: '#fff' },
+  card: { borderWidth: 1, borderColor: theme.colors.border, gap: 12, padding: 17, borderRadius: 17, backgroundColor: '#fff' },
   actionCard: { gap: 12, padding: 17, borderRadius: 17, backgroundColor: '#fff7e8' },
   attendanceCard: { gap: 12, padding: 17, borderRadius: 17, backgroundColor: '#eef7f2' },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
-  cardTitleWrap: { flex: 1, gap: 4 },
-  eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.1, color: '#77778a', textTransform: 'uppercase' },
-  title: { fontSize: 24, lineHeight: 30, fontWeight: '800', color: '#171721' },
-  description: { fontSize: 14, lineHeight: 20, color: '#555565' },
-  statusBadge: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase', color: '#4b4b65', backgroundColor: '#efeff5', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
-  sectionTitle: { fontSize: 17, fontWeight: '800', color: '#171721' },
+  cardTitleWrap: { flex: 1, minWidth: 0, gap: 4 },
+  eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.1, color: theme.colors.inkMuted, textTransform: 'uppercase' },
+  title: { fontSize: 24, lineHeight: 30, fontWeight: '800', color: theme.colors.ink },
+  description: { fontSize: 14, lineHeight: 20, color: theme.colors.inkMuted },
+  statusBadge: { alignSelf: 'flex-start', fontSize: 12, fontWeight: '800', textTransform: 'uppercase', color: theme.colors.primaryStrong, backgroundColor: theme.colors.secondary, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
+  sectionTitle: { fontSize: 17, fontWeight: '800', color: theme.colors.ink },
   detailRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 },
-  detailLabel: { flex: 1, fontSize: 12, color: '#77778a' },
-  detailValue: { flex: 1.3, fontSize: 13, fontWeight: '700', textAlign: 'right', color: '#333342' },
-  acceptButton: { alignItems: 'center', paddingHorizontal: 14, paddingVertical: 13, borderRadius: 12, backgroundColor: '#1f6b45' },
+  detailLabel: { flex: 1, fontSize: 12, color: theme.colors.inkMuted },
+  detailValue: { flex: 1.3, fontSize: 13, fontWeight: '700', textAlign: 'right', color: theme.colors.ink },
+  acceptButton: { minHeight: 48, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 13, borderRadius: 12, backgroundColor: theme.colors.primary },
   acceptButtonText: { fontSize: 13, fontWeight: '800', color: '#fff' },
   declineBox: { gap: 8, paddingTop: 4 },
-  fieldLabel: { fontSize: 12, fontWeight: '800', color: '#3d3d54' },
-  input: { minHeight: 86, padding: 12, borderWidth: 1, borderColor: '#d9d9e3', borderRadius: 12, backgroundColor: '#fff', color: '#171721', textAlignVertical: 'top' },
-  counter: { alignSelf: 'flex-end', fontSize: 11, color: '#77778a' },
+  fieldLabel: { fontSize: 12, fontWeight: '800', color: theme.colors.ink },
+  input: { minHeight: 86, padding: 12, borderWidth: 1, borderColor: theme.colors.border, borderRadius: 12, backgroundColor: '#fff', color: theme.colors.ink, textAlignVertical: 'top' },
+  counter: { alignSelf: 'flex-end', fontSize: 11, color: theme.colors.inkMuted },
   declineButton: { alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: '#9a3d3d', backgroundColor: '#fff' },
   declineButtonText: { fontSize: 13, fontWeight: '800', color: '#8b3535' },
   reportButton: { alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, backgroundColor: '#7a3b2e' },
   reportButtonText: { fontSize: 13, fontWeight: '800', color: '#fff' },
   confirmBox: { gap: 10, padding: 12, borderRadius: 12, backgroundColor: '#fff' },
-  confirmText: { fontSize: 12, lineHeight: 18, color: '#4f4f61' },
+  confirmText: { fontSize: 12, lineHeight: 18, color: theme.colors.inkMuted },
   confirmActions: { gap: 8 },
   confirmPrimary: { flex: 1 },
   secondaryButton: { alignItems: 'center', paddingHorizontal: 14, paddingVertical: 11, borderRadius: 12, borderWidth: 1, borderColor: '#c8c8d3', backgroundColor: '#fff' },
-  secondaryButtonText: { fontSize: 13, fontWeight: '800', color: '#4f4f61' },
+  secondaryButtonText: { fontSize: 13, fontWeight: '800', color: theme.colors.inkMuted },
   pressed: { opacity: 0.82 },
   disabled: { opacity: 0.45 },
   historyRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  historyDot: { width: 9, height: 9, marginTop: 5, borderRadius: 999, backgroundColor: '#30304a' },
+  historyDot: { width: 9, height: 9, marginTop: 5, borderRadius: 999, backgroundColor: theme.colors.primary },
   historyCopy: { flex: 1, gap: 2 },
-  historyTitle: { fontSize: 13, fontWeight: '800', color: '#333342' },
-  historyReason: { fontSize: 12, lineHeight: 18, color: '#555565' },
-  readOnlyCard: { gap: 4, padding: 14, borderRadius: 14, backgroundColor: '#f0f0f6' },
-  readOnlyTitle: { fontSize: 13, fontWeight: '800', color: '#3d3d54' },
-  muted: { fontSize: 13, lineHeight: 18, color: '#77778a' },
+  historyTitle: { fontSize: 13, fontWeight: '800', color: theme.colors.ink },
+  historyReason: { fontSize: 12, lineHeight: 18, color: theme.colors.inkMuted },
+  readOnlyCard: { gap: 4, padding: 14, borderRadius: 14, backgroundColor: theme.colors.secondary },
+  readOnlyTitle: { fontSize: 13, fontWeight: '800', color: theme.colors.ink },
+  muted: { fontSize: 13, lineHeight: 18, color: theme.colors.inkMuted },
   errorText: { fontSize: 13, lineHeight: 19, color: '#8b3535' },
 });
