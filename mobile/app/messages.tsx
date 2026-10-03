@@ -12,6 +12,7 @@ import {
   type ConversationSummary,
   type MessageWorkspace,
 } from '../lib/messages';
+import { theme } from '../lib/theme';
 import { useAuth } from '../providers/AuthProvider';
 
 type InboxState =
@@ -81,11 +82,11 @@ export default function MessagesScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
         <ScrollView contentContainerStyle={styles.content}>
-          <BrandLogo compact />
+          <View style={styles.brandRow}><BrandLogo compact /></View>
           <View style={styles.headerRow}>
             <View style={styles.headerCopy}>
               <Text style={styles.eyebrow}>MESSAGES</Text>
-              <Text style={styles.title}>Marketplace conversations</Text>
+              <Text style={styles.title}>My messages</Text>
               <Text style={styles.description}>View your conversations as a Customer or Provider.</Text>
             </View>
             <Text style={styles.count}>{unreadCount}</Text>
@@ -126,7 +127,7 @@ export default function MessagesScreen() {
                 href={{ pathname: '/messages/[conversationId]', params: { conversationId: row.id, workspace } }}
                 asChild
               >
-                <Pressable style={[styles.card, row.unread_count > 0 && styles.unreadCard]}>
+                <Pressable accessibilityRole="button" accessibilityLabel={`Open conversation with ${row.counterpart_name}`} style={[styles.card, row.unread_count > 0 && styles.unreadCard]}>
                   <View style={styles.cardHeader}>
                     <View style={styles.cardTitleWrap}>
                       <Text style={styles.kind}>{row.conversation_kind.replaceAll('_', ' ')}</Text>
@@ -150,37 +151,38 @@ export default function MessagesScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f7f7fb' },
+  safeArea: { flex: 1, backgroundColor: theme.colors.white },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   screen: { flex: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 10, gap: 10 },
+  brandRow: { alignItems: 'center', paddingBottom: 6 },
   content: { gap: 12, paddingBottom: 8 },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  headerCopy: { flex: 1, gap: 5 },
-  eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.4, color: '#77778a' },
-  title: { fontSize: 27, lineHeight: 33, fontWeight: '800', color: '#171721' },
-  description: { fontSize: 14, lineHeight: 20, color: '#666678' },
-  count: { minWidth: 38, textAlign: 'center', fontSize: 14, fontWeight: '800', color: '#fff', backgroundColor: '#30304a', paddingHorizontal: 9, paddingVertical: 8, borderRadius: 999 },
-  workspaceRow: { flexDirection: 'row', gap: 8, padding: 5, borderRadius: 13, backgroundColor: '#ededf4' },
-  workspaceButton: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 10 },
-  workspaceButtonActive: { backgroundColor: '#30304a' },
-  workspaceText: { fontSize: 12, fontWeight: '800', color: '#555565' },
+  headerCopy: { flex: 1, minWidth: 0, gap: 5 },
+  eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.4, color: theme.colors.inkMuted },
+  title: { fontSize: 27, lineHeight: 33, fontWeight: '800', color: theme.colors.ink },
+  description: { fontSize: 14, lineHeight: 20, color: theme.colors.inkMuted },
+  count: { minWidth: 38, textAlign: 'center', fontSize: 14, fontWeight: '800', color: '#fff', backgroundColor: theme.colors.primary, paddingHorizontal: 9, paddingVertical: 8, borderRadius: 999 },
+  workspaceRow: { flexDirection: 'row', gap: 8, padding: 5, borderRadius: 13, backgroundColor: theme.colors.secondary },
+  workspaceButton: { flex: 1, minHeight: 48, justifyContent: 'center', alignItems: 'center', paddingVertical: 10, borderRadius: 10 },
+  workspaceButtonActive: { backgroundColor: theme.colors.primary },
+  workspaceText: { fontSize: 12, fontWeight: '800', color: theme.colors.inkMuted },
   workspaceTextActive: { color: '#fff' },
   actionRow: { flexDirection: 'row', justifyContent: 'flex-end' },
   disabled: { opacity: 0.5 },
-  refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: '#ededf4' },
-  refreshText: { fontSize: 12, fontWeight: '800', color: '#3f3f58' },
+  refreshButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: theme.colors.secondary },
+  refreshText: { fontSize: 12, fontWeight: '800', color: theme.colors.primaryStrong },
   inlineStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  card: { gap: 8, padding: 15, borderRadius: 15, backgroundColor: '#fff', borderWidth: 1, borderColor: 'transparent' },
-  unreadCard: { borderColor: '#b8b8d0' },
+  card: { gap: 8, padding: 15, borderRadius: 15, backgroundColor: '#fff', borderWidth: 1, borderColor: theme.colors.border },
+  unreadCard: { borderColor: theme.colors.accent },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
-  cardTitleWrap: { flex: 1, gap: 3 },
-  kind: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase', color: '#77778a' },
-  cardTitle: { fontSize: 16, fontWeight: '800', color: '#171721' },
-  unreadBadge: { minWidth: 24, textAlign: 'center', fontSize: 10, fontWeight: '800', color: '#fff', backgroundColor: '#30304a', paddingHorizontal: 6, paddingVertical: 5, borderRadius: 999 },
-  counterpart: { fontSize: 13, fontWeight: '800', color: '#444454' },
-  context: { fontSize: 12, color: '#77778a' },
-  preview: { fontSize: 13, lineHeight: 19, color: '#555565' },
-  openText: { fontSize: 12, fontWeight: '800', color: '#30304a' },
-  muted: { fontSize: 13, lineHeight: 18, color: '#77778a' },
+  cardTitleWrap: { flex: 1, minWidth: 0, gap: 3 },
+  kind: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase', color: theme.colors.inkMuted },
+  cardTitle: { fontSize: 16, fontWeight: '800', color: theme.colors.ink },
+  unreadBadge: { minWidth: 24, textAlign: 'center', fontSize: 10, fontWeight: '800', color: '#fff', backgroundColor: theme.colors.primary, paddingHorizontal: 6, paddingVertical: 5, borderRadius: 999 },
+  counterpart: { fontSize: 13, fontWeight: '800', color: theme.colors.inkMuted },
+  context: { fontSize: 12, color: theme.colors.inkMuted },
+  preview: { fontSize: 13, lineHeight: 19, color: theme.colors.inkMuted },
+  openText: { fontSize: 12, fontWeight: '800', color: theme.colors.primaryStrong },
+  muted: { fontSize: 13, lineHeight: 18, color: theme.colors.inkMuted },
   errorText: { fontSize: 13, lineHeight: 19, color: '#8b3535' },
 });

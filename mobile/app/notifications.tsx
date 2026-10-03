@@ -143,11 +143,11 @@ export default function NotificationsScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
         <ScrollView contentContainerStyle={styles.content}>
-          <BrandLogo compact />
+          <View style={styles.brandRow}><BrandLogo compact /></View>
           <View style={styles.headerRow}>
             <View style={styles.headerCopy}>
               <Text style={styles.eyebrow}>NOTIFICATIONS</Text>
-              <Text style={styles.title}>Updates that need attention</Text>
+              <Text style={styles.title}>My updates</Text>
               <Text style={styles.description}>Booking, proposal and messaging updates from your marketplace activity.</Text>
             </View>
             <Text style={styles.count}>{unreadCount}</Text>
@@ -194,33 +194,34 @@ export default function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: theme.colors.canvas },
+  safeArea: { flex: 1, backgroundColor: theme.colors.white },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   screen: { flex: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 10, gap: 10 },
+  brandRow: { alignItems: 'center', paddingBottom: 6 },
   content: { gap: 12, paddingBottom: 8 },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  headerCopy: { flex: 1, gap: 5 },
+  headerCopy: { flex: 1, minWidth: 0, gap: 5 },
   eyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1.4, color: theme.colors.primary },
   title: { fontSize: 27, lineHeight: 33, fontWeight: '900', color: theme.colors.ink },
   description: { fontSize: 14, lineHeight: 20, color: theme.colors.inkMuted },
   count: { minWidth: 38, textAlign: 'center', fontSize: 14, fontWeight: '900', color: theme.colors.white, backgroundColor: theme.colors.primary, paddingHorizontal: 9, paddingVertical: 8, borderRadius: theme.radii.pill },
-  actionRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },
-  primaryButton: { minHeight: 42, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 13, borderRadius: theme.radii.md, backgroundColor: theme.colors.primary },
+  actionRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 8 },
+  primaryButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 13, borderRadius: theme.radii.md, backgroundColor: theme.colors.primary },
   primaryText: { fontSize: 12, fontWeight: '800', color: '#fff' },
-  secondaryButton: { minHeight: 42, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 13, borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary },
+  secondaryButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 13, borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary },
   secondaryText: { fontSize: 12, fontWeight: '900', color: theme.colors.primaryStrong },
   disabled: { opacity: 0.45 },
   inlineStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   card: { gap: 8, padding: 15, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, ...cardShadow },
   unreadCard: { borderColor: theme.colors.accent, backgroundColor: '#FBFAFF' },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
-  cardTitleWrap: { flex: 1, gap: 3 },
+  cardTitleWrap: { flex: 1, minWidth: 0, gap: 3 },
   eventType: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase', color: theme.colors.primary },
-  cardTitle: { fontSize: 16, fontWeight: '800', color: '#171721' },
+  cardTitle: { fontSize: 16, fontWeight: '800', color: theme.colors.ink },
   unreadBadge: { fontSize: 9, fontWeight: '800', color: '#285c33', backgroundColor: '#edf8ef', paddingHorizontal: 7, paddingVertical: 4, borderRadius: 8 },
-  body: { fontSize: 13, lineHeight: 19, color: '#555565' },
-  timestamp: { fontSize: 11, color: '#888899' },
+  body: { fontSize: 13, lineHeight: 19, color: theme.colors.inkMuted },
+  timestamp: { fontSize: 11, color: theme.colors.inkMuted },
   openText: { fontSize: 12, fontWeight: '900', color: theme.colors.primary },
-  muted: { fontSize: 13, lineHeight: 18, color: '#77778a' },
+  muted: { fontSize: 13, lineHeight: 18, color: theme.colors.inkMuted },
   errorText: { fontSize: 13, lineHeight: 19, color: '#8b3535' },
 });
