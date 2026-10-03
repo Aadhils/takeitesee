@@ -146,7 +146,7 @@ export default function ProviderScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <BrandLogo compact />
+          <View style={styles.brandRow}><BrandLogo compact /></View>
           <View style={styles.headerRow}>
             <View style={styles.headerCopy}>
               <Text style={styles.eyebrow}>PROVIDER</Text>
@@ -155,13 +155,13 @@ export default function ProviderScreen() {
                 Respond to matching one-time Customer requirements from your Provider workspace.
               </Text>
             </View>
-            <Pressable onPress={() => setRefreshKey((value) => value + 1)} style={styles.refreshButton}>
+            <Pressable accessibilityRole="button" disabled={state.status === 'loading' || !!busyLeadId} onPress={() => setRefreshKey((value) => value + 1)} style={[styles.refreshButton, (state.status === 'loading' || !!busyLeadId) && styles.buttonDisabled]}>
               <Text style={styles.refreshText}>Refresh</Text>
             </Pressable>
           </View>
 
           <Link href="/provider-bookings" asChild>
-            <Pressable style={styles.bookingEntry}>
+            <Pressable accessibilityRole="button" style={styles.bookingEntry}>
               <View style={styles.bookingEntryCopy}>
                 <Text style={styles.bookingEntryTitle}>Provider bookings</Text>
                 <Text style={styles.bookingEntryText}>Review assigned service bookings and current journey status.</Text>
@@ -230,7 +230,7 @@ export default function ProviderScreen() {
                 ) : alreadyProposed ? (
                   <Text style={styles.alreadyText}>Proposal already submitted for this requirement.</Text>
                 ) : !draftOpen ? (
-                  <Pressable onPress={() => openDraft(lead)} style={styles.primaryButton}>
+                  <Pressable accessibilityRole="button" onPress={() => openDraft(lead)} style={styles.primaryButton}>
                     <Text style={styles.primaryButtonText}>Respond with proposal</Text>
                   </Pressable>
                 ) : (
@@ -238,6 +238,7 @@ export default function ProviderScreen() {
                     <Text style={styles.composerTitle}>Proposal for {lead.requirement_reference}</Text>
                     <Text style={styles.label}>Amount ({lead.currency})</Text>
                     <TextInput
+                      accessibilityLabel="Proposal amount"
                       value={draft.amount}
                       onChangeText={(amount) => setDraft((current) => current?.leadId === lead.id ? { ...current, amount } : current)}
                       keyboardType="decimal-pad"
@@ -247,6 +248,7 @@ export default function ProviderScreen() {
                     />
                     <Text style={styles.label}>Message</Text>
                     <TextInput
+                      accessibilityLabel="Proposal message"
                       value={draft.message}
                       onChangeText={(message) => setDraft((current) => current?.leadId === lead.id ? { ...current, message } : current)}
                       placeholder="Explain how you can help, scope and timing."
@@ -259,6 +261,7 @@ export default function ProviderScreen() {
                     <Text style={styles.helper}>{draft.message.trim().length}/2000 · minimum 20 characters</Text>
                     <View style={styles.actionRow}>
                       <Pressable
+                        accessibilityRole="button"
                         disabled={busy}
                         onPress={() => void submit(lead)}
                         style={[styles.primaryButton, busy && styles.buttonDisabled]}
@@ -266,6 +269,7 @@ export default function ProviderScreen() {
                         {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryButtonText}>Send proposal</Text>}
                       </Pressable>
                       <Pressable
+                        accessibilityRole="button"
                         disabled={busy}
                         onPress={() => setDraft(null)}
                         style={styles.secondaryButton}
@@ -311,8 +315,9 @@ function ProposalHistoryCard({ proposal }: { proposal: ProviderRequirementPropos
           <Text style={styles.reference}>{proposal.proposal_reference}</Text>
           <Text style={styles.cardTitle}>{proposal.requirement_title}</Text>
         </View>
-        <Text style={styles.statusBadge}>{proposal.status}</Text>
+        
       </View>
+      <Text style={styles.statusBadge}>{proposal.status}</Text>
       <View style={styles.metaRow}>
         <Text style={styles.meta}>{proposal.category_name}</Text>
         <Text style={styles.meta}>{proposal.location_name}</Text>
@@ -327,19 +332,20 @@ function ProposalHistoryCard({ proposal }: { proposal: ProviderRequirementPropos
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: theme.colors.canvas },
+  safeArea: { flex: 1, backgroundColor: theme.colors.white },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   screen: { flex: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 10, gap: 10 },
+  brandRow: { alignItems: 'center', paddingBottom: 6 },
   content: { gap: 12, paddingBottom: 8 },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  headerCopy: { flex: 1, gap: 5 },
+  headerCopy: { flex: 1, minWidth: 0, gap: 5 },
   eyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1.4, color: theme.colors.primary },
   title: { fontSize: 28, lineHeight: 34, fontWeight: '900', color: theme.colors.ink },
   description: { fontSize: 14, lineHeight: 20, color: theme.colors.inkMuted },
-  refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary },
+  refreshButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 9, borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary },
   refreshText: { fontSize: 12, fontWeight: '900', color: theme.colors.primaryStrong },
   bookingEntry: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: theme.radii.lg, backgroundColor: theme.colors.primary, ...cardShadow },
-  bookingEntryCopy: { flex: 1, gap: 3 },
+  bookingEntryCopy: { flex: 1, minWidth: 0, gap: 3 },
   bookingEntryTitle: { fontSize: 15, fontWeight: '800', color: '#fff' },
   bookingEntryText: { fontSize: 12, lineHeight: 17, color: '#dedee9' },
   bookingEntryArrow: { fontSize: 22, fontWeight: '800', color: '#fff' },
@@ -349,27 +355,27 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 13, lineHeight: 19, color: '#8b3535' },
   inlineStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 4 },
-  sectionTitle: { fontSize: 20, fontWeight: '800', color: '#171721' },
+  sectionTitle: { fontSize: 20, fontWeight: '800', color: theme.colors.ink },
   count: { minWidth: 34, textAlign: 'center', fontSize: 13, fontWeight: '900', color: theme.colors.white, backgroundColor: theme.colors.primary, paddingHorizontal: 9, paddingVertical: 7, borderRadius: theme.radii.pill },
   card: { gap: 10, padding: 16, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, ...cardShadow },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
-  cardTitleWrap: { flex: 1, gap: 3 },
-  reference: { fontSize: 10, fontWeight: '800', letterSpacing: 0.7, color: '#77778a' },
-  cardTitle: { fontSize: 16, fontWeight: '800', color: '#171721' },
+  cardTitleWrap: { flex: 1, minWidth: 0, gap: 3 },
+  reference: { fontSize: 10, fontWeight: '800', letterSpacing: 0.7, color: theme.colors.inkMuted },
+  cardTitle: { fontSize: 16, fontWeight: '800', color: theme.colors.ink },
   openBadge: { fontSize: 10, fontWeight: '800', color: '#285c33', backgroundColor: '#edf8ef', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
-  statusBadge: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase', color: '#4b4b65', backgroundColor: '#efeff5', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
-  detail: { fontSize: 13, lineHeight: 19, color: '#555565' },
+  statusBadge: { alignSelf: 'flex-start', fontSize: 12, fontWeight: '800', textTransform: 'uppercase', color: theme.colors.primaryStrong, backgroundColor: theme.colors.secondary, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
+  detail: { fontSize: 13, lineHeight: 19, color: theme.colors.inkMuted },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  meta: { fontSize: 11, color: '#555565', backgroundColor: '#f3f3f7', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
+  meta: { fontSize: 11, color: theme.colors.inkMuted, backgroundColor: theme.colors.secondary, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
   freezeCard: { padding: 13, borderRadius: 12, backgroundColor: '#fff8e7', gap: 5 },
   freezeTitle: { fontSize: 13, fontWeight: '800', color: '#66522b' },
-  alreadyText: { fontSize: 12, fontWeight: '700', color: '#555565' },
+  alreadyText: { fontSize: 12, fontWeight: '700', color: theme.colors.inkMuted },
   composer: { padding: 14, borderRadius: 14, backgroundColor: '#f7f7fb', gap: 8 },
-  composerTitle: { fontSize: 14, fontWeight: '800', color: '#333342' },
-  label: { fontSize: 12, fontWeight: '700', color: '#4b4b65' },
-  input: { minHeight: 46, borderWidth: 1, borderColor: '#d9d9e3', borderRadius: 11, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: '#171721', backgroundColor: '#fff' },
+  composerTitle: { fontSize: 14, fontWeight: '800', color: theme.colors.ink },
+  label: { fontSize: 12, fontWeight: '700', color: theme.colors.primaryStrong },
+  input: { minHeight: 46, borderWidth: 1, borderColor: theme.colors.border, borderRadius: 11, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: theme.colors.ink, backgroundColor: '#fff' },
   messageInput: { minHeight: 112 },
-  helper: { fontSize: 11, color: '#77778a' },
+  helper: { fontSize: 11, color: theme.colors.inkMuted },
   actionRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   primaryButton: { minHeight: 44, flexGrow: 1, alignItems: 'center', justifyContent: 'center', borderRadius: theme.radii.md, backgroundColor: theme.colors.primary, paddingHorizontal: 14 },
   primaryButtonText: { color: '#fff', fontSize: 13, fontWeight: '800' },
@@ -377,5 +383,5 @@ const styles = StyleSheet.create({
   secondaryButtonText: { color: theme.colors.primaryStrong, fontSize: 13, fontWeight: '900' },
   buttonDisabled: { opacity: 0.45 },
   acceptedText: { fontSize: 12, fontWeight: '800', color: '#285c33' },
-  muted: { fontSize: 13, lineHeight: 19, color: '#77778a' },
+  muted: { fontSize: 13, lineHeight: 19, color: theme.colors.inkMuted },
 });
