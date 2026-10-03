@@ -13,6 +13,7 @@ import {
   formatBookingTime,
   type CustomerBooking,
 } from '../../lib/bookings';
+import { theme } from '../../lib/theme';
 import { useAuth } from '../../providers/AuthProvider';
 
 type DetailState =
@@ -104,10 +105,10 @@ export default function CustomerBookingDetailScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
-        <BrandLogo compact />
+        <View style={styles.brandRow}><BrandLogo compact /></View>
         <View style={styles.topRow}>
           <Link href="/bookings" style={styles.backLink}>← My bookings</Link>
-          <Pressable onPress={() => void load()} style={styles.refreshButton}>
+          <Pressable accessibilityRole="button" disabled={state.status === 'loading' || completionBusy} onPress={() => void load()} style={[styles.refreshButton, (state.status === 'loading' || completionBusy) && styles.disabled]}>
             <Text style={styles.refreshText}>Refresh</Text>
           </Pressable>
         </View>
@@ -128,8 +129,9 @@ export default function CustomerBookingDetailScreen() {
                   <Text style={styles.eyebrow}>{booking.booking_reference}</Text>
                   <Text style={styles.title}>{booking.service_name}</Text>
                 </View>
-                <Text style={styles.statusBadge}>{formatBookingStatus(booking.status)}</Text>
+                
               </View>
+              <Text style={styles.statusBadge}>{formatBookingStatus(booking.status)}</Text>
               <Text style={styles.description}>
                 {providerLabel} · {booking.provider.provider_type === 'business' ? 'Business' : 'Professional'}
               </Text>
@@ -255,42 +257,43 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f7f7fb' },
+  safeArea: { flex: 1, backgroundColor: theme.colors.white },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 20 },
+  brandRow: { alignItems: 'center' },
   content: { padding: 18, gap: 12, paddingBottom: 28 },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  backLink: { fontSize: 13, fontWeight: '800', color: '#30304a' },
-  refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: '#ededf4' },
-  refreshText: { fontSize: 12, fontWeight: '800', color: '#3f3f58' },
+  backLink: { fontSize: 13, fontWeight: '800', color: theme.colors.primaryStrong },
+  refreshButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: theme.colors.secondary },
+  refreshText: { fontSize: 12, fontWeight: '800', color: theme.colors.primaryStrong },
   inlineStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  card: { gap: 12, padding: 17, borderRadius: 17, backgroundColor: '#fff' },
-  completionCard: { gap: 12, padding: 17, borderRadius: 17, backgroundColor: '#eef8f1' },
+  card: { gap: 12, padding: 17, borderWidth: 1, borderColor: theme.colors.border, borderRadius: 17, backgroundColor: '#fff' },
+  completionCard: { gap: 12, padding: 17, borderRadius: 17, backgroundColor: theme.colors.secondary },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
-  cardTitleWrap: { flex: 1, gap: 4 },
-  eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.1, color: '#77778a' },
-  title: { fontSize: 24, lineHeight: 30, fontWeight: '800', color: '#171721' },
-  description: { fontSize: 14, lineHeight: 20, color: '#555565' },
-  statusBadge: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase', color: '#4b4b65', backgroundColor: '#efeff5', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
-  sectionTitle: { fontSize: 17, fontWeight: '800', color: '#171721' },
+  cardTitleWrap: { flex: 1, minWidth: 0, gap: 4 },
+  eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.1, color: theme.colors.inkMuted },
+  title: { fontSize: 24, lineHeight: 30, fontWeight: '800', color: theme.colors.ink },
+  description: { fontSize: 14, lineHeight: 20, color: theme.colors.inkMuted },
+  statusBadge: { alignSelf: 'flex-start', fontSize: 12, fontWeight: '800', textTransform: 'uppercase', color: theme.colors.primaryStrong, backgroundColor: theme.colors.secondary, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
+  sectionTitle: { fontSize: 17, fontWeight: '800', color: theme.colors.ink },
   detailRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 },
-  detailLabel: { flex: 1, fontSize: 12, color: '#77778a' },
-  detailValue: { flex: 1.3, fontSize: 13, fontWeight: '700', textAlign: 'right', color: '#333342' },
-  readOnlyCard: { gap: 4, padding: 13, borderRadius: 12, backgroundColor: '#f0f0f6' },
-  readOnlyTitle: { fontSize: 13, fontWeight: '800', color: '#3d3d54' },
-  actionLink: { textAlign: 'center', paddingVertical: 13, paddingHorizontal: 14, borderRadius: 12, backgroundColor: '#5a4378', color: '#fff', fontWeight: '800' },
-  completionButton: { alignItems: 'center', paddingVertical: 13, paddingHorizontal: 14, borderRadius: 12, backgroundColor: '#1f6b45' },
+  detailLabel: { flex: 1, fontSize: 12, color: theme.colors.inkMuted },
+  detailValue: { flex: 1.3, fontSize: 13, fontWeight: '700', textAlign: 'right', color: theme.colors.inkMuted },
+  readOnlyCard: { gap: 4, padding: 13, borderRadius: 12, backgroundColor: theme.colors.secondary },
+  readOnlyTitle: { fontSize: 13, fontWeight: '800', color: theme.colors.ink },
+  actionLink: { textAlign: 'center', paddingVertical: 13, paddingHorizontal: 14, borderRadius: 12, backgroundColor: theme.colors.primary, color: '#fff', fontWeight: '800' },
+  completionButton: { alignItems: 'center', paddingVertical: 13, paddingHorizontal: 14, borderRadius: 12, backgroundColor: theme.colors.primary },
   completionButtonText: { fontSize: 13, fontWeight: '800', color: '#fff' },
   confirmBox: { gap: 10, padding: 13, borderRadius: 12, backgroundColor: '#fff' },
-  confirmTitle: { fontSize: 14, fontWeight: '800', color: '#253e30' },
+  confirmTitle: { fontSize: 14, fontWeight: '800', color: theme.colors.ink },
   confirmActions: { flexDirection: 'row', gap: 9 },
-  cancelConfirmButton: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 10, backgroundColor: '#ededf4' },
-  cancelConfirmText: { fontSize: 13, fontWeight: '800', color: '#4b4b65' },
-  confirmCompletionButton: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 10, backgroundColor: '#1f6b45' },
+  cancelConfirmButton: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 12, borderRadius: 10, backgroundColor: theme.colors.secondary },
+  cancelConfirmText: { fontSize: 13, fontWeight: '800', color: theme.colors.primaryStrong },
+  confirmCompletionButton: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 12, borderRadius: 10, backgroundColor: theme.colors.primary },
   confirmCompletionText: { fontSize: 13, fontWeight: '800', color: '#fff' },
-  reviewLink: { textAlign: 'center', paddingVertical: 13, paddingHorizontal: 14, borderRadius: 12, backgroundColor: '#171721', color: '#fff', fontWeight: '800' },
-  providerLink: { textAlign: 'center', paddingVertical: 13, paddingHorizontal: 14, borderRadius: 12, backgroundColor: '#30304a', color: '#fff', fontWeight: '800' },
+  reviewLink: { textAlign: 'center', paddingVertical: 13, paddingHorizontal: 14, borderRadius: 12, backgroundColor: theme.colors.primary, color: '#fff', fontWeight: '800' },
+  providerLink: { textAlign: 'center', paddingVertical: 13, paddingHorizontal: 14, borderRadius: 12, backgroundColor: theme.colors.primary, color: '#fff', fontWeight: '800' },
   pressed: { opacity: 0.82 },
   disabled: { opacity: 0.45 },
-  muted: { fontSize: 13, lineHeight: 18, color: '#77778a' },
+  muted: { fontSize: 13, lineHeight: 18, color: theme.colors.inkMuted },
   errorText: { fontSize: 13, lineHeight: 19, color: '#8b3535' },
 });
