@@ -21,6 +21,7 @@ import {
   type RequirementDetailResponse,
   type RequirementProposal,
 } from '../../lib/requirements';
+import { theme } from '../../lib/theme';
 import { useAuth } from '../../providers/AuthProvider';
 
 type DetailState =
@@ -125,9 +126,9 @@ export default function RequirementDetailScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
-        <BrandLogo compact />
+        <View style={styles.brandRow}><BrandLogo compact /></View>
         <Link href="/requirements" asChild>
-          <Pressable style={styles.backButton}>
+          <Pressable accessibilityRole="button" style={styles.backButton}>
             <Text style={styles.backText}>‹ Back to Requirements</Text>
           </Pressable>
         </Link>
@@ -143,7 +144,7 @@ export default function RequirementDetailScreen() {
           <View style={styles.errorCard}>
             <Text style={styles.errorTitle}>Requirement unavailable</Text>
             <Text style={styles.errorText}>{state.message}</Text>
-            <Pressable onPress={() => void load()} style={styles.secondaryButton}>
+            <Pressable accessibilityRole="button" onPress={() => void load()} style={styles.secondaryButton}>
               <Text style={styles.secondaryButtonText}>Try again</Text>
             </Pressable>
           </View>
@@ -204,8 +205,9 @@ function RequirementContent({
             <Text style={styles.eyebrow}>{requirement.requirement_reference}</Text>
             <Text style={styles.title}>{requirement.title}</Text>
           </View>
-          <Text style={styles.status}>{requirement.status}</Text>
+          
         </View>
+        <Text style={styles.status}>{requirement.status}</Text>
         <Text style={styles.description}>{requirement.description}</Text>
         <View style={styles.metaRow}>
           {categoryName ? <Text style={styles.meta}>{categoryName}</Text> : null}
@@ -254,9 +256,10 @@ function RequirementContent({
                   <Text style={styles.cardTitle}>{proposal.provider_display_name}</Text>
                   <Text style={styles.muted}>{proposal.provider_type} · {proposal.service_name}</Text>
                 </View>
-                <Text style={styles.status}>{proposal.status}</Text>
+                
               </View>
 
+              <Text style={styles.status}>{proposal.status}</Text>
               <View style={styles.metaRow}>
                 <Text style={styles.meta}>{formatRequirementMoney(proposal.amount_minor, proposal.currency)}</Text>
                 <Text style={styles.meta}>{proposal.pricing_basis === 'whole_requirement' ? 'Whole requirement' : 'Per service'}</Text>
@@ -273,7 +276,7 @@ function RequirementContent({
                   }}
                   asChild
                 >
-                  <Pressable style={styles.secondaryButton}>
+                  <Pressable accessibilityRole="button" style={styles.secondaryButton}>
                     <Text style={styles.secondaryButtonText}>View provider profile</Text>
                   </Pressable>
                 </Link>
@@ -286,6 +289,7 @@ function RequirementContent({
               {canAct && !pending ? (
                 <View style={styles.actionRow}>
                   <Pressable
+                    accessibilityRole="button"
                     disabled={!canAccept || busy}
                     onPress={() => onAskDecision(proposal.id, 'accept')}
                     style={[styles.primaryButton, (!canAccept || busy) && styles.buttonDisabled]}
@@ -293,6 +297,7 @@ function RequirementContent({
                     <Text style={styles.primaryButtonText}>Accept</Text>
                   </Pressable>
                   <Pressable
+                    accessibilityRole="button"
                     disabled={busy}
                     onPress={() => onAskDecision(proposal.id, 'decline')}
                     style={[styles.dangerButton, busy && styles.buttonDisabled]}
@@ -316,6 +321,7 @@ function RequirementContent({
                   </Text>
                   <View style={styles.actionRow}>
                     <Pressable
+                    accessibilityRole="button"
                       disabled={busy}
                       onPress={() => void onDecide(proposal, pending)}
                       style={[pending === 'accept' ? styles.primaryButton : styles.dangerButton, busy && styles.buttonDisabled]}
@@ -328,7 +334,7 @@ function RequirementContent({
                         </Text>
                       )}
                     </Pressable>
-                    <Pressable disabled={busy} onPress={onCancelDecision} style={styles.secondaryButton}>
+                    <Pressable accessibilityRole="button" disabled={busy} onPress={onCancelDecision} style={styles.secondaryButton}>
                       <Text style={styles.secondaryButtonText}>Keep reviewing</Text>
                     </Pressable>
                   </View>
@@ -343,46 +349,47 @@ function RequirementContent({
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f7f7fb' },
+  safeArea: { flex: 1, backgroundColor: theme.colors.white },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
-  content: { padding: 18, gap: 14 },
-  backButton: { alignSelf: 'flex-start', paddingVertical: 7, paddingRight: 12 },
-  backText: { fontSize: 14, fontWeight: '700', color: '#42425f' },
+  brandRow: { alignItems: 'center' },
+  content: { padding: 18, paddingBottom: 28, gap: 14 },
+  backButton: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingRight: 12 },
+  backText: { fontSize: 14, fontWeight: '700', color: theme.colors.primaryStrong },
   loadingCard: { padding: 20, borderRadius: 18, backgroundColor: '#fff', gap: 10, alignItems: 'center' },
   errorCard: { padding: 16, borderRadius: 14, backgroundColor: '#fff0f0', gap: 8 },
   errorTitle: { fontSize: 17, fontWeight: '800', color: '#7f2020' },
   errorText: { fontSize: 13, lineHeight: 19, color: '#8b3535' },
   successNotice: { padding: 13, borderRadius: 12, backgroundColor: '#edf8ef' },
   successText: { fontSize: 13, fontWeight: '700', color: '#285c33' },
-  heroCard: { padding: 20, borderRadius: 20, backgroundColor: '#fff', gap: 10 },
+  heroCard: { borderWidth: 1, borderColor: theme.colors.border, padding: 20, borderRadius: 20, backgroundColor: '#fff', gap: 10 },
   heroHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
-  heroCopy: { flex: 1, gap: 3 },
-  eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.3, color: '#77778a' },
-  reference: { fontSize: 10, fontWeight: '800', letterSpacing: 0.7, color: '#77778a' },
-  title: { fontSize: 26, lineHeight: 32, fontWeight: '800', color: '#171721' },
-  description: { fontSize: 14, lineHeight: 21, color: '#555565' },
-  status: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase', color: '#4b4b65', backgroundColor: '#efeff5', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
+  heroCopy: { flex: 1, minWidth: 0, gap: 3 },
+  eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.3, color: theme.colors.inkMuted },
+  reference: { fontSize: 10, fontWeight: '800', letterSpacing: 0.7, color: theme.colors.inkMuted },
+  title: { fontSize: 26, lineHeight: 32, fontWeight: '800', color: theme.colors.ink },
+  description: { fontSize: 14, lineHeight: 21, color: theme.colors.inkMuted },
+  status: { alignSelf: 'flex-start', fontSize: 12, fontWeight: '800', textTransform: 'uppercase', color: theme.colors.primaryStrong, backgroundColor: theme.colors.secondary, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  meta: { fontSize: 11, color: '#555565', backgroundColor: '#f3f3f7', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
+  meta: { fontSize: 11, color: theme.colors.inkMuted, backgroundColor: theme.colors.secondary, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
   freezeCard: { padding: 16, borderRadius: 16, backgroundColor: '#fff8e7', gap: 6 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  sectionTitle: { fontSize: 20, fontWeight: '800', color: '#171721' },
-  proposalCount: { minWidth: 34, textAlign: 'center', fontSize: 13, fontWeight: '800', color: '#fff', backgroundColor: '#30304a', paddingHorizontal: 9, paddingVertical: 7, borderRadius: 999 },
-  card: { padding: 17, borderRadius: 18, backgroundColor: '#fff', gap: 10 },
-  cardTitle: { fontSize: 16, fontWeight: '800', color: '#171721' },
+  sectionTitle: { fontSize: 20, fontWeight: '800', color: theme.colors.ink },
+  proposalCount: { minWidth: 34, textAlign: 'center', fontSize: 13, fontWeight: '800', color: '#fff', backgroundColor: theme.colors.primary, paddingHorizontal: 9, paddingVertical: 7, borderRadius: 999 },
+  card: { borderWidth: 1, borderColor: theme.colors.border, padding: 17, borderRadius: 18, backgroundColor: '#fff', gap: 10 },
+  cardTitle: { fontSize: 16, fontWeight: '800', color: theme.colors.ink },
   proposalHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
-  proposalCopy: { flex: 1, gap: 3 },
+  proposalCopy: { flex: 1, minWidth: 0, gap: 3 },
   actionRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  primaryButton: { minHeight: 44, flexGrow: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 11, backgroundColor: '#30304a', paddingHorizontal: 15 },
+  primaryButton: { minHeight: 44, flexGrow: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 11, backgroundColor: theme.colors.primary, paddingHorizontal: 15 },
   primaryButtonText: { color: '#fff', fontSize: 13, fontWeight: '800' },
-  secondaryButton: { minHeight: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 11, backgroundColor: '#ededf4', paddingHorizontal: 14 },
-  secondaryButtonText: { color: '#30304a', fontSize: 13, fontWeight: '800' },
+  secondaryButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 11, backgroundColor: theme.colors.secondary, paddingHorizontal: 14 },
+  secondaryButtonText: { color: theme.colors.primaryStrong, fontSize: 13, fontWeight: '800' },
   dangerButton: { minHeight: 44, flexGrow: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 11, backgroundColor: '#fff0f0', paddingHorizontal: 15 },
   dangerButtonText: { color: '#8b2b2b', fontSize: 13, fontWeight: '800' },
   buttonDisabled: { opacity: 0.45 },
   confirmAccept: { padding: 14, borderRadius: 14, backgroundColor: '#edf8ef', gap: 9 },
   confirmDecline: { padding: 14, borderRadius: 14, backgroundColor: '#fff3f3', gap: 9 },
-  confirmTitle: { fontSize: 14, fontWeight: '800', color: '#333342' },
+  confirmTitle: { fontSize: 14, fontWeight: '800', color: theme.colors.ink },
   warningText: { fontSize: 12, lineHeight: 18, color: '#7a5b24' },
-  muted: { fontSize: 13, lineHeight: 19, color: '#77778a' },
+  muted: { fontSize: 13, lineHeight: 19, color: theme.colors.inkMuted },
 });
