@@ -48,9 +48,9 @@ export default function AccountScreen() {
       <View style={styles.screen}>
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.header}>
-            <BrandLogo compact />
+            <View style={styles.brandRow}><BrandLogo compact /></View>
             <Text style={styles.eyebrow}>ACCOUNT</Text>
-            <Text style={styles.title}>Your TakeItEsee account</Text>
+            <Text style={styles.title}>My account</Text>
             <Text style={styles.description}>
               Manage your bookings, messages, notifications and reviews from one place.
             </Text>
@@ -58,7 +58,7 @@ export default function AccountScreen() {
 
           <View style={styles.quickRow}>
             <Link href="/notifications" asChild>
-              <Pressable style={styles.quickCard}>
+              <Pressable accessibilityRole="button" style={({ pressed }) => [styles.quickCard, pressed && styles.buttonPressed]}>
                 <Text style={styles.quickEyebrow}>ATTENTION</Text>
                 <Text style={styles.quickTitle}>Notifications</Text>
                 <Text style={styles.quickText}>Booking, proposal and message updates.</Text>
@@ -66,7 +66,7 @@ export default function AccountScreen() {
               </Pressable>
             </Link>
             <Link href="/messages" asChild>
-              <Pressable style={styles.quickCard}>
+              <Pressable accessibilityRole="button" style={({ pressed }) => [styles.quickCard, pressed && styles.buttonPressed]}>
                 <Text style={styles.quickEyebrow}>CONVERSATIONS</Text>
                 <Text style={styles.quickTitle}>Messages</Text>
                 <Text style={styles.quickText}>Your service conversations in one place.</Text>
@@ -77,7 +77,7 @@ export default function AccountScreen() {
 
           <View style={styles.quickRow}>
             <Link href="/reviews" asChild>
-              <Pressable style={styles.quickCard}>
+              <Pressable accessibilityRole="button" style={({ pressed }) => [styles.quickCard, pressed && styles.buttonPressed]}>
                 <Text style={styles.quickEyebrow}>FEEDBACK</Text>
                 <Text style={styles.quickTitle}>My reviews</Text>
                 <Text style={styles.quickText}>Read your published service feedback and Provider responses.</Text>
@@ -86,7 +86,7 @@ export default function AccountScreen() {
             </Link>
             {providerAccess ? (
               <Link href="/provider-reviews" asChild>
-                <Pressable style={styles.quickCard}>
+                <Pressable accessibilityRole="button" style={({ pressed }) => [styles.quickCard, pressed && styles.buttonPressed]}>
                   <Text style={styles.quickEyebrow}>PROVIDER</Text>
                   <Text style={styles.quickTitle}>Provider reviews</Text>
                   <Text style={styles.quickText}>Read Customer ratings and your existing response history.</Text>
@@ -104,6 +104,11 @@ export default function AccountScreen() {
               <>
                 <Text style={styles.value}>Provider</Text>
                 <Text style={styles.detail}>Provider tools are available for your Professional or Business profile.</Text>
+                <Link href="/provider" asChild>
+                  <Pressable accessibilityRole="button" style={({ pressed }) => [styles.workspaceButton, pressed && styles.buttonPressed]}>
+                    <Text style={styles.workspaceButtonText}>Open Provider workspace →</Text>
+                  </Pressable>
+                </Link>
               </>
             ) : null}
           </View>
@@ -150,17 +155,20 @@ export default function AccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: theme.colors.canvas },
+  safeArea: { flex: 1, backgroundColor: theme.colors.white },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   screen: { flex: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 10, gap: 10 },
   content: { gap: 14, paddingBottom: 8 },
   header: { gap: 6 },
+  brandRow: { alignItems: 'center', paddingBottom: 8 },
+  workspaceButton: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 14, borderRadius: theme.radii.md, backgroundColor: theme.colors.primary },
+  workspaceButtonText: { fontSize: 14, fontWeight: '800', color: theme.colors.white },
   eyebrow: { fontSize: 11, fontWeight: '900', letterSpacing: 1.5, color: theme.colors.primary },
   title: { fontSize: 28, lineHeight: 34, fontWeight: '900', letterSpacing: -0.4, color: theme.colors.ink },
   description: { fontSize: 14, lineHeight: 20, color: theme.colors.inkMuted },
-  quickRow: { flexDirection: 'row', gap: 10 },
-  quickCard: { flex: 1, minHeight: 128, gap: 6, padding: 14, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, ...cardShadow },
-  quickSpacer: { flex: 1 },
+  quickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  quickCard: { flexGrow: 1, flexBasis: 140, minWidth: 0, minHeight: 128, gap: 6, padding: 14, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, ...cardShadow },
+  quickSpacer: { flexGrow: 1, flexBasis: 140 },
   quickEyebrow: { fontSize: 9, fontWeight: '900', letterSpacing: 1, color: theme.colors.primary },
   quickTitle: { fontSize: 16, fontWeight: '900', color: theme.colors.ink },
   quickText: { flex: 1, fontSize: 12, lineHeight: 17, color: theme.colors.inkMuted },
