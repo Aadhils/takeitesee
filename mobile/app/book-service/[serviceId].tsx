@@ -144,6 +144,8 @@ export default function BookServiceScreen() {
       && currency,
   );
 
+  const hasAvailableSlots = ready?.availability.days.some((day) => day.slots.some((slot) => slot.available)) ?? false;
+
   const submit = async () => {
     if (!ready || !directlyBookable || !currency || !selectedDate || !selectedTime || busy) return;
     setBusy(true);
@@ -211,6 +213,15 @@ export default function BookServiceScreen() {
                 <Text style={styles.muted}>
                   This service needs a configured price, duration, supported currency and location before direct booking. Use the service request flow instead.
                 </Text>
+                <Link href="/request-service" style={styles.requestLink}>Request a service</Link>
+              </View>
+            ) : !hasAvailableSlots ? (
+              <View style={styles.infoCard}>
+                <Text style={styles.sectionTitle}>No booking times available</Text>
+                <Text style={styles.muted}>No available times were returned for the dates shown. Check again later or post a service request.</Text>
+                <Pressable accessibilityRole="button" onPress={() => setLoadAttempt((value) => value + 1)} style={styles.primaryButton}>
+                  <Text style={styles.primaryButtonText}>Check availability again</Text>
+                </Pressable>
                 <Link href="/request-service" style={styles.requestLink}>Request a service</Link>
               </View>
             ) : (
