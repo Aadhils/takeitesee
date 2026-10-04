@@ -23,8 +23,8 @@ export function MobileNav() {
       const create = item.href === '/request-service';
       return <Link key={item.href} href={item.href} asChild>
         <Pressable accessibilityRole="button" accessibilityLabel={create ? 'Post a requirement' : item.label} accessibilityState={{ selected: active }} style={({ pressed }) => [styles.link, active && styles.activeLink, pressed && styles.pressed]}>
-          <View style={[styles.iconWrap, create && styles.createIcon]}><Text style={[styles.icon, active && styles.activeText, create && styles.createText]}>{item.icon}</Text></View>
-          <Text numberOfLines={1} style={[styles.label, active && styles.activeText]}>{item.label}</Text>
+          <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[styles.iconWrap, create && styles.createIcon]}><Text style={[styles.icon, active && styles.activeText, create && styles.createText]}>{item.icon}</Text></View>
+          <Text style={[styles.label, active && styles.activeText]}>{item.label}</Text>
         </Pressable>
       </Link>;
     })}
@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
   createIcon: { width: 42, height: 42, borderRadius: 21, backgroundColor: theme.colors.primary, marginTop: -8 },
   icon: { fontSize: 27, lineHeight: 32, color: theme.colors.inkMuted },
   createText: { fontSize: 32, color: theme.colors.white },
-  label: { fontSize: 10, fontWeight: '800', color: theme.colors.inkMuted },
+  label: { width: '100%', textAlign: 'center', paddingHorizontal: 2, fontSize: 10, fontWeight: '800', color: theme.colors.inkMuted },
   activeText: { color: theme.colors.primaryStrong },
   pressed: { opacity: 0.65 },
 });
