@@ -6,6 +6,7 @@ import {
   Platform,
   Pressable,
   StyleSheet,
+  ScrollView,
   Text,
   TextInput,
   View,
@@ -45,12 +46,12 @@ export default function LoginScreen() {
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <View style={styles.intro}>
-            <BrandLogo />
+            <View style={styles.brandRow}><BrandLogo /></View>
             <Text style={styles.title}>Welcome back</Text>
             <Text style={styles.description}>
-              Sign in with the same email and password you use on TakeItEsee web.
+              Find trusted services and manage your bookings with your TakeItEsee account.
             </Text>
           </View>
 
@@ -59,7 +60,11 @@ export default function LoginScreen() {
               <Text style={styles.label}>Email</Text>
               <TextInput
                 autoCapitalize="none"
+                accessibilityLabel="Email"
                 autoComplete="email"
+                textContentType="username"
+                autoCorrect={false}
+                returnKeyType="next"
                 keyboardType="email-address"
                 placeholder="you@example.com"
                 value={email}
@@ -73,7 +78,11 @@ export default function LoginScreen() {
               <Text style={styles.label}>Password</Text>
               <TextInput
                 autoCapitalize="none"
+                accessibilityLabel="Password"
                 autoComplete="current-password"
+                textContentType="password"
+                autoCorrect={false}
+                returnKeyType="go"
                 secureTextEntry
                 placeholder="Your password"
                 value={password}
@@ -84,10 +93,11 @@ export default function LoginScreen() {
               />
             </View>
 
-            {error ? <Text style={styles.error}>{error}</Text> : null}
+            {error ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>{error}</Text> : null}
 
             <Pressable
               accessibilityRole="button"
+              accessibilityState={{ disabled: submitting || !email.trim() || !password, busy: submitting }}
               disabled={submitting || !email.trim() || !password}
               onPress={() => void submit()}
               style={({ pressed }) => [
@@ -105,22 +115,23 @@ export default function LoginScreen() {
           </Link>
 
           <Text style={styles.footer}>Secure sign-in for your TakeItEsee account.</Text>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: theme.colors.canvas },
+  safeArea: { flex: 1, backgroundColor: theme.colors.white },
   keyboardView: { flex: 1 },
-  container: { flex: 1, justifyContent: 'center', paddingHorizontal: 24, gap: 22 },
-  intro: { gap: 8 },
-  title: { fontSize: 32, lineHeight: 38, fontWeight: '900', color: theme.colors.ink },
-  description: { fontSize: 16, lineHeight: 24, color: theme.colors.inkMuted },
+  container: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 28, gap: 22 },
+  brandRow: { alignItems: 'center' },
+  intro: { gap: 12 },
+  title: { textAlign: 'center', fontSize: 32, lineHeight: 38, fontWeight: '900', color: theme.colors.ink },
+  description: { textAlign: 'center', fontSize: 16, lineHeight: 24, color: theme.colors.inkMuted },
   card: { gap: 16, padding: 20, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.xl, backgroundColor: theme.colors.surface, ...cardShadow },
   field: { gap: 7 },
-  label: { fontSize: 14, fontWeight: '600', color: '#333342' },
+  label: { fontSize: 14, fontWeight: '600', color: theme.colors.ink },
   input: {
     minHeight: 50,
     borderWidth: 1,
@@ -131,7 +142,7 @@ const styles = StyleSheet.create({
     color: theme.colors.ink,
     backgroundColor: theme.colors.surface,
   },
-  error: { fontSize: 14, lineHeight: 20, color: '#a12626' },
+  error: { fontSize: 14, lineHeight: 20, color: theme.colors.danger },
   button: {
     minHeight: 50,
     borderRadius: theme.radii.md,
