@@ -23,6 +23,7 @@ import {
   type BookingAvailability,
   type CustomerBooking,
 } from '../../lib/bookings';
+import { theme } from '../../lib/theme';
 import { useAuth } from '../../providers/AuthProvider';
 
 const cancellationReasons = ['Plans changed', 'Booked by mistake', 'Timing no longer works', 'Found another provider'];
@@ -143,10 +144,10 @@ export default function CustomerBookingActionsScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <BrandLogo compact />
+        <View style={styles.brandRow}><BrandLogo compact /></View>
         <View style={styles.topRow}>
           <Link href={{ pathname: '/bookings/[bookingId]', params: { bookingId } }} style={styles.backLink}>← Booking detail</Link>
-          <Pressable onPress={() => void load()} style={styles.refreshButton}><Text style={styles.refreshText}>Refresh</Text></Pressable>
+          <Pressable accessibilityRole="button" accessibilityState={{ disabled: state.status === 'loading' || busyAction !== null }} disabled={state.status === 'loading' || busyAction !== null} onPress={() => void load()} style={[styles.refreshButton, (state.status === 'loading' || busyAction !== null) && styles.buttonMuted]}><Text style={styles.refreshText}>Refresh</Text></Pressable>
         </View>
 
         {state.status === 'loading' ? <View style={styles.inlineStatus}><ActivityIndicator /><Text style={styles.muted}>Loading booking actions…</Text></View> : null}
@@ -157,7 +158,8 @@ export default function CustomerBookingActionsScreen() {
             <View style={styles.headerCard}>
               <Text style={styles.eyebrow}>{booking.booking_reference}</Text>
               <Text style={styles.title}>{booking.service_name}</Text>
-              <Text style={styles.description}>{booking.booking_date} · {booking.start_time.slice(0, 5)} · {formatBookingStatus(booking.status)}</Text>
+              <Text style={styles.description}>{booking.booking_date} · {booking.start_time.slice(0, 5)}</Text>
+              <Text style={styles.statusBadge}>{formatBookingStatus(booking.status)}</Text>
             </View>
 
             {!manageable ? (
@@ -170,10 +172,12 @@ export default function CustomerBookingActionsScreen() {
                 <View style={styles.card}>
                   <Text style={styles.sectionTitle}>Cancel booking</Text>
                   <Text style={styles.muted}>Choose a common reason or type your own. The server will validate whether cancellation is still allowed.</Text>
-                  <ReasonChips options={cancellationReasons} value={cancelReason} onChange={setCancelReason} />
+                  <ReasonChips disabled={busyAction !== null} options={cancellationReasons} value={cancelReason} onChange={setCancelReason} />
                   <TextInput
                     value={cancelReason}
                     onChangeText={setCancelReason}
+                    accessibilityLabel="Cancellation reason"
+                    editable={busyAction === null}
                     placeholder="Cancellation reason"
                     maxLength={500}
                     multiline
@@ -181,6 +185,7 @@ export default function CustomerBookingActionsScreen() {
                   />
                   <Text style={styles.counter}>{cancelReason.trim().length}/500</Text>
                   <Pressable
+                    accessibilityRole="button"
                     disabled={busyAction !== null || cancelReason.trim().length < 3}
                     onPress={() => void submitCancel()}
                     style={({ pressed }) => [styles.dangerButton, (pressed || busyAction !== null || cancelReason.trim().length < 3) && styles.buttonMuted]}
@@ -201,7 +206,9 @@ export default function CustomerBookingActionsScreen() {
                       return (
                         <Pressable
                           key={day.date}
-                          disabled={!count}
+                          accessibilityRole="button"
+                          accessibilityState={{ selected, disabled: !count || busyAction !== null }}
+                          disabled={!count || busyAction !== null}
                           onPress={() => { setSelectedDate(day.date); setSelectedTime(''); }}
                           style={[styles.dateChip, selected && styles.dateChipSelected, !count && styles.dateChipDisabled]}
                         >
@@ -216,11 +223,13 @@ export default function CustomerBookingActionsScreen() {
                     <View style={styles.slotGrid}>
                       {selectedDay.slots.map((slot) => {
                         const current = isCurrentBookingSlot(booking, selectedDay.date, slot.time);
-                        const disabled = !slot.available || current;
+                        const disabled = !slot.available || current || busyAction !== null;
                         const selected = selectedTime === slot.time;
                         return (
                           <Pressable
                             key={slot.time}
+                            accessibilityRole="button"
+                            accessibilityState={{ selected, disabled }}
                             disabled={disabled}
                             onPress={() => setSelectedTime(slot.time)}
                             style={[styles.slotChip, selected && styles.slotChipSelected, disabled && styles.slotChipDisabled]}
@@ -236,6 +245,8 @@ export default function CustomerBookingActionsScreen() {
                   <TextInput
                     value={rescheduleReason}
                     onChangeText={setRescheduleReason}
+                    accessibilityLabel="Reschedule reason"
+                    editable={busyAction === null}
                     placeholder="Why do you need a new time?"
                     maxLength={500}
                     multiline
@@ -243,6 +254,7 @@ export default function CustomerBookingActionsScreen() {
                   />
                   <Text style={styles.counter}>{rescheduleReason.trim().length}/500</Text>
                   <Pressable
+                    accessibilityRole="button"
                     disabled={busyAction !== null || !selectedDate || !selectedTime || rescheduleReason.trim().length < 3}
                     onPress={() => void submitReschedule()}
                     style={({ pressed }) => [styles.primaryButton, (pressed || busyAction !== null || !selectedDate || !selectedTime || rescheduleReason.trim().length < 3) && styles.buttonMuted]}
@@ -270,13 +282,13 @@ function isManageable(booking: CustomerBooking) {
     && !['customer_no_show', 'provider_no_show'].includes(booking.attendance_outcome ?? '');
 }
 
-function ReasonChips({ options, value, onChange }: { options: string[]; value: string; onChange: (value: string) => void }) {
+function ReasonChips({ options, value, onChange, disabled }: { options: string[]; value: string; onChange: (value: string) => void; disabled: boolean }) {
   return (
     <View style={styles.reasonWrap}>
       {options.map((option) => {
         const selected = value === option;
         return (
-          <Pressable key={option} onPress={() => onChange(option)} style={[styles.reasonChip, selected && styles.reasonChipSelected]}>
+          <Pressable key={option} accessibilityRole="button" accessibilityState={{ selected, disabled }} disabled={disabled} onPress={() => onChange(option)} style={[styles.reasonChip, selected && styles.reasonChipSelected]}>
             <Text style={[styles.reasonText, selected && styles.reasonTextSelected]}>{option}</Text>
           </Pressable>
         );
@@ -286,46 +298,48 @@ function ReasonChips({ options, value, onChange }: { options: string[]; value: s
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f7f7fb' },
+  safeArea: { flex: 1, backgroundColor: theme.colors.white },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 20 },
   content: { padding: 18, gap: 12, paddingBottom: 34 },
+  brandRow: { alignItems: 'center' },
+  statusBadge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: theme.colors.secondary, color: theme.colors.primaryStrong, fontSize: 12, fontWeight: '800' },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  backLink: { fontSize: 13, fontWeight: '800', color: '#30304a' },
-  refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: '#ededf4' },
-  refreshText: { fontSize: 12, fontWeight: '800', color: '#3f3f58' },
+  backLink: { fontSize: 13, fontWeight: '800', color: theme.colors.primary },
+  refreshButton: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: theme.colors.secondary },
+  refreshText: { fontSize: 12, fontWeight: '800', color: theme.colors.inkMuted },
   inlineStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headerCard: { gap: 5, padding: 17, borderRadius: 17, backgroundColor: '#fff' },
-  eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.1, color: '#77778a' },
-  title: { fontSize: 24, lineHeight: 30, fontWeight: '800', color: '#171721' },
-  description: { fontSize: 13, lineHeight: 19, color: '#666678' },
-  card: { gap: 12, padding: 17, borderRadius: 17, backgroundColor: '#fff' },
-  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#171721' },
+  headerCard: { gap: 5, padding: 17, borderRadius: 17, backgroundColor: theme.colors.white, borderWidth: 1, borderColor: theme.colors.border },
+  eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.1, color: theme.colors.inkMuted },
+  title: { fontSize: 24, lineHeight: 30, fontWeight: '800', color: theme.colors.ink },
+  description: { fontSize: 13, lineHeight: 19, color: theme.colors.inkMuted },
+  card: { gap: 12, padding: 17, borderRadius: 17, backgroundColor: theme.colors.white, borderWidth: 1, borderColor: theme.colors.border },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: theme.colors.ink },
   reasonWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
-  reasonChip: { paddingHorizontal: 10, paddingVertical: 7, borderRadius: 999, backgroundColor: '#f0f0f6' },
-  reasonChipSelected: { backgroundColor: '#30304a' },
-  reasonText: { fontSize: 11, fontWeight: '700', color: '#555565' },
-  reasonTextSelected: { color: '#fff' },
-  input: { minHeight: 78, padding: 12, borderRadius: 12, backgroundColor: '#f7f7fb', borderWidth: 1, borderColor: '#e1e1e9', textAlignVertical: 'top', color: '#242433' },
-  counter: { alignSelf: 'flex-end', fontSize: 10, color: '#888899' },
+  reasonChip: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 999, backgroundColor: theme.colors.secondary },
+  reasonChipSelected: { backgroundColor: theme.colors.primary },
+  reasonText: { fontSize: 11, fontWeight: '700', color: theme.colors.inkMuted },
+  reasonTextSelected: { color: theme.colors.white },
+  input: { minHeight: 78, padding: 12, borderRadius: 12, backgroundColor: theme.colors.secondary, borderWidth: 1, borderColor: theme.colors.border, textAlignVertical: 'top', color: theme.colors.ink },
+  counter: { alignSelf: 'flex-end', fontSize: 10, color: theme.colors.inkMuted },
   dateRow: { gap: 8, paddingVertical: 2 },
-  dateChip: { width: 126, gap: 4, padding: 11, borderRadius: 12, backgroundColor: '#f0f0f6' },
-  dateChipSelected: { backgroundColor: '#30304a' },
+  dateChip: { width: 126, gap: 4, padding: 11, borderRadius: 12, backgroundColor: theme.colors.secondary },
+  dateChipSelected: { backgroundColor: theme.colors.primary },
   dateChipDisabled: { opacity: 0.4 },
-  dateLabel: { fontSize: 11, fontWeight: '800', color: '#444454' },
-  dateCount: { fontSize: 9, color: '#77778a' },
-  dateLabelSelected: { color: '#fff' },
+  dateLabel: { fontSize: 11, fontWeight: '800', color: theme.colors.inkMuted },
+  dateCount: { fontSize: 9, color: theme.colors.inkMuted },
+  dateLabelSelected: { color: theme.colors.white },
   slotGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  slotChip: { paddingHorizontal: 11, paddingVertical: 8, borderRadius: 9, backgroundColor: '#eeeeF4' },
-  slotChipSelected: { backgroundColor: '#30304a' },
+  slotChip: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 11, paddingVertical: 8, borderRadius: 9, backgroundColor: theme.colors.secondary },
+  slotChipSelected: { backgroundColor: theme.colors.primary },
   slotChipDisabled: { opacity: 0.35 },
-  slotText: { fontSize: 11, fontWeight: '700', color: '#444454' },
-  slotTextSelected: { color: '#fff' },
-  primaryButton: { alignItems: 'center', paddingVertical: 13, borderRadius: 12, backgroundColor: '#30304a' },
-  dangerButton: { alignItems: 'center', paddingVertical: 13, borderRadius: 12, backgroundColor: '#7f2f2f' },
+  slotText: { fontSize: 11, fontWeight: '700', color: theme.colors.inkMuted },
+  slotTextSelected: { color: theme.colors.white },
+  primaryButton: { minHeight: 48, justifyContent: 'center', alignItems: 'center', paddingVertical: 13, borderRadius: 12, backgroundColor: theme.colors.primary },
+  dangerButton: { minHeight: 48, justifyContent: 'center', alignItems: 'center', paddingVertical: 13, borderRadius: 12, backgroundColor: theme.colors.danger },
   buttonMuted: { opacity: 0.45 },
-  buttonText: { fontSize: 13, fontWeight: '800', color: '#fff' },
-  infoCard: { gap: 5, padding: 14, borderRadius: 14, backgroundColor: '#f0f0f6' },
-  infoTitle: { fontSize: 13, fontWeight: '800', color: '#3d3d54' },
-  muted: { fontSize: 13, lineHeight: 18, color: '#77778a' },
-  errorText: { fontSize: 13, lineHeight: 19, color: '#8b3535' },
+  buttonText: { fontSize: 13, fontWeight: '800', color: theme.colors.white },
+  infoCard: { gap: 5, padding: 14, borderRadius: 14, backgroundColor: theme.colors.secondary },
+  infoTitle: { fontSize: 13, fontWeight: '800', color: theme.colors.inkMuted },
+  muted: { fontSize: 13, lineHeight: 18, color: theme.colors.inkMuted },
+  errorText: { fontSize: 13, lineHeight: 19, color: theme.colors.danger },
 });
