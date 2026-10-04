@@ -48,7 +48,7 @@ test('Customer direct booking UI selects only live server-generated dates and sl
   assert.ok(bookingScreen.includes('findProviderService(provider, serviceId)'));
   assert.ok(bookingScreen.includes('day.slots.some((slot) => slot.available)'));
   assert.ok(bookingScreen.includes('day.slots.filter((slot) => slot.available)'));
-  assert.ok(bookingScreen.includes('disabled={!slot.available}'));
+  assert.ok(bookingScreen.includes('disabled={busy || !slot.available}'));
   assert.ok(bookingScreen.includes('setSelectedTime(slot.time)'));
   assert.ok(!bookingScreen.includes('TextInput'));
   assert.ok(bookingScreen.includes('Times shown in {ready.availability.timezone}'));

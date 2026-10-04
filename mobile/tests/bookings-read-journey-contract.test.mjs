@@ -48,7 +48,8 @@ test('Customer booking create uses live availability before existing booking man
   assert.ok(customerCreate.includes('fetchServiceBookingAvailability(serviceId)'));
   assert.ok(customerCreate.includes('createCustomerBooking({'));
   assert.ok(customerCreate.includes('day.slots.some((slot) => slot.available)'));
-  assert.ok(customerCreate.includes('disabled={!slot.available}'));
+  assert.ok(customerCreate.includes('disabled={busy || !slot.available}'));
+  assert.ok(customerCreate.includes('disabled={busy || !count}'));
   assert.ok(customerCreate.includes("pathname: '/bookings/[bookingId]'"));
   assert.ok(customerCreate.includes('Booking protection'));
   assert.ok(customerCreate.includes('No payment is collected here.'));
