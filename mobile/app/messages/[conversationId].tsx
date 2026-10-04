@@ -2,6 +2,8 @@ import { Link, Redirect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -138,7 +140,9 @@ export default function MessageThreadScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView style={styles.keyboardView} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.screen}>
+        <ScrollView style={styles.threadScroll} contentContainerStyle={styles.threadContent} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <View style={styles.brandRow}><BrandLogo compact /></View>
         <View style={styles.topRow}>
           <Link href={{ pathname: '/messages', params: { workspace } }} style={styles.backLink}>← Messages</Link>
@@ -163,7 +167,7 @@ export default function MessageThreadScreen() {
               <Text style={styles.statusText}>Conversation: {conversation.conversation_status}</Text>
             </View>
 
-            <ScrollView style={styles.messageScroll} contentContainerStyle={styles.messageContent}>
+            <View style={styles.messageContent}>
               {state.messages.length === 0 ? <Text style={styles.muted}>No messages yet.</Text> : null}
               {state.messages.map((message) => (
                 <View key={message.id} style={[styles.messageBubble, message.is_mine ? styles.mineBubble : styles.theirBubble]}>
@@ -172,7 +176,12 @@ export default function MessageThreadScreen() {
                   <Text style={styles.timestamp}>{message.created_at}</Text>
                 </View>
               ))}
-            </ScrollView>
+            </View>
+          </>
+        ) : null}
+        </ScrollView>
+        {conversation ? (
+          <>
 
             {state.safety.messaging_blocked ? (
               <View style={styles.blockedCard}>
@@ -213,6 +222,7 @@ export default function MessageThreadScreen() {
           </>
         ) : null}
       </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -221,7 +231,10 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: theme.colors.white },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 20 },
   brandRow: { alignItems: 'center' },
+  keyboardView: { flex: 1 },
   screen: { flex: 1, padding: 16, gap: 10 },
+  threadScroll: { flex: 1 },
+  threadContent: { gap: 10, paddingBottom: 8 },
   topRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   backLink: { flexShrink: 1, fontSize: 13, fontWeight: '800', color: theme.colors.primaryStrong },
   refreshButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: theme.colors.secondary },
@@ -233,7 +246,6 @@ const styles = StyleSheet.create({
   counterpart: { fontSize: 13, fontWeight: '800', color: theme.colors.inkMuted },
   context: { fontSize: 12, lineHeight: 18, color: theme.colors.inkMuted },
   statusText: { fontSize: 11, fontWeight: '700', color: theme.colors.inkMuted },
-  messageScroll: { flex: 1 },
   messageContent: { gap: 8, paddingVertical: 4 },
   messageBubble: { maxWidth: '86%', gap: 4, padding: 11, borderRadius: 13 },
   mineBubble: { alignSelf: 'flex-end', backgroundColor: theme.colors.secondary },
