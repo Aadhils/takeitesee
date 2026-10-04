@@ -88,14 +88,14 @@ export default function ProviderServiceAvailabilityScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
         <ScrollView contentContainerStyle={styles.content}>
-          <BrandLogo compact />
+          <View style={styles.brandRow}><BrandLogo compact /></View>
           <View style={styles.headerRow}>
             <View style={styles.headerCopy}>
               <Text style={styles.eyebrow}>SERVICE AVAILABILITY</Text>
               <Text style={styles.title}>Booking mode</Text>
               <Text style={styles.description}>Choose how each service accepts bookings without changing your detailed schedule.</Text>
             </View>
-            <Pressable onPress={() => void load()} style={styles.refreshButton}><Text style={styles.refreshText}>Refresh</Text></Pressable>
+            <Pressable accessibilityRole="button" disabled={state.status === 'loading' || Boolean(savingServiceId)} onPress={() => void load()} style={[styles.refreshButton, (state.status === 'loading' || Boolean(savingServiceId)) && styles.refreshDisabled]}><Text style={styles.refreshText}>Refresh</Text></Pressable>
           </View>
 
           <View style={styles.boundaryCard}>
@@ -121,8 +121,9 @@ export default function ProviderServiceAvailabilityScreen() {
                     <Text style={styles.cardTitle}>{service.name}</Text>
                     <Text style={styles.muted}>{service.category || 'Service'} · {service.status}</Text>
                   </View>
-                  <Text style={styles.modeBadge}>{formatProviderServiceAvailabilityMode(service.availability_mode)}</Text>
+                  
                 </View>
+                <Text style={styles.modeBadge}>{formatProviderServiceAvailabilityMode(service.availability_mode)}</Text>
                 <View style={styles.metaRow}>
                   <Text style={styles.meta}>{service.timezone}</Text>
                   <Text style={styles.meta}>{service.weekly_window_count} weekly window{service.weekly_window_count === 1 ? '' : 's'}</Text>
@@ -135,6 +136,8 @@ export default function ProviderServiceAvailabilityScreen() {
                     const disabled = saving || scheduleBlocked;
                     return (
                       <Pressable
+                        accessibilityRole="button"
+                        accessibilityState={{ selected }}
                         key={mode.value}
                         disabled={disabled}
                         onPress={() => void updateMode(service, mode.value)}
@@ -160,16 +163,18 @@ export default function ProviderServiceAvailabilityScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: theme.colors.canvas },
+  safeArea: { flex: 1, backgroundColor: theme.colors.white },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   screen: { flex: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 10, gap: 10 },
+  refreshDisabled: { opacity: 0.5 },
+  brandRow: { alignItems: 'center', paddingBottom: 6 },
   content: { gap: 12, paddingBottom: 8 },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  headerCopy: { flex: 1, gap: 5 },
+  headerCopy: { flex: 1, minWidth: 0, gap: 5 },
   eyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1.4, color: theme.colors.primary },
   title: { fontSize: 28, lineHeight: 34, fontWeight: '900', color: theme.colors.ink },
   description: { fontSize: 14, lineHeight: 20, color: theme.colors.inkMuted },
-  refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary },
+  refreshButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 9, borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary },
   refreshText: { fontSize: 12, fontWeight: '900', color: theme.colors.primaryStrong },
   boundaryCard: { gap: 4, padding: 14, borderRadius: theme.radii.lg, backgroundColor: theme.colors.secondary },
   boundaryTitle: { fontSize: 13, fontWeight: '900', color: theme.colors.primaryStrong },
@@ -180,16 +185,16 @@ const styles = StyleSheet.create({
   inlineStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   card: { gap: 12, padding: 16, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, ...cardShadow },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
-  cardTitleWrap: { flex: 1, gap: 3 },
+  cardTitleWrap: { flex: 1, minWidth: 0, gap: 3 },
   cardTitle: { fontSize: 17, fontWeight: '900', color: theme.colors.ink },
-  modeBadge: { fontSize: 10, fontWeight: '900', color: theme.colors.primaryStrong, backgroundColor: theme.colors.secondary, paddingHorizontal: 8, paddingVertical: 5, borderRadius: theme.radii.sm },
+  modeBadge: { alignSelf: 'flex-start', fontSize: 12, fontWeight: '900', color: theme.colors.primaryStrong, backgroundColor: theme.colors.secondary, paddingHorizontal: 8, paddingVertical: 5, borderRadius: theme.radii.sm },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   meta: { fontSize: 11, fontWeight: '700', color: theme.colors.primaryStrong, backgroundColor: theme.colors.secondary, paddingHorizontal: 8, paddingVertical: 5, borderRadius: theme.radii.sm },
   modeList: { gap: 8 },
   modeButton: { minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 13, paddingVertical: 10, borderRadius: theme.radii.lg, backgroundColor: theme.colors.secondary },
   modeSelected: { backgroundColor: theme.colors.primary },
   modeDisabled: { opacity: 0.48 },
-  modeCopy: { flex: 1, gap: 2 },
+  modeCopy: { flex: 1, minWidth: 0, gap: 2 },
   modeTitle: { fontSize: 13, fontWeight: '900', color: theme.colors.ink },
   modeDetail: { fontSize: 11, lineHeight: 16, color: theme.colors.inkMuted },
   modeSelectedText: { color: '#fff' },
