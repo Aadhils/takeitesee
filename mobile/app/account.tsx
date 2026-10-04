@@ -31,6 +31,15 @@ export default function AccountScreen() {
 
   const providerAccess = auth.identity.roles.includes('professional') || auth.identity.roles.includes('business_owner');
 
+  const openAccountLink = async (url: string) => {
+    setError('');
+    try {
+      await Linking.openURL(url);
+    } catch {
+      setError('This account page could not open. Please try the link again.');
+    }
+  };
+
   const signOut = async () => {
     if (signingOut) return;
     setSigningOut(true);
@@ -120,14 +129,14 @@ export default function AccountScreen() {
             </Text>
             <Pressable
               accessibilityRole="link"
-              onPress={() => void Linking.openURL('https://www.takeitesee.com/privacy')}
+              onPress={() => void openAccountLink('https://www.takeitesee.com/privacy')}
               style={({ pressed }) => [styles.accountLink, pressed && styles.buttonPressed]}
             >
               <Text style={styles.accountLinkText}>Privacy Policy →</Text>
             </Pressable>
             <Pressable
               accessibilityRole="link"
-              onPress={() => void Linking.openURL('https://www.takeitesee.com/account/privacy')}
+              onPress={() => void openAccountLink('https://www.takeitesee.com/account/privacy')}
               style={({ pressed }) => [styles.accountLink, pressed && styles.buttonPressed]}
             >
               <Text style={styles.accountLinkText}>Request account deletion →</Text>
@@ -137,10 +146,11 @@ export default function AccountScreen() {
             </Text>
           </View>
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>{error}</Text> : null}
 
           <Pressable
             accessibilityRole="button"
+            accessibilityState={{ disabled: signingOut, busy: signingOut }}
             disabled={signingOut}
             onPress={() => void signOut()}
             style={({ pressed }) => [styles.signOutButton, pressed && styles.buttonPressed]}
