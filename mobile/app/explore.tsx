@@ -105,7 +105,7 @@ export default function ExploreScreen() {
             placeholder="Website developer, plumber, salon…"
             style={styles.searchInput}
           />
-          <Pressable accessibilityRole="button" disabled={state.status === 'loading'} onPress={submit} style={[styles.searchButton, state.status === 'loading' && styles.disabled]}>
+          <Pressable accessibilityRole="button" accessibilityState={{ disabled: state.status === 'loading', busy: state.status === 'loading' }} disabled={state.status === 'loading'} onPress={submit} style={[styles.searchButton, state.status === 'loading' && styles.disabled]}>
             <Text style={styles.searchButtonText}>{state.status === 'loading' ? 'Searching…' : 'Search'}</Text>
           </Pressable>
         </View>
@@ -148,8 +148,8 @@ export default function ExploreScreen() {
           ListEmptyComponent={
             state.status === 'ready' ? (
               <View style={styles.emptyCard}>
-                <Text style={styles.cardTitle}>No matching services yet</Text>
-                <Text style={styles.muted}>Try a broader service name or clear the search.</Text>
+                <Text style={styles.cardTitle}>{submittedQuery ? 'No matching services yet' : 'No services available yet'}</Text>
+                <Text style={styles.muted}>{submittedQuery ? 'Try a broader service name or clear the search.' : 'Please check again later for available services.'}</Text>
               </View>
             ) : null
           }
@@ -225,9 +225,12 @@ const styles = StyleSheet.create({
   eyebrow: { fontSize: 11, fontWeight: '900', letterSpacing: 1.5, color: theme.colors.primary },
   title: { fontSize: 28, lineHeight: 34, fontWeight: '900', letterSpacing: -0.4, color: theme.colors.ink },
   description: { fontSize: 14, lineHeight: 20, color: theme.colors.inkMuted },
-  searchRow: { flexDirection: 'row', gap: 8 },
+  searchRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   searchInput: {
-    flex: 1,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 160,
+    minWidth: 0,
     minHeight: 48,
     borderWidth: 1,
     borderColor: theme.colors.border,
