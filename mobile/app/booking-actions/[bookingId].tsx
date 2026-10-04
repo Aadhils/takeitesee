@@ -241,7 +241,7 @@ export default function CustomerBookingActionsScreen() {
                     </View>
                   ) : null}
 
-                  <ReasonChips options={rescheduleReasons} value={rescheduleReason} onChange={setRescheduleReason} />
+                  <ReasonChips disabled={busyAction !== null} options={rescheduleReasons} value={rescheduleReason} onChange={setRescheduleReason} />
                   <TextInput
                     value={rescheduleReason}
                     onChangeText={setRescheduleReason}
