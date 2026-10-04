@@ -62,7 +62,7 @@ export default function ProviderServiceAvailabilityScreen() {
   if (!isProvider) return <Redirect href="/home" />;
 
   const updateMode = async (service: ProviderServiceAvailability, mode: ProviderServiceAvailabilityMode) => {
-    if (savingServiceId || mode === service.availability_mode) return;
+    if (savingServiceId || state.status !== 'ready' || mode === service.availability_mode) return;
     if (mode === 'scheduled' && service.weekly_window_count === 0) {
       setActionError('Scheduled mode needs existing weekly hours. Configure the detailed schedule on web first.');
       return;
@@ -133,11 +133,11 @@ export default function ProviderServiceAvailabilityScreen() {
                   {modes.map((mode) => {
                     const selected = service.availability_mode === mode.value;
                     const scheduleBlocked = mode.value === 'scheduled' && service.weekly_window_count === 0;
-                    const disabled = saving || scheduleBlocked;
+                    const disabled = Boolean(savingServiceId) || state.status !== 'ready' || scheduleBlocked;
                     return (
                       <Pressable
                         accessibilityRole="button"
-                        accessibilityState={{ selected }}
+                        accessibilityState={{ selected, disabled, busy: saving }}
                         key={mode.value}
                         disabled={disabled}
                         onPress={() => void updateMode(service, mode.value)}
