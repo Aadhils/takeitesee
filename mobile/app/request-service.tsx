@@ -177,10 +177,11 @@ export default function RequestServiceScreen() {
 
         <View style={styles.card}>
           <Text style={styles.label}>Title</Text>
-          <TextInput accessibilityLabel="Request title" value={title} onChangeText={setTitle} style={styles.input} placeholder="What service do you need?" />
+          <TextInput editable={!submitting} accessibilityLabel="Request title" value={title} onChangeText={setTitle} style={styles.input} placeholder="What service do you need?" />
 
           <Text style={styles.label}>Description</Text>
           <TextInput
+            editable={!submitting}
             accessibilityLabel="Request description"
             value={description}
             onChangeText={setDescription}
@@ -198,8 +199,9 @@ export default function RequestServiceScreen() {
             {(catalog?.categories ?? []).map((item) => (
               <Pressable
                 key={item.id}
+                disabled={submitting}
                 accessibilityRole="button"
-                accessibilityState={{ selected: categoryId === item.id }}
+                accessibilityState={{ selected: categoryId === item.id, disabled: submitting }}
                 onPress={() => setCategoryId(item.id)}
                 style={[styles.chip, categoryId === item.id && styles.chipSelected]}
               >
@@ -215,8 +217,9 @@ export default function RequestServiceScreen() {
             {(catalog?.locations ?? []).map((item) => (
               <Pressable
                 key={item.id}
+                disabled={submitting}
                 accessibilityRole="button"
-                accessibilityState={{ selected: locationId === item.id }}
+                accessibilityState={{ selected: locationId === item.id, disabled: submitting }}
                 onPress={() => setLocationId(item.id)}
                 style={[styles.chip, locationId === item.id && styles.chipSelected]}
               >
@@ -226,7 +229,7 @@ export default function RequestServiceScreen() {
           </ScrollView>
         </View>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>{error}</Text> : null}
 
         <Pressable
           accessibilityRole="button"
