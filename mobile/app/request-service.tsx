@@ -115,7 +115,7 @@ export default function RequestServiceScreen() {
   if (auth.status === 'signedOut') {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.centeredCardWrap}>
+        <ScrollView contentContainerStyle={styles.centeredCardWrap}>
           <View style={styles.brandRow}><BrandLogo compact /></View>
           <View style={styles.card}>
             <Text style={styles.eyebrow}>CUSTOMER REQUEST</Text>
@@ -134,7 +134,7 @@ export default function RequestServiceScreen() {
               </Pressable>
             </Link>
           </View>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -142,7 +142,7 @@ export default function RequestServiceScreen() {
   if (created) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.centeredCardWrap}>
+        <ScrollView contentContainerStyle={styles.centeredCardWrap}>
           <View style={styles.brandRow}><BrandLogo compact /></View>
           <View style={styles.successCard}>
             <Text style={styles.eyebrow}>REQUIREMENT POSTED</Text>
@@ -160,7 +160,7 @@ export default function RequestServiceScreen() {
               </Pressable>
             </Link>
           </View>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -266,7 +266,7 @@ export default function RequestServiceScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: theme.colors.white },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
-  centeredCardWrap: { flex: 1, justifyContent: 'center', padding: 20, gap: 18 },
+  centeredCardWrap: { flexGrow: 1, justifyContent: 'center', padding: 20, gap: 18 },
   brandRow: { alignItems: 'center' },
   content: { padding: 18, paddingBottom: 32, gap: 14 },
   backButton: { alignSelf: 'flex-start', paddingVertical: 7, paddingRight: 12 },
