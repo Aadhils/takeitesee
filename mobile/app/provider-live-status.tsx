@@ -107,7 +107,7 @@ export default function ProviderLiveStatusScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
         <ScrollView contentContainerStyle={styles.content}>
-          <BrandLogo compact />
+          <View style={styles.brandRow}><BrandLogo compact /></View>
           <View style={styles.topRow}>
             <View style={styles.headerCopy}>
               <Text style={styles.eyebrow}>PROVIDER LIVE STATUS</Text>
@@ -116,7 +116,7 @@ export default function ProviderLiveStatusScreen() {
                 Let customers know whether you can take work right now. Available and Busy can be set for a short time.
               </Text>
             </View>
-            <Pressable onPress={() => void load()} style={styles.refreshButton}>
+            <Pressable accessibilityRole="button" disabled={state.status === 'loading' || Boolean(saving)} onPress={() => void load()} style={[styles.refreshButton, (state.status === 'loading' || Boolean(saving)) && styles.refreshDisabled]}>
               <Text style={styles.refreshText}>Refresh</Text>
             </Pressable>
           </View>
@@ -139,6 +139,8 @@ export default function ProviderLiveStatusScreen() {
                 const selected = duration === value;
                 return (
                   <Pressable
+                        accessibilityRole="button"
+                        accessibilityState={{ selected }}
                     key={value}
                     onPress={() => setDuration(value)}
                     disabled={Boolean(saving)}
@@ -158,6 +160,8 @@ export default function ProviderLiveStatusScreen() {
               const busy = saving === mode.value;
               return (
                 <Pressable
+                        accessibilityRole="button"
+                        accessibilityState={{ selected }}
                   key={mode.value}
                   disabled={Boolean(saving) || state.status === 'loading'}
                   onPress={() => void updateMode(mode.value)}
@@ -190,16 +194,18 @@ export default function ProviderLiveStatusScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: theme.colors.canvas },
+  safeArea: { flex: 1, backgroundColor: theme.colors.white },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 20 },
   screen: { flex: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 10, gap: 10 },
+  refreshDisabled: { opacity: 0.5 },
+  brandRow: { alignItems: 'center', paddingBottom: 6 },
   content: { gap: 12, paddingBottom: 10 },
   topRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  headerCopy: { flex: 1, gap: 5 },
+  headerCopy: { flex: 1, minWidth: 0, gap: 5 },
   eyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1.2, color: theme.colors.primary },
   title: { fontSize: 28, lineHeight: 34, fontWeight: '900', color: theme.colors.ink },
   description: { fontSize: 14, lineHeight: 20, color: theme.colors.inkMuted },
-  refreshButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary },
+  refreshButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 9, borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary },
   refreshText: { fontSize: 12, fontWeight: '900', color: theme.colors.primaryStrong },
   backLink: { fontSize: 13, fontWeight: '900', color: theme.colors.primary },
   statusCard: { gap: 5, padding: 17, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, ...cardShadow },
@@ -208,13 +214,13 @@ const styles = StyleSheet.create({
   card: { gap: 12, padding: 17, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, ...cardShadow },
   sectionTitle: { fontSize: 18, fontWeight: '900', color: theme.colors.ink },
   choiceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  durationChip: { minWidth: 82, alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10, borderRadius: theme.radii.pill, backgroundColor: theme.colors.secondary },
+  durationChip: { minHeight: 48, justifyContent: 'center', minWidth: 82, alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10, borderRadius: theme.radii.pill, backgroundColor: theme.colors.secondary },
   durationChipSelected: { backgroundColor: theme.colors.primary },
   durationText: { fontSize: 12, fontWeight: '900', color: theme.colors.primaryStrong },
   durationTextSelected: { color: '#fff' },
   modeButton: { minHeight: 66, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: theme.radii.lg, backgroundColor: theme.colors.secondary },
   modeButtonSelected: { backgroundColor: theme.colors.primary },
-  modeCopy: { flex: 1, gap: 3 },
+  modeCopy: { flex: 1, minWidth: 0, gap: 3 },
   modeLabel: { fontSize: 15, fontWeight: '900', color: theme.colors.ink },
   modeLabelSelected: { color: '#fff' },
   modeHelp: { fontSize: 12, lineHeight: 17, color: theme.colors.inkMuted },

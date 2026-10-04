@@ -17,7 +17,7 @@ test('remaining real-device marketplace screens use shared brand theme tokens', 
   ]) {
     assert.ok(source.includes("from '../lib/theme'"), `${name} must use shared theme tokens`);
     assert.ok(source.includes('theme.colors.primary'), `${name} must use brand primary`);
-    assert.ok(source.includes(name === 'bookings' ? 'backgroundColor: theme.colors.white' : 'theme.colors.canvas'), `${name} must use brand canvas`);
+    assert.ok(source.includes('backgroundColor: theme.colors.white'), `${name} must use brand canvas`);
     assert.equal(source.includes("backgroundColor: '#30304a'"), false, `${name} must not keep legacy selected navy`);
   }
 });
