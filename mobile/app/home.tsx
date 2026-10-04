@@ -77,7 +77,7 @@ export default function HomeScreen() {
         {loading ? <View style={styles.status}><ActivityIndicator color={theme.colors.primary} /><Text style={styles.description}>Loading services…</Text></View> : null}
         {error ? <View style={styles.emptyCard}><Text accessibilityRole="alert" style={styles.error}>{error}</Text><Pressable accessibilityRole="button" onPress={() => setAttempt((current) => current + 1)} style={styles.textButton}><Text style={styles.textAction}>Try again →</Text></Pressable></View> : null}
         {!loading && !error && marketplace?.categories.length === 0 ? <Text style={styles.description}>Browse Explore to discover available services.</Text> : null}
-        {!error ? <View style={styles.categoryGrid}>{marketplace?.categories.slice(0, 8).map((category, index) => <Pressable key={category.slug} accessibilityRole="button" onPress={() => search(category.name)} style={({ pressed }) => [styles.category, pressed && styles.pressed]}><View style={[styles.categoryIcon, { backgroundColor: categoryColors[index % categoryColors.length] }]}><Text style={styles.categoryInitial}>{categorySymbol(category.name)}</Text></View><Text numberOfLines={2} style={styles.categoryName}>{category.name}</Text></Pressable>)}</View> : null}
+        {!error ? <View style={styles.categoryGrid}>{marketplace?.categories.slice(0, 8).map((category, index) => <Pressable key={category.slug} accessibilityRole="button" onPress={() => search(category.name)} style={({ pressed }) => [styles.category, pressed && styles.pressed]}><View style={[styles.categoryIcon, { backgroundColor: categoryColors[index % categoryColors.length] }]}><Text style={styles.categoryInitial}>{categorySymbol(category.name)}</Text></View><Text style={styles.categoryName}>{category.name}</Text></Pressable>)}</View> : null}
 
         <View style={styles.sectionHeading}><Text style={styles.sectionTitle}>Your service journey</Text></View>
         <Text style={styles.description}>Find services, manage bookings and keep up with your requests in one place.</Text>
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
   heroTitle: { fontSize: 27, lineHeight: 33, fontWeight: '900', color: theme.colors.white },
   heroBody: { fontSize: 13, lineHeight: 19, color: '#F0EDFF' },
   heroAction: { alignSelf: 'flex-start', marginTop: 4, padding: 10, borderRadius: 10, backgroundColor: theme.colors.white, color: theme.colors.primaryStrong, fontSize: 12, fontWeight: '900' },
-  sectionHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 5 },
+  sectionHeading: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 5 },
   sectionTitle: { flex: 1, fontSize: 18, fontWeight: '900', color: theme.colors.ink },
   textButton: { minHeight: 44, justifyContent: 'center' },
   textAction: { fontSize: 12, fontWeight: '800', color: theme.colors.primary },
@@ -132,8 +132,8 @@ const styles = StyleSheet.create({
   categoryIcon: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
   categoryInitial: { fontSize: 23, fontWeight: '900', color: theme.colors.primaryStrong },
   categoryName: { textAlign: 'center', fontSize: 11, lineHeight: 15, color: theme.colors.ink, fontWeight: '700' },
-  quickRow: { flexDirection: 'row', gap: 10 },
-  quickCard: { flex: 1, minWidth: 0, gap: 7, padding: 15, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, ...cardShadow },
+  quickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  quickCard: { flexGrow: 1, flexShrink: 1, flexBasis: 150, minWidth: 0, gap: 7, padding: 15, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.surface, ...cardShadow },
   quickSymbol: { fontSize: 26, color: theme.colors.primary },
   quickTitle: { fontSize: 15, fontWeight: '800', color: theme.colors.ink },
   description: { fontSize: 12, lineHeight: 18, color: theme.colors.inkMuted },
