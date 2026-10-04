@@ -51,7 +51,7 @@ export default function LoginScreen() {
             <View style={styles.brandRow}><BrandLogo /></View>
             <Text style={styles.title}>Welcome back</Text>
             <Text style={styles.description}>
-              Find trusted services and manage your bookings with your TakeItEsee account.
+              Sign in with the same email and password you use on TakeItEsee web.
             </Text>
           </View>
 
