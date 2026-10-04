@@ -38,6 +38,8 @@ export default function RequestServiceScreen() {
   const [catalog, setCatalog] = useState<RequirementCatalog | null>(null);
   const [categoryId, setCategoryId] = useState('');
   const [locationId, setLocationId] = useState('');
+  const [catalogAttempt, setCatalogAttempt] = useState(0);
+  const [catalogError, setCatalogError] = useState('');
   const [loadingCatalog, setLoadingCatalog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -50,7 +52,7 @@ export default function RequestServiceScreen() {
     if (auth.status !== 'signedIn') return;
     let active = true;
     setLoadingCatalog(true);
-    setError('');
+    setCatalogError('');
 
     fetchRequirementCatalog()
       .then((result) => {
@@ -67,7 +69,7 @@ export default function RequestServiceScreen() {
       })
       .catch((caught: unknown) => {
         if (!active) return;
-        setError(caught instanceof Error ? caught.message : 'Unable to load requirement options.');
+        setCatalogError(caught instanceof Error ? caught.message : 'Unable to load requirement options.');
       })
       .finally(() => {
         if (active) setLoadingCatalog(false);
@@ -76,7 +78,7 @@ export default function RequestServiceScreen() {
     return () => {
       active = false;
     };
-  }, [auth.status, params.location]);
+  }, [auth.status, params.location, catalogAttempt]);
 
   const submit = async () => {
     if (submitting || !title.trim() || !description.trim() || !categoryId || !locationId) return;
@@ -228,6 +230,13 @@ export default function RequestServiceScreen() {
             ))}
           </ScrollView>
         </View>
+
+        {catalogError ? <View style={styles.card}>
+          <Text accessibilityRole="alert" style={styles.error}>{catalogError}</Text>
+          <Pressable accessibilityRole="button" disabled={loadingCatalog || submitting} onPress={() => setCatalogAttempt((value) => value + 1)} style={styles.secondaryButton}>
+            <Text style={styles.secondaryButtonText}>Retry options</Text>
+          </Pressable>
+        </View> : null}
 
         {error ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>{error}</Text> : null}
 
