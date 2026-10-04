@@ -61,6 +61,7 @@ export default function BookServiceScreen() {
   const providerType = providerTypeParam(firstParam(params.providerType));
   const providerId = firstParam(params.providerId)?.trim() ?? '';
   const [state, setState] = useState<ScreenState>({ status: 'loading' });
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [busy, setBusy] = useState(false);
@@ -104,7 +105,7 @@ export default function BookServiceScreen() {
       });
 
     return () => { active = false; };
-  }, [auth.status, providerId, providerType, serviceId]);
+  }, [auth.status, providerId, providerType, serviceId, loadAttempt]);
 
   const selectedDay = useMemo(() => {
     if (state.status !== 'ready') return undefined;
@@ -184,7 +185,12 @@ export default function BookServiceScreen() {
         {state.status === 'loading' ? (
           <View style={styles.inlineStatus}><ActivityIndicator /><Text style={styles.muted}>Loading live availability…</Text></View>
         ) : null}
-        {state.status === 'error' ? <Text style={styles.errorText}>{state.message}</Text> : null}
+        {state.status === 'error' ? <View style={styles.infoCard}>
+          <Text accessibilityRole="alert" style={styles.errorText}>{state.message}</Text>
+          <Pressable accessibilityRole="button" onPress={() => setLoadAttempt((value) => value + 1)} style={styles.primaryButton}>
+            <Text style={styles.primaryButtonText}>Try again</Text>
+          </Pressable>
+        </View> : null}
 
         {ready ? (
           <>
