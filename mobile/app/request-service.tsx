@@ -143,14 +143,20 @@ export default function RequestServiceScreen() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.centeredCardWrap}>
+          <View style={styles.brandRow}><BrandLogo compact /></View>
           <View style={styles.successCard}>
             <Text style={styles.eyebrow}>REQUIREMENT POSTED</Text>
             <Text style={styles.title}>Your request is live</Text>
             <Text style={styles.description}>{created.title}</Text>
             <Text style={styles.reference}>{created.reference}</Text>
+            <Link href={{ pathname: '/requirements/[requirementId]', params: { requirementId: created.id } }} asChild>
+              <Pressable accessibilityRole="button" style={styles.primaryButton}>
+                <Text style={styles.primaryButtonText}>View my request</Text>
+              </Pressable>
+            </Link>
             <Link href="/home" asChild>
-              <Pressable style={styles.primaryButton}>
-                <Text style={styles.primaryButtonText}>Go to Home</Text>
+              <Pressable accessibilityRole="button" style={styles.secondaryButton}>
+                <Text style={styles.secondaryButtonText}>Go to Home</Text>
               </Pressable>
             </Link>
           </View>
