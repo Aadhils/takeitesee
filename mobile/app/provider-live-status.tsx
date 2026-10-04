@@ -88,7 +88,7 @@ export default function ProviderLiveStatusScreen() {
   if (!isProvider) return <Redirect href="/home" />;
 
   const updateMode = async (mode: ProviderWorkMode) => {
-    if (saving) return;
+    if (saving || state.status === 'loading') return;
     setSaving(mode);
     setNotice('');
     setActionError('');
@@ -125,10 +125,10 @@ export default function ProviderLiveStatusScreen() {
 
           <View style={styles.statusCard}>
             <Text style={styles.eyebrow}>CURRENT EFFECTIVE STATUS</Text>
-            <Text style={styles.statusTitle}>{currentMode.replaceAll('_', ' ')}</Text>
-            {expiryText ? <Text style={styles.muted}>Until {expiryText}</Text> : null}
+            <Text style={styles.statusTitle}>{state.status === 'ready' ? currentMode.replaceAll('_', ' ') : state.status === 'loading' ? 'Checking status…' : 'Status unavailable'}</Text>
+            {state.status === 'ready' && expiryText ? <Text style={styles.muted}>Until {expiryText}</Text> : null}
             {state.status === 'loading' ? <View style={styles.inline}><ActivityIndicator /><Text style={styles.muted}>Refreshing…</Text></View> : null}
-            {state.status === 'error' ? <Text style={styles.errorText}>{state.message}</Text> : null}
+            {state.status === 'error' ? <Text accessibilityRole="alert" style={styles.errorText}>{state.message}</Text> : null}
           </View>
 
           <View style={styles.card}>
@@ -156,7 +156,7 @@ export default function ProviderLiveStatusScreen() {
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Choose status</Text>
             {modes.map((mode) => {
-              const selected = currentMode === mode.value;
+              const selected = state.status === 'ready' && currentMode === mode.value;
               const busy = saving === mode.value;
               return (
                 <Pressable
