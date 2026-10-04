@@ -221,10 +221,10 @@ export default function BookServiceScreen() {
                         <Pressable
                           key={day.date}
                           accessibilityRole="button"
-                          accessibilityState={{ selected, disabled: !count }}
-                          disabled={!count}
+                          accessibilityState={{ selected, disabled: busy || !count }}
+                          disabled={busy || !count}
                           onPress={() => { setSelectedDate(day.date); setSelectedTime(''); }}
-                          style={[styles.dateChip, selected && styles.dateChipSelected, !count && styles.disabled]}
+                          style={[styles.dateChip, selected && styles.dateChipSelected, (busy || !count) && styles.disabled]}
                         >
                           <Text style={[styles.dateLabel, selected && styles.selectedText]}>{day.label}</Text>
                           <Text style={[styles.dateCount, selected && styles.selectedText]}>{count ? `${count} times` : 'Unavailable'}</Text>
@@ -246,10 +246,10 @@ export default function BookServiceScreen() {
                           <Pressable
                             key={slot.time}
                             accessibilityRole="button"
-                            accessibilityState={{ selected, disabled: !slot.available }}
-                            disabled={!slot.available}
+                            accessibilityState={{ selected, disabled: busy || !slot.available }}
+                            disabled={busy || !slot.available}
                             onPress={() => setSelectedTime(slot.time)}
-                            style={[styles.slotChip, selected && styles.slotSelected, !slot.available && styles.disabled]}
+                            style={[styles.slotChip, selected && styles.slotSelected, (busy || !slot.available) && styles.disabled]}
                           >
                             <Text style={[styles.slotText, selected && styles.selectedText]}>{slot.time}</Text>
                           </Pressable>
