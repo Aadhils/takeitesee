@@ -224,6 +224,21 @@ function RequirementContent({
         </View>
       </View>
 
+      {requirement.schedule_pattern === 'one_time' && requirement.accepted_proposal_id && data.conversation_id ? (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Your provider conversation</Text>
+          <Text style={styles.muted}>Discuss this requirement with your selected provider.</Text>
+          <Link
+            href={{ pathname: '/messages/[conversationId]', params: { conversationId: data.conversation_id, workspace: 'customer' } }}
+            asChild
+          >
+            <Pressable accessibilityRole="button" accessibilityLabel="Open conversation with your selected provider" style={styles.secondaryButton}>
+              <Text style={styles.secondaryButtonText}>Open conversation →</Text>
+            </Pressable>
+          </Link>
+        </View>
+      ) : null}
+
       {requirement.schedule_pattern === 'recurring' ? (
         <View style={styles.freezeCard}>
           <Text style={styles.cardTitle}>Recurring requirement · read-only in native v1</Text>
