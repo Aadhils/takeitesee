@@ -70,3 +70,11 @@ test('missing requirement links recover to the list instead of an endless loadin
   assert.ok(!guard.includes('<ActivityIndicator'));
   assert.ok(requirementDetail.includes("firstParam(params.requirementId)?.trim() ?? ''"));
 });
+
+test('requirement fetches and decisions ignore results from a previous route context', () => {
+  assert.ok(requirementDetail.includes('const version = ++requestVersion.current'));
+  assert.ok(requirementDetail.includes('return () => { requestVersion.current += 1; }'));
+  assert.ok(requirementDetail.includes("state.status === 'ready' && state.data.requirement.id === requirementId"));
+  assert.ok(requirementDetail.includes('state.data.requirement.id !== requirementId || busyProposalId'));
+  assert.ok(requirementDetail.includes('await decideCustomerRequirementProposal(requirementId, proposal.id, decision);\n      if (version !== requestVersion.current) return;'));
+});
