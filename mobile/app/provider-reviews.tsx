@@ -60,7 +60,7 @@ export default function ProviderReviewsScreen() {
   }, [load]);
 
   const startResponse = (review: ProviderReview) => {
-    if (savingReviewId) return;
+    if (savingReviewId || state.status !== 'ready') return;
     setEditingReviewId(review.id);
     setResponseDraft(review.provider_response || '');
     setActionError('');
@@ -75,7 +75,7 @@ export default function ProviderReviewsScreen() {
   };
 
   const saveResponse = async (reviewId: string) => {
-    if (savingReviewId) return;
+    if (savingReviewId || state.status !== 'ready') return;
     setSavingReviewId(reviewId);
     setActionError('');
     setNotice('');
@@ -191,9 +191,9 @@ export default function ProviderReviewsScreen() {
                     <View style={styles.actionRow}>
                       <Pressable
                         accessibilityRole="button"
-                        disabled={saving || responseDraft.trim().length < 3}
+                        disabled={saving || state.status !== 'ready' || responseDraft.trim().length < 3}
                         onPress={() => void saveResponse(review.id)}
-                        style={[styles.primaryButton, (saving || responseDraft.trim().length < 3) && styles.buttonDisabled]}
+                        style={[styles.primaryButton, (saving || state.status !== 'ready' || responseDraft.trim().length < 3) && styles.buttonDisabled]}
                       >
                         <Text style={styles.primaryButtonText}>{saving ? 'Saving…' : 'Save response'}</Text>
                       </Pressable>
@@ -203,7 +203,7 @@ export default function ProviderReviewsScreen() {
                     </View>
                   </View>
                 ) : (
-                  <Pressable accessibilityRole="button" disabled={!!savingReviewId} accessibilityState={{ disabled: !!savingReviewId }} onPress={() => startResponse(review)} style={[styles.responseButton, !!savingReviewId && styles.buttonDisabled]}>
+                  <Pressable accessibilityRole="button" disabled={!!savingReviewId || state.status !== 'ready'} accessibilityState={{ disabled: !!savingReviewId || state.status !== 'ready' }} onPress={() => startResponse(review)} style={[styles.responseButton, (!!savingReviewId || state.status !== 'ready') && styles.buttonDisabled]}>
                     <Text style={styles.responseButtonText}>{review.provider_response ? 'Edit response' : 'Respond to review'}</Text>
                   </Pressable>
                 )}
