@@ -79,3 +79,12 @@ test('thread back navigation restores the requested workspace with the existing 
   assert.ok(inboxScreen.includes("selectedWorkspace === 'provider' && providerAccess ? 'provider' : 'customer'"));
   assert.ok(inboxScreen.includes("setWorkspace(requestedWorkspace === 'provider' ? 'provider' : 'customer')"));
 });
+
+test('thread requests and send results cannot overwrite another conversation', () => {
+  assert.ok(threadScreen.includes('const version = ++requestVersion.current'));
+  assert.ok(threadScreen.includes('return () => { requestVersion.current += 1; }'));
+  assert.ok(threadScreen.includes("state.status === 'ready' && state.conversation.id === conversationId"));
+  const send = threadScreen.split('  const send = async () => {')[1].split('\n  return (')[0];
+  assert.ok(send.includes('const version = requestVersion.current'));
+  assert.ok(send.includes('await sendConversationMessage(conversation.id, body);\n      if (version !== requestVersion.current) return;'));
+});

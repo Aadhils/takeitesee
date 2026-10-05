@@ -1,5 +1,5 @@
 import { Link, Redirect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -50,14 +50,18 @@ export default function MessageThreadScreen() {
   const [sending, setSending] = useState(false);
   const [actionError, setActionError] = useState('');
 
+  const requestVersion = useRef(0);
+
   const load = useCallback(async (silent = false) => {
     if (auth.status !== 'signedIn' || !conversationId) return;
+    const version = ++requestVersion.current;
     if (!silent) setState((current) => ({ status: 'loading', conversation: null, messages: current.messages, safety: current.safety }));
     try {
       const [thread, safetyPayload] = await Promise.all([
         fetchConversation(conversationId),
         fetchConversationSafety(conversationId),
       ]);
+      if (version !== requestVersion.current) return;
       setState({
         status: 'ready',
         conversation: thread.conversation,
@@ -66,6 +70,7 @@ export default function MessageThreadScreen() {
       });
       setActionError('');
     } catch (error) {
+      if (version !== requestVersion.current) return;
       if (silent) {
         setActionError('Message sent, but the conversation could not refresh. Tap Refresh to update the history.');
       } else {
@@ -81,10 +86,13 @@ export default function MessageThreadScreen() {
   }, [auth.status, conversationId]);
 
   useEffect(() => {
+    setDraft('');
+    setActionError('');
     void load();
+    return () => { requestVersion.current += 1; };
   }, [load]);
 
-  const conversation = state.status === 'ready' ? state.conversation : null;
+  const conversation = state.status === 'ready' && state.conversation.id === conversationId ? state.conversation : null;
   const canCompose = conversation ? conversationCanCompose(conversation, state.safety) : false;
   const contextSummary = useMemo(() => {
     if (!conversation) return '';
@@ -125,13 +133,16 @@ export default function MessageThreadScreen() {
   const send = async () => {
     const body = draft.trim();
     if (!conversation || !canCompose || !body || sending) return;
+    const version = requestVersion.current;
     setSending(true);
     setActionError('');
     try {
       await sendConversationMessage(conversation.id, body);
+      if (version !== requestVersion.current) return;
       setDraft('');
       await load(true);
     } catch (error) {
+      if (version !== requestVersion.current) return;
       setActionError(error instanceof Error ? error.message : 'Message could not be sent.');
     } finally {
       setSending(false);
