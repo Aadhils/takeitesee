@@ -54,3 +54,10 @@ test('central request navigation is authenticated and active on requirement deta
   assert.equal(items.find((item) => item.href === '/request-service')?.auth, true);
   assert.ok(mobileNav.includes("item.href === '/request-service' && pathname.startsWith('/requirements')"));
 });
+
+test('selected one-time requirements open the server-linked Customer conversation', () => {
+  assert.ok(requirementDetail.includes("requirement.schedule_pattern === 'one_time' && requirement.accepted_proposal_id && data.conversation_id ?"));
+  assert.ok(requirementDetail.includes("pathname: '/messages/[conversationId]'"));
+  assert.ok(requirementDetail.includes("conversationId: data.conversation_id, workspace: 'customer'"));
+  assert.ok(requirementDetail.includes('Open conversation →'));
+});
