@@ -99,6 +99,7 @@ export default function ProviderScreen() {
   const providerType = isProfessional ? 'Professional' : 'Business';
 
   const openDraft = (lead: ProviderRequirementLead) => {
+    if (busyLeadId || state.status !== 'ready') return;
     if (lead.schedule_pattern !== 'one_time') return;
     const initialAmount = lead.budget_type === 'fixed' && lead.budget_min_minor && lead.budget_min_minor > 0
       ? String(lead.budget_min_minor / 100)
@@ -230,7 +231,7 @@ export default function ProviderScreen() {
                 ) : alreadyProposed ? (
                   <Text style={styles.alreadyText}>Proposal already submitted for this requirement.</Text>
                 ) : !draftOpen ? (
-                  <Pressable accessibilityRole="button" onPress={() => openDraft(lead)} style={styles.primaryButton}>
+                  <Pressable accessibilityRole="button" disabled={!!busyLeadId || state.status !== 'ready'} accessibilityState={{ disabled: !!busyLeadId || state.status !== 'ready' }} onPress={() => openDraft(lead)} style={[styles.primaryButton, (!!busyLeadId || state.status !== 'ready') && styles.buttonDisabled]}>
                     <Text style={styles.primaryButtonText}>Respond with proposal</Text>
                   </Pressable>
                 ) : (
