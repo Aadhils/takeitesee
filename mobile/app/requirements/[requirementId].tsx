@@ -1,5 +1,5 @@
 import { Link, Redirect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -60,13 +60,18 @@ export default function RequirementDetailScreen() {
   const [notice, setNotice] = useState('');
   const [actionError, setActionError] = useState('');
 
+  const requestVersion = useRef(0);
+
   const load = useCallback(async () => {
     if (auth.status !== 'signedIn' || !requirementId) return;
+    const version = ++requestVersion.current;
     setState({ status: 'loading' });
     try {
       const data = await fetchCustomerRequirementDetail(requirementId);
+      if (version !== requestVersion.current) return;
       setState({ status: 'ready', data });
     } catch (error) {
+      if (version !== requestVersion.current) return;
       setState({
         status: 'error',
         message: error instanceof Error ? error.message : 'Unable to load requirement.',
@@ -75,35 +80,42 @@ export default function RequirementDetailScreen() {
   }, [auth.status, requirementId]);
 
   useEffect(() => {
+    setPendingDecision(null);
+    setNotice('');
+    setActionError('');
     void load();
+    return () => { requestVersion.current += 1; };
   }, [load]);
 
   const orderedProposals = useMemo(() => {
-    if (state.status !== 'ready') return [];
+    if (state.status !== 'ready' || state.data.requirement.id !== requirementId) return [];
     return [...state.data.proposals].sort((left, right) => {
       const statusDiff = proposalStatusPriority(left.status) - proposalStatusPriority(right.status);
       if (statusDiff !== 0) return statusDiff;
       return new Date(right.submitted_at).getTime() - new Date(left.submitted_at).getTime();
     });
-  }, [state]);
+  }, [state, requirementId]);
 
   const decide = async (proposal: RequirementProposal, decision: 'accept' | 'decline') => {
-    if (state.status !== 'ready' || busyProposalId) return;
+    if (state.status !== 'ready' || state.data.requirement.id !== requirementId || busyProposalId) return;
     const requirement = state.data.requirement;
     if (requirement.schedule_pattern !== 'one_time') return;
     if (!['open', 'paused'].includes(requirement.status)) return;
     if (proposal.status !== 'submitted') return;
     if (decision === 'accept' && proposal.provider_marketplace_status === 'ineligible') return;
 
+    const version = requestVersion.current;
     setBusyProposalId(proposal.id);
     setActionError('');
     setNotice('');
     try {
       await decideCustomerRequirementProposal(requirementId, proposal.id, decision);
+      if (version !== requestVersion.current) return;
       setPendingDecision(null);
       setNotice(decision === 'accept' ? 'Provider selected.' : 'Proposal declined.');
       await load();
     } catch (error) {
+      if (version !== requestVersion.current) return;
       setActionError(error instanceof Error ? error.message : 'Proposal decision could not be saved.');
     } finally {
       setBusyProposalId('');
@@ -169,7 +181,7 @@ export default function RequirementDetailScreen() {
           </View>
         ) : null}
 
-        {state.status === 'ready' ? (
+        {state.status === 'ready' && state.data.requirement.id === requirementId ? (
           <RequirementContent
             data={state.data}
             proposals={orderedProposals}
