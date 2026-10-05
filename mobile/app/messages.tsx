@@ -1,4 +1,4 @@
-import { Link, Redirect } from 'expo-router';
+import { Link, Redirect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,12 +22,19 @@ type InboxState =
 
 export default function MessagesScreen() {
   const auth = useAuth();
+  const params = useLocalSearchParams<{ workspace?: string | string[] }>();
+  const requestedWorkspace = Array.isArray(params.workspace) ? params.workspace[0] : params.workspace;
   const providerAccess = auth.status === 'signedIn'
     && (auth.identity.roles.includes('professional') || auth.identity.roles.includes('business_owner'));
-  const [workspace, setWorkspace] = useState<MessageWorkspace>('customer');
+  const [selectedWorkspace, setWorkspace] = useState<MessageWorkspace>(requestedWorkspace === 'provider' ? 'provider' : 'customer');
+  const workspace: MessageWorkspace = selectedWorkspace === 'provider' && providerAccess ? 'provider' : 'customer';
   const [state, setState] = useState<InboxState>({ status: 'loading', conversations: [] });
 
   const requestVersion = useRef(0);
+
+  useEffect(() => {
+    setWorkspace(requestedWorkspace === 'provider' ? 'provider' : 'customer');
+  }, [requestedWorkspace]);
 
   const load = useCallback(async () => {
     if (auth.status !== 'signedIn') return;

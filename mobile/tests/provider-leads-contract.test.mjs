@@ -56,3 +56,11 @@ test('Provider workspace remains gated only by server-returned provider roles', 
   assert.ok(providerScreen.includes("auth.identity.roles.includes('business_owner')"));
   assert.ok(providerScreen.includes('if (!hasProviderAccess) return <Redirect href="/home" />'));
 });
+
+test('accepted proposals open only their server-linked conversation in the Provider workspace', () => {
+  const card = providerScreen.split('function ProposalHistoryCard')[1].split('const styles')[0];
+  assert.ok(card.includes("proposal.status === 'accepted' && proposal.conversation_id ?"));
+  assert.ok(card.includes("pathname: '/messages/[conversationId]'"));
+  assert.ok(card.includes("conversationId: proposal.conversation_id, workspace: 'provider'"));
+  assert.ok(card.includes('Open conversation →'));
+});
