@@ -141,3 +141,12 @@ test('native booking actions keep attendance bounded and stay outside finance, c
   assert.ok(!bookingsClient.includes("action: 'report_provider_no_show'"));
   assert.ok(!bookingsClient.includes("ProviderBookingAction = 'accept' | 'decline' | 'complete'"));
 });
+
+test('Customer booking reads and completion results remain scoped to the current route', () => {
+  assert.ok(customerDetail.includes('const version = ++requestVersion.current'));
+  assert.ok(customerDetail.includes('return () => { requestVersion.current += 1; }'));
+  assert.ok(customerDetail.includes("state.status === 'ready' && state.booking.id === bookingId"));
+  assert.ok(customerDetail.includes("state.status !== 'ready' || state.booking.id !== bookingId"));
+  assert.ok(customerDetail.includes('await confirmCustomerServiceCompletion(bookingId);\n      if (version !== requestVersion.current) return;'));
+  assert.ok(customerDetail.includes('const refreshed = await fetchCustomerBooking(bookingId);\n      if (version !== requestVersion.current) return;'));
+});
