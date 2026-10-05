@@ -110,7 +110,7 @@ export default function ProviderScreen() {
   };
 
   const submit = async (lead: ProviderRequirementLead) => {
-    if (!draft || draft.leadId !== lead.id || busyLeadId) return;
+    if (!draft || draft.leadId !== lead.id || busyLeadId || state.status !== 'ready') return;
     if (lead.schedule_pattern !== 'one_time') return;
     const amount = Number(draft.amount);
     const message = draft.message.trim();
@@ -263,9 +263,9 @@ export default function ProviderScreen() {
                     <View style={styles.actionRow}>
                       <Pressable
                         accessibilityRole="button"
-                        disabled={busy}
+                        disabled={busy || state.status !== 'ready'}
                         onPress={() => void submit(lead)}
-                        style={[styles.primaryButton, busy && styles.buttonDisabled]}
+                        style={[styles.primaryButton, (busy || state.status !== 'ready') && styles.buttonDisabled]}
                       >
                         {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryButtonText}>Send proposal</Text>}
                       </Pressable>
