@@ -326,7 +326,17 @@ function ProposalHistoryCard({ proposal }: { proposal: ProviderRequirementPropos
       </View>
       <Text style={styles.detail}>{proposal.message}</Text>
       {proposal.status === 'accepted' && proposal.conversation_id ? (
-        <Text style={styles.acceptedText}>Selected by Customer · conversation ready</Text>
+        <View style={styles.conversationEntry}>
+          <Text style={styles.acceptedText}>Selected by Customer · conversation ready</Text>
+          <Link
+            href={{ pathname: '/messages/[conversationId]', params: { conversationId: proposal.conversation_id, workspace: 'provider' } }}
+            asChild
+          >
+            <Pressable accessibilityRole="button" accessibilityLabel={`Open conversation for ${proposal.requirement_title}`} style={styles.conversationButton}>
+              <Text style={styles.secondaryButtonText}>Open conversation →</Text>
+            </Pressable>
+          </Link>
+        </View>
       ) : null}
     </View>
   );
@@ -383,6 +393,8 @@ const styles = StyleSheet.create({
   secondaryButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary, paddingHorizontal: 14 },
   secondaryButtonText: { color: theme.colors.primaryStrong, fontSize: 13, fontWeight: '900' },
   buttonDisabled: { opacity: 0.45 },
+  conversationEntry: { gap: 8 },
+  conversationButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: theme.radii.md, backgroundColor: theme.colors.secondary, paddingHorizontal: 14, paddingVertical: 10 },
   acceptedText: { fontSize: 12, fontWeight: '800', color: '#285c33' },
   muted: { fontSize: 13, lineHeight: 19, color: theme.colors.inkMuted },
 });

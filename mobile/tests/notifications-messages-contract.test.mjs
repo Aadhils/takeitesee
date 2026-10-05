@@ -72,3 +72,10 @@ test('Notifications and messages native slice stays outside frozen finance and r
     assert.ok(!combined.includes(forbidden), `unexpected frozen-domain reference: ${forbidden}`);
   }
 });
+
+test('thread back navigation restores the requested workspace with the existing provider role gate', () => {
+  assert.ok(threadScreen.includes("pathname: '/messages', params: { workspace }"));
+  assert.ok(inboxScreen.includes('useLocalSearchParams<{ workspace?: string | string[] }>'));
+  assert.ok(inboxScreen.includes("selectedWorkspace === 'provider' && providerAccess ? 'provider' : 'customer'"));
+  assert.ok(inboxScreen.includes("setWorkspace(requestedWorkspace === 'provider' ? 'provider' : 'customer')"));
+});
