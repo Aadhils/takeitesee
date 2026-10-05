@@ -158,8 +158,14 @@ export default function RequirementDetailScreen() {
             busyProposalId={busyProposalId}
             notice={notice}
             actionError={actionError}
-            onAskDecision={(proposalId, decision) => setPendingDecision({ proposalId, decision })}
-            onCancelDecision={() => setPendingDecision(null)}
+            onAskDecision={(proposalId, decision) => {
+              if (busyProposalId) return;
+              setPendingDecision({ proposalId, decision });
+            }}
+            onCancelDecision={() => {
+              if (busyProposalId) return;
+              setPendingDecision(null);
+            }}
             onDecide={decide}
           />
         ) : null}
@@ -247,6 +253,7 @@ function RequirementContent({
           const canAct = nativeActionsAllowed && proposal.status === 'submitted';
           const canAccept = canAct && proposal.provider_marketplace_status !== 'ineligible';
           const busy = busyProposalId === proposal.id;
+          const decisionLocked = !!busyProposalId;
 
           return (
             <View key={proposal.id} style={styles.card}>
@@ -290,17 +297,17 @@ function RequirementContent({
                 <View style={styles.actionRow}>
                   <Pressable
                     accessibilityRole="button"
-                    disabled={!canAccept || busy}
+                    disabled={!canAccept || decisionLocked}
                     onPress={() => onAskDecision(proposal.id, 'accept')}
-                    style={[styles.primaryButton, (!canAccept || busy) && styles.buttonDisabled]}
+                    style={[styles.primaryButton, (!canAccept || decisionLocked) && styles.buttonDisabled]}
                   >
                     <Text style={styles.primaryButtonText}>Accept</Text>
                   </Pressable>
                   <Pressable
                     accessibilityRole="button"
-                    disabled={busy}
+                    disabled={decisionLocked}
                     onPress={() => onAskDecision(proposal.id, 'decline')}
-                    style={[styles.dangerButton, busy && styles.buttonDisabled]}
+                    style={[styles.dangerButton, decisionLocked && styles.buttonDisabled]}
                   >
                     <Text style={styles.dangerButtonText}>Decline</Text>
                   </Pressable>
@@ -322,9 +329,9 @@ function RequirementContent({
                   <View style={styles.actionRow}>
                     <Pressable
                     accessibilityRole="button"
-                      disabled={busy}
+                      disabled={decisionLocked}
                       onPress={() => void onDecide(proposal, pending)}
-                      style={[pending === 'accept' ? styles.primaryButton : styles.dangerButton, busy && styles.buttonDisabled]}
+                      style={[pending === 'accept' ? styles.primaryButton : styles.dangerButton, decisionLocked && styles.buttonDisabled]}
                     >
                       {busy ? (
                         <ActivityIndicator color={pending === 'accept' ? '#fff' : '#8b2b2b'} />
@@ -334,7 +341,7 @@ function RequirementContent({
                         </Text>
                       )}
                     </Pressable>
-                    <Pressable accessibilityRole="button" disabled={busy} onPress={onCancelDecision} style={styles.secondaryButton}>
+                    <Pressable accessibilityRole="button" disabled={decisionLocked} onPress={onCancelDecision} style={[styles.secondaryButton, decisionLocked && styles.buttonDisabled]}>
                       <Text style={styles.secondaryButtonText}>Keep reviewing</Text>
                     </Pressable>
                   </View>
