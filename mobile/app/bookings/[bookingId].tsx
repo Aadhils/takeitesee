@@ -1,5 +1,5 @@
 import { Link, Redirect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -30,13 +30,18 @@ export default function CustomerBookingDetailScreen() {
   const [completionBusy, setCompletionBusy] = useState(false);
   const [completionError, setCompletionError] = useState('');
 
+  const requestVersion = useRef(0);
+
   const load = useCallback(async () => {
     if (auth.status !== 'signedIn' || !bookingId) return;
+    const version = ++requestVersion.current;
     setState({ status: 'loading', booking: null });
     try {
       const payload = await fetchCustomerBooking(bookingId);
+      if (version !== requestVersion.current) return;
       setState({ status: 'ready', booking: payload.booking });
     } catch (error) {
+      if (version !== requestVersion.current) return;
       setState({
         status: 'error',
         booking: null,
@@ -46,19 +51,26 @@ export default function CustomerBookingDetailScreen() {
   }, [auth.status, bookingId]);
 
   useEffect(() => {
+    setCompletionConfirmOpen(false);
+    setCompletionError('');
     void load();
+    return () => { requestVersion.current += 1; };
   }, [load]);
 
   const submitCompletionAcknowledgement = async () => {
-    if (!bookingId || completionBusy) return;
+    if (!bookingId || completionBusy || state.status !== 'ready' || state.booking.id !== bookingId) return;
+    const version = requestVersion.current;
     setCompletionError('');
     setCompletionBusy(true);
     try {
       await confirmCustomerServiceCompletion(bookingId);
+      if (version !== requestVersion.current) return;
       const refreshed = await fetchCustomerBooking(bookingId);
+      if (version !== requestVersion.current) return;
       setState({ status: 'ready', booking: refreshed.booking });
       setCompletionConfirmOpen(false);
     } catch (error) {
+      if (version !== requestVersion.current) return;
       setCompletionError(error instanceof Error ? error.message : 'Unable to confirm service completion.');
     } finally {
       setCompletionBusy(false);
@@ -89,7 +101,7 @@ export default function CustomerBookingDetailScreen() {
     );
   }
 
-  const booking = state.status === 'ready' ? state.booking : null;
+  const booking = state.status === 'ready' && state.booking.id === bookingId ? state.booking : null;
   const providerLabel = booking?.provider_name
     || (booking?.provider.provider_type === 'business' ? 'Business provider' : 'Professional provider');
   const canManage = booking
