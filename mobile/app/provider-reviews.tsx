@@ -123,7 +123,7 @@ export default function ProviderReviewsScreen() {
             </Pressable>
           </View>
 
-          <View style={styles.summaryCard}>
+          {state.status === 'ready' ? <View style={styles.summaryCard}>
             <View style={styles.summaryMain}>
               <Text style={styles.average}>{state.summary.average.toFixed(1)}</Text>
               <Text style={styles.stars}>{stars(state.summary.average)}</Text>
@@ -133,7 +133,7 @@ export default function ProviderReviewsScreen() {
               <Text style={styles.summaryLabel}>5-star share</Text>
               <Text style={styles.summaryValue}>{state.summary.five_star_share}%</Text>
             </View>
-          </View>
+          </View> : null}
 
           <View style={styles.guardCard}>
             <Text style={styles.guardTitle}>Response access</Text>
