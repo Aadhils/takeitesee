@@ -123,6 +123,25 @@ export default function RequirementDetailScreen() {
 
   if (auth.status === 'signedOut') return <Redirect href="/login" />;
 
+  if (!requirementId) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.missingContent}>
+          <View style={styles.brandRow}><BrandLogo compact /></View>
+          <View style={styles.errorCard}>
+            <Text accessibilityRole="alert" style={styles.errorTitle}>Requirement link unavailable</Text>
+            <Text style={styles.errorText}>This link is missing the requirement ID. Open your requirements list to choose a request.</Text>
+            <Link href="/requirements" asChild>
+              <Pressable accessibilityRole="button" style={styles.secondaryButton}>
+                <Text style={styles.secondaryButtonText}>Back to Requirements</Text>
+              </Pressable>
+            </Link>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -373,6 +392,7 @@ function RequirementContent({
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: theme.colors.white },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
+  missingContent: { flexGrow: 1, justifyContent: 'center', padding: 18, gap: 18 },
   brandRow: { alignItems: 'center' },
   content: { padding: 18, paddingBottom: 28, gap: 14 },
   backButton: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingRight: 12 },

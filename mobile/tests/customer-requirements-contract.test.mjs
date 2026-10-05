@@ -61,3 +61,12 @@ test('selected one-time requirements open the server-linked Customer conversatio
   assert.ok(requirementDetail.includes("conversationId: data.conversation_id, workspace: 'customer'"));
   assert.ok(requirementDetail.includes('Open conversation →'));
 });
+
+test('missing requirement links recover to the list instead of an endless loading screen', () => {
+  const guard = requirementDetail.split('  if (!requirementId) {')[1]?.split('\n  return (')[0];
+  assert.ok(guard, 'a missing-ID render guard must exist');
+  assert.ok(guard.includes('Requirement link unavailable'));
+  assert.ok(guard.includes('href="/requirements"'));
+  assert.ok(!guard.includes('<ActivityIndicator'));
+  assert.ok(requirementDetail.includes("firstParam(params.requirementId)?.trim() ?? ''"));
+});
