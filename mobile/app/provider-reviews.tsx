@@ -60,6 +60,7 @@ export default function ProviderReviewsScreen() {
   }, [load]);
 
   const startResponse = (review: ProviderReview) => {
+    if (savingReviewId) return;
     setEditingReviewId(review.id);
     setResponseDraft(review.provider_response || '');
     setActionError('');
@@ -67,6 +68,7 @@ export default function ProviderReviewsScreen() {
   };
 
   const cancelResponse = () => {
+    if (savingReviewId) return;
     setEditingReviewId('');
     setResponseDraft('');
     setActionError('');
@@ -175,6 +177,7 @@ export default function ProviderReviewsScreen() {
                   <View style={styles.composer}>
                     <Text style={styles.label}>Provider response</Text>
                     <TextInput
+                      editable={!savingReviewId}
                       accessibilityLabel="Provider review response"
                       maxLength={1000}
                       multiline
@@ -200,7 +203,7 @@ export default function ProviderReviewsScreen() {
                     </View>
                   </View>
                 ) : (
-                  <Pressable accessibilityRole="button" onPress={() => startResponse(review)} style={styles.responseButton}>
+                  <Pressable accessibilityRole="button" disabled={!!savingReviewId} accessibilityState={{ disabled: !!savingReviewId }} onPress={() => startResponse(review)} style={[styles.responseButton, !!savingReviewId && styles.buttonDisabled]}>
                     <Text style={styles.responseButtonText}>{review.provider_response ? 'Edit response' : 'Respond to review'}</Text>
                   </Pressable>
                 )}
