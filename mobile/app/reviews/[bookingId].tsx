@@ -1,5 +1,5 @@
 import { Link, Redirect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -15,29 +15,38 @@ import { theme } from '../../lib/theme';
 import { useAuth } from '../../providers/AuthProvider';
 
 type ReviewState =
-  | { status: 'loading'; review: CustomerReview | null }
-  | { status: 'ready'; review: CustomerReview | null }
-  | { status: 'error'; review: null; message: string };
+  | { status: 'loading'; bookingId: string | null; review: CustomerReview | null }
+  | { status: 'ready'; bookingId: string; review: CustomerReview | null }
+  | { status: 'error'; bookingId: string; review: null; message: string };
 
 export default function CustomerReviewComposerScreen() {
   const auth = useAuth();
   const params = useLocalSearchParams<{ bookingId?: string | string[] }>();
   const bookingId = Array.isArray(params.bookingId) ? params.bookingId[0] : params.bookingId;
-  const [state, setState] = useState<ReviewState>({ status: 'loading', review: null });
+  const [state, setState] = useState<ReviewState>({ status: 'loading', bookingId: null, review: null });
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [actionError, setActionError] = useState('');
 
+  const requestVersion = useRef(0);
+  const currentState = state.bookingId === bookingId
+    ? state
+    : { status: 'loading' as const, bookingId: bookingId ?? null, review: null };
+
   const load = useCallback(async () => {
+    const version = ++requestVersion.current;
     if (auth.status !== 'signedIn' || !bookingId) return;
-    setState({ status: 'loading', review: null });
+    setState({ status: 'loading', bookingId, review: null });
     try {
       const payload = await fetchCustomerReviewForBooking(bookingId);
-      setState({ status: 'ready', review: payload.review ?? null });
+      if (version !== requestVersion.current) return;
+      setState({ status: 'ready', bookingId, review: payload.review ?? null });
     } catch (error) {
+      if (version !== requestVersion.current) return;
       setState({
         status: 'error',
+        bookingId,
         review: null,
         message: error instanceof Error ? error.message : 'Unable to load review state.',
       });
@@ -45,17 +54,24 @@ export default function CustomerReviewComposerScreen() {
   }, [auth.status, bookingId]);
 
   useEffect(() => {
+    setRating(0);
+    setComment('');
+    setActionError('');
     void load();
+    return () => { requestVersion.current += 1; };
   }, [load]);
 
   const submit = async () => {
-    if (!bookingId || submitting || rating < 1 || rating > 5) return;
+    if (!bookingId || submitting || currentState.status !== 'ready' || currentState.review || rating < 1 || rating > 5) return;
+    const version = requestVersion.current;
     setSubmitting(true);
     setActionError('');
     try {
       const payload = await submitCustomerReview({ bookingId, rating, comment });
-      setState({ status: 'ready', review: payload.review });
+      if (version !== requestVersion.current) return;
+      setState({ status: 'ready', bookingId, review: payload.review });
     } catch (error) {
+      if (version !== requestVersion.current) return;
       setActionError(error instanceof Error ? error.message : 'Review could not be submitted.');
     } finally {
       setSubmitting(false);
@@ -107,30 +123,30 @@ export default function CustomerReviewComposerScreen() {
           </Text>
         </View>
 
-        {state.status === 'loading' ? (
+        {currentState.status === 'loading' ? (
           <View style={styles.inlineStatus}><ActivityIndicator /><Text style={styles.muted}>Checking review eligibility…</Text></View>
         ) : null}
-        {state.status === 'error' ? <Text style={styles.errorText}>{state.message}</Text> : null}
-        {actionError ? <Text style={styles.errorText}>{actionError}</Text> : null}
+        {currentState.status === 'error' ? <Text style={styles.errorText}>{currentState.message}</Text> : null}
+        {state.bookingId === bookingId && actionError ? <Text style={styles.errorText}>{actionError}</Text> : null}
 
-        {state.status === 'ready' && state.review ? (
+        {currentState.status === 'ready' && currentState.review ? (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Review already published</Text>
             <View style={styles.ratingRow}>
-              <Text style={styles.stars}>{stars(state.review.rating)}</Text>
-              <Text style={styles.ratingValue}>{state.review.rating}/5</Text>
+              <Text style={styles.stars}>{stars(currentState.review.rating)}</Text>
+              <Text style={styles.ratingValue}>{currentState.review.rating}/5</Text>
             </View>
-            <Text style={styles.comment}>{state.review.comment || 'No written comment.'}</Text>
-            {state.review.provider_response ? (
+            <Text style={styles.comment}>{currentState.review.comment || 'No written comment.'}</Text>
+            {currentState.review.provider_response ? (
               <View style={styles.responseCard}>
                 <Text style={styles.responseLabel}>PROVIDER RESPONSE</Text>
-                <Text style={styles.responseText}>{state.review.provider_response}</Text>
+                <Text style={styles.responseText}>{currentState.review.provider_response}</Text>
               </View>
             ) : null}
           </View>
         ) : null}
 
-        {state.status === 'ready' && !state.review ? (
+        {currentState.status === 'ready' && !currentState.review ? (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Your rating</Text>
             <View style={styles.ratingChoices}>
