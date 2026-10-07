@@ -1,5 +1,5 @@
 import { Link, Redirect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -39,13 +39,18 @@ export default function ProviderBookingDetailScreen() {
   const isProvider = auth.status === 'signedIn'
     && (auth.identity.roles.includes('professional') || auth.identity.roles.includes('business_owner'));
 
+  const requestVersion = useRef(0);
+
   const load = useCallback(async () => {
     if (auth.status !== 'signedIn' || !isProvider || !bookingId) return;
+    const version = ++requestVersion.current;
     setState({ status: 'loading', booking: null });
     try {
       const payload = await fetchProviderBooking(bookingId);
+      if (version !== requestVersion.current) return;
       setState({ status: 'ready', booking: payload.booking });
     } catch (error) {
+      if (version !== requestVersion.current) return;
       setState({
         status: 'error',
         booking: null,
@@ -55,11 +60,18 @@ export default function ProviderBookingDetailScreen() {
   }, [auth.status, bookingId, isProvider]);
 
   useEffect(() => {
+    setDeclineReason('');
+    setNoShowNote('');
+    setActionError('');
+    setAttendanceError('');
+    setAttendanceConfirmOpen(false);
     void load();
+    return () => { requestVersion.current += 1; };
   }, [load]);
 
   const submitAction = async (action: ProviderBookingAction) => {
-    if (!bookingId || busyAction || attendanceBusy) return;
+    if (!bookingId || busyAction || attendanceBusy || state.status !== 'ready' || state.booking.id !== bookingId) return;
+    const version = requestVersion.current;
     setActionError('');
     setBusyAction(action);
     try {
@@ -68,9 +80,11 @@ export default function ProviderBookingDetailScreen() {
         action,
         action === 'decline' ? declineReason : undefined,
       );
+      if (version !== requestVersion.current) return;
       setState({ status: 'ready', booking: payload.booking });
       setDeclineReason('');
     } catch (error) {
+      if (version !== requestVersion.current) return;
       setActionError(error instanceof Error ? error.message : 'Unable to update booking.');
     } finally {
       setBusyAction(null);
@@ -78,16 +92,20 @@ export default function ProviderBookingDetailScreen() {
   };
 
   const submitCustomerNoShow = async () => {
-    if (!bookingId || attendanceBusy || busyAction) return;
+    if (!bookingId || attendanceBusy || busyAction || state.status !== 'ready' || state.booking.id !== bookingId) return;
+    const version = requestVersion.current;
     setAttendanceError('');
     setAttendanceBusy(true);
     try {
       await reportProviderCustomerNoShow(bookingId, noShowNote);
+      if (version !== requestVersion.current) return;
       const payload = await fetchProviderBooking(bookingId);
+      if (version !== requestVersion.current) return;
       setState({ status: 'ready', booking: payload.booking });
       setNoShowNote('');
       setAttendanceConfirmOpen(false);
     } catch (error) {
+      if (version !== requestVersion.current) return;
       setAttendanceError(error instanceof Error ? error.message : 'Unable to record attendance.');
     } finally {
       setAttendanceBusy(false);
@@ -119,7 +137,7 @@ export default function ProviderBookingDetailScreen() {
     );
   }
 
-  const booking = state.status === 'ready' ? state.booking : null;
+  const booking = state.status === 'ready' && state.booking.id === bookingId ? state.booking : null;
   const canRespond = booking ? ['pending', 'rescheduled'].includes(booking.status) : false;
   const canOfferCustomerNoShow = booking
     ? booking.status === 'confirmed' && booking.attendance_outcome === 'pending'

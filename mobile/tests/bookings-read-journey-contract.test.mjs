@@ -150,3 +150,12 @@ test('Customer booking reads and completion results remain scoped to the current
   assert.ok(customerDetail.includes('await confirmCustomerServiceCompletion(bookingId);\n      if (version !== requestVersion.current) return;'));
   assert.ok(customerDetail.includes('const refreshed = await fetchCustomerBooking(bookingId);\n      if (version !== requestVersion.current) return;'));
 });
+
+test('Provider booking reads and action results remain scoped to the current route', () => {
+  assert.ok(providerDetail.includes('const version = ++requestVersion.current'));
+  assert.ok(providerDetail.includes('return () => { requestVersion.current += 1; }'));
+  assert.ok(providerDetail.includes("state.status === 'ready' && state.booking.id === bookingId"));
+  assert.equal((providerDetail.match(/state\.booking\.id !== bookingId/g) ?? []).length, 2);
+  assert.ok(providerDetail.includes('await reportProviderCustomerNoShow(bookingId, noShowNote);\n      if (version !== requestVersion.current) return;'));
+  assert.equal((providerDetail.match(/if \(version !== requestVersion.current\) return;/g) ?? []).length, 7);
+});
