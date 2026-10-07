@@ -30,7 +30,7 @@ import { useAuth } from '../../providers/AuthProvider';
 
 type ScreenState =
   | { status: 'loading' }
-  | { status: 'ready'; provider: PublicProviderProfile; service: PublicProviderService; availability: BookingAvailability }
+  | { status: 'ready'; contextKey: string; provider: PublicProviderProfile; service: PublicProviderService; availability: BookingAvailability }
   | { status: 'error'; message: string };
 
 function firstParam(value: string | string[] | undefined) {
@@ -60,21 +60,31 @@ export default function BookServiceScreen() {
   const serviceId = firstParam(params.serviceId)?.trim() ?? '';
   const providerType = providerTypeParam(firstParam(params.providerType));
   const providerId = firstParam(params.providerId)?.trim() ?? '';
+  const contextKey = JSON.stringify([providerType, providerId, serviceId]);
   const [state, setState] = useState<ScreenState>({ status: 'loading' });
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState('');
+  const requestVersion = useRef(0);
+  const keyContext = useRef(contextKey);
   const idempotencyKey = useRef('');
   if (!idempotencyKey.current) idempotencyKey.current = createIdempotencyKey();
 
   useEffect(() => {
     let active = true;
-    if (auth.status !== 'signedIn') return () => { active = false; };
+    ++requestVersion.current;
+    if (keyContext.current !== contextKey) {
+      keyContext.current = contextKey;
+      idempotencyKey.current = createIdempotencyKey();
+      setSelectedDate('');
+      setSelectedTime('');
+    }
+    if (auth.status !== 'signedIn') return () => { active = false; requestVersion.current += 1; };
     if (!serviceId || !providerType || !providerId) {
       setState({ status: 'error', message: 'Booking context is incomplete.' });
-      return () => { active = false; };
+      return () => { active = false; requestVersion.current += 1; };
     }
 
     setState({ status: 'loading' });
@@ -91,7 +101,7 @@ export default function BookServiceScreen() {
           setState({ status: 'error', message: 'This service is no longer publicly available.' });
           return;
         }
-        setState({ status: 'ready', provider, service, availability });
+        setState({ status: 'ready', contextKey, provider, service, availability });
         const firstDay = availability.days.find((day) => day.slots.some((slot) => slot.available));
         setSelectedDate(firstDay?.date ?? '');
         setSelectedTime('');
@@ -104,13 +114,13 @@ export default function BookServiceScreen() {
         });
       });
 
-    return () => { active = false; };
-  }, [auth.status, providerId, providerType, serviceId, loadAttempt]);
+    return () => { active = false; requestVersion.current += 1; };
+  }, [auth.status, providerId, providerType, serviceId, contextKey, loadAttempt]);
 
   const selectedDay = useMemo(() => {
-    if (state.status !== 'ready') return undefined;
+    if (state.status !== 'ready' || state.contextKey !== contextKey) return undefined;
     return state.availability.days.find((day) => day.date === selectedDate);
-  }, [selectedDate, state]);
+  }, [selectedDate, state, contextKey]);
 
   if (auth.status === 'loading') {
     return (
@@ -132,7 +142,7 @@ export default function BookServiceScreen() {
     );
   }
 
-  const ready = state.status === 'ready' ? state : null;
+  const ready = state.status === 'ready' && state.contextKey === contextKey ? state : null;
   const serviceLocation = ready ? (ready.service.location || ready.provider.location || '').trim() : '';
   const currency = ready ? supportedCurrency(ready.service.currency) : null;
   const directlyBookable = Boolean(
@@ -148,6 +158,7 @@ export default function BookServiceScreen() {
 
   const submit = async () => {
     if (!ready || !directlyBookable || !currency || !selectedDate || !selectedTime || busy) return;
+    const version = requestVersion.current;
     setBusy(true);
     setActionError('');
     try {
@@ -165,8 +176,10 @@ export default function BookServiceScreen() {
         idempotency_key: idempotencyKey.current,
         service_name: ready.service.name,
       });
+      if (version !== requestVersion.current) return;
       router.replace({ pathname: '/bookings/[bookingId]', params: { bookingId: payload.booking.id } });
     } catch (error) {
+      if (version !== requestVersion.current) return;
       setActionError(error instanceof Error ? error.message : 'Booking could not be created.');
     } finally {
       setBusy(false);

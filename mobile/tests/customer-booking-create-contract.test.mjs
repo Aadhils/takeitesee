@@ -93,3 +93,11 @@ test('direct booking slice does not activate finance, support, completion, recov
   }
   assert.ok(bookingScreen.includes('No payment is collected here.'));
 });
+
+test('booking creation keeps retry keys within one provider/service context and ignores stale submit results', () => {
+  assert.ok(bookingScreen.includes('JSON.stringify([providerType, providerId, serviceId])'));
+  assert.ok(bookingScreen.includes('if (keyContext.current !== contextKey) {'));
+  assert.ok(bookingScreen.includes('keyContext.current = contextKey;\n      idempotencyKey.current = createIdempotencyKey();'));
+  assert.ok(bookingScreen.includes("state.status === 'ready' && state.contextKey === contextKey"));
+  assert.ok(bookingScreen.includes('if (version !== requestVersion.current) return;\n      router.replace'));
+});
