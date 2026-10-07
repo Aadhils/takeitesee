@@ -73,3 +73,13 @@ test('review actions stay outside completion, attendance, finance, recovery and 
     assert.ok(!actionSources.includes(forbidden), `unexpected frozen-domain reference: ${forbidden}`);
   }
 });
+
+test('review composer scopes loads, drafts and submissions to the current booking', () => {
+  assert.ok(reviewComposer.includes('state.bookingId === bookingId'));
+  assert.ok(reviewComposer.includes("currentState.status !== 'ready' || currentState.review"));
+  assert.ok(reviewComposer.includes('const version = ++requestVersion.current;'));
+  assert.equal((reviewComposer.match(/if \(version !== requestVersion.current\) return;/g) ?? []).length, 4);
+  assert.ok(reviewComposer.includes('return () => { requestVersion.current += 1; };'));
+  assert.ok(reviewComposer.includes("setRating(0);\n    setComment('');\n    setActionError('');\n    void load();"));
+  assert.ok(reviewComposer.includes("setState({ status: 'ready', bookingId, review: payload.review });"));
+});
