@@ -1,5 +1,5 @@
 import { Link, Redirect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -48,26 +48,33 @@ export default function CustomerBookingActionsScreen() {
   const [busyAction, setBusyAction] = useState<'cancel' | 'reschedule' | null>(null);
   const [actionError, setActionError] = useState('');
 
+  const requestVersion = useRef(0);
+
   const load = useCallback(async () => {
     if (auth.status !== 'signedIn' || !bookingId) return;
+    const version = ++requestVersion.current;
     setState({ status: 'loading', booking: null, availability: null });
     setAvailabilityError('');
     try {
       const bookingPayload = await fetchCustomerBooking(bookingId);
+      if (version !== requestVersion.current) return;
       const booking = bookingPayload.booking;
       let availability: BookingAvailability | null = null;
       if (isManageable(booking)) {
         try {
           availability = await fetchCustomerBookingAvailability(bookingId);
         } catch (error) {
+          if (version !== requestVersion.current) return;
           setAvailabilityError(error instanceof Error ? error.message : 'Unable to load reschedule availability.');
         }
       }
+      if (version !== requestVersion.current) return;
       setState({ status: 'ready', booking, availability });
       const firstDay = availability?.days.find((day) => day.slots.some((slot) => slot.available && !isCurrentBookingSlot(booking, day.date, slot.time)));
       setSelectedDate(firstDay?.date ?? '');
       setSelectedTime('');
     } catch (error) {
+      if (version !== requestVersion.current) return;
       setState({
         status: 'error',
         booking: null,
@@ -78,13 +85,19 @@ export default function CustomerBookingActionsScreen() {
   }, [auth.status, bookingId]);
 
   useEffect(() => {
+    setCancelReason('');
+    setRescheduleReason('');
+    setSelectedDate('');
+    setSelectedTime('');
+    setActionError('');
     void load();
+    return () => { requestVersion.current += 1; };
   }, [load]);
 
   const selectedDay = useMemo(() => {
-    if (state.status !== 'ready') return undefined;
+    if (state.status !== 'ready' || state.booking.id !== bookingId) return undefined;
     return state.availability?.days.find((day) => day.date === selectedDate);
-  }, [selectedDate, state]);
+  }, [selectedDate, state, bookingId]);
 
   if (auth.status === 'loading') {
     return (
@@ -106,7 +119,7 @@ export default function CustomerBookingActionsScreen() {
     );
   }
 
-  const booking = state.status === 'ready' ? state.booking : null;
+  const booking = state.status === 'ready' && state.booking.id === bookingId ? state.booking : null;
   const manageable = booking ? isManageable(booking) : false;
 
   const returnToBooking = () => {
@@ -115,12 +128,15 @@ export default function CustomerBookingActionsScreen() {
 
   const submitCancel = async () => {
     if (!booking || !manageable || busyAction) return;
+    const version = requestVersion.current;
     setBusyAction('cancel');
     setActionError('');
     try {
       await cancelCustomerBooking(booking.id, cancelReason);
+      if (version !== requestVersion.current) return;
       returnToBooking();
     } catch (error) {
+      if (version !== requestVersion.current) return;
       setActionError(error instanceof Error ? error.message : 'Booking could not be cancelled.');
     } finally {
       setBusyAction(null);
@@ -129,12 +145,15 @@ export default function CustomerBookingActionsScreen() {
 
   const submitReschedule = async () => {
     if (!booking || !manageable || busyAction || !selectedDate || !selectedTime) return;
+    const version = requestVersion.current;
     setBusyAction('reschedule');
     setActionError('');
     try {
       await rescheduleCustomerBooking(booking.id, selectedDate, selectedTime, rescheduleReason);
+      if (version !== requestVersion.current) return;
       returnToBooking();
     } catch (error) {
+      if (version !== requestVersion.current) return;
       setActionError(error instanceof Error ? error.message : 'Booking could not be rescheduled.');
     } finally {
       setBusyAction(null);

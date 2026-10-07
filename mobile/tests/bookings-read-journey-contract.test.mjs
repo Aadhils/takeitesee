@@ -159,3 +159,11 @@ test('Provider booking reads and action results remain scoped to the current rou
   assert.ok(providerDetail.includes('await reportProviderCustomerNoShow(bookingId, noShowNote);\n      if (version !== requestVersion.current) return;'));
   assert.equal((providerDetail.match(/if \(version !== requestVersion.current\) return;/g) ?? []).length, 7);
 });
+
+test('booking management ignores stale availability and cannot redirect from a previous booking action', () => {
+  assert.ok(customerActions.includes('const version = ++requestVersion.current'));
+  assert.ok(customerActions.includes('return () => { requestVersion.current += 1; }'));
+  assert.ok(customerActions.includes("state.status === 'ready' && state.booking.id === bookingId"));
+  assert.ok(customerActions.includes('await cancelCustomerBooking(booking.id, cancelReason);\n      if (version !== requestVersion.current) return;\n      returnToBooking();'));
+  assert.ok(customerActions.includes('await rescheduleCustomerBooking(booking.id, selectedDate, selectedTime, rescheduleReason);\n      if (version !== requestVersion.current) return;\n      returnToBooking();'));
+});
