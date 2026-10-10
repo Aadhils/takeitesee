@@ -68,7 +68,7 @@ export default function HomeScreen() {
         <Pressable accessibilityRole="button" onPress={() => router.push('/explore')} style={({ pressed }) => [styles.hero, pressed && styles.pressed]}>
           <View style={styles.heroCircle} />
           <Text style={styles.heroEyebrow}>FIND. BOOK. GET IT DONE.</Text>
-          <Text style={styles.heroTitle}>Find the right service\nfor your next task.</Text>
+          <Text style={styles.heroTitle}>Find the right service for your next task.</Text>
           <Text style={styles.heroBody}>Connect with Professionals and Businesses.</Text>
           <Text style={styles.heroAction}>Explore services →</Text>
         </Pressable>

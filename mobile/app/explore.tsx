@@ -210,7 +210,7 @@ function ServiceCard({ service }: { service: MarketplaceService }) {
       }}
       asChild
     >
-      <Pressable accessibilityRole="button" accessibilityLabel={`View ${name} from ${service.provider_name}`} style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
+      <Pressable accessibilityRole="button" accessibilityLabel={`View ${name} from ${service.provider_name}`} android_ripple={{ color: '#E8E2FF', foreground: true }} style={styles.card}>
         {content}
       </Pressable>
     </Link>
