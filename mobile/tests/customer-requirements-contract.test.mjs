@@ -4,11 +4,12 @@ import test from 'node:test';
 
 const root = new URL('../', import.meta.url);
 const normalizeNewlines = (value) => value.replace(/\r\n/g, '\n');
-const [requirementsClient, requirementsList, requirementDetail, mobileNav] = await Promise.all([
+const [requirementsClient, requirementsList, requirementDetail, mobileNav, requestComposer] = await Promise.all([
   readFile(new URL('lib/requirements.ts', root), 'utf8'),
   readFile(new URL('app/requirements.tsx', root), 'utf8'),
   readFile(new URL('app/requirements/[requirementId].tsx', root), 'utf8'),
   readFile(new URL('components/MobileNav.tsx', root), 'utf8'),
+  readFile(new URL('app/request-service.tsx', root), 'utf8'),
 ]);
 
 test('Customer requirements list and detail reuse frozen bearer API routes', () => {
@@ -77,4 +78,16 @@ test('requirement fetches and decisions ignore results from a previous route con
   assert.ok(requirementDetail.includes("state.status === 'ready' && state.data.requirement.id === requirementId"));
   assert.ok(requirementDetail.includes('state.data.requirement.id !== requirementId || busyProposalId'));
   assert.ok(requirementDetail.includes('await decideCustomerRequirementProposal(requirementId, proposal.id, decision);\n      if (version !== requestVersion.current) return;'));
+});
+
+test('requirement creation resets account context and ignores outdated submit results', () => {
+  assert.ok(requestComposer.includes('const userId = auth.status'));
+  assert.ok(requestComposer.includes('formUserId !== userId'));
+  assert.ok(requestComposer.includes('const version = requestVersion.current;'));
+  assert.equal((requestComposer.match(/if \(version !== requestVersion.current\) return;/g) ?? []).length, 2);
+  const reset = requestComposer.split('setFormUserId(userId);')[1].split('}, [userId]);')[0];
+  for (const required of ["setCategoryId('');", "setLocationId('');", 'setCatalog(null);', 'setCreated(null);', "setError('');", 'idempotencyKey.current =', 'return () => { requestVersion.current += 1; };']) {
+    assert.ok(reset.includes(required), required);
+  }
+  assert.ok(requestComposer.includes('}, [userId, params.location, catalogAttempt]);'));
 });
