@@ -20,21 +20,21 @@ export function BrandLogo({ compact = false, large = false }: BrandLogoProps) {
 
 const styles = StyleSheet.create({
   wrap: {
-    alignSelf: 'flex-start',
+    alignSelf: 'center',
     minHeight: 44,
     justifyContent: 'center',
   },
   largeWrap: { alignSelf: 'center', maxWidth: '100%' },
   largeLogo: { width: 260, height: 120, maxWidth: '100%' },
   compactWrap: {
-    minHeight: 30,
+    minHeight: 44,
   },
   logo: {
     width: 154,
     height: 44,
   },
   compactLogo: {
-    width: 112,
-    height: 30,
+    width: 152,
+    height: 44,
   },
 });

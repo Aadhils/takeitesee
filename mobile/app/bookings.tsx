@@ -96,7 +96,7 @@ export default function CustomerBookingsScreen() {
               href={{ pathname: '/bookings/[bookingId]', params: { bookingId: booking.id } }}
               asChild
             >
-              <Pressable accessibilityRole="button" accessibilityLabel={`View booking for ${booking.service_name}`} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
+              <Pressable accessibilityRole="button" accessibilityLabel={`View booking for ${booking.service_name}`} android_ripple={{ color: '#E8E2FF', foreground: true }} style={styles.card}>
                 <View style={styles.cardHeader}>
                   <View style={styles.cardTitleWrap}>
                     <Text style={styles.reference}>{booking.booking_reference}</Text>

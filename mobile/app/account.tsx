@@ -67,7 +67,7 @@ export default function AccountScreen() {
 
           <View style={styles.quickRow}>
             <Link href="/notifications" asChild>
-              <Pressable accessibilityRole="button" style={({ pressed }) => [styles.quickCard, pressed && styles.buttonPressed]}>
+              <Pressable accessibilityRole="button" android_ripple={{ color: '#E8E2FF', foreground: true }} style={styles.quickCard}>
                 <Text style={styles.quickEyebrow}>ATTENTION</Text>
                 <Text style={styles.quickTitle}>Notifications</Text>
                 <Text style={styles.quickText}>Booking, proposal and message updates.</Text>
@@ -75,7 +75,7 @@ export default function AccountScreen() {
               </Pressable>
             </Link>
             <Link href="/messages" asChild>
-              <Pressable accessibilityRole="button" style={({ pressed }) => [styles.quickCard, pressed && styles.buttonPressed]}>
+              <Pressable accessibilityRole="button" android_ripple={{ color: '#E8E2FF', foreground: true }} style={styles.quickCard}>
                 <Text style={styles.quickEyebrow}>CONVERSATIONS</Text>
                 <Text style={styles.quickTitle}>Messages</Text>
                 <Text style={styles.quickText}>Your service conversations in one place.</Text>
@@ -86,7 +86,7 @@ export default function AccountScreen() {
 
           <View style={styles.quickRow}>
             <Link href="/reviews" asChild>
-              <Pressable accessibilityRole="button" style={({ pressed }) => [styles.quickCard, pressed && styles.buttonPressed]}>
+              <Pressable accessibilityRole="button" android_ripple={{ color: '#E8E2FF', foreground: true }} style={styles.quickCard}>
                 <Text style={styles.quickEyebrow}>FEEDBACK</Text>
                 <Text style={styles.quickTitle}>My reviews</Text>
                 <Text style={styles.quickText}>Read your published service feedback and Provider responses.</Text>
@@ -95,7 +95,7 @@ export default function AccountScreen() {
             </Link>
             {providerAccess ? (
               <Link href="/provider-reviews" asChild>
-                <Pressable accessibilityRole="button" style={({ pressed }) => [styles.quickCard, pressed && styles.buttonPressed]}>
+                <Pressable accessibilityRole="button" android_ripple={{ color: '#E8E2FF', foreground: true }} style={styles.quickCard}>
                   <Text style={styles.quickEyebrow}>PROVIDER</Text>
                   <Text style={styles.quickTitle}>Provider reviews</Text>
                   <Text style={styles.quickText}>Read Customer ratings and your existing response history.</Text>
@@ -114,7 +114,7 @@ export default function AccountScreen() {
                 <Text style={styles.value}>Provider</Text>
                 <Text style={styles.detail}>Provider tools are available for your Professional or Business profile.</Text>
                 <Link href="/provider" asChild>
-                  <Pressable accessibilityRole="button" style={({ pressed }) => [styles.workspaceButton, pressed && styles.buttonPressed]}>
+                  <Pressable accessibilityRole="button" android_ripple={{ color: '#7865E7', foreground: true }} style={styles.workspaceButton}>
                     <Text style={styles.workspaceButtonText}>Open Provider workspace →</Text>
                   </Pressable>
                 </Link>
