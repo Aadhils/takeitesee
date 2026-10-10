@@ -119,14 +119,27 @@ export default function CustomerReviewComposerScreen() {
           <Text style={styles.eyebrow}>SERVICE REVIEW</Text>
           <Text style={styles.title}>Share your feedback</Text>
           <Text style={styles.description}>
-            TakeItEsee server rules decide whether this completed booking is still inside the review window and whether a review already exists.
+            Share how your service went. You can leave one review for an eligible completed booking.
           </Text>
         </View>
 
         {currentState.status === 'loading' ? (
           <View style={styles.inlineStatus}><ActivityIndicator /><Text style={styles.muted}>Checking review eligibility…</Text></View>
         ) : null}
-        {currentState.status === 'error' ? <Text style={styles.errorText}>{currentState.message}</Text> : null}
+        {currentState.status === 'error' ? (
+          <View style={styles.card}>
+            <Text accessibilityRole="alert" style={styles.errorText}>{currentState.message}</Text>
+            <Pressable
+              accessibilityRole="button"
+              disabled={submitting}
+              accessibilityState={{ disabled: submitting }}
+              onPress={() => void load()}
+              style={[styles.primaryButton, submitting && styles.primaryButtonDisabled]}
+            >
+              <Text style={styles.primaryButtonText}>Try again</Text>
+            </Pressable>
+          </View>
+        ) : null}
         {state.bookingId === bookingId && actionError ? <Text style={styles.errorText}>{actionError}</Text> : null}
 
         {currentState.status === 'ready' && currentState.review ? (
