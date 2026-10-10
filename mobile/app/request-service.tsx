@@ -33,6 +33,10 @@ export default function RequestServiceScreen() {
     location?: string | string[];
   }>();
   const auth = useAuth();
+  const userId = auth.status === 'signedIn' ? auth.identity.userId : null;
+  const [formUserId, setFormUserId] = useState(userId);
+  const initialDraft = useRef({ title: firstParam(params.title) ?? '', description: firstParam(params.description) ?? '' });
+  const requestVersion = useRef(0);
   const [title, setTitle] = useState(firstParam(params.title) ?? '');
   const [description, setDescription] = useState(firstParam(params.description) ?? '');
   const [catalog, setCatalog] = useState<RequirementCatalog | null>(null);
@@ -49,7 +53,22 @@ export default function RequestServiceScreen() {
   );
 
   useEffect(() => {
-    if (auth.status !== 'signedIn') return;
+    requestVersion.current += 1;
+    setFormUserId(userId);
+    setTitle(userId ? initialDraft.current.title : '');
+    setDescription(userId ? initialDraft.current.description : '');
+    setCategoryId('');
+    setLocationId('');
+    setCatalog(null);
+    setCatalogError('');
+    setCreated(null);
+    setError('');
+    idempotencyKey.current = `mobile-one-time-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    return () => { requestVersion.current += 1; };
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) return;
     let active = true;
     setLoadingCatalog(true);
     setCatalogError('');
@@ -78,10 +97,11 @@ export default function RequestServiceScreen() {
     return () => {
       active = false;
     };
-  }, [auth.status, params.location, catalogAttempt]);
+  }, [userId, params.location, catalogAttempt]);
 
   const submit = async () => {
-    if (submitting || !title.trim() || !description.trim() || !categoryId || !locationId) return;
+    if (!userId || formUserId !== userId || submitting || !title.trim() || !description.trim() || !categoryId || !locationId) return;
+    const version = requestVersion.current;
     setSubmitting(true);
     setError('');
 
@@ -93,15 +113,17 @@ export default function RequestServiceScreen() {
         title,
         description,
       });
+      if (version !== requestVersion.current) return;
       setCreated(result.requirement);
     } catch (caught) {
+      if (version !== requestVersion.current) return;
       setError(caught instanceof Error ? caught.message : 'Requirement could not be posted.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (auth.status === 'loading') {
+  if (auth.status === 'loading' || (auth.status === 'signedIn' && formUserId !== userId)) {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.centered}>
