@@ -1,5 +1,5 @@
 import { Redirect } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -16,10 +16,11 @@ import {
 import { cardShadow, theme } from '../lib/theme';
 import { useAuth } from '../providers/AuthProvider';
 
-type ScreenState =
+type ScreenState = { userId: string | null } & (
   | { status: 'loading'; services: ProviderServiceAvailability[] }
   | { status: 'ready'; services: ProviderServiceAvailability[] }
-  | { status: 'error'; services: ProviderServiceAvailability[]; message: string };
+  | { status: 'error'; services: ProviderServiceAvailability[]; message: string }
+);
 
 const modes: { value: ProviderServiceAvailabilityMode; label: string; detail: string }[] = [
   { value: 'always_available', label: 'Always available', detail: 'Customers can see available booking times even without weekly hours.' },
@@ -29,7 +30,7 @@ const modes: { value: ProviderServiceAvailabilityMode; label: string; detail: st
 
 export default function ProviderServiceAvailabilityScreen() {
   const auth = useAuth();
-  const [state, setState] = useState<ScreenState>({ status: 'loading', services: [] });
+  const [loadedState, setState] = useState<ScreenState>({ status: 'loading', userId: null, services: [] });
   const [savingServiceId, setSavingServiceId] = useState('');
   const [notice, setNotice] = useState('');
   const [actionError, setActionError] = useState('');
@@ -37,23 +38,38 @@ export default function ProviderServiceAvailabilityScreen() {
   const isProvider = auth.status === 'signedIn'
     && (auth.identity.roles.includes('professional') || auth.identity.roles.includes('business_owner'));
 
+  const providerUserId = auth.status === 'signedIn' && isProvider ? auth.identity.userId : null;
+  const requestVersion = useRef(0);
+  const state: ScreenState = loadedState.userId === providerUserId
+    ? loadedState
+    : { status: 'loading', userId: providerUserId, services: [] };
+
   const load = useCallback(async () => {
-    if (auth.status !== 'signedIn' || !isProvider) return;
-    setState((current) => ({ status: 'loading', services: current.services }));
+    const version = ++requestVersion.current;
+    if (!providerUserId) return;
+    setState((current) => ({ status: 'loading', userId: providerUserId, services: current.userId === providerUserId ? current.services : [] }));
     setActionError('');
     try {
       const payload = await fetchProviderServiceAvailability();
-      setState({ status: 'ready', services: payload.services ?? [] });
+      if (version !== requestVersion.current) return;
+      setState({ status: 'ready', userId: providerUserId, services: payload.services ?? [] });
     } catch (error) {
+      if (version !== requestVersion.current) return;
       setState({
         status: 'error',
+        userId: providerUserId,
         services: [],
         message: error instanceof Error ? error.message : 'Unable to load service availability.',
       });
     }
-  }, [auth.status, isProvider]);
+  }, [providerUserId]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    setNotice('');
+    setActionError('');
+    void load();
+    return () => { requestVersion.current += 1; };
+  }, [load]);
 
   if (auth.status === 'loading') {
     return <SafeAreaView style={styles.safeArea}><View style={styles.centered}><ActivityIndicator /><Text style={styles.muted}>Checking provider access…</Text></View></SafeAreaView>;
@@ -67,17 +83,21 @@ export default function ProviderServiceAvailabilityScreen() {
       setActionError('Scheduled mode needs existing weekly hours. Configure the detailed schedule on web first.');
       return;
     }
+    const version = requestVersion.current;
     setSavingServiceId(service.id);
     setActionError('');
     setNotice('');
     try {
       const payload = await updateProviderServiceAvailability(service.id, mode);
+      if (version !== requestVersion.current) return;
       setState((current) => ({
         status: 'ready',
+        userId: providerUserId,
         services: current.services.map((item) => item.id === service.id ? payload.service : item),
       }));
       setNotice(`${service.name}: ${formatProviderServiceAvailabilityMode(mode)} saved.`);
     } catch (error) {
+      if (version !== requestVersion.current) return;
       setActionError(error instanceof Error ? error.message : 'Availability could not be updated.');
     } finally {
       setSavingServiceId('');
@@ -103,8 +123,8 @@ export default function ProviderServiceAvailabilityScreen() {
             <Text style={styles.muted}>Existing timezone, weekly hours and blackout periods are preserved. For detailed schedule editing, use the web.</Text>
           </View>
 
-          {notice ? <View style={styles.successCard}><Text style={styles.successText}>{notice}</Text></View> : null}
-          {actionError ? <View style={styles.errorCard}><Text style={styles.errorText}>{actionError}</Text></View> : null}
+          {loadedState.userId === providerUserId && notice ? <View style={styles.successCard}><Text style={styles.successText}>{notice}</Text></View> : null}
+          {loadedState.userId === providerUserId && actionError ? <View style={styles.errorCard}><Text style={styles.errorText}>{actionError}</Text></View> : null}
           {state.status === 'loading' ? <View style={styles.inlineStatus}><ActivityIndicator /><Text style={styles.muted}>Loading your services…</Text></View> : null}
           {state.status === 'error' ? <Text style={styles.errorText}>{state.message}</Text> : null}
 
