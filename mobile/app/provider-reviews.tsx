@@ -1,5 +1,5 @@
 import { Redirect } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -16,10 +16,11 @@ import {
 import { theme } from '../lib/theme';
 import { useAuth } from '../providers/AuthProvider';
 
-type ReviewState =
+type ReviewState = { userId: string | null } & (
   | { status: 'loading'; reviews: ProviderReview[]; summary: ProviderReviewSummary }
   | { status: 'ready'; reviews: ProviderReview[]; summary: ProviderReviewSummary }
-  | { status: 'error'; reviews: ProviderReview[]; summary: ProviderReviewSummary; message: string };
+  | { status: 'error'; reviews: ProviderReview[]; summary: ProviderReviewSummary; message: string }
+);
 
 const emptySummary: ProviderReviewSummary = {
   total: 0,
@@ -30,7 +31,7 @@ const emptySummary: ProviderReviewSummary = {
 
 export default function ProviderReviewsScreen() {
   const auth = useAuth();
-  const [state, setState] = useState<ReviewState>({ status: 'loading', reviews: [], summary: emptySummary });
+  const [loadedState, setState] = useState<ReviewState>({ status: 'loading', userId: null, reviews: [], summary: emptySummary });
   const [editingReviewId, setEditingReviewId] = useState('');
   const [responseDraft, setResponseDraft] = useState('');
   const [savingReviewId, setSavingReviewId] = useState('');
@@ -39,24 +40,43 @@ export default function ProviderReviewsScreen() {
   const providerAccess = auth.status === 'signedIn'
     && (auth.identity.roles.includes('professional') || auth.identity.roles.includes('business_owner'));
 
+  const providerUserId = auth.status === 'signedIn' && providerAccess ? auth.identity.userId : null;
+  const requestVersion = useRef(0);
+  const state: ReviewState = loadedState.userId === providerUserId
+    ? loadedState
+    : { status: 'loading', userId: providerUserId, reviews: [], summary: emptySummary };
+
   const load = useCallback(async () => {
-    if (auth.status !== 'signedIn' || !providerAccess) return;
-    setState((current) => ({ status: 'loading', reviews: current.reviews, summary: current.summary }));
+    const version = ++requestVersion.current;
+    if (!providerUserId) return;
+    setState((current) => ({
+      status: 'loading', userId: providerUserId,
+      reviews: current.userId === providerUserId ? current.reviews : [],
+      summary: current.userId === providerUserId ? current.summary : emptySummary,
+    }));
     try {
       const payload = await fetchProviderReviews();
-      setState({ status: 'ready', reviews: payload.reviews ?? [], summary: payload.summary ?? emptySummary });
+      if (version !== requestVersion.current) return;
+      setState({ status: 'ready', userId: providerUserId, reviews: payload.reviews ?? [], summary: payload.summary ?? emptySummary });
     } catch (error) {
+      if (version !== requestVersion.current) return;
       setState({
         status: 'error',
+        userId: providerUserId,
         reviews: [],
         summary: emptySummary,
         message: error instanceof Error ? error.message : 'Unable to load Provider reviews.',
       });
     }
-  }, [auth.status, providerAccess]);
+  }, [providerUserId]);
 
   useEffect(() => {
+    setEditingReviewId('');
+    setResponseDraft('');
+    setActionError('');
+    setNotice('');
     void load();
+    return () => { requestVersion.current += 1; };
   }, [load]);
 
   const startResponse = (review: ProviderReview) => {
@@ -75,17 +95,20 @@ export default function ProviderReviewsScreen() {
   };
 
   const saveResponse = async (reviewId: string) => {
-    if (savingReviewId || state.status !== 'ready') return;
+    if (savingReviewId || state.status !== 'ready' || editingReviewId !== reviewId) return;
+    const version = requestVersion.current;
     setSavingReviewId(reviewId);
     setActionError('');
     setNotice('');
     try {
       await saveProviderReviewResponse(reviewId, responseDraft);
+      if (version !== requestVersion.current) return;
       setEditingReviewId('');
       setResponseDraft('');
       setNotice('Your response was saved.');
       await load();
     } catch (error) {
+      if (version !== requestVersion.current) return;
       setActionError(error instanceof Error ? error.message : 'Review response could not be saved.');
     } finally {
       setSavingReviewId('');
@@ -140,8 +163,8 @@ export default function ProviderReviewsScreen() {
             <Text style={styles.muted}>You can respond only to reviews linked to your Provider profile.</Text>
           </View>
 
-          {notice ? <Text style={styles.noticeText}>{notice}</Text> : null}
-          {actionError ? <Text style={styles.errorText}>{actionError}</Text> : null}
+          {loadedState.userId === providerUserId && notice ? <Text style={styles.noticeText}>{notice}</Text> : null}
+          {loadedState.userId === providerUserId && actionError ? <Text style={styles.errorText}>{actionError}</Text> : null}
           {state.status === 'loading' ? <View style={styles.inlineStatus}><ActivityIndicator /><Text style={styles.muted}>Loading feedback…</Text></View> : null}
           {state.status === 'error' ? <Text style={styles.errorText}>{state.message}</Text> : null}
           {state.status === 'ready' && state.reviews.length === 0 ? (

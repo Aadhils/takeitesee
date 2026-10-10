@@ -83,3 +83,14 @@ test('review composer scopes loads, drafts and submissions to the current bookin
   assert.ok(reviewComposer.includes("setRating(0);\n    setComment('');\n    setActionError('');\n    void load();"));
   assert.ok(reviewComposer.includes("setState({ status: 'ready', bookingId, review: payload.review });"));
 });
+
+test('Provider review reads and response results stay scoped to the active account', () => {
+  assert.ok(providerReviews.includes("auth.identity.userId : null"));
+  assert.ok(providerReviews.includes('loadedState.userId === providerUserId'));
+  assert.ok(providerReviews.includes('current.userId === providerUserId ? current.reviews : []'));
+  assert.ok(providerReviews.includes('const version = ++requestVersion.current;'));
+  assert.equal((providerReviews.match(/if \(version !== requestVersion.current\) return;/g) ?? []).length, 4);
+  assert.ok(providerReviews.includes('return () => { requestVersion.current += 1; };'));
+  assert.ok(providerReviews.includes("setEditingReviewId('');\n    setResponseDraft('');\n    setActionError('');\n    setNotice('');\n    void load();"));
+  assert.ok(providerReviews.includes("state.status !== 'ready' || editingReviewId !== reviewId"));
+});
