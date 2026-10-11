@@ -32,7 +32,7 @@ export function workspaceMenu(scope: ProfileScope): MenuGroup[] {
   ] });
   if (scope === 'business') groups.push({ title: 'Business presence', items: [
     { label: 'Business profile', detail: 'Manage your business information', path: '/edit-profile?scope=business' },
-    { label: 'Hiring & applicants', detail: 'Manage your job listings and applications', path: '/provider/jobs', web: true },
+    { label: 'Hiring & applicants', detail: 'Review job listings and applicant status', path: '/provider-hiring' },
   ] });
   groups.push({ title: 'Stay connected', items: [
     { label: 'Messages', detail: 'Your service conversations', path: provider ? '/messages?workspace=provider' : '/messages?workspace=customer' },
@@ -48,7 +48,7 @@ export function workspaceWebUrl(path: string): string {
     ...workspaceMenu('customer').flatMap((group) => group.items.filter((item) => item.web).map((item) => item.path)),
     ...workspaceMenu('professional').flatMap((group) => group.items.filter((item) => item.web).map((item) => item.path)),
     ...workspaceMenu('business').flatMap((group) => group.items.filter((item) => item.web).map((item) => item.path)),
-    '/provider/resume', '/provider/portfolio', '/provider/verification', '/provider/handle', '/provider/services', '/provider/setup', '/account/profile', '/account/settings', '/account/security', '/account/privacy', '/privacy', '/terms', '/cookies',
+    '/provider/jobs', '/provider/resume', '/provider/portfolio', '/provider/verification', '/provider/handle', '/provider/services', '/provider/setup', '/account/profile', '/account/settings', '/account/security', '/account/privacy', '/privacy', '/terms', '/cookies',
   ]);
   if (!allowed.has(path)) throw new Error('This account page is unavailable.');
   return `https://www.takeitesee.com${path}`;
