@@ -49,7 +49,7 @@ function disclosureState(provider: DisclosureRow) {
 export async function GET(request: Request) {
   try {
     const session = await productionAuthProvider.requireProvider(request);
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(request);
     let provider: {
       id: string;
       provider_type: 'professional' | 'business';
