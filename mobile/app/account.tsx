@@ -5,6 +5,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandLogo } from '../components/BrandLogo';
+import { ProfileDashboardHeader } from '../components/ProfileDashboardHeader';
 import { MobileNav } from '../components/MobileNav';
 import { cardShadow, theme } from '../lib/theme';
 import { useAuth } from '../providers/AuthProvider';
@@ -64,6 +65,8 @@ export default function AccountScreen() {
               Manage your bookings, messages, notifications and reviews from one place.
             </Text>
           </View>
+
+          <ProfileDashboardHeader context="customer" />
 
           <View style={styles.quickRow}>
             <Link href="/notifications" asChild>

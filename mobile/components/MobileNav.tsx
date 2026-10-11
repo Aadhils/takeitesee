@@ -22,13 +22,13 @@ export function MobileNav() {
         || (item.href === '/request-service' && pathname.startsWith('/requirements'));
       const create = item.href === '/request-service';
       return <Link key={item.href} href={item.href} asChild>
-        <Pressable accessibilityRole="button" accessibilityLabel={create ? 'Post a requirement' : item.label} accessibilityState={{ selected: active }} style={({ pressed }) => [styles.link, active && styles.activeLink, pressed && styles.pressed]}>
+        <Pressable accessibilityRole="button" accessibilityLabel={create ? 'Post a requirement' : item.label} accessibilityState={{ selected: active }} android_ripple={{ color: '#E8E2FF', foreground: true }} style={[styles.link, active && styles.activeLink]}>
           <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[styles.iconWrap, create && styles.createIcon]}><Text style={[styles.icon, active && styles.activeText, create && styles.createText]}>{item.icon}</Text></View>
           <Text style={[styles.label, active && styles.activeText]}>{item.label}</Text>
         </Pressable>
       </Link>;
     })}
-    {auth.status === 'signedOut' ? <Link href="/login" asChild><Pressable accessibilityRole="button" style={styles.link}><Text style={styles.icon}>○</Text><Text style={styles.label}>Sign in</Text></Pressable></Link> : null}
+    {auth.status === 'signedOut' ? <Link href="/login" asChild><Pressable accessibilityRole="button" style={styles.link}><View style={styles.iconWrap}><Text style={styles.icon}>○</Text></View><Text style={styles.label}>Sign in</Text></Pressable></Link> : null}
   </View></View>;
 }
 const styles = StyleSheet.create({
@@ -36,8 +36,8 @@ const styles = StyleSheet.create({
   nav: { flexDirection: 'row', gap: 2 },
   link: { flex: 1, minWidth: 0, minHeight: 64, alignItems: 'center', justifyContent: 'center', gap: 3, borderRadius: theme.radii.md, paddingVertical: 4 },
   activeLink: { backgroundColor: theme.colors.secondary },
-  iconWrap: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
-  createIcon: { width: 42, height: 42, borderRadius: 21, backgroundColor: theme.colors.primary, marginTop: -8 },
+  iconWrap: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center' },
+  createIcon: { width: 42, height: 42, borderRadius: 21, backgroundColor: theme.colors.primary },
   icon: { fontSize: 27, lineHeight: 32, color: theme.colors.inkMuted },
   createText: { fontSize: 32, color: theme.colors.white },
   label: { width: '100%', textAlign: 'center', paddingHorizontal: 2, fontSize: 10, fontWeight: '800', color: theme.colors.inkMuted },
