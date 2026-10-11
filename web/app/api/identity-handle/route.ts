@@ -95,7 +95,7 @@ async function providerPublicProfileReady(
 }
 
 async function ownedIdentity(request: Request, context: HandleContext): Promise<OwnedIdentity> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient(request);
 
   if (context === 'customer') {
     const session = await productionAuthProvider.requireCustomer(request);
@@ -136,7 +136,7 @@ export async function GET(request: Request) {
   try {
     const context = requestedContext(request);
     const identity = await ownedIdentity(request, context);
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(request);
     const [{ data, error }, publicProfileReady] = await Promise.all([
       supabase
         .from('identity_handles')
@@ -168,7 +168,7 @@ export async function PATCH(request: Request) {
     const body = await request.json() as { handle?: string };
     if (typeof body.handle !== 'string' || !body.handle.trim()) throw new Error('Handle is required.');
 
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(request);
     const { data, error } = await supabase.rpc('set_my_identity_handle', {
       target_context: context,
       requested_handle: body.handle,
