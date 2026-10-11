@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 
 async function providerContext(request: Request) {
   const session = await productionAuthProvider.requireProvider(request);
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient(request);
   if (session.roles.includes('business_owner')) {
     const { data: business, error: businessError } = await supabase.from('businesses').select('id,name,verified').eq('owner_user_id', session.user_id).limit(1).maybeSingle();
     if (businessError) throw new Error(businessError.message);
