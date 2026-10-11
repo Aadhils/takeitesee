@@ -22,7 +22,7 @@ export function workspaceMenu(scope: ProfileScope): MenuGroup[] {
     { label: 'Manage services', detail: 'Create drafts and edit your service listings', path: '/provider-services' },
     { label: 'Weekly schedule', detail: 'Configure service working hours', path: '/provider-schedule' },
     { label: 'Verification', detail: 'Review your verification status', path: '/provider/verification', web: true },
-    { label: 'Public profile readiness', detail: 'Check your profile before sharing', path: '/provider/public-readiness', web: true },
+    { label: 'Public profile readiness', detail: 'Check your profile before sharing', path: '/provider-readiness' },
     { label: 'Public handle', detail: 'Manage your public profile address', path: '/provider/handle', web: true },
   ] });
   if (scope === 'professional') groups.push({ title: 'Professional presence', items: [
