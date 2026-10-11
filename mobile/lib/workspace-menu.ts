@@ -19,7 +19,7 @@ export function workspaceMenu(scope: ProfileScope): MenuGroup[] {
   ] }];
   if (provider) groups.push({ title: 'Services & profile', items: [
     { label: 'Edit Provider details', detail: 'Name, description and service area', path: `/edit-profile?scope=${scope}` },
-    { label: 'Manage services', detail: 'Create and edit your service listings', path: '/provider/services', web: true },
+    { label: 'Manage services', detail: 'Create drafts and edit your service listings', path: '/provider-services' },
     { label: 'Weekly schedule', detail: 'Configure detailed working hours', path: '/provider/schedule', web: true },
     { label: 'Verification', detail: 'Review your verification status', path: '/provider/verification', web: true },
     { label: 'Public profile readiness', detail: 'Check your profile before sharing', path: '/provider/public-readiness', web: true },
@@ -48,7 +48,7 @@ export function workspaceWebUrl(path: string): string {
     ...workspaceMenu('customer').flatMap((group) => group.items.filter((item) => item.web).map((item) => item.path)),
     ...workspaceMenu('professional').flatMap((group) => group.items.filter((item) => item.web).map((item) => item.path)),
     ...workspaceMenu('business').flatMap((group) => group.items.filter((item) => item.web).map((item) => item.path)),
-    '/account/profile', '/account/settings', '/account/security', '/account/privacy', '/privacy', '/terms', '/cookies',
+    '/provider/services', '/provider/setup', '/account/profile', '/account/settings', '/account/security', '/account/privacy', '/privacy', '/terms', '/cookies',
   ]);
   if (!allowed.has(path)) throw new Error('This account page is unavailable.');
   return `https://www.takeitesee.com${path}`;

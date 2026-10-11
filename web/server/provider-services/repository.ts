@@ -79,8 +79,8 @@ function validateInput(input: CreateProviderServiceInput | UpdateProviderService
   if (input.status !== undefined && !['draft', 'active', 'paused'].includes(input.status)) throw new Error('Service status is invalid.');
 }
 
-async function resolveCanonicalCategory(categoryId: EntityId): Promise<CanonicalCategory> {
-  const supabase = await createSupabaseServerClient();
+async function resolveCanonicalCategory(categoryId: EntityId, request?: Request): Promise<CanonicalCategory> {
+  const supabase = await createSupabaseServerClient(request);
   const { data: category, error: categoryError } = await supabase
     .from('platform_categories')
     .select('id,name,code,application_id')
@@ -109,8 +109,8 @@ async function resolveCanonicalCategory(categoryId: EntityId): Promise<Canonical
   };
 }
 
-async function resolveTrustStatus(owner: Pick<ResolvedOwner, 'provider_type' | 'professional_id' | 'business_id'>): Promise<ProviderTrustStatus> {
-  const supabase = await createSupabaseServerClient();
+async function resolveTrustStatus(owner: Pick<ResolvedOwner, 'provider_type' | 'professional_id' | 'business_id'>, request?: Request): Promise<ProviderTrustStatus> {
+  const supabase = await createSupabaseServerClient(request);
   const { data, error } = await supabase.rpc('provider_current_trust_status', {
     p_provider_type: owner.provider_type,
   });
@@ -118,8 +118,8 @@ async function resolveTrustStatus(owner: Pick<ResolvedOwner, 'provider_type' | '
   return (data ?? 'normal') as ProviderTrustStatus;
 }
 
-async function resolveOwner(session: ServerCustomerSession): Promise<ResolvedOwner> {
-  const supabase = await createSupabaseServerClient();
+async function resolveOwner(session: ServerCustomerSession, request?: Request): Promise<ResolvedOwner> {
+  const supabase = await createSupabaseServerClient(request);
   const disclosureColumns = 'legal_name,principal_address,public_contact_email,public_contact_phone,grievance_officer_name,grievance_officer_designation,grievance_email,grievance_phone';
   if (session.roles.includes('professional')) {
     const { data, error } = await supabase.from('professional_profiles').select(`id,verified,${disclosureColumns}`).eq('user_id', session.user_id).maybeSingle();
@@ -132,7 +132,7 @@ async function resolveOwner(session: ServerCustomerSession): Promise<ResolvedOwn
       verified: Boolean(data.verified),
       marketplace_disclosure_complete: marketplaceDisclosureComplete(data),
     };
-    return { ...owner, trust_status: await resolveTrustStatus(owner) };
+    return { ...owner, trust_status: await resolveTrustStatus(owner, request) };
   }
   if (session.roles.includes('business_owner')) {
     const { data, error } = await supabase.from('businesses').select(`id,verified,${disclosureColumns}`).eq('owner_user_id', session.user_id).limit(1).maybeSingle();
@@ -145,17 +145,17 @@ async function resolveOwner(session: ServerCustomerSession): Promise<ResolvedOwn
       verified: Boolean(data.verified),
       marketplace_disclosure_complete: marketplaceDisclosureComplete(data),
     };
-    return { ...owner, trust_status: await resolveTrustStatus(owner) };
+    return { ...owner, trust_status: await resolveTrustStatus(owner, request) };
   }
   throw new Error('Provider role is required.');
 }
 
-async function assertPublishAllowed(owner: ResolvedOwner, status: ProviderServiceStatus | undefined, serviceId?: EntityId) {
+async function assertPublishAllowed(owner: ResolvedOwner, status: ProviderServiceStatus | undefined, serviceId?: EntityId, request?: Request) {
   if (status !== 'active') return;
   if (owner.trust_status === 'suspended') throw new Error('Provider suspension must be resolved by the platform before services can be activated.');
   if (owner.trust_status === 'reverification_required') throw new Error('Provider re-verification is required before services can be activated. Open Verification to submit current evidence.');
   if (!owner.verified) throw new Error('Provider verification is required before a service can be published. Complete Verification first.');
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient(request);
   const { data: profileComplete, error: profileError } = await supabase.rpc('provider_profile_is_complete', {
     p_provider_type: owner.provider_type,
     p_professional_id: owner.professional_id,
@@ -177,10 +177,10 @@ function mapService(row: Record<string, unknown>): ProviderServiceRecord {
 function ownerFields(owner: ResolvedOwner) { return { provider_type: owner.provider_type, professional_id: owner.professional_id, business_id: owner.business_id }; }
 
 export const productionProviderServiceRepository = {
-  async list(session: ServerCustomerSession): Promise<ProviderServiceRecord[]> {
+  async list(session: ServerCustomerSession, request?: Request): Promise<ProviderServiceRecord[]> {
     assertProductionBackendConfigured();
-    const owner = await resolveOwner(session);
-    const supabase = await createSupabaseServerClient();
+    const owner = await resolveOwner(session, request);
+    const supabase = await createSupabaseServerClient(request);
     let query = supabase.from('services').select('*').order('created_at', { ascending: false });
     query = owner.provider_type === 'professional' ? query.eq('professional_id', owner.professional_id) : query.eq('business_id', owner.business_id);
     const { data, error } = await query;
@@ -188,25 +188,25 @@ export const productionProviderServiceRepository = {
     return (data ?? []).map((row) => mapService(row as Record<string, unknown>));
   },
 
-  async create(session: ServerCustomerSession, input: CreateProviderServiceInput): Promise<ProviderServiceRecord> {
+  async create(session: ServerCustomerSession, input: CreateProviderServiceInput, request?: Request): Promise<ProviderServiceRecord> {
     assertProductionBackendConfigured(); validateInput(input);
-    const owner = await resolveOwner(session); const status = input.status ?? 'draft';
-    await assertPublishAllowed(owner, status);
-    const category = await resolveCanonicalCategory(input.category_id);
-    const supabase = await createSupabaseServerClient();
+    const owner = await resolveOwner(session, request); const status = input.status ?? 'draft';
+    await assertPublishAllowed(owner, status, undefined, request);
+    const category = await resolveCanonicalCategory(input.category_id, request);
+    const supabase = await createSupabaseServerClient(request);
     const { data, error } = await supabase.from('services').insert({ ...ownerFields(owner), name: input.name.trim(), description: input.description.trim(), category: category.name, category_code: category.code, location: input.location?.trim() || null, duration_minutes: input.duration_minutes, base_price: input.base_price, currency: input.currency ?? 'INR', status, active: status === 'active' }).select('*').single();
     if (error || !data) throw new Error(error?.message ?? 'Service could not be created.');
     return mapService(data as Record<string, unknown>);
   },
 
-  async update(session: ServerCustomerSession, serviceId: EntityId, input: UpdateProviderServiceInput): Promise<ProviderServiceRecord> {
+  async update(session: ServerCustomerSession, serviceId: EntityId, input: UpdateProviderServiceInput, request?: Request): Promise<ProviderServiceRecord> {
     assertProductionBackendConfigured(); validateInput(input, true);
-    const owner = await resolveOwner(session); await assertPublishAllowed(owner, input.status, serviceId);
-    const supabase = await createSupabaseServerClient(); const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    const owner = await resolveOwner(session, request); await assertPublishAllowed(owner, input.status, serviceId, request);
+    const supabase = await createSupabaseServerClient(request); const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (input.name !== undefined) patch.name = input.name.trim();
     if (input.description !== undefined) patch.description = input.description.trim();
     if (input.category_id !== undefined) {
-      const category = await resolveCanonicalCategory(input.category_id);
+      const category = await resolveCanonicalCategory(input.category_id, request);
       patch.category = category.name;
       patch.category_code = category.code;
     }

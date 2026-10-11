@@ -8,7 +8,7 @@ export const runtime = 'nodejs';
 export async function GET(request: Request) {
   try {
     const session = await productionAuthProvider.requireProvider(request);
-    const services = await productionProviderServiceRepository.list(session);
+    const services = await productionProviderServiceRepository.list(session, request);
     const publicIds = await loadPublicServiceIds(services.map((service) => service.id));
     const enriched = services.map((service) => ({
       ...service,
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
   try {
     const session = await productionAuthProvider.requireProvider(request);
     const input = await request.json() as CreateProviderServiceInput;
-    const service = await productionProviderServiceRepository.create(session, input);
+    const service = await productionProviderServiceRepository.create(session, input, request);
     return NextResponse.json({ service }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to create service.' }, { status: 400 });
