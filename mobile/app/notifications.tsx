@@ -1,5 +1,5 @@
-import { Redirect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Redirect, useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -11,6 +11,7 @@ import {
   markNotificationRead,
   type NativeNotification,
 } from '../lib/notifications';
+import { providerNotificationTarget } from '../lib/provider-notification-target';
 import { cardShadow, theme } from '../lib/theme';
 import { useAuth } from '../providers/AuthProvider';
 
@@ -36,29 +37,40 @@ function formatNotificationTime(value: string) {
 export default function NotificationsScreen() {
   const auth = useAuth();
   const router = useRouter();
-  const [state, setState] = useState<NotificationState>({ status: 'loading', notifications: [] });
+  const userId = auth.status === 'signedIn' ? auth.identity.userId : '';
+  const currentUser = useRef(userId); currentUser.current = userId;
+  const epoch = useRef(0);
+  const [loadedUser, setLoadedUser] = useState('');
+  const [loadedState, setState] = useState<NotificationState>({ status: 'loading', notifications: [] });
   const [busyId, setBusyId] = useState('');
   const [markingAll, setMarkingAll] = useState(false);
   const [actionError, setActionError] = useState('');
 
+  const state: NotificationState = loadedUser === userId ? loadedState : { status: 'loading', notifications: [] };
   const load = useCallback(async () => {
-    if (auth.status !== 'signedIn') return;
-    setState((current) => ({ status: 'loading', notifications: current.notifications }));
+    const version = ++epoch.current;
+    if (!userId) return;
+    setLoadedUser(userId);
+    setState({ status: 'loading', notifications: [] });
     try {
-      const payload = await fetchNotifications();
+      const payload = await fetchNotifications(userId);
+      if (currentUser.current !== userId || epoch.current !== version) return;
       setState({ status: 'ready', notifications: payload.notifications ?? [] });
     } catch (error) {
+      if (currentUser.current !== userId || epoch.current !== version) return;
       setState({
         status: 'error',
         notifications: [],
         message: error instanceof Error ? error.message : 'Unable to load notifications.',
       });
     }
-  }, [auth.status]);
+  }, [userId]);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
+    setBusyId(''); setMarkingAll(false); setActionError('');
     void load();
-  }, [load]);
+    return () => { epoch.current += 1; };
+  }, [load]));
 
   const unreadCount = useMemo(
     () => state.notifications.reduce((sum, item) => sum + (item.read_at ? 0 : 1), 0),
@@ -79,6 +91,11 @@ export default function NotificationsScreen() {
 
   const openNativeTarget = (item: NativeNotification) => {
     const path = item.target_path || '';
+    const providerTarget = providerNotificationTarget(item.target_path);
+    if (providerTarget) {
+      router.push(providerTarget);
+      return;
+    }
     if (item.conversation_id) {
       const workspace = path.startsWith('/provider/messages') ? 'provider' : 'customer';
       router.push({
@@ -105,8 +122,10 @@ export default function NotificationsScreen() {
     if (busyId || markingAll || state.status === 'loading') return;
     setActionError('');
     setBusyId(item.id);
+    const version = epoch.current;
     try {
-      if (!item.read_at) await markNotificationRead(item.id);
+      if (!item.read_at) await markNotificationRead(item.id, userId);
+      if (currentUser.current !== userId || epoch.current !== version) return;
       setState((current) => ({
         ...current,
         notifications: current.notifications.map((row) => row.id === item.id
@@ -115,9 +134,10 @@ export default function NotificationsScreen() {
       }));
       openNativeTarget(item);
     } catch {
+      if (currentUser.current !== userId || epoch.current !== version) return;
       setActionError('Could not open this update. Please try again.');
     } finally {
-      setBusyId('');
+      if (currentUser.current === userId && epoch.current === version) setBusyId('');
     }
   };
 
@@ -125,17 +145,20 @@ export default function NotificationsScreen() {
     if (markingAll || busyId || state.status !== 'ready' || unreadCount === 0) return;
     setActionError('');
     setMarkingAll(true);
+    const version = epoch.current;
     try {
-      await markAllNotificationsRead();
+      await markAllNotificationsRead(userId);
+      if (currentUser.current !== userId || epoch.current !== version) return;
       const now = new Date().toISOString();
       setState((current) => ({
         ...current,
         notifications: current.notifications.map((item) => ({ ...item, read_at: item.read_at || now })),
       }));
     } catch {
+      if (currentUser.current !== userId || epoch.current !== version) return;
       setActionError('Could not mark notifications as read. Please try again.');
     } finally {
-      setMarkingAll(false);
+      if (currentUser.current === userId && epoch.current === version) setMarkingAll(false);
     }
   };
 

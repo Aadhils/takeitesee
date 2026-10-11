@@ -30,7 +30,7 @@ test('Notifications only deep-link to native-known routes', () => {
   assert.ok(notificationsScreen.includes("pathname: '/bookings/[bookingId]'"));
   assert.ok(notificationsScreen.includes("pathname: '/provider-bookings/[bookingId]'"));
   assert.ok(notificationsScreen.includes("pathname: '/requirements/[requirementId]'"));
-  assert.ok(notificationsScreen.includes('markNotificationRead(item.id)'));
+  assert.ok(notificationsScreen.includes('markNotificationRead(item.id, userId)'));
 });
 
 test('Messages preserve server workspace scoping, thread reads, safety reads and idempotent sends', () => {
