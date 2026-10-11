@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   shell: { borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.lg, backgroundColor: theme.colors.white, overflow: 'hidden', ...cardShadow },
   banner: { height: 130, backgroundColor: theme.colors.primaryStrong, overflow: 'hidden', justifyContent: 'flex-end', padding: 18 },
   businessBanner: { backgroundColor: theme.colors.ink },
-  bannerImage: { ...StyleSheet.absoluteFillObject },
+  bannerImage: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
   bannerAccent: { position: 'absolute', width: 250, height: 250, borderRadius: 125, backgroundColor: theme.colors.primary, right: -70, top: -110 },
   bannerLabel: { alignSelf: 'flex-end', color: theme.colors.white, fontSize: 12, fontWeight: '800' },
   content: { padding: 16, paddingTop: 0, gap: 8 },
