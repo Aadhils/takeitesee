@@ -48,7 +48,7 @@ function profileBasicsComplete(displayName: string | null | undefined, descripti
 export async function GET(request: Request) {
   try {
     const session = await productionAuthProvider.requireProvider(request);
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(request);
 
     if (session.roles.includes('professional')) {
       const { data: profile, error } = await supabase
@@ -97,7 +97,7 @@ export async function PATCH(request: Request) {
   try {
     await productionAuthProvider.requireProvider(request);
     const input = profileInput(await request.json() as { display_name?: string; description?: string; location?: string });
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(request);
 
     const { data: result, error } = await supabase.rpc('update_provider_profile', {
       requested_display_name: input.displayName,

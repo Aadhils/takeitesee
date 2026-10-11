@@ -63,6 +63,7 @@ export default function AccountScreen() {
           </View>
 
           <ProfileDashboardHeader context="customer" />
+          <Link href="/edit-profile?scope=customer" asChild><Pressable accessibilityRole="button" style={styles.workspaceButton}><Text style={styles.workspaceButtonText}>Edit profile details →</Text></Pressable></Link>
           <Link href="/settings" asChild><Pressable accessibilityRole="button" style={styles.workspaceButton}><Text style={styles.workspaceButtonText}>Settings & privacy →</Text></Pressable></Link>
 
           <View style={styles.quickRow}>
