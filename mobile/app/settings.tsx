@@ -19,7 +19,6 @@ const preferences: { key: keyof AccountPreferences; label: string; help: string 
   { key: 'useHistoryForRecommendations', label: 'Personalised recommendations', help: 'Use your activity history for recommendations.' },
 ];
 const pages = [
-  { label: 'Edit Customer details', path: '/account/profile', help: 'Name, phone and location' },
   { label: 'Language & accessibility', path: '/account/settings', help: 'Manage your saved account preferences' },
   { label: 'Password & security', path: '/account/security', help: 'Securely verify and change your password' },
   { label: 'Privacy requests & account deletion', path: '/account/privacy', help: 'Submit and track a request for review' },
@@ -90,6 +89,7 @@ export default function SettingsScreen() {
     <View style={styles.top}><Pressable accessibilityRole="button" onPress={() => router.navigate(profileDestination(workspace.selectedScope))} style={styles.back}><Text style={styles.linkText}>‹ Profile</Text></Pressable><BrandLogo compact /><View style={styles.spacer} /></View>
     <ScrollView contentContainerStyle={styles.content}>
       <Text style={styles.title}>Settings & privacy</Text><Text style={styles.help}>These preferences belong to your account and are shared across your profiles.</Text>
+      <Pressable accessibilityRole="button" onPress={() => router.navigate({ pathname: '/edit-profile', params: { scope: workspace.selectedScope } })} style={styles.signOut}><Text style={styles.linkText}>Edit selected profile details →</Text></Pressable>
       {visible.loading ? <View style={styles.loading}><ActivityIndicator /><Text style={styles.help}>Loading settings…</Text></View> : null}
       {visible.form ? <View style={styles.card}><Text style={styles.cardTitle}>Notifications & recommendations</Text>{preferences.map((item) => <View key={item.key} style={styles.preference}><View style={styles.copy}><Text style={styles.label}>{item.label}</Text><Text style={styles.help}>{item.help}</Text></View><Switch accessibilityLabel={item.label} value={visible.form![item.key]} disabled={visible.busy} trackColor={{ false: theme.colors.border, true: theme.colors.primary }} onValueChange={(value) => setState((old) => old.owner === userId && old.form ? { ...old, form: { ...old.form, [item.key]: value }, notice: '' } : old)} /></View>)}<Pressable accessibilityRole="button" accessibilityState={{ disabled: visible.busy, busy: visible.busy }} disabled={visible.busy} onPress={() => void save()} style={[styles.save, visible.busy && styles.disabled]}><Text style={styles.saveText}>{visible.busy ? 'Please wait…' : 'Save preferences'}</Text></Pressable></View> : null}
       {visible.notice ? <Text accessibilityLiveRegion="polite" style={styles.success}>{visible.notice}</Text> : null}

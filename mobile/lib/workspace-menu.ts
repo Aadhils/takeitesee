@@ -12,12 +12,13 @@ export function workspaceMenu(scope: ProfileScope): MenuGroup[] {
     { label: 'Live work status', detail: 'Available, busy, offline or paused', path: '/provider-live-status' },
     { label: 'Customer reviews', detail: 'Ratings and your response history', path: '/provider-reviews' },
   ] : [
+    { label: 'Edit profile details', detail: 'Name, phone and location', path: '/edit-profile?scope=customer' },
     { label: 'My bookings', detail: 'Service dates and booking details', path: '/bookings' },
     { label: 'My requirements', detail: 'Requests and Provider proposals', path: '/requirements' },
     { label: 'My reviews', detail: 'Your published service feedback', path: '/reviews' },
   ] }];
   if (provider) groups.push({ title: 'Services & profile', items: [
-    { label: 'Edit Provider details', detail: 'Name, description and profile information', path: '/provider/profile', web: true },
+    { label: 'Edit Provider details', detail: 'Name, description and service area', path: `/edit-profile?scope=${scope}` },
     { label: 'Manage services', detail: 'Create and edit your service listings', path: '/provider/services', web: true },
     { label: 'Weekly schedule', detail: 'Configure detailed working hours', path: '/provider/schedule', web: true },
     { label: 'Verification', detail: 'Review your verification status', path: '/provider/verification', web: true },
@@ -30,7 +31,7 @@ export function workspaceMenu(scope: ProfileScope): MenuGroup[] {
     { label: 'Jobs & applications', detail: 'Browse opportunities and track applications', path: '/provider/jobs', web: true },
   ] });
   if (scope === 'business') groups.push({ title: 'Business presence', items: [
-    { label: 'Business profile', detail: 'Manage your business information', path: '/provider/profile', web: true },
+    { label: 'Business profile', detail: 'Manage your business information', path: '/edit-profile?scope=business' },
     { label: 'Hiring & applicants', detail: 'Manage your job listings and applications', path: '/provider/jobs', web: true },
   ] });
   groups.push({ title: 'Stay connected', items: [
