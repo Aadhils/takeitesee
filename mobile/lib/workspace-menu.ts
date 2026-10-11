@@ -28,7 +28,7 @@ export function workspaceMenu(scope: ProfileScope): MenuGroup[] {
   if (scope === 'professional') groups.push({ title: 'Professional presence', items: [
     { label: 'Portfolio', detail: 'Showcase your work', path: '/provider-portfolio' },
     { label: 'Résumé & career', detail: 'Review your résumé and career availability', path: '/provider-career' },
-    { label: 'Jobs & applications', detail: 'Browse opportunities and track applications', path: '/provider/jobs', web: true },
+    { label: 'Jobs & applications', detail: 'Track applications and saved opportunities', path: '/provider-job-tracker' },
   ] });
   if (scope === 'business') groups.push({ title: 'Business presence', items: [
     { label: 'Business profile', detail: 'Manage your business information', path: '/edit-profile?scope=business' },

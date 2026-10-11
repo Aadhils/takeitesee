@@ -32,7 +32,7 @@ async function professionalContext(request: Request) {
   if (!session) throw new Error('Authentication required.');
   if (!session.roles.includes('professional')) throw new Error('Professional profile required.');
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient(request);
   const { data: professional, error } = await supabase
     .from('professional_profiles')
     .select('id,verified')
