@@ -12,6 +12,7 @@ import {
   type NativeNotification,
 } from '../lib/notifications';
 import { providerNotificationTarget } from '../lib/provider-notification-target';
+import { privacyNotificationTarget } from '../lib/privacy-notification-target';
 import { cardShadow, theme } from '../lib/theme';
 import { useAuth } from '../providers/AuthProvider';
 
@@ -91,6 +92,8 @@ export default function NotificationsScreen() {
 
   const openNativeTarget = (item: NativeNotification) => {
     const path = item.target_path || '';
+    const privacyTarget = privacyNotificationTarget(item.target_path);
+    if (privacyTarget) { router.push(privacyTarget); return; }
     const providerTarget = providerNotificationTarget(item.target_path);
     if (providerTarget) {
       router.push(providerTarget);
