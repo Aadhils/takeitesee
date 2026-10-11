@@ -11,7 +11,7 @@ export async function GET(request: Request, context: RouteContext) {
   try {
     const session = await productionAuthProvider.requireProvider(request);
     const { serviceId } = await context.params;
-    const availability = await productionProviderAvailabilityRepository.get(session, serviceId as EntityId);
+    const availability = await productionProviderAvailabilityRepository.get(session, serviceId as EntityId, request);
     return NextResponse.json({ availability });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to load availability.' }, { status: 400 });
@@ -23,7 +23,7 @@ export async function PUT(request: Request, context: RouteContext) {
     const session = await productionAuthProvider.requireProvider(request);
     const { serviceId } = await context.params;
     const input = await request.json() as ProviderAvailabilityInput;
-    const availability = await productionProviderAvailabilityRepository.save(session, serviceId as EntityId, input);
+    const availability = await productionProviderAvailabilityRepository.save(session, serviceId as EntityId, input, request);
     return NextResponse.json({ availability });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to save availability.' }, { status: 400 });

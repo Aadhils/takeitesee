@@ -64,8 +64,8 @@ function validate(input: ProviderAvailabilityInput) {
   }
 }
 
-async function assertOwnService(session: ServerCustomerSession, serviceId: EntityId) {
-  const supabase = await createSupabaseServerClient();
+async function assertOwnService(session: ServerCustomerSession, serviceId: EntityId, request?: Request) {
+  const supabase = await createSupabaseServerClient(request);
   const { data, error } = await supabase.from('services').select('id,provider_type,professional_id,business_id').eq('id', serviceId).maybeSingle();
   if (error || !data) throw new Error('Service was not found.');
 
@@ -85,10 +85,10 @@ async function assertOwnService(session: ServerCustomerSession, serviceId: Entit
 }
 
 export const productionProviderAvailabilityRepository = {
-  async get(session: ServerCustomerSession, serviceId: EntityId): Promise<ProviderAvailabilityRecord> {
+  async get(session: ServerCustomerSession, serviceId: EntityId, request?: Request): Promise<ProviderAvailabilityRecord> {
     assertProductionBackendConfigured();
-    await assertOwnService(session, serviceId);
-    const supabase = await createSupabaseServerClient();
+    await assertOwnService(session, serviceId, request);
+    const supabase = await createSupabaseServerClient(request);
     const [{ data: setting, error: settingError }, { data: windows, error: windowsError }, { data: blackouts, error: blackoutsError }] = await Promise.all([
       supabase.from('service_availability').select('mode,timezone').eq('service_id', serviceId).maybeSingle(),
       supabase.from('service_availability_windows').select('day_of_week,start_time,end_time').eq('service_id', serviceId).order('day_of_week').order('start_time'),
@@ -104,12 +104,12 @@ export const productionProviderAvailabilityRepository = {
     };
   },
 
-  async save(session: ServerCustomerSession, serviceId: EntityId, input: ProviderAvailabilityInput): Promise<ProviderAvailabilityRecord> {
+  async save(session: ServerCustomerSession, serviceId: EntityId, input: ProviderAvailabilityInput, request?: Request): Promise<ProviderAvailabilityRecord> {
     assertProductionBackendConfigured();
     const normalizedInput = normalize(input);
     validate(normalizedInput);
-    await assertOwnService(session, serviceId);
-    const supabase = await createSupabaseServerClient();
+    await assertOwnService(session, serviceId, request);
+    const supabase = await createSupabaseServerClient(request);
 
     const { error: settingError } = await supabase.from('service_availability').upsert({ service_id: serviceId, mode: normalizedInput.mode, timezone: normalizedInput.timezone, updated_at: new Date().toISOString() }, { onConflict: 'service_id' });
     if (settingError) throw new Error(settingError.message);
@@ -128,6 +128,6 @@ export const productionProviderAvailabilityRepository = {
       if (error) throw new Error(error.message);
     }
 
-    return this.get(session, serviceId);
+    return this.get(session, serviceId, request);
   },
 };

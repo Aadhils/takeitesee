@@ -52,7 +52,7 @@ test('availability loads and saves ignore outdated Provider account results', ()
   assert.ok(screen.includes('loadedState.userId === providerUserId'));
   assert.ok(screen.includes('current.userId === providerUserId ? current.services : []'));
   assert.ok(screen.includes('const version = ++requestVersion.current;'));
-  assert.equal((screen.match(/if \(version !== requestVersion.current\) return;/g) ?? []).length, 4);
+  assert.equal((screen.match(/if \(version !== requestVersion.current\) return;/g) ?? []).length, 5);
   assert.ok(screen.includes('return () => { requestVersion.current += 1; };'));
   assert.ok(screen.includes("setNotice('');\n    setActionError('');\n    void load();"));
   assert.ok(screen.includes('}, [providerUserId]);'));
