@@ -1,45 +1,59 @@
-import { Link, usePathname } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { theme } from '../lib/theme';
+import { profileDestination } from '../lib/profile-model';
 import { useAuth } from '../providers/AuthProvider';
+import { useWorkspace } from '../providers/WorkspaceProvider';
+import { NativeIcon } from './NativeIcon';
+import { ProfileAvatar } from './ProfileAvatar';
 
 const items = [
-  { href: '/home', label: 'Home', icon: '⌂', auth: true },
-  { href: '/explore', label: 'Explore', icon: '⌕', auth: false },
-  { href: '/request-service', label: 'Request', icon: '+', auth: true },
-  { href: '/bookings', label: 'Bookings', icon: '▤', auth: true },
-  { href: '/account', label: 'Account', icon: '○', auth: true },
+  { href: '/home', label: 'Home', icon: 'home', auth: true },
+  { href: '/explore', label: 'Explore', icon: 'search', auth: false },
+  { href: '/request-service', label: 'Request', icon: 'plus', auth: true },
+  { href: '/bookings', label: 'Bookings', icon: 'calendar', auth: true },
+  { href: '/account', label: 'Profile', icon: 'person', auth: true },
 ] as const;
 
 export function MobileNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const auth = useAuth();
+  const workspace = useWorkspace();
+  const profile = /^\/provider(?:-|\/|$)/.test(pathname)
+    ? workspace.profiles.find((item) => item.scope !== 'customer')
+    : workspace.profiles.find((item) => item.scope === workspace.selectedScope);
+  const provider = profile && profile.scope !== 'customer';
   return <View style={styles.shell}><View style={styles.nav}>
     {items.map((item) => {
       if (item.auth && auth.status !== 'signedIn') return null;
-      const active = pathname === item.href
-        || (item.href === '/bookings' && pathname.startsWith('/bookings/'))
+      const destination = item.href === '/account' ? profileDestination(profile?.scope ?? workspace.selectedScope)
+        : item.href === '/bookings' && provider ? '/provider-bookings' : item.href;
+      const active = pathname === destination
+        || (item.href === '/bookings' && (pathname.startsWith('/bookings/') || pathname.startsWith('/provider-bookings/')))
         || (item.href === '/request-service' && pathname.startsWith('/requirements'));
       const create = item.href === '/request-service';
-      return <Link key={item.href} href={item.href} asChild>
-        <Pressable accessibilityRole="button" accessibilityLabel={create ? 'Post a requirement' : item.label} accessibilityState={{ selected: active }} android_ripple={{ color: '#E8E2FF', foreground: true }} style={[styles.link, active && styles.activeLink]}>
-          <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[styles.iconWrap, create && styles.createIcon]}><Text style={[styles.icon, active && styles.activeText, create && styles.createText]}>{item.icon}</Text></View>
-          <Text style={[styles.label, active && styles.activeText]}>{item.label}</Text>
-        </Pressable>
-      </Link>;
+      const color = create ? theme.colors.white : active ? theme.colors.primaryStrong : theme.colors.inkMuted;
+      return <Pressable key={item.href} accessibilityRole="button" accessibilityLabel={create ? 'Post a requirement as Customer' : item.label} accessibilityState={{ selected: active }} onPress={() => {
+        if (create) workspace.select('customer');
+        router.navigate(destination);
+      }} style={({ pressed }) => [styles.link, active && styles.activeLink, pressed && styles.pressed]}>
+        <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[styles.iconWrap, create && styles.createIcon]}>
+          {item.href === '/account' && profile?.media?.avatar_url ? <ProfileAvatar name={profile.name} url={profile.media.avatar_url} size={28} /> : <NativeIcon name={item.icon} color={color} size={create ? 28 : 24} />}
+        </View>
+        <Text numberOfLines={1} style={[styles.label, active && styles.activeText]}>{item.label}</Text>
+      </Pressable>;
     })}
-    {auth.status === 'signedOut' ? <Link href="/login" asChild><Pressable accessibilityRole="button" style={styles.link}><View style={styles.iconWrap}><Text style={styles.icon}>○</Text></View><Text style={styles.label}>Sign in</Text></Pressable></Link> : null}
+    {auth.status === 'signedOut' ? <Pressable accessibilityRole="button" onPress={() => router.navigate('/login')} style={styles.link}><View style={styles.iconWrap}><NativeIcon name="person" /></View><Text style={styles.label}>Sign in</Text></Pressable> : null}
   </View></View>;
 }
 const styles = StyleSheet.create({
-  shell: { borderTopWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.surface, paddingTop: 6 },
-  nav: { flexDirection: 'row', gap: 2 },
-  link: { flex: 1, minWidth: 0, minHeight: 64, alignItems: 'center', justifyContent: 'center', gap: 3, borderRadius: theme.radii.md, paddingVertical: 4 },
+  shell: { alignSelf: 'stretch', borderTopWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.surface, paddingTop: 4 },
+  nav: { flexDirection: 'row', width: '100%', alignItems: 'stretch' },
+  link: { flex: 1, flexBasis: 0, minWidth: 0, minHeight: 68, alignItems: 'center', justifyContent: 'center', gap: 3, borderRadius: theme.radii.md, paddingVertical: 4 },
   activeLink: { backgroundColor: theme.colors.secondary },
-  iconWrap: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center' },
-  createIcon: { width: 42, height: 42, borderRadius: 21, backgroundColor: theme.colors.primary },
-  icon: { fontSize: 27, lineHeight: 32, color: theme.colors.inkMuted },
-  createText: { fontSize: 32, color: theme.colors.white },
+  iconWrap: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  createIcon: { borderRadius: 20, backgroundColor: theme.colors.primary },
   label: { width: '100%', textAlign: 'center', paddingHorizontal: 2, fontSize: 10, fontWeight: '800', color: theme.colors.inkMuted },
   activeText: { color: theme.colors.primaryStrong },
   pressed: { opacity: 0.65 },
