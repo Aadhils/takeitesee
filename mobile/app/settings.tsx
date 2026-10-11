@@ -20,7 +20,6 @@ const preferences: { key: keyof AccountPreferences; label: string; help: string 
 ];
 const pages = [
   { label: 'Password & security', path: '/account/security', help: 'Securely verify and change your password' },
-  { label: 'Privacy requests & account deletion', path: '/account/privacy', help: 'Submit and track a request for review' },
   { label: 'Privacy Policy', path: '/privacy', help: 'How your information is handled' },
   { label: 'Terms of Service', path: '/terms', help: 'Using TakeItEsee' },
   { label: 'Cookie Policy', path: '/cookies', help: 'Website cookie information' },
@@ -95,6 +94,7 @@ export default function SettingsScreen() {
       {visible.error ? <Text accessibilityRole="alert" style={styles.error}>{visible.error}</Text> : null}
       {!visible.loading && !visible.form ? <Pressable accessibilityRole="button" onPress={() => setReload((value) => value + 1)} style={styles.back}><Text style={styles.linkText}>Retry settings</Text></Pressable> : null}
       <Pressable accessibilityRole="button" onPress={() => router.navigate('/experience-preferences')} style={styles.signOut}><Text style={styles.linkText}>Language & accessibility preferences →</Text></Pressable>
+      <Pressable accessibilityRole="button" onPress={() => router.navigate('/privacy-requests')} style={styles.signOut}><Text style={styles.linkText}>Privacy requests & account deletion →</Text></Pressable>
       <View style={styles.card}><Text style={styles.cardTitle}>Account & privacy</Text>{pages.map((page) => <Pressable key={page.path} accessibilityRole="link" accessibilityLabel={`${page.label}, opens website`} onPress={() => void openWeb(page.path)} style={({ pressed }) => [styles.webRow, pressed && styles.disabled]}><Text style={styles.label}>{page.label}</Text><Text style={styles.help}>{page.help}</Text><Text style={styles.linkText}>Opens website ↗</Text></Pressable>)}<Text style={styles.help}>Website pages may ask you to sign in with the same account. Deletion requests are reviewed; they do not immediately delete your account.</Text></View>
       <Pressable accessibilityRole="button" disabled={visible.busy || auth.status !== 'signedIn'} onPress={signOut} style={styles.signOut}><Text style={styles.linkText}>Sign out</Text></Pressable>
     </ScrollView><MobileNav />
