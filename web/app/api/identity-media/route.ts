@@ -44,7 +44,7 @@ function requestedKind(value: unknown): MediaKind {
 async function resolveIdentity(request: Request, context: IdentityContext): Promise<{ identity: ResolvedIdentity; supabase: ServerSupabase }> {
   if (context === 'customer') {
     const session = await productionAuthProvider.requireCustomer(request);
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(request);
     const { data, error } = await supabase
       .from('customer_profiles')
       .select('avatar_object_path,banner_object_path')
@@ -66,7 +66,7 @@ async function resolveIdentity(request: Request, context: IdentityContext): Prom
   }
 
   const session = await productionAuthProvider.requireProvider(request);
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient(request);
 
   if (session.roles.includes('professional')) {
     const { data, error } = await supabase

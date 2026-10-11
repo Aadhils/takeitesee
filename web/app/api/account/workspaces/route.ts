@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     const session = await productionAuthProvider.getSession(request);
     if (!session) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
 
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(request);
     const [{ data: user, error: userError }, { data: professional, error: professionalError }, { data: business, error: businessError }, { data: pendingApplication, error: pendingApplicationError }] = await Promise.all([
       supabase.from('users').select('name').eq('id', session.user_id).maybeSingle(),
       supabase.from('professional_profiles').select('id,headline,verified').eq('user_id', session.user_id).limit(1).maybeSingle(),

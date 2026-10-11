@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandLogo } from '../components/BrandLogo';
+import { ProfileDashboardHeader } from '../components/ProfileDashboardHeader';
 import { MobileNav } from '../components/MobileNav';
 import {
   fetchProviderRequirementLeads,
@@ -148,6 +149,7 @@ export default function ProviderScreen() {
       <View style={styles.screen}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.brandRow}><BrandLogo compact /></View>
+          <ProfileDashboardHeader context="provider" />
           <View style={styles.headerRow}>
             <View style={styles.headerCopy}>
               <Text style={styles.eyebrow}>PROVIDER</Text>
