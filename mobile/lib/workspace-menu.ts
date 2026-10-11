@@ -20,7 +20,7 @@ export function workspaceMenu(scope: ProfileScope): MenuGroup[] {
   if (provider) groups.push({ title: 'Services & profile', items: [
     { label: 'Edit Provider details', detail: 'Name, description and service area', path: `/edit-profile?scope=${scope}` },
     { label: 'Manage services', detail: 'Create drafts and edit your service listings', path: '/provider-services' },
-    { label: 'Weekly schedule', detail: 'Configure detailed working hours', path: '/provider/schedule', web: true },
+    { label: 'Weekly schedule', detail: 'Configure service working hours', path: '/provider-schedule' },
     { label: 'Verification', detail: 'Review your verification status', path: '/provider/verification', web: true },
     { label: 'Public profile readiness', detail: 'Check your profile before sharing', path: '/provider/public-readiness', web: true },
     { label: 'Public handle', detail: 'Manage your public profile address', path: '/provider/handle', web: true },

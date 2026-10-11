@@ -1,5 +1,5 @@
-import { Redirect } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, Redirect, useFocusEffect } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -64,12 +64,13 @@ export default function ProviderServiceAvailabilityScreen() {
     }
   }, [providerUserId]);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
+    setSavingServiceId('');
     setNotice('');
     setActionError('');
     void load();
     return () => { requestVersion.current += 1; };
-  }, [load]);
+  }, [load]));
 
   if (auth.status === 'loading') {
     return <SafeAreaView style={styles.safeArea}><View style={styles.centered}><ActivityIndicator /><Text style={styles.muted}>Checking provider access…</Text></View></SafeAreaView>;
@@ -80,7 +81,7 @@ export default function ProviderServiceAvailabilityScreen() {
   const updateMode = async (service: ProviderServiceAvailability, mode: ProviderServiceAvailabilityMode) => {
     if (savingServiceId || state.status !== 'ready' || mode === service.availability_mode) return;
     if (mode === 'scheduled' && service.weekly_window_count === 0) {
-      setActionError('Scheduled mode needs existing weekly hours. Configure the detailed schedule on web first.');
+      setActionError('Scheduled mode needs existing weekly hours. Open Weekly working hours to add a schedule first.');
       return;
     }
     const version = requestVersion.current;
@@ -100,6 +101,7 @@ export default function ProviderServiceAvailabilityScreen() {
       if (version !== requestVersion.current) return;
       setActionError(error instanceof Error ? error.message : 'Availability could not be updated.');
     } finally {
+      if (version !== requestVersion.current) return;
       setSavingServiceId('');
     }
   };
@@ -120,7 +122,8 @@ export default function ProviderServiceAvailabilityScreen() {
 
           <View style={styles.boundaryCard}>
             <Text style={styles.boundaryTitle}>Quick control only</Text>
-            <Text style={styles.muted}>Existing timezone, weekly hours and blackout periods are preserved. For detailed schedule editing, use the web.</Text>
+            <Text style={styles.muted}>Existing timezone, weekly hours and blackout periods are preserved. Edit detailed hours in Weekly working hours below.</Text>
+            <Link href="/provider-schedule" style={styles.scheduleLink}>Weekly working hours →</Link>
           </View>
 
           {loadedState.userId === providerUserId && notice ? <View style={styles.successCard}><Text style={styles.successText}>{notice}</Text></View> : null}
@@ -129,7 +132,7 @@ export default function ProviderServiceAvailabilityScreen() {
           {state.status === 'error' ? <Text style={styles.errorText}>{state.message}</Text> : null}
 
           {state.status === 'ready' && state.services.length === 0 ? (
-            <View style={styles.card}><Text style={styles.cardTitle}>No services yet</Text><Text style={styles.muted}>Create a Provider service on web first. It will appear here for quick availability control.</Text></View>
+            <View style={styles.card}><Text style={styles.cardTitle}>No services yet</Text><Text style={styles.muted}>Create a draft in Manage services first. It will appear here for quick availability control.</Text><Link href="/provider-services" style={styles.scheduleLink}>Manage services →</Link></View>
           ) : null}
 
           {state.services.map((service) => {
@@ -149,6 +152,7 @@ export default function ProviderServiceAvailabilityScreen() {
                   <Text style={styles.meta}>{service.weekly_window_count} weekly window{service.weekly_window_count === 1 ? '' : 's'}</Text>
                   {service.location ? <Text style={styles.meta}>{service.location}</Text> : null}
                 </View>
+                <Link href={{ pathname: '/provider-schedule', params: { serviceId: service.id } }} style={styles.scheduleLink}>Edit weekly working hours →</Link>
                 <View style={styles.modeList}>
                   {modes.map((mode) => {
                     const selected = service.availability_mode === mode.value;
@@ -165,7 +169,7 @@ export default function ProviderServiceAvailabilityScreen() {
                       >
                         <View style={styles.modeCopy}>
                           <Text style={[styles.modeTitle, selected && styles.modeSelectedText]}>{mode.label}</Text>
-                          <Text style={[styles.modeDetail, selected && styles.modeSelectedDetail]}>{scheduleBlocked ? 'Add weekly hours on web before choosing Scheduled.' : mode.detail}</Text>
+                          <Text style={[styles.modeDetail, selected && styles.modeSelectedDetail]}>{scheduleBlocked ? 'Add weekly hours below before choosing Scheduled.' : mode.detail}</Text>
                         </View>
                         <Text style={[styles.modeMark, selected && styles.modeSelectedText]}>{saving && !selected ? '…' : selected ? '✓' : '→'}</Text>
                       </Pressable>
@@ -186,6 +190,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: theme.colors.white },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   screen: { flex: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 10, gap: 10 },
+  scheduleLink: { minHeight: 44, paddingVertical: 12, color: theme.colors.primaryStrong, fontWeight: '800' },
   refreshDisabled: { opacity: 0.5 },
   brandRow: { alignItems: 'center', paddingBottom: 6 },
   content: { gap: 12, paddingBottom: 8 },

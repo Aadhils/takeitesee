@@ -152,6 +152,7 @@ export default function ProviderScreen() {
           <View style={styles.brandRow}><View style={styles.menuSpacer} /><BrandLogo compact /><WorkspaceMenu context="provider" /></View>
           <ProfileDashboardHeader context="provider" />
           <View style={styles.tools}>
+            <Link href="/provider-schedule" asChild><Pressable accessibilityRole="button" style={styles.tool}><Text style={styles.toolText}>Weekly working hours →</Text></Pressable></Link>
             <Link href="/provider-services" asChild><Pressable accessibilityRole="button" style={styles.tool}><Text style={styles.toolText}>Manage services →</Text></Pressable></Link>
             <Link href={{ pathname: '/edit-profile', params: { scope: isProfessional ? 'professional' : 'business' } }} asChild><Pressable accessibilityRole="button" style={styles.tool}><Text style={styles.toolText}>Edit profile details →</Text></Pressable></Link>
             <Link href="/provider-service-availability" asChild><Pressable accessibilityRole="button" style={styles.tool}><Text style={styles.toolText}>Service availability →</Text></Pressable></Link>

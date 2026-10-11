@@ -32,5 +32,5 @@ test('Provider live status and booking mode use branded selected states', () => 
   assert.ok(liveStatus.includes('durationChipSelected: { backgroundColor: theme.colors.primary }'));
   assert.ok(liveStatus.includes('modeButtonSelected: { backgroundColor: theme.colors.primary }'));
   assert.ok(serviceAvailability.includes('modeSelected: { backgroundColor: theme.colors.primary }'));
-  assert.ok(serviceAvailability.includes('For detailed schedule editing, use the web.'));
+  assert.ok(serviceAvailability.includes('Edit detailed hours in Weekly working hours below.'));
 });
