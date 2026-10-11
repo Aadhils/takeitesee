@@ -28,21 +28,35 @@ export function ProfileDashboardHeader({ context }: { context: 'customer' | 'pro
   const [failedBanner, setFailedBanner] = useState<string | null>(null);
   const busy = useRef(false);
   const active = useRef(true);
+  const focusEpoch = useRef(0);
   const scope = profile?.scope;
   const ownerKey = `${userId ?? ''}:${scope ?? ''}`;
   const currentOwnerKey = useRef(ownerKey);
   currentOwnerKey.current = ownerKey;
   const { refresh, select, updateMedia } = workspace;
 
-  useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
-  useFocusEffect(useCallback(() => { void refresh(); }, [refresh]));
-  useEffect(() => { if (scope) select(scope); }, [scope, select]);
+  useFocusEffect(useCallback(() => {
+    active.current = true;
+    focusEpoch.current += 1;
+    busy.current = false;
+    setWorking(null);
+    void refresh();
+    return () => {
+      active.current = false;
+      focusEpoch.current += 1;
+      busy.current = false;
+      setDraft(null);
+      setWorking(null);
+    };
+  }, [refresh]));
+  useFocusEffect(useCallback(() => { if (scope) select(scope); }, [scope, select]));
   useEffect(() => { setDraft(null); setWorking(null); busy.current = false; setError(''); setNotice(''); }, [userId, scope]);
 
   const choosePhoto = async (kind: MediaKind) => {
     if (!profile?.media || !userId || busy.current || draft) return;
     const operationKey = ownerKey;
-    const current = () => active.current && currentOwnerKey.current === operationKey;
+    const operationEpoch = focusEpoch.current;
+    const current = () => active.current && currentOwnerKey.current === operationKey && focusEpoch.current === operationEpoch;
     busy.current = true;
     setWorking(kind); setError(''); setNotice('');
     try {
@@ -67,13 +81,14 @@ export function ProfileDashboardHeader({ context }: { context: 'customer' | 'pro
   const savePhoto = async () => {
     if (!draft || draft.ownerKey !== ownerKey || !profile?.media || !userId || busy.current) return;
     const operationKey = ownerKey;
-    const current = () => active.current && currentOwnerKey.current === operationKey;
+    const operationEpoch = focusEpoch.current;
+    const current = () => active.current && currentOwnerKey.current === operationKey && focusEpoch.current === operationEpoch;
     busy.current = true;
     setWorking(draft.kind); setError('');
     try {
       const media = await uploadIdentityMedia(userId, profile.scope, draft.kind, draft.buffer);
+      updateMedia(profile.scope, media);
       if (current()) {
-        updateMedia(profile.scope, media);
         setDraft(null);
         setNotice(draft.kind === 'avatar' ? 'Profile photo updated.' : 'Cover photo updated.');
       }
@@ -87,7 +102,8 @@ export function ProfileDashboardHeader({ context }: { context: 'customer' | 'pro
   const removePhoto = (kind: MediaKind) => {
     if (!profile?.media || !userId || busy.current) return;
     const operationKey = ownerKey;
-    const current = () => active.current && currentOwnerKey.current === operationKey;
+    const operationEpoch = focusEpoch.current;
+    const current = () => active.current && currentOwnerKey.current === operationKey && focusEpoch.current === operationEpoch;
     Alert.alert(kind === 'avatar' ? 'Remove profile photo?' : 'Remove cover photo?', 'This removes the photo from this identity on both the app and web.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Remove', style: 'destructive', onPress: () => {
@@ -95,7 +111,8 @@ export function ProfileDashboardHeader({ context }: { context: 'customer' | 'pro
         busy.current = true;
         setWorking(kind); setError(''); setNotice('');
         void removeIdentityMedia(userId, profile.scope, kind).then((media) => {
-          if (current()) { updateMedia(profile.scope, media); setNotice('Photo removed.'); }
+          updateMedia(profile.scope, media);
+          if (current()) setNotice('Photo removed.');
         }).catch((cause) => {
           if (current()) setError(cause instanceof Error ? cause.message : 'Your photo could not be removed.');
         }).finally(() => { if (current()) { busy.current = false; setWorking(null); } });

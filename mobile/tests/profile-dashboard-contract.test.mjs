@@ -12,6 +12,8 @@ test('owner media remains Bearer authenticated under existing server ownership a
   assert.ok(provider.includes('state.userId === userId ? state : emptyState'));
   assert.ok(provider.includes('owner.current !== userId'));
   assert.ok(header.includes('currentOwnerKey.current === operationKey'));
+  assert.ok(header.includes('focusEpoch.current === operationEpoch'));
+  assert.ok(header.includes('useFocusEffect(useCallback(() => { if (scope) select(scope); }'));
   assert.ok(!client.includes('user_metadata'));
   const media = await read('../web/app/api/identity-media/route.ts');
   assert.equal((media.match(/createSupabaseServerClient\(request\)/g) ?? []).length, 2);
