@@ -16,7 +16,7 @@ const SKILL_SELECT = 'id,professional_id,name,proficiency,years_experience,displ
 
 async function getOwnedProfessionalProfile(request: Request) {
   const session = await productionAuthProvider.requireProvider(request);
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient(request);
   const { data: profile, error } = await supabase
     .from('professional_profiles')
     .select('id,user_id,verified')
