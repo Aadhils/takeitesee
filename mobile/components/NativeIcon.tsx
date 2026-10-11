@@ -1,7 +1,7 @@
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { theme } from '../lib/theme';
 
-export type NativeIconName = 'home' | 'search' | 'plus' | 'calendar' | 'person' | 'camera' | 'chevron' | 'check' | 'close';
+export type NativeIconName = 'home' | 'search' | 'plus' | 'calendar' | 'person' | 'camera' | 'chevron' | 'check' | 'close' | 'menu';
 
 export function NativeIcon({ name, color = theme.colors.inkMuted, size = 24 }: { name: NativeIconName; color?: string; size?: number }) {
   return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
@@ -14,5 +14,6 @@ export function NativeIcon({ name, color = theme.colors.inkMuted, size = 24 }: {
     {name === 'chevron' ? <Path d="m6 9 6 6 6-6" /> : null}
     {name === 'check' ? <Path d="m5 12 4 4L19 6" /> : null}
     {name === 'close' ? <Path d="m6 6 12 12M18 6 6 18" /> : null}
+    {name === 'menu' ? <Path d="M4 6h16M4 12h16M4 18h16" /> : null}
   </Svg>;
 }

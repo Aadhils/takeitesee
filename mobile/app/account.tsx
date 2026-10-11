@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandLogo } from '../components/BrandLogo';
 import { ProfileDashboardHeader } from '../components/ProfileDashboardHeader';
 import { MobileNav } from '../components/MobileNav';
+import { WorkspaceMenu } from '../components/WorkspaceMenu';
 import { cardShadow, theme } from '../lib/theme';
 import { useAuth } from '../providers/AuthProvider';
 
@@ -58,10 +59,11 @@ export default function AccountScreen() {
       <View style={styles.screen}>
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.header}>
-            <View style={styles.brandRow}><BrandLogo compact /></View>
+            <View style={styles.brandRow}><View style={styles.menuSpacer} /><BrandLogo compact /><WorkspaceMenu context="customer" /></View>
           </View>
 
           <ProfileDashboardHeader context="customer" />
+          <Link href="/settings" asChild><Pressable accessibilityRole="button" style={styles.workspaceButton}><Text style={styles.workspaceButtonText}>Settings & privacy →</Text></Pressable></Link>
 
           <View style={styles.quickRow}>
             <Link href="/notifications" asChild>
@@ -168,7 +170,8 @@ const styles = StyleSheet.create({
   screen: { flex: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 10, gap: 10 },
   content: { gap: 14, paddingBottom: 8 },
   header: { gap: 6 },
-  brandRow: { alignItems: 'center', paddingBottom: 8 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 8 },
+  menuSpacer: { width: 82 },
   workspaceButton: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 14, borderRadius: theme.radii.md, backgroundColor: theme.colors.primary },
   workspaceButtonText: { fontSize: 14, fontWeight: '800', color: theme.colors.white },
   eyebrow: { fontSize: 11, fontWeight: '900', letterSpacing: 1.5, color: theme.colors.primary },
