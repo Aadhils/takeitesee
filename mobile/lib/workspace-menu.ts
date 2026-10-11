@@ -26,7 +26,7 @@ export function workspaceMenu(scope: ProfileScope): MenuGroup[] {
     { label: 'Public handle', detail: 'Manage your public profile address', path: '/provider-handle' },
   ] });
   if (scope === 'professional') groups.push({ title: 'Professional presence', items: [
-    { label: 'Portfolio', detail: 'Showcase your work', path: '/provider/portfolio', web: true },
+    { label: 'Portfolio', detail: 'Showcase your work', path: '/provider-portfolio' },
     { label: 'Résumé & career', detail: 'Manage your professional résumé', path: '/provider/resume', web: true },
     { label: 'Jobs & applications', detail: 'Browse opportunities and track applications', path: '/provider/jobs', web: true },
   ] });
@@ -48,7 +48,7 @@ export function workspaceWebUrl(path: string): string {
     ...workspaceMenu('customer').flatMap((group) => group.items.filter((item) => item.web).map((item) => item.path)),
     ...workspaceMenu('professional').flatMap((group) => group.items.filter((item) => item.web).map((item) => item.path)),
     ...workspaceMenu('business').flatMap((group) => group.items.filter((item) => item.web).map((item) => item.path)),
-    '/provider/verification', '/provider/handle', '/provider/services', '/provider/setup', '/account/profile', '/account/settings', '/account/security', '/account/privacy', '/privacy', '/terms', '/cookies',
+    '/provider/portfolio', '/provider/verification', '/provider/handle', '/provider/services', '/provider/setup', '/account/profile', '/account/settings', '/account/security', '/account/privacy', '/privacy', '/terms', '/cookies',
   ]);
   if (!allowed.has(path)) throw new Error('This account page is unavailable.');
   return `https://www.takeitesee.com${path}`;
