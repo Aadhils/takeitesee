@@ -30,6 +30,7 @@ export function MobileNav() {
       const destination = item.href === '/account' ? profileDestination(profile?.scope ?? workspace.selectedScope)
         : item.href === '/bookings' && provider ? '/provider-bookings' : item.href;
       const active = pathname === destination
+        || (item.href === '/account' && pathname === '/settings')
         || (item.href === '/bookings' && (pathname.startsWith('/bookings/') || pathname.startsWith('/provider-bookings/')))
         || (item.href === '/request-service' && pathname.startsWith('/requirements'));
       const create = item.href === '/request-service';

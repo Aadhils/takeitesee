@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandLogo } from '../components/BrandLogo';
 import { ProfileDashboardHeader } from '../components/ProfileDashboardHeader';
 import { MobileNav } from '../components/MobileNav';
+import { WorkspaceMenu } from '../components/WorkspaceMenu';
 import {
   fetchProviderRequirementLeads,
   formatProviderLeadMoney,
@@ -148,8 +149,13 @@ export default function ProviderScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <View style={styles.brandRow}><BrandLogo compact /></View>
+          <View style={styles.brandRow}><View style={styles.menuSpacer} /><BrandLogo compact /><WorkspaceMenu context="provider" /></View>
           <ProfileDashboardHeader context="provider" />
+          <View style={styles.tools}>
+            <Link href="/provider-service-availability" asChild><Pressable accessibilityRole="button" style={styles.tool}><Text style={styles.toolText}>Service availability →</Text></Pressable></Link>
+            <Link href="/provider-live-status" asChild><Pressable accessibilityRole="button" style={styles.tool}><Text style={styles.toolText}>Live work status →</Text></Pressable></Link>
+            <Link href="/settings" asChild><Pressable accessibilityRole="button" style={styles.tool}><Text style={styles.toolText}>Settings & privacy →</Text></Pressable></Link>
+          </View>
           <View style={styles.headerRow}>
             <View style={styles.headerCopy}>
               <Text style={styles.eyebrow}>PROVIDER</Text>
@@ -348,7 +354,11 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: theme.colors.white },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   screen: { flex: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 10, gap: 10 },
-  brandRow: { alignItems: 'center', paddingBottom: 6 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 6 },
+  menuSpacer: { width: 82 },
+  tools: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  tool: { flexGrow: 1, flexBasis: 140, minHeight: 48, justifyContent: 'center', padding: 12, borderRadius: 12, backgroundColor: theme.colors.secondary },
+  toolText: { color: theme.colors.primaryStrong, fontSize: 13, fontWeight: '800' },
   content: { gap: 12, paddingBottom: 8 },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   headerCopy: { flex: 1, minWidth: 0, gap: 5 },
