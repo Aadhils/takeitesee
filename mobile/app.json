@@ -16,6 +16,14 @@
           "resizeMode": "contain",
           "backgroundColor": "#F8F7FF"
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Choose a photo for your TakeItEsee profile or cover.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
       ]
     ],
     "experiments": {
@@ -32,7 +40,11 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/official-takeitesee-logo.png",
         "backgroundColor": "#F8F7FF"
-      }
+      },
+      "blockedPermissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "extra": {
       "eas": {

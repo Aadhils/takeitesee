@@ -4,9 +4,11 @@ import { ActivityIndicator, Keyboard, Pressable, ScrollView, StyleSheet, Text, T
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandLogo } from '../components/BrandLogo';
 import { MobileNav } from '../components/MobileNav';
+import { ProfileSwitcher } from '../components/ProfileSwitcher';
 import { searchMarketplaceServices, formatMarketplacePrice, type MarketplaceSearchResponse } from '../lib/marketplace';
 import { cardShadow, theme } from '../lib/theme';
 import { useAuth } from '../providers/AuthProvider';
+import { useWorkspace } from '../providers/WorkspaceProvider';
 
 const categoryColors = ['#F2EFFF', '#EAF4FF', '#E9F8F0', '#FFF2E6', '#FFEFF4', '#EDF2FF'];
 
@@ -26,6 +28,7 @@ function categorySymbol(name: string) {
 
 export default function HomeScreen() {
   const auth = useAuth();
+  const workspace = useWorkspace();
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [marketplace, setMarketplace] = useState<MarketplaceSearchResponse | null>(null);
@@ -52,10 +55,12 @@ export default function HomeScreen() {
   if (auth.status === 'signedOut') return <Redirect href="/login" />;
   if (auth.status === 'loading') return <SafeAreaView style={styles.safeArea}><View style={styles.centered}><ActivityIndicator color={theme.colors.primary} /><Text style={styles.description}>Loading your account…</Text></View></SafeAreaView>;
   const providerAccess = auth.identity.roles.includes('professional') || auth.identity.roles.includes('business_owner');
+  const providerSelected = providerAccess && workspace.selectedScope !== 'customer';
 
   return <SafeAreaView style={styles.safeArea}>
     <View style={styles.screen}>
       <View style={styles.header}>
+        <ProfileSwitcher compact />
         <View style={styles.logoWrap}><BrandLogo compact /></View>
         <Pressable accessibilityRole="button" accessibilityLabel="Notifications" onPress={() => router.push('/notifications')} style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}><Text style={styles.headerSymbol}>🔔</Text><Text style={styles.smallLabel}>Updates</Text></Pressable>
       </View>
@@ -80,12 +85,12 @@ export default function HomeScreen() {
         {!error ? <View style={styles.categoryGrid}>{marketplace?.categories.slice(0, 8).map((category, index) => <Pressable key={category.slug} accessibilityRole="button" onPress={() => search(category.name)} style={({ pressed }) => [styles.category, pressed && styles.pressed]}><View style={[styles.categoryIcon, { backgroundColor: categoryColors[index % categoryColors.length] }]}><Text style={styles.categoryInitial}>{categorySymbol(category.name)}</Text></View><Text style={styles.categoryName}>{category.name}</Text></Pressable>)}</View> : null}
 
         <View style={styles.sectionHeading}><Text style={styles.sectionTitle}>Your service journey</Text></View>
-        <Text style={styles.description}>Find services, manage bookings and keep up with your requests in one place.</Text>
+        <Text style={styles.description}>{providerSelected ? 'Manage your Provider bookings and matching Customer leads.' : 'Find services, manage bookings and keep up with your requests in one place.'}</Text>
         <View style={styles.quickRow}>
-          <Pressable accessibilityRole="button" onPress={() => router.push('/bookings')} style={({ pressed }) => [styles.quickCard, pressed && styles.pressed]}><Text style={styles.quickSymbol}>▤</Text><Text style={styles.quickTitle}>My bookings</Text><Text style={styles.description}>Keep track of your services →</Text></Pressable>
-          <Pressable accessibilityRole="button" onPress={() => router.push('/request-service')} style={({ pressed }) => [styles.quickCard, pressed && styles.pressed]}><Text style={styles.quickSymbol}>＋</Text><Text style={styles.quickTitle}>Post a requirement</Text><Text style={styles.description}>Tell providers what you need →</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => { if (providerSelected) router.push('/provider-bookings'); else router.push('/bookings'); }} style={({ pressed }) => [styles.quickCard, pressed && styles.pressed]}><Text style={styles.quickSymbol}>▤</Text><Text style={styles.quickTitle}>{providerSelected ? 'Provider bookings' : 'My bookings'}</Text><Text style={styles.description}>Keep track of your services →</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => { if (providerSelected) router.push('/provider'); else router.push('/request-service'); }} style={({ pressed }) => [styles.quickCard, pressed && styles.pressed]}><Text style={styles.quickSymbol}>＋</Text><Text style={styles.quickTitle}>{providerSelected ? 'Matching leads' : 'Post a requirement'}</Text><Text style={styles.description}>{providerSelected ? 'Respond to Customer requirements →' : 'Tell providers what you need →'}</Text></Pressable>
         </View>
-        <Pressable accessibilityRole="button" onPress={() => router.push('/requirements')} style={styles.textButton}><Text style={styles.textAction}>View my requests →</Text></Pressable>
+        {!providerSelected ? <Pressable accessibilityRole="button" onPress={() => router.push('/requirements')} style={styles.textButton}><Text style={styles.textAction}>View my requests →</Text></Pressable> : null}
         {providerAccess ? <Pressable accessibilityRole="button" onPress={() => router.push('/provider')} style={styles.providerCard}><Text style={styles.quickTitle}>Provider workspace</Text><Text style={styles.textAction}>Manage leads and bookings →</Text></Pressable> : null}
 
         {!loading && !error && marketplace && marketplace.services.length > 0 ? <>
@@ -105,7 +110,7 @@ const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   screen: { flex: 1, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8, gap: 10 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 60 },
-  logoWrap: { flex: 1, alignItems: 'center', paddingLeft: 48 },
+  logoWrap: { flex: 1, alignItems: 'center', minWidth: 0 },
   headerButton: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   headerSymbol: { fontSize: 25, color: theme.colors.ink },
   smallLabel: { fontSize: 10, color: theme.colors.inkMuted },

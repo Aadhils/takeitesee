@@ -59,11 +59,6 @@ export default function AccountScreen() {
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.header}>
             <View style={styles.brandRow}><BrandLogo compact /></View>
-            <Text style={styles.eyebrow}>ACCOUNT</Text>
-            <Text style={styles.title}>My account</Text>
-            <Text style={styles.description}>
-              Manage your bookings, messages, notifications and reviews from one place.
-            </Text>
           </View>
 
           <ProfileDashboardHeader context="customer" />
