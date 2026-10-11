@@ -12,7 +12,7 @@ const noStoreHeaders = { 'Cache-Control': 'no-store, max-age=0' };
 export async function GET(request: Request) {
   try {
     const session = await productionAuthProvider.requireCustomer(request);
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(request);
     const { data, error } = await supabase
       .from('privacy_requests')
       .select(selectFields)
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Request details must be 10 to 2000 characters.' }, { status: 400, headers: noStoreHeaders });
     }
 
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(request);
     const { data, error } = await supabase
       .from('privacy_requests')
       .insert({ user_id: session.user_id, request_type: requestType, details })
