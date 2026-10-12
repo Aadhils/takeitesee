@@ -2,7 +2,7 @@ import * as Crypto from 'expo-crypto';
 import { apiFetch } from './api';
 import { supabase } from './supabase';
 import { fetchPortfolio, type PortfolioItem } from './provider-portfolio';
-import { clearConfirmedPortfolioUpload, recordPendingPortfolioUpload } from './portfolio-upload-journal';
+import { clearConfirmedPortfolioUpload, readPendingPortfolioUpload, recordPendingPortfolioUpload } from './portfolio-upload-journal';
 export const MAX_PORTFOLIO_IMAGE_BYTES = 8 * 1024 * 1024;
 const bucket = 'professional-portfolio-media';
 export type PendingPortfolioUpload = { userId: string; professionalId: string; objectPath: string };
@@ -41,4 +41,21 @@ export async function uploadPortfolioImage(userId: string, expectedId: string | 
  } catch { // Neither storage nor registration failures prove that no object/record was committed.
   throw new PortfolioUploadUnconfirmed(pending);
  }
+}
+
+export async function finalizePendingPortfolioUpload(userId: string, pending: PendingPortfolioUpload): Promise<PortfolioItem> {
+ await token(userId);
+ const recorded=readPendingPortfolioUpload(userId,pending.professionalId);
+ if(!recorded||recorded.userId!==pending.userId||recorded.objectPath!==pending.objectPath)throw new Error('This pending upload changed. Reload its status before continuing.');
+ const existing=await checkPendingPortfolioUpload(userId,pending);
+ if(existing)return existing;
+ try {
+  const extension=pending.objectPath.split('.').pop();
+  const {media}=await apiFetch<{media:PortfolioItem}>('/api/provider/profile/media',{method:'POST',accessToken:await token(userId),body:JSON.stringify({object_path:pending.objectPath,original_filename:`portfolio-image.${extension}`,professional_role_id:null,caption:null,alt_text:null,active:false})});
+  if(!media||media.professional_id!==pending.professionalId||media.object_path!==pending.objectPath||media.media_type!=='image')throw new Error('Unexpected registration response.');
+  const item=(await fetchPortfolio(userId,pending.professionalId)).find(row=>row.object_path===pending.objectPath);
+  if(!item||item.id!==media.id)throw new Error('Registration readback failed.');
+  clearConfirmedPortfolioUpload(pending);
+  return item;
+ }catch{throw new PortfolioUploadUnconfirmed(pending);}
 }
