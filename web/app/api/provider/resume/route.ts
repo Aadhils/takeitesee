@@ -221,6 +221,23 @@ export async function PATCH(request: Request) {
     const input = await request.json() as ResumeInput;
     const { supabase, profile } = await getOwnedProfessionalProfile(request);
 
+    if (input.section === 'summary') {
+      const headline = optionalText(input.career_headline, 160, 'Career headline');
+      if (headline && headline.length < 2) throw new Error('Career headline must have at least 2 characters.');
+      const summary = optionalText(input.career_summary, 2400, 'Career summary');
+      const expected = input.expected_updated_at;
+      if (expected !== null && (typeof expected !== 'string' || expected.length > 64 || !Number.isFinite(Date.parse(expected)))) throw new Error('Reload your career profile before saving.');
+      const updatedAt = new Date(expected === null ? Date.now() : Math.max(Date.now(), Date.parse(expected as string) + 1)).toISOString();
+      const values = { career_headline: headline, career_summary: summary, updated_at: updatedAt };
+      const query = expected === null
+        ? supabase.from('professional_career_profiles').insert({ professional_id: profile.id, ...values })
+        : supabase.from('professional_career_profiles').update(values).eq('professional_id', profile.id).eq('updated_at', expected);
+      const { data, error } = await query.select(PROFILE_SELECT).maybeSingle();
+      if (error?.code === '23505' || (!error && !data)) return NextResponse.json({ error: 'Career profile changed. Reload before saving.' }, { status: 409 });
+      if (error) throw new Error(error.message);
+      return NextResponse.json({ career_profile: data });
+    }
+
     if (input.section === 'profile') {
       const normalized = normalizeProfile(input);
       const { data, error } = await supabase
