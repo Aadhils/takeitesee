@@ -1,7 +1,7 @@
 import { apiFetch } from './api';
 import { supabase } from './supabase';
 import { mobileEnv } from './env';
-export type PortfolioItem = { id: string; professional_id: string; professional_role_id: string | null; updated_at: string; media_type: 'image' | 'video'; caption: string | null; alt_text: string | null; active: boolean; moderation_state: string; signed_url: string | null; display_order: number };
+export type PortfolioItem = { id: string; professional_id: string; object_path: string; professional_role_id: string | null; updated_at: string; media_type: 'image' | 'video'; caption: string | null; alt_text: string | null; active: boolean; moderation_state: string; signed_url: string | null; display_order: number };
 export function portfolioImageUrl(item: PortfolioItem) {
   if (item.media_type !== 'image' || !item.signed_url) return null;
   try {
